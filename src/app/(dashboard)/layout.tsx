@@ -36,7 +36,7 @@ export default function DashboardLayout({
   if (!mounted || authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-primary-1">
-        <p className="text-secondary-3">Carregando…</p>
+        <p className="text-primary-2">Carregando…</p>
       </div>
     );
   }
@@ -47,16 +47,19 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-primary-1">
-      <aside className="w-56 shrink-0 border-r border-secondary-2 bg-primary-1 p-4">
-        <p className="text-sm font-medium text-primary-2">Comunidade RPM</p>
-        <p className="truncate text-xs text-secondary-3/80">{user.email}</p>
+      <aside className="w-56 shrink-0 border-r border-secondary-2 bg-primary-2 p-4">
+        <p className="text-sm font-medium text-primary-1">Comunidade RPM</p>
+        <p className="truncate text-xs text-primary-3">
+          {user.email}
+          {user.role === 'ADMIN' && ' (admin)'}
+        </p>
         <nav className="mt-6 space-y-1">
           <Link
             href="/dashboard"
             className={`block rounded-lg px-3 py-2 text-sm ${
               pathname === '/dashboard'
                 ? 'bg-primary-3 font-medium text-primary-2'
-                : 'text-secondary-3 hover:bg-secondary-2'
+                : 'text-primary-1 hover:bg-secondary-3'
             }`}
           >
             Início
@@ -65,7 +68,7 @@ export default function DashboardLayout({
         <button
           type="button"
           onClick={logout}
-          className="mt-6 w-full rounded-lg border border-secondary-2 px-3 py-2 text-left text-sm text-secondary-3 hover:bg-secondary-2"
+          className="mt-6 w-full rounded-lg border border-primary-3 px-3 py-2 text-left text-sm text-primary-1 hover:bg-primary-3 hover:text-primary-2"
         >
           Sair
         </button>
