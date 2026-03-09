@@ -35,8 +35,8 @@ export default function DashboardLayout({
 
   if (!mounted || authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-100">
-        <p className="text-zinc-500">Carregando…</p>
+      <div className="flex min-h-screen items-center justify-center bg-primary-1">
+        <p className="text-secondary-3">Carregando…</p>
       </div>
     );
   }
@@ -46,17 +46,17 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-100">
-      <aside className="w-56 shrink-0 border-r border-zinc-200 bg-white p-4">
-        <p className="text-sm font-medium text-zinc-900">Comunidade RPM</p>
-        <p className="truncate text-xs text-zinc-500">{user.email}</p>
+    <div className="flex min-h-screen bg-primary-1">
+      <aside className="w-56 shrink-0 border-r border-secondary-2 bg-primary-1 p-4">
+        <p className="text-sm font-medium text-primary-2">Comunidade RPM</p>
+        <p className="truncate text-xs text-secondary-3/80">{user.email}</p>
         <nav className="mt-6 space-y-1">
           <Link
             href="/dashboard"
             className={`block rounded-lg px-3 py-2 text-sm ${
               pathname === '/dashboard'
-                ? 'bg-blue-50 font-medium text-blue-700'
-                : 'text-zinc-700 hover:bg-zinc-100'
+                ? 'bg-primary-3 font-medium text-primary-2'
+                : 'text-secondary-3 hover:bg-secondary-2'
             }`}
           >
             Início
@@ -65,12 +65,12 @@ export default function DashboardLayout({
         <button
           type="button"
           onClick={logout}
-          className="mt-6 w-full rounded-lg border border-zinc-300 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
+          className="mt-6 w-full rounded-lg border border-secondary-2 px-3 py-2 text-left text-sm text-secondary-3 hover:bg-secondary-2"
         >
           Sair
         </button>
       </aside>
-      <main className="flex-1 p-6">{children}</main>
+      <main className="flex-1 p-6 text-primary-2">{children}</main>
     </div>
   );
 }
