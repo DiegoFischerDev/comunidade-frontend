@@ -64,6 +64,30 @@ export default function DashboardLayout({
           >
             Início
           </Link>
+          {user.role === 'ADMIN' && (
+            <>
+              <Link
+                href="/dashboard/users"
+                className={`block rounded-lg px-3 py-2 text-sm ${
+                  pathname === '/dashboard/users'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Users
+              </Link>
+              <Link
+                href="/dashboard/partners"
+                className={`block rounded-lg px-3 py-2 text-sm ${
+                  pathname === '/dashboard/partners'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Parceiros
+              </Link>
+            </>
+          )}
         </nav>
         <button
           type="button"

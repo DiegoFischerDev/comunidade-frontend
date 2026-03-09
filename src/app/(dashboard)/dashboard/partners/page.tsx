@@ -1,0 +1,271 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+
+type PartnerRow = {
+  id: string;
+  name: string;
+  whatsapp: string;
+  logoUrl: string | null;
+  createdAt: string;
+  user: { id: string; email: string; role: string };
+};
+
+export default function PartnersPage() {
+  const { user } = useAuth();
+  const [partners, setPartners] = useState<PartnerRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    if (user.role !== 'ADMIN') {
+      setLoading(false);
+      return;
+    }
+    (async () => {
+      try {
+        const data = await api.admin.partners.list();
+        setPartners(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro ao carregar parceiros.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [user]);
+
+  if (!user) return null;
+
+  if (user.role !== 'ADMIN') {
+    return (
+      <div>
+        <h1 className="text-2xl font-semibold text-zinc-900">Parceiros</h1>
+        <p className="mt-2 text-sm text-zinc-600">
+          Você não tem permissão para acessar esta página.
+        </p>
+      </div>
+    );
+  }
+
+  async function handleCreatePartner(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setCreating(true);
+    try {
+      const result = await api.admin.partners.create({
+        email,
+        password,
+        name,
+        whatsapp,
+        logoUrl: logoUrl || undefined,
+      });
+      setPartners((prev) => [
+        {
+          id: result.partner.id,
+          name: result.partner.name,
+          whatsapp: result.partner.whatsapp,
+          logoUrl: result.partner.logoUrl,
+          createdAt: result.partner.createdAt,
+          user: result.user,
+        },
+        ...prev,
+      ]);
+      setEmail('');
+      setPassword('');
+      setName('');
+      setWhatsapp('');
+      setLogoUrl('');
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Erro ao criar parceiro. Tente novamente.',
+      );
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  return (
+    <div>
+      <h1 className="text-2xl font-semibold text-zinc-900">Parceiros</h1>
+      <p className="mt-2 text-zinc-600">
+        Gerencie parceiros da plataforma (criação e remoção).
+      </p>
+
+      {error && (
+        <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <form
+        onSubmit={handleCreatePartner}
+        className="mt-6 grid gap-4 rounded-lg border border-zinc-200 bg-white p-4 md:grid-cols-2"
+      >
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-zinc-700">
+            E-mail do parceiro
+          </label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-zinc-700">
+            Senha inicial
+          </label>
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-zinc-700">
+            Nome do parceiro
+          </label>
+          <input
+            type="text"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-zinc-700">
+            WhatsApp (com DDI)
+          </label>
+          <input
+            type="text"
+            required
+            value={whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <div className="space-y-1 md:col-span-2">
+          <label className="block text-sm font-medium text-zinc-700">
+            URL da logo (opcional)
+          </label>
+          <input
+            type="url"
+            value={logoUrl}
+            onChange={(e) => setLogoUrl(e.target.value)}
+            placeholder="https://..."
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <div className="md:col-span-2">
+          <button
+            type="submit"
+            disabled={creating}
+            className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {creating ? 'Criando parceiro…' : 'Criar parceiro'}
+          </button>
+        </div>
+      </form>
+
+      {loading ? (
+        <p className="mt-4 text-sm text-zinc-600">Carregando parceiros…</p>
+      ) : (
+        <div className="mt-6 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+          <table className="min-w-full text-sm">
+            <thead className="bg-zinc-50 text-zinc-600">
+              <tr>
+                <th className="px-4 py-2 text-left">Nome</th>
+                <th className="px-4 py-2 text-left">E-mail</th>
+                <th className="px-4 py-2 text-left">WhatsApp</th>
+                <th className="px-4 py-2 text-left">Logo</th>
+                <th className="px-4 py-2 text-left">Criado em</th>
+                <th className="px-4 py-2 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {partners.map((p) => (
+                <tr key={p.id} className="border-t border-zinc-200">
+                  <td className="px-4 py-2">{p.name}</td>
+                  <td className="px-4 py-2">{p.user.email}</td>
+                  <td className="px-4 py-2">{p.whatsapp}</td>
+                  <td className="px-4 py-2">
+                    {p.logoUrl ? (
+                      <a
+                        href={p.logoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        Ver logo
+                      </a>
+                    ) : (
+                      <span className="text-zinc-400">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2">
+                    {new Date(p.createdAt).toLocaleString('pt-PT')}
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (
+                          !window.confirm(
+                            'Tem certeza que deseja remover este parceiro? Esta ação é irreversível.',
+                          )
+                        ) {
+                          return;
+                        }
+                        try {
+                          await api.admin.partners.delete(p.id);
+                          setPartners((prev) =>
+                            prev.filter((row) => row.id !== p.id),
+                          );
+                        } catch (err) {
+                          setError(
+                            err instanceof Error
+                              ? err.message
+                              : 'Erro ao remover parceiro.',
+                          );
+                        }
+                      }}
+                      className="rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                    >
+                      Remover
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {partners.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-4 py-4 text-center text-sm text-zinc-500"
+                  >
+                    Nenhum parceiro encontrado.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+

@@ -60,4 +60,55 @@ export const api = {
         token,
       }),
   },
+  admin: {
+    users: {
+      list: () =>
+        request<{ id: string; email: string; role: string; createdAt: string }[]>(
+          '/users',
+          { method: 'GET' },
+        ),
+      updateRole: (id: string, role: 'USER' | 'PARTNER' | 'ADMIN') =>
+        request<{ id: string; email: string; role: string; createdAt: string }>(
+          `/users/${id}/role`,
+          { method: 'PATCH', body: JSON.stringify({ role }) },
+        ),
+      delete: (id: string) =>
+        request<void>(`/users/${id}`, { method: 'DELETE' }),
+    },
+    partners: {
+      list: () =>
+        request<
+          {
+            id: string;
+            name: string;
+            whatsapp: string;
+            logoUrl: string | null;
+            createdAt: string;
+            user: { id: string; email: string; role: string };
+          }[]
+        >('/partners', { method: 'GET' }),
+      create: (input: {
+        email: string;
+        password: string;
+        name: string;
+        whatsapp: string;
+        logoUrl?: string;
+      }) =>
+        request<{
+          user: { id: string; email: string; role: string };
+          partner: {
+            id: string;
+            name: string;
+            whatsapp: string;
+            logoUrl: string | null;
+            createdAt: string;
+          };
+        }>('/partners', {
+          method: 'POST',
+          body: JSON.stringify(input),
+        }),
+      delete: (id: string) =>
+        request<void>(`/partners/${id}`, { method: 'DELETE' }),
+    },
+  },
 };
