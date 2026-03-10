@@ -125,7 +125,7 @@ export default function CategoriesPage() {
           data.message || 'Erro ao fazer upload da imagem de background.',
         );
       }
-      setBackgroundImageUrl(data.url);
+      setBackgroundImageUrl(`${API_URL}${data.url}`);
     } catch (err) {
       setError(
         err instanceof Error

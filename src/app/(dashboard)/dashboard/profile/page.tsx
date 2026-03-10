@@ -118,7 +118,7 @@ export default function PartnerProfilePage() {
           data.message || 'Erro ao fazer upload da logo.',
         );
       }
-      setLogoUrl(data.url);
+      setLogoUrl(`${API_URL}${data.url}`);
     } catch (err) {
       setError(
         err instanceof Error

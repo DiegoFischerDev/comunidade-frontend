@@ -28,6 +28,9 @@ export default function PartnerPage() {
   const [error, setError] = useState('');
   const [showContact, setShowContact] = useState(false);
 
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
   useEffect(() => {
     if (!params?.id) return;
     (async () => {
@@ -72,6 +75,10 @@ export default function PartnerPage() {
   }
 
   const whatsappUrl = `https://wa.me/${partner.whatsapp.replace(/\D/g, '')}`;
+  const logoSrc =
+    partner.logoUrl && partner.logoUrl.startsWith('/uploads/')
+      ? `${API_URL}${partner.logoUrl}`
+      : partner.logoUrl;
 
   return (
     <div className="space-y-8">
@@ -84,10 +91,10 @@ export default function PartnerPage() {
           />
         )}
         <div className="relative z-10 flex flex-col gap-6 px-6 py-10 sm:flex-row sm:items-center sm:px-10 sm:py-14">
-          {partner.logoUrl && (
+          {logoSrc && (
             <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/90 p-2 shadow-md sm:h-24 sm:w-24">
               <img
-                src={partner.logoUrl}
+                src={logoSrc}
                 alt={partner.name}
                 className="max-h-full max-w-full object-contain"
               />
@@ -180,10 +187,10 @@ export default function PartnerPage() {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center gap-3">
-              {partner.logoUrl && (
+              {logoSrc && (
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-50 p-1">
                   <img
-                    src={partner.logoUrl}
+                    src={logoSrc}
                     alt={partner.name}
                     className="max-h-full max-w-full object-contain"
                   />

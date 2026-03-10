@@ -37,6 +37,13 @@ export default function PartnersPage() {
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+  function resolveLogo(url: string | null) {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('/uploads/')) return `${API_URL}${url}`;
+    return url;
+  }
+
   useEffect(() => {
     if (!user) return;
     if (user.role !== 'ADMIN') {
@@ -134,7 +141,7 @@ export default function PartnersPage() {
           data.message || 'Erro ao fazer upload da logo.',
         );
       }
-      setLogoUrl(data.url);
+      setLogoUrl(`${API_URL}${data.url}`);
     } catch (err) {
       setError(
         err instanceof Error
@@ -260,9 +267,9 @@ export default function PartnersPage() {
               {partners.map((p) => (
                 <tr key={p.id} className="border-t border-zinc-200">
                   <td className="px-4 py-2">
-                    {p.logoUrl ? (
+                    {resolveLogo(p.logoUrl) ? (
                       <img
-                        src={p.logoUrl}
+                        src={resolveLogo(p.logoUrl) as string}
                         alt={p.name}
                         className="h-8 w-8 rounded object-contain"
                       />
