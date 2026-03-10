@@ -11,6 +11,7 @@ type PartnerRow = {
   logoUrl: string | null;
   createdAt: string;
   user: { id: string; email: string; role: string };
+  category: { id: string; name: string; slug: string } | null;
 };
 
 export default function PartnersPage() {
@@ -18,6 +19,12 @@ export default function PartnersPage() {
   const [partners, setPartners] = useState<PartnerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [categories, setCategories] = useState<
+    { id: string; slug: string; name: string }[]
+  >([]);
+  const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(
+    null,
+  );
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,8 +41,12 @@ export default function PartnersPage() {
     }
     (async () => {
       try {
-        const data = await api.admin.partners.list();
-        setPartners(data);
+        const [partnersData, categoriesData] = await Promise.all([
+          api.admin.partners.list(),
+          api.admin.partners.listCategories(),
+        ]);
+        setPartners(partnersData);
+        setCategories(categoriesData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar parceiros.');
       } finally {
@@ -77,6 +88,7 @@ export default function PartnersPage() {
           logoUrl: result.partner.logoUrl,
           createdAt: result.partner.createdAt,
           user: result.user,
+          category: null,
         },
         ...prev,
       ]);
@@ -193,6 +205,7 @@ export default function PartnersPage() {
                 <th className="px-4 py-2 text-left">E-mail</th>
                 <th className="px-4 py-2 text-left">WhatsApp</th>
                 <th className="px-4 py-2 text-left">Logo</th>
+                <th className="px-4 py-2 text-left">Categoria</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
@@ -216,6 +229,46 @@ export default function PartnersPage() {
                     ) : (
                       <span className="text-zinc-400">—</span>
                     )}
+                  </td>
+                  <td className="px-4 py-2">
+                    <select
+                      value={p.category?.id ?? ''}
+                      onChange={async (e) => {
+                        const newCategoryId = e.target.value || null;
+                        setUpdatingCategoryId(p.id);
+                        setError('');
+                        try {
+                          const updated = await api.admin.partners.update(
+                            p.id,
+                            { categoryId: newCategoryId },
+                          );
+                          setPartners((prev) =>
+                            prev.map((row) =>
+                              row.id === p.id
+                                ? { ...row, category: updated.category }
+                                : row,
+                            ),
+                          );
+                        } catch (err) {
+                          setError(
+                            err instanceof Error
+                              ? err.message
+                              : 'Erro ao atualizar categoria do parceiro.',
+                          );
+                        } finally {
+                          setUpdatingCategoryId(null);
+                        }
+                      }}
+                      disabled={updatingCategoryId === p.id}
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="">Sem categoria</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   <td className="px-4 py-2">
                     {new Date(p.createdAt).toLocaleString('pt-PT')}

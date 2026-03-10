@@ -85,6 +85,7 @@ export const api = {
             logoUrl: string | null;
             createdAt: string;
             user: { id: string; email: string; role: string };
+            category: { id: string; name: string; slug: string } | null;
           }[]
         >('/partners', { method: 'GET' }),
       create: (input: {
@@ -109,6 +110,28 @@ export const api = {
         }),
       delete: (id: string) =>
         request<void>(`/partners/${id}`, { method: 'DELETE' }),
+      update: (id: string, input: { categoryId?: string | null }) =>
+        request<{
+          id: string;
+          name: string;
+          whatsapp: string;
+          logoUrl: string | null;
+          createdAt: string;
+          user: { id: string; email: string; role: string };
+          category: { id: string; name: string; slug: string } | null;
+        }>(`/partners/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(input),
+        }),
+      listCategories: () =>
+        request<
+          {
+            id: string;
+            slug: string;
+            name: string;
+            sortOrder: number;
+          }[]
+        >('/partners/admin/categories', { method: 'GET' }),
     },
   },
   partner: {
@@ -183,5 +206,21 @@ export const api = {
       delete: (id: string) =>
         request<void>(`/partners/me/services/${id}`, { method: 'DELETE' }),
     },
+  },
+  marketplace: {
+    categoriesWithPartners: () =>
+      request<
+        {
+          id: string;
+          slug: string;
+          name: string;
+          partners: {
+            id: string;
+            name: string;
+            logoUrl: string | null;
+            shortDescription: string | null;
+          }[];
+        }[]
+      >('/partners/categories-with-partners', { method: 'GET' }),
   },
 };

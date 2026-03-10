@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { getAuthToken, clearAuthToken } from '@/lib/api';
+import { getAuthToken, clearAuthToken, api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function DashboardLayout({
@@ -15,6 +15,10 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const { user, logout, loading: authLoading } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [categories, setCategories] = useState<
+    { id: string; slug: string; name: string }[]
+  >([]);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -32,6 +36,22 @@ export default function DashboardLayout({
       router.replace('/login');
     }
   }, [mounted, authLoading, user, router]);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const data = await api.marketplace.categoriesWithPartners();
+        setCategories(
+          data.map((c) => ({ id: c.id, slug: c.slug, name: c.name })),
+        );
+      } catch {
+        // silencioso: menu continua sem categorias se falhar
+      } finally {
+        setCategoriesLoaded(true);
+      }
+    })();
+  }, [user]);
 
   if (!mounted || authLoading) {
     return (
@@ -64,6 +84,20 @@ export default function DashboardLayout({
           >
             Início
           </Link>
+          {categoriesLoaded &&
+            categories.map((c) => (
+              <Link
+                key={c.id}
+                href={`/dashboard/category/${c.slug}`}
+                className={`block rounded-lg px-3 py-2 text-sm ${
+                  pathname === `/dashboard/category/${c.slug}`
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                {c.name}
+              </Link>
+            ))}
           {user.role === 'PARTNER' && (
             <>
               <Link
