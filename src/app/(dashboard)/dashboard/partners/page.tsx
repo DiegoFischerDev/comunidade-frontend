@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import { api, getAuthToken } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 type PartnerRow = {
@@ -120,8 +120,12 @@ export default function PartnersPage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      const token = getAuthToken();
       const res = await fetch(`${API_URL}/uploads`, {
         method: 'POST',
+        headers: token
+          ? { Authorization: `Bearer ${token}` }
+          : undefined,
         body: formData,
       });
       const data = await res.json();
