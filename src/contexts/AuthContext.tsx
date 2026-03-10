@@ -11,14 +11,19 @@ import {
 import { useRouter } from 'next/navigation';
 import { api, setAuthToken, clearAuthToken, getAuthToken } from '@/lib/api';
 
-type User = { id: string; email: string; role: string } | null;
+type User = { id: string; email: string; role: string; name?: string; whatsapp?: string } | null;
 
 type AuthContextValue = {
   user: User;
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (params: {
+    email: string;
+    password: string;
+    name: string;
+    whatsapp: string;
+  }) => Promise<void>;
   logout: () => void;
 };
 
@@ -63,8 +68,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const register = useCallback(
-    async (email: string, password: string) => {
-      const { user: u, token: t } = await api.auth.register(email, password);
+    async (params: {
+      email: string;
+      password: string;
+      name: string;
+      whatsapp: string;
+    }) => {
+      const { user: u, token: t } = await api.auth.register(params);
       setAuthToken(t);
       setUser(u);
       setTokenState(t);

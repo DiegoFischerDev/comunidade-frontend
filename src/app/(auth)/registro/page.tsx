@@ -6,7 +6,9 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function RegistroPage() {
   const { register } = useAuth();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,7 +18,7 @@ export default function RegistroPage() {
     setError('');
     setLoading(true);
     try {
-      await register(email, password);
+      await register({ email, password, name, whatsapp });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar conta.');
     } finally {
@@ -37,6 +39,19 @@ export default function RegistroPage() {
           </div>
         )}
         <div>
+          <label htmlFor="name" className="block text-sm font-medium text-zinc-700">
+            Nome
+          </label>
+          <input
+            id="name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <div>
           <label htmlFor="email" className="block text-sm font-medium text-zinc-700">
             E-mail
           </label>
@@ -46,6 +61,20 @@ export default function RegistroPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label htmlFor="whatsapp" className="block text-sm font-medium text-zinc-700">
+            WhatsApp
+          </label>
+          <input
+            id="whatsapp"
+            type="text"
+            value={whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+            required
+            placeholder="Ex: 351 912 345 678"
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>

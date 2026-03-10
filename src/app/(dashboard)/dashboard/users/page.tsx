@@ -6,7 +6,9 @@ import { useAuth } from '@/contexts/AuthContext';
 
 type UserRow = {
   id: string;
+  name: string;
   email: string;
+  whatsapp: string;
   role: string;
   createdAt: string;
 };
@@ -70,7 +72,9 @@ export default function UsersPage() {
           <table className="min-w-full text-sm">
             <thead className="bg-zinc-50 text-zinc-600">
               <tr>
+                <th className="px-4 py-2 text-left">Nome</th>
                 <th className="px-4 py-2 text-left">E-mail</th>
+                <th className="px-4 py-2 text-left">WhatsApp</th>
                 <th className="px-4 py-2 text-left">Role</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
@@ -79,7 +83,9 @@ export default function UsersPage() {
             <tbody>
               {users.map((u) => (
                 <tr key={u.id} className="border-t border-zinc-200">
-                  <td className="px-4 py-2">{u.email}</td>
+                    <td className="px-4 py-2">{u.name}</td>
+                    <td className="px-4 py-2">{u.email}</td>
+                    <td className="px-4 py-2">{u.whatsapp}</td>
                   <td className="px-4 py-2">
                     <select
                       value={u.role}

@@ -44,11 +44,19 @@ async function request<T>(
 
 export const api = {
   auth: {
-    register: (email: string, password: string) =>
-      request<{ user: { id: string; email: string; role: string }; token: string }>(
-        '/auth/register',
-        { method: 'POST', body: JSON.stringify({ email, password }) },
-      ),
+    register: (params: {
+      email: string;
+      password: string;
+      name: string;
+      whatsapp: string;
+    }) =>
+      request<{
+        user: { id: string; email: string; role: string; name: string; whatsapp: string; createdAt: string };
+        token: string;
+      }>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }),
     login: (email: string, password: string) =>
       request<{ user: { id: string; email: string; role: string }; token: string }>(
         '/auth/login',
@@ -63,12 +71,28 @@ export const api = {
   admin: {
     users: {
       list: () =>
-        request<{ id: string; email: string; role: string; createdAt: string }[]>(
+        request<
+          {
+            id: string;
+            name: string;
+            email: string;
+            whatsapp: string;
+            role: string;
+            createdAt: string;
+          }[]
+        >(
           '/users',
           { method: 'GET' },
         ),
       updateRole: (id: string, role: 'USER' | 'PARTNER' | 'ADMIN') =>
-        request<{ id: string; email: string; role: string; createdAt: string }>(
+        request<{
+          id: string;
+          name: string;
+          email: string;
+          whatsapp: string;
+          role: string;
+          createdAt: string;
+        }>(
           `/users/${id}/role`,
           { method: 'PATCH', body: JSON.stringify({ role }) },
         ),
