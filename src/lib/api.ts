@@ -84,6 +84,21 @@ export const api = {
           '/users',
           { method: 'GET' },
         ),
+      update: (
+        id: string,
+        input: { name?: string; email?: string; whatsapp?: string },
+      ) =>
+        request<{
+          id: string;
+          name: string;
+          email: string;
+          whatsapp: string;
+          role: string;
+          createdAt: string;
+        }>(`/users/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(input),
+        }),
       updateRole: (id: string, role: 'USER' | 'PARTNER' | 'ADMIN') =>
         request<{
           id: string;
