@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, getAuthToken } from '@/lib/api';
 
 type PartnerDetails = {
   id: string;
@@ -82,13 +82,18 @@ export default function PartnerPage() {
 
   async function registerLead(source: 'WHATSAPP' | 'CONTACT') {
     try {
+      const token = getAuthToken();
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+      }
+
       await fetch(`${API_URL}/partners/${partner!.id}/leads`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({ source }),
-        credentials: 'include',
       });
     } catch {
       // silencioso: não bloqueia a ação de contacto
