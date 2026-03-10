@@ -288,8 +288,7 @@ export const api = {
           {
             id: string;
             createdAt: string;
-            source?: string;
-            user: { email: string };
+            user: { name: string | null; email: string; whatsapp: string | null };
           }[]
         >('/partners/me/leads', { method: 'GET' }),
     },
