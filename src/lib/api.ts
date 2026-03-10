@@ -111,4 +111,77 @@ export const api = {
         request<void>(`/partners/${id}`, { method: 'DELETE' }),
     },
   },
+  partner: {
+    me: () =>
+      request<{
+        id: string;
+        name: string;
+        whatsapp: string;
+        logoUrl: string | null;
+        shortDescription: string | null;
+        fullDescription: string | null;
+        backgroundImageUrl: string | null;
+      }>('/partners/me', { method: 'GET' }),
+    updateMe: (input: {
+      logoUrl?: string;
+      shortDescription?: string;
+      fullDescription?: string;
+      backgroundImageUrl?: string;
+    }) =>
+      request<{
+        id: string;
+        name: string;
+        whatsapp: string;
+        logoUrl: string | null;
+        shortDescription: string | null;
+        fullDescription: string | null;
+        backgroundImageUrl: string | null;
+      }>('/partners/me', {
+        method: 'PATCH',
+        body: JSON.stringify(input),
+      }),
+    services: {
+      list: () =>
+        request<
+          {
+            id: string;
+            title: string;
+            description: string | null;
+            price: string | null;
+            createdAt: string;
+          }[]
+        >('/partners/me/services', { method: 'GET' }),
+      create: (input: {
+        title: string;
+        description?: string;
+        price?: string;
+      }) =>
+        request<{
+          id: string;
+          title: string;
+          description: string | null;
+          price: string | null;
+          createdAt: string;
+        }>('/partners/me/services', {
+          method: 'POST',
+          body: JSON.stringify(input),
+        }),
+      update: (
+        id: string,
+        input: { title?: string; description?: string; price?: string },
+      ) =>
+        request<{
+          id: string;
+          title: string;
+          description: string | null;
+          price: string | null;
+          createdAt: string;
+        }>(`/partners/me/services/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(input),
+        }),
+      delete: (id: string) =>
+        request<void>(`/partners/me/services/${id}`, { method: 'DELETE' }),
+    },
+  },
 };
