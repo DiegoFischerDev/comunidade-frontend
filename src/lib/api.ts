@@ -274,6 +274,7 @@ export const api = {
           description: string | null;
           price: string | null;
           createdAt: string;
+          commissionEuro: number | null;
         }>(`/partners/me/services/${id}`, {
           method: 'PATCH',
           body: JSON.stringify(input),
