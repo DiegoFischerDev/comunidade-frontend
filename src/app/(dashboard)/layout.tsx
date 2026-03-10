@@ -135,6 +135,16 @@ export default function DashboardLayout({
                 Users
               </Link>
               <Link
+                href="/dashboard/admin-services"
+                className={`block rounded-lg px-3 py-2 text-sm ${
+                  pathname === '/dashboard/admin-services'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Serviços (admin)
+              </Link>
+              <Link
                 href="/dashboard/categories"
                 className={`block rounded-lg px-3 py-2 text-sm ${
                   pathname === '/dashboard/categories'

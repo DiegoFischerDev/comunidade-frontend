@@ -32,6 +32,10 @@ export default function PartnersPage() {
   const [whatsapp, setWhatsapp] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [creating, setCreating] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
   useEffect(() => {
     if (!user) return;
@@ -106,6 +110,38 @@ export default function PartnersPage() {
     }
   }
 
+  async function handleLogoUpload(
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError('');
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_URL}/uploads`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(
+          data.message || 'Erro ao fazer upload da logo.',
+        );
+      }
+      setLogoUrl(data.url);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Erro ao fazer upload da logo.',
+      );
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-semibold text-zinc-900">Parceiros</h1>
@@ -173,15 +209,21 @@ export default function PartnersPage() {
         </div>
         <div className="space-y-1 md:col-span-2">
           <label className="block text-sm font-medium text-zinc-700">
-            URL da logo (opcional)
+            Logo do parceiro
           </label>
           <input
-            type="url"
-            value={logoUrl}
-            onChange={(e) => setLogoUrl(e.target.value)}
-            placeholder="https://..."
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            type="file"
+            accept="image/*"
+            onChange={handleLogoUpload}
+            className="block w-full text-sm text-zinc-900 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
           />
+          <p className="mt-1 text-xs text-zinc-500">
+            {uploadingLogo
+              ? 'Enviando logo…'
+              : logoUrl
+              ? 'Logo carregada com sucesso.'
+              : 'Selecione uma imagem de logo. Ela será exibida nos cards e páginas do parceiro.'}
+          </p>
         </div>
         <div className="md:col-span-2">
           <button
@@ -201,10 +243,10 @@ export default function PartnersPage() {
           <table className="min-w-full text-sm">
             <thead className="bg-zinc-50 text-zinc-600">
               <tr>
+                <th className="px-4 py-2 text-left">Logo</th>
                 <th className="px-4 py-2 text-left">Nome</th>
                 <th className="px-4 py-2 text-left">E-mail</th>
                 <th className="px-4 py-2 text-left">WhatsApp</th>
-                <th className="px-4 py-2 text-left">Logo</th>
                 <th className="px-4 py-2 text-left">Categoria</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
@@ -213,23 +255,20 @@ export default function PartnersPage() {
             <tbody>
               {partners.map((p) => (
                 <tr key={p.id} className="border-t border-zinc-200">
-                  <td className="px-4 py-2">{p.name}</td>
-                  <td className="px-4 py-2">{p.user.email}</td>
-                  <td className="px-4 py-2">{p.whatsapp}</td>
                   <td className="px-4 py-2">
                     {p.logoUrl ? (
-                      <a
-                        href={p.logoUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        Ver logo
-                      </a>
+                      <img
+                        src={p.logoUrl}
+                        alt={p.name}
+                        className="h-8 w-8 rounded object-contain"
+                      />
                     ) : (
                       <span className="text-zinc-400">—</span>
                     )}
                   </td>
+                  <td className="px-4 py-2">{p.name}</td>
+                  <td className="px-4 py-2">{p.user.email}</td>
+                  <td className="px-4 py-2">{p.whatsapp}</td>
                   <td className="px-4 py-2">
                     <select
                       value={p.category?.id ?? ''}

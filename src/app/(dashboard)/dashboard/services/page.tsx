@@ -10,6 +10,7 @@ type PartnerServiceRow = {
   description: string | null;
   price: string | null;
   createdAt: string;
+  commissionEuro: number | null;
 };
 
 export default function PartnerServicesPage() {
@@ -231,6 +232,7 @@ export default function PartnerServicesPage() {
                 <th className="px-4 py-2 text-left">Título</th>
                 <th className="px-4 py-2 text-left">Descrição</th>
                 <th className="px-4 py-2 text-left">Valor</th>
+                <th className="px-4 py-2 text-left">Comissão RPM (EUR)</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
@@ -250,6 +252,15 @@ export default function PartnerServicesPage() {
                   </td>
                   <td className="px-4 py-2 align-top">
                     {s.price ?? <span className="text-zinc-400">—</span>}
+                  </td>
+                  <td className="px-4 py-2 align-top">
+                    {s.commissionEuro != null ? (
+                      <span className="text-xs font-medium text-emerald-700">
+                        {s.commissionEuro.toFixed(2)} €
+                      </span>
+                    ) : (
+                      <span className="text-zinc-400 text-xs">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-2 align-top">
                     {new Date(s.createdAt).toLocaleString('pt-PT')}

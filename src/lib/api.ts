@@ -183,6 +183,28 @@ export const api = {
           method: 'DELETE',
         }),
     },
+    services: {
+      list: () =>
+        request<
+          {
+            id: string;
+            title: string;
+            description: string | null;
+            price: string | null;
+            commissionEuro: number | null;
+            createdAt: string;
+            partner: { id: string; name: string };
+          }[]
+        >('/partners/admin/services', { method: 'GET' }),
+      updateCommission: (id: string, commissionEuro: number | null) =>
+        request<{
+          id: string;
+          commissionEuro: number | null;
+        }>(`/partners/admin/services/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ commissionEuro }),
+        }),
+    },
   },
   partner: {
     me: () =>
@@ -222,12 +244,14 @@ export const api = {
             description: string | null;
             price: string | null;
             createdAt: string;
+            commissionEuro: number | null;
           }[]
         >('/partners/me/services', { method: 'GET' }),
       create: (input: {
         title: string;
         description?: string;
         price?: string;
+        commissionEuro?: number;
       }) =>
         request<{
           id: string;
@@ -235,6 +259,7 @@ export const api = {
           description: string | null;
           price: string | null;
           createdAt: string;
+          commissionEuro: number | null;
         }>('/partners/me/services', {
           method: 'POST',
           body: JSON.stringify(input),
@@ -289,6 +314,7 @@ export const api = {
           title: string;
           description: string | null;
           price: string | null;
+          commissionEuro: number | null;
         }[];
       }>(`/partners/${id}/public`, { method: 'GET' }),
   },

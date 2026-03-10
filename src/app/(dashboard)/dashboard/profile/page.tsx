@@ -17,6 +17,10 @@ export default function PartnerProfilePage() {
   const [shortDescription, setShortDescription] = useState('');
   const [fullDescription, setFullDescription] = useState('');
   const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
   useEffect(() => {
     if (!user) return;
@@ -90,6 +94,38 @@ export default function PartnerProfilePage() {
     }
   }
 
+  async function handleLogoUpload(
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError('');
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_URL}/uploads`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(
+          data.message || 'Erro ao fazer upload da logo.',
+        );
+      }
+      setLogoUrl(data.url);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Erro ao fazer upload da logo. Tente novamente.',
+      );
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-semibold text-zinc-900">Meu perfil</h1>
@@ -144,15 +180,21 @@ export default function PartnerProfilePage() {
 
           <div className="space-y-1">
             <label className="block text-sm font-medium text-zinc-700">
-              URL da logo (opcional)
+              Logo (upload)
             </label>
             <input
-              type="url"
-              value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              placeholder="https://..."
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              type="file"
+              accept="image/*"
+              onChange={handleLogoUpload}
+              className="block w-full text-sm text-zinc-900 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
             />
+            <p className="mt-1 text-xs text-zinc-500">
+              {uploadingLogo
+                ? 'Enviando logo…'
+                : logoUrl
+                ? 'Logo carregada com sucesso.'
+                : 'Selecione uma imagem de logo para o seu perfil de parceiro.'}
+            </p>
           </div>
 
           <div className="space-y-1">

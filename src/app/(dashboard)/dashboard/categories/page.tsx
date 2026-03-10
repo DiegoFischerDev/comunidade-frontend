@@ -34,6 +34,10 @@ export default function CategoriesPage() {
   const [editingBackgroundImageUrl, setEditingBackgroundImageUrl] =
     useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+  const [uploadingBackground, setUploadingBackground] = useState(false);
+
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
   useEffect(() => {
     if (!user) return;
@@ -94,6 +98,38 @@ export default function CategoriesPage() {
       );
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function handleBackgroundUpload(
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError('');
+    setUploadingBackground(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_URL}/uploads`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(
+          data.message || 'Erro ao fazer upload da imagem de background.',
+        );
+      }
+      setBackgroundImageUrl(data.url);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Erro ao fazer upload da imagem de background.',
+      );
+    } finally {
+      setUploadingBackground(false);
     }
   }
 
@@ -209,15 +245,21 @@ export default function CategoriesPage() {
         </div>
         <div className="space-y-1 md:col-span-3">
           <label className="block text-sm font-medium text-zinc-700">
-            Imagem de background (URL opcional)
+            Imagem de background
           </label>
           <input
-            type="url"
-            value={backgroundImageUrl}
-            onChange={(e) => setBackgroundImageUrl(e.target.value)}
-            placeholder="https://..."
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            type="file"
+            accept="image/*"
+            onChange={handleBackgroundUpload}
+            className="block w-full text-sm text-zinc-900 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
           />
+          <p className="mt-1 text-xs text-zinc-500">
+            {uploadingBackground
+              ? 'Enviando imagem…'
+              : backgroundImageUrl
+              ? 'Imagem carregada com sucesso.'
+              : 'Selecione uma imagem para o banner da categoria.'}
+          </p>
         </div>
         <div className="space-y-1">
           <label className="block text-sm font-medium text-zinc-700">
