@@ -235,6 +235,15 @@ export default function PartnersPage() {
               ? 'Logo carregada com sucesso.'
               : 'Selecione uma imagem de logo. Ela será exibida nos cards e páginas do parceiro.'}
           </p>
+          {logoUrl && (
+            <div className="mt-2">
+              <img
+                src={logoUrl}
+                alt="Pré-visualização da logo"
+                className="h-12 w-12 rounded object-contain border border-zinc-200 bg-white"
+              />
+            </div>
+          )}
         </div>
         <div className="md:col-span-2">
           <button

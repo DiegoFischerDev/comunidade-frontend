@@ -231,7 +231,7 @@ export default function PartnerServicesPage() {
               <tr>
                 <th className="px-4 py-2 text-left">Título</th>
                 <th className="px-4 py-2 text-left">Descrição</th>
-                <th className="px-4 py-2 text-left">Valor</th>
+                <th className="px-4 py-2 text-left">Valor (EUR)</th>
                 <th className="px-4 py-2 text-left">Comissão RPM (EUR)</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
@@ -251,7 +251,13 @@ export default function PartnerServicesPage() {
                     )}
                   </td>
                   <td className="px-4 py-2 align-top">
-                    {s.price ?? <span className="text-zinc-400">—</span>}
+                    {s.price ? (
+                      <span className="text-xs font-medium text-emerald-700">
+                        {s.price} €
+                      </span>
+                    ) : (
+                      <span className="text-zinc-400 text-xs">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-2 align-top">
                     {s.commissionEuro != null ? (

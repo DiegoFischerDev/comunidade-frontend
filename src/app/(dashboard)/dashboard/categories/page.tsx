@@ -264,6 +264,14 @@ export default function CategoriesPage() {
               ? 'Imagem carregada com sucesso.'
               : 'Selecione uma imagem para o banner da categoria.'}
           </p>
+          {backgroundImageUrl && (
+            <div className="mt-2 h-20 w-full overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100">
+              <div
+                className="h-full w-full bg-cover bg-center"
+                style={{ backgroundImage: `url(${backgroundImageUrl})` }}
+              />
+            </div>
+          )}
         </div>
         <div className="space-y-1">
           <label className="block text-sm font-medium text-zinc-700">

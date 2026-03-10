@@ -119,7 +119,7 @@ export const api = {
           createdAt: string;
           user: { id: string; email: string; role: string };
           category: { id: string; name: string; slug: string } | null;
-        }>(`/partners/${id}`, {
+        }>(`/partners/admin/${id}`, {
           method: 'PATCH',
           body: JSON.stringify(input),
         }),
