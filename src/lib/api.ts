@@ -140,6 +140,8 @@ export const api = {
             id: string;
             slug: string;
             name: string;
+            description?: string;
+            backgroundImageUrl?: string;
             sortOrder: number;
           }[]
         >('/partners/admin/categories', { method: 'GET' }),
@@ -148,6 +150,8 @@ export const api = {
           id: string;
           slug: string;
           name: string;
+          description?: string;
+          backgroundImageUrl?: string;
           sortOrder: number;
         }>('/partners/admin/categories', {
           method: 'POST',
@@ -155,12 +159,20 @@ export const api = {
         }),
       update: (
         id: string,
-        input: { slug?: string; name?: string; sortOrder?: number },
+        input: {
+          slug?: string;
+          name?: string;
+          description?: string;
+          backgroundImageUrl?: string;
+          sortOrder?: number;
+        },
       ) =>
         request<{
           id: string;
           slug: string;
           name: string;
+          description?: string;
+          backgroundImageUrl?: string;
           sortOrder: number;
         }>(`/partners/admin/categories/${id}`, {
           method: 'PATCH',
@@ -252,13 +264,32 @@ export const api = {
           id: string;
           slug: string;
           name: string;
+          description?: string;
+          backgroundImageUrl?: string;
           partners: {
             id: string;
             name: string;
-            logoUrl: string | null;
+            backgroundImageUrl: string | null;
             shortDescription: string | null;
           }[];
         }[]
       >('/partners/categories-with-partners', { method: 'GET' }),
+    partnerDetails: (id: string) =>
+      request<{
+        id: string;
+        name: string;
+        whatsapp: string;
+        logoUrl: string | null;
+        shortDescription: string | null;
+        fullDescription: string | null;
+        backgroundImageUrl: string | null;
+        user: { email: string };
+        services: {
+          id: string;
+          title: string;
+          description: string | null;
+          price: string | null;
+        }[];
+      }>(`/partners/${id}/public`, { method: 'GET' }),
   },
 };

@@ -9,6 +9,8 @@ type CategoryRow = {
   slug: string;
   name: string;
   sortOrder: number;
+  description?: string;
+  backgroundImageUrl?: string;
 };
 
 export default function CategoriesPage() {
@@ -20,12 +22,17 @@ export default function CategoriesPage() {
   const [slug, setSlug] = useState('');
   const [name, setName] = useState('');
   const [sortOrder, setSortOrder] = useState('');
+  const [description, setDescription] = useState('');
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
   const [creating, setCreating] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingSlug, setEditingSlug] = useState('');
   const [editingName, setEditingName] = useState('');
   const [editingSortOrder, setEditingSortOrder] = useState('');
+  const [editingDescription, setEditingDescription] = useState('');
+  const [editingBackgroundImageUrl, setEditingBackgroundImageUrl] =
+    useState('');
   const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
@@ -77,6 +84,8 @@ export default function CategoriesPage() {
       setSlug('');
       setName('');
       setSortOrder('');
+      setDescription('');
+      setBackgroundImageUrl('');
     } catch (err) {
       setError(
         err instanceof Error
@@ -93,6 +102,8 @@ export default function CategoriesPage() {
     setEditingSlug(row.slug);
     setEditingName(row.name);
     setEditingSortOrder(String(row.sortOrder ?? ''));
+    setEditingDescription(row.description ?? '');
+    setEditingBackgroundImageUrl(row.backgroundImageUrl ?? '');
   }
 
   async function handleSaveEdit(e: React.FormEvent) {
@@ -105,6 +116,8 @@ export default function CategoriesPage() {
         slug: editingSlug || undefined,
         name: editingName || undefined,
         sortOrder: editingSortOrder ? Number(editingSortOrder) : undefined,
+        description: editingDescription || undefined,
+        backgroundImageUrl: editingBackgroundImageUrl || undefined,
       });
       setCategories((prev) =>
         prev.map((row) => (row.id === updated.id ? updated : row)),
@@ -113,6 +126,8 @@ export default function CategoriesPage() {
       setEditingSlug('');
       setEditingName('');
       setEditingSortOrder('');
+      setEditingDescription('');
+      setEditingBackgroundImageUrl('');
     } catch (err) {
       setError(
         err instanceof Error
@@ -178,6 +193,29 @@ export default function CategoriesPage() {
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             placeholder="ex: vistos, niss-niff"
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <div className="space-y-1 md:col-span-3">
+          <label className="block text-sm font-medium text-zinc-700">
+            Descrição (opcional)
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={2}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <div className="space-y-1 md:col-span-3">
+          <label className="block text-sm font-medium text-zinc-700">
+            Imagem de background (URL opcional)
+          </label>
+          <input
+            type="url"
+            value={backgroundImageUrl}
+            onChange={(e) => setBackgroundImageUrl(e.target.value)}
+            placeholder="https://..."
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>

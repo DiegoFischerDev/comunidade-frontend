@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 
@@ -8,10 +9,12 @@ type CategoryWithPartners = {
   id: string;
   slug: string;
   name: string;
+  description?: string;
+  backgroundImageUrl?: string;
   partners: {
     id: string;
     name: string;
-    logoUrl: string | null;
+    backgroundImageUrl: string | null;
     shortDescription: string | null;
   }[];
 };
@@ -67,44 +70,60 @@ export default function CategoryPage() {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-zinc-900">
-        {category.name}
-      </h1>
-      <p className="mt-2 text-sm text-zinc-600">
-        Parceiros desta categoria.
-      </p>
+    <div className="space-y-8">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+        {category.backgroundImageUrl && (
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-40"
+            style={{ backgroundImage: `url(${category.backgroundImageUrl})` }}
+          />
+        )}
+        <div className="relative z-10 px-6 py-10 sm:px-10 sm:py-14">
+          <p className="text-xs uppercase tracking-wide text-blue-100">
+            Categoria
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
+            {category.name}
+          </h1>
+          {category.description && (
+            <p className="mt-3 max-w-2xl text-sm text-blue-50 sm:text-base">
+              {category.description}
+            </p>
+          )}
+        </div>
+      </section>
 
       {category.partners.length === 0 ? (
-        <p className="mt-4 text-sm text-zinc-500">
+        <p className="text-sm text-zinc-500">
           Ainda não há parceiros nesta categoria.
         </p>
       ) : (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {category.partners.map((partner) => (
-            <div
+            <Link
               key={partner.id}
-              className="flex flex-col rounded-lg border border-zinc-200 bg-white p-4 shadow-sm"
+              href={`/dashboard/partner/${partner.id}`}
+              className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
             >
-              {partner.logoUrl && (
-                <div className="mb-3 flex justify-center">
-                  {/* poderia ser <Image>, mas mantemos simples */}
-                  <img
-                    src={partner.logoUrl}
-                    alt={partner.name}
-                    className="h-12 object-contain"
+              <div className="relative h-28 w-full overflow-hidden bg-gradient-to-r from-zinc-100 to-zinc-200">
+                {partner.backgroundImageUrl && (
+                  <div
+                    className="absolute inset-0 bg-cover bg-center transition group-hover:scale-105"
+                    style={{ backgroundImage: `url(${partner.backgroundImageUrl})` }}
                   />
+                )}
+                <div className="relative z-10 flex h-full items-end bg-gradient-to-t from-black/50 via-black/10 to-transparent px-4 pb-3">
+                  <h2 className="text-sm font-semibold text-white drop-shadow">
+                    {partner.name}
+                  </h2>
                 </div>
-              )}
-              <h2 className="text-base font-semibold text-zinc-900">
-                {partner.name}
-              </h2>
+              </div>
               {partner.shortDescription && (
-                <p className="mt-1 text-sm text-zinc-600 line-clamp-3">
+                <p className="line-clamp-3 px-4 pb-4 pt-3 text-xs text-zinc-600">
                   {partner.shortDescription}
                 </p>
               )}
-            </div>
+            </Link>
           ))}
         </div>
       )}
