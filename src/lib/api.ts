@@ -133,6 +133,44 @@ export const api = {
           }[]
         >('/partners/admin/categories', { method: 'GET' }),
     },
+    categories: {
+      list: () =>
+        request<
+          {
+            id: string;
+            slug: string;
+            name: string;
+            sortOrder: number;
+          }[]
+        >('/partners/admin/categories', { method: 'GET' }),
+      create: (input: { slug: string; name: string; sortOrder?: number }) =>
+        request<{
+          id: string;
+          slug: string;
+          name: string;
+          sortOrder: number;
+        }>('/partners/admin/categories', {
+          method: 'POST',
+          body: JSON.stringify(input),
+        }),
+      update: (
+        id: string,
+        input: { slug?: string; name?: string; sortOrder?: number },
+      ) =>
+        request<{
+          id: string;
+          slug: string;
+          name: string;
+          sortOrder: number;
+        }>(`/partners/admin/categories/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(input),
+        }),
+      delete: (id: string) =>
+        request<void>(`/partners/admin/categories/${id}`, {
+          method: 'DELETE',
+        }),
+    },
   },
   partner: {
     me: () =>
