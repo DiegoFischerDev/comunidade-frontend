@@ -262,7 +262,7 @@ export default function PartnerServicesPage() {
                   <td className="px-4 py-2 align-top">
                     {s.commissionEuro != null ? (
                       <span className="text-xs font-medium text-emerald-700">
-                        {s.commissionEuro.toFixed(2)} €
+                        {Math.round(s.commissionEuro)} €
                       </span>
                     ) : (
                       <span className="text-zinc-400 text-xs">—</span>

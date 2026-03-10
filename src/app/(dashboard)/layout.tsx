@@ -41,10 +41,19 @@ export default function DashboardLayout({
     if (!user) return;
     (async () => {
       try {
-        const data = await api.marketplace.categoriesWithPartners();
-        setCategories(
-          data.map((c) => ({ id: c.id, slug: c.slug, name: c.name })),
-        );
+        // Admin vê todas as categorias, mesmo sem parceiros ainda
+        if (user.role === 'ADMIN') {
+          const data = await api.admin.categories.list();
+          setCategories(
+            data.map((c) => ({ id: c.id, slug: c.slug, name: c.name })),
+          );
+        } else {
+          // USER / PARTNER vê apenas categorias com parceiros
+          const data = await api.marketplace.categoriesWithPartners();
+          setCategories(
+            data.map((c) => ({ id: c.id, slug: c.slug, name: c.name })),
+          );
+        }
       } catch {
         // silencioso: menu continua sem categorias se falhar
       } finally {
@@ -100,6 +109,16 @@ export default function DashboardLayout({
             ))}
           {user.role === 'PARTNER' && (
             <>
+              <Link
+                href="/dashboard/leads"
+                className={`block rounded-lg px-3 py-2 text-sm ${
+                  pathname === '/dashboard/leads'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Leads
+              </Link>
               <Link
                 href="/dashboard/profile"
                 className={`block rounded-lg px-3 py-2 text-sm ${

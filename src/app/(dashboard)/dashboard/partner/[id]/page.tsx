@@ -80,6 +80,21 @@ export default function PartnerPage() {
       ? `${API_URL}${partner.logoUrl}`
       : partner.logoUrl;
 
+  async function registerLead(source: 'WHATSAPP' | 'CONTACT') {
+    try {
+      await fetch(`${API_URL}/partners/${partner!.id}/leads`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ source }),
+        credentials: 'include',
+      });
+    } catch {
+      // silencioso: não bloqueia a ação de contacto
+    }
+  }
+
   return (
     <div className="space-y-8">
       {/* Hero */}
@@ -115,19 +130,24 @@ export default function PartnerPage() {
             <div className="mt-5 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => setShowContact(true)}
+                onClick={async () => {
+                  await registerLead('CONTACT');
+                  setShowContact(true);
+                }}
                 className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-medium text-emerald-700 shadow-sm hover:bg-emerald-50"
               >
                 Entrar em contacto
               </button>
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={async () => {
+                  await registerLead('WHATSAPP');
+                  window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+                }}
                 className="inline-flex items-center rounded-full border border-emerald-100 bg-emerald-500/40 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500/60"
               >
                 Falar no WhatsApp
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -167,7 +187,7 @@ export default function PartnerPage() {
                   </h3>
                   {service.price && (
                     <span className="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                      {service.price}
+                      {service.price} €
                     </span>
                   )}
                 </div>

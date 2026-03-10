@@ -282,6 +282,17 @@ export const api = {
       delete: (id: string) =>
         request<void>(`/partners/me/services/${id}`, { method: 'DELETE' }),
     },
+    leads: {
+      list: () =>
+        request<
+          {
+            id: string;
+            createdAt: string;
+            source?: string;
+            user: { email: string };
+          }[]
+        >('/partners/me/leads', { method: 'GET' }),
+    },
   },
   marketplace: {
     categoriesWithPartners: () =>
