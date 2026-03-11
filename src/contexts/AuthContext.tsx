@@ -11,14 +11,19 @@ import {
 import { useRouter } from 'next/navigation';
 import { api, setAuthToken, clearAuthToken, getAuthToken } from '@/lib/api';
 
-type User = { id: string; email: string; role: string } | null;
+type User = { id: string; email: string; role: string; name?: string; whatsapp?: string } | null;
 
 type AuthContextValue = {
   user: User;
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (params: {
+    email: string;
+    password: string;
+    name: string;
+    whatsapp: string;
+  }) => Promise<void>;
   logout: () => void;
 };
 
@@ -53,32 +58,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const { user: u, token: t } = await api.auth.login(email, password);
+      const { token: t } = await api.auth.login(email, password);
       setAuthToken(t);
-      setUser(u);
-      setTokenState(t);
-      router.push('/dashboard');
+      await loadUser(t);
+      // não alteramos a rota: o utilizador permanece na página atual
     },
-    [router],
+    [loadUser],
   );
 
   const register = useCallback(
-    async (email: string, password: string) => {
-      const { user: u, token: t } = await api.auth.register(email, password);
+    async (params: {
+      email: string;
+      password: string;
+      name: string;
+      whatsapp: string;
+    }) => {
+      const { token: t } = await api.auth.register(params);
       setAuthToken(t);
-      setUser(u);
-      setTokenState(t);
-      router.push('/dashboard');
+      await loadUser(t);
+      // não alteramos a rota: o utilizador permanece na página atual
     },
-    [router],
+    [loadUser],
   );
 
   const logout = useCallback(() => {
     clearAuthToken();
     setUser(null);
     setTokenState(null);
-    router.push('/login');
-  }, [router]);
+    // não alteramos a rota: o utilizador permanece na página atual
+  }, []);
 
   const value: AuthContextValue = {
     user,
