@@ -80,6 +80,7 @@ export default function CategoryPage() {
 
   return (
     <div className="space-y-8">
+      {/* Hero da categoria */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
         {heroBg && (
           <div
@@ -115,30 +116,30 @@ export default function CategoryPage() {
                 ? `${API_URL}${partner.backgroundImageUrl}`
                 : partner.backgroundImageUrl);
             return (
-            <Link
-              key={partner.id}
-              href={`/dashboard/partner/${partner.id}`}
-              className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
-            >
-              <div className="relative h-28 w-full overflow-hidden bg-gradient-to-r from-zinc-100 to-zinc-200">
-                {partnerBg && (
-                  <div
-                    className="absolute inset-0 bg-cover bg-center transition group-hover:scale-105"
-                    style={{ backgroundImage: `url(${partnerBg})` }}
-                  />
-                )}
-                <div className="relative z-10 flex h-full items-end bg-gradient-to-t from-black/50 via-black/10 to-transparent px-4 pb-3">
-                  <h2 className="text-sm font-semibold text-white drop-shadow">
-                    {partner.name}
-                  </h2>
+              <Link
+                key={partner.id}
+                href={`/dashboard/partner/${partner.id}`}
+                className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
+              >
+                <div className="relative h-28 w-full overflow-hidden bg-gradient-to-r from-zinc-100 to-zinc-200">
+                  {partnerBg && (
+                    <div
+                      className="absolute inset-0 bg-cover bg-center transition group-hover:scale-105"
+                      style={{ backgroundImage: `url(${partnerBg})` }}
+                    />
+                  )}
+                  <div className="relative z-10 flex h-full items-end bg-gradient-to-t from-black/50 via-black/10 to-transparent px-4 pb-3">
+                    <h2 className="text-sm font-semibold text-white drop-shadow">
+                      {partner.name}
+                    </h2>
+                  </div>
                 </div>
-              </div>
-              {partner.shortDescription && (
-                <p className="line-clamp-3 px-4 pb-4 pt-3 text-xs text-zinc-600">
-                  {partner.shortDescription}
-                </p>
-              )}
-            </Link>
+                {partner.shortDescription && (
+                  <p className="line-clamp-3 px-4 pb-4 pt-3 text-xs text-zinc-600">
+                    {partner.shortDescription}
+                  </p>
+                )}
+              </Link>
             );
           })}
         </div>

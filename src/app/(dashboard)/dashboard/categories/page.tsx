@@ -83,6 +83,8 @@ export default function CategoriesPage() {
       const created = await api.admin.categories.create({
         slug,
         name,
+        description: description || undefined,
+        backgroundImageUrl: backgroundImageUrl || undefined,
         sortOrder: sortOrder ? Number(sortOrder) : undefined,
       });
       setCategories((prev) => [...prev, created]);
@@ -359,6 +361,7 @@ export default function CategoriesPage() {
               <tr>
                 <th className="px-4 py-2 text-left">Slug</th>
                 <th className="px-4 py-2 text-left">Nome</th>
+                <th className="px-4 py-2 text-left">Descrição</th>
                 <th className="px-4 py-2 text-left">Ordem</th>
                 <th className="px-4 py-2 text-left">Background</th>
                 <th className="px-4 py-2 text-right">Ações</th>
@@ -389,6 +392,22 @@ export default function CategoriesPage() {
                       />
                     ) : (
                       c.name
+                    )}
+                  </td>
+                  <td className="px-4 py-2 align-top">
+                    {editingId === c.id ? (
+                      <textarea
+                        value={editingDescription}
+                        onChange={(e) => setEditingDescription(e.target.value)}
+                        rows={2}
+                        className="w-full rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    ) : c.description ? (
+                      <p className="line-clamp-3 max-w-xs text-xs text-zinc-600">
+                        {c.description}
+                      </p>
+                    ) : (
+                      <span className="text-xs text-zinc-400">Sem descrição</span>
                     )}
                   </td>
                   <td className="px-4 py-2 align-top">

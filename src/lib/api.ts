@@ -358,6 +358,7 @@ export const api = {
         shortDescription: string | null;
         fullDescription: string | null;
         backgroundImageUrl: string | null;
+        category?: { id: string; name: string; slug: string } | null;
         user: { email: string };
         services: {
           id: string;

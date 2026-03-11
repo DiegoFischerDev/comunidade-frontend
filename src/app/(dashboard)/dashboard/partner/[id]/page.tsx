@@ -13,6 +13,11 @@ type PartnerDetails = {
   shortDescription: string | null;
   fullDescription: string | null;
   backgroundImageUrl: string | null;
+  category?: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
   user: { email: string };
   services: {
     id: string;
@@ -116,29 +121,61 @@ export default function PartnerPage() {
             style={{ backgroundImage: `url(${partner.backgroundImageUrl})` }}
           />
         )}
-        <div className="relative z-10 flex flex-col gap-6 px-6 py-10 sm:flex-row sm:items-center sm:px-10 sm:py-14">
-          {logoSrc && (
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/90 p-2 shadow-md sm:h-24 sm:w-24">
-              <img
-                src={logoSrc}
-                alt={partner.name}
-                className="max-h-full max-w-full object-contain"
+        <div className="relative z-10 px-6 py-6 sm:px-10 sm:py-8">
+          <button
+            type="button"
+            onClick={() =>
+              partner.category
+                ? router.push(`/dashboard/category/${partner.category.slug}`)
+                : router.back()
+            }
+            className="absolute left-4 top-4 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/95 text-emerald-700 shadow-lg ring-1 ring-emerald-500/40 hover:bg-white sm:left-6 sm:top-6"
+            aria-label={
+              partner.category
+                ? `Voltar para ${partner.category.name}`
+                : 'Voltar'
+            }
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              aria-hidden="true"
+            >
+              <path
+                d="M15.75 19.5 8.25 12l7.5-7.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               />
-            </div>
-          )}
-          <div>
-            <p className="text-xs uppercase tracking-wide text-emerald-100">
-              Parceiro
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
-              {partner.name}
-            </h1>
-            {partner.shortDescription && (
-              <p className="mt-3 max-w-2xl text-sm text-emerald-50 sm:text-base">
-                {partner.shortDescription}
-              </p>
+            </svg>
+          </button>
+
+          <div className="mt-4 flex flex-col gap-6 sm:flex-row sm:items-center">
+            {logoSrc && (
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/90 p-2 shadow-md sm:h-24 sm:w-24">
+                <img
+                  src={logoSrc}
+                  alt={partner.name}
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
             )}
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-emerald-100">
+                {partner.category?.name ?? 'Parceiro'}
+              </p>
+              <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
+                {partner.name}
+              </h1>
+              {partner.shortDescription && (
+                <p className="mt-3 max-w-2xl text-sm text-emerald-50 sm:text-base">
+                  {partner.shortDescription}
+                </p>
+              )}
+              <div className="mt-5 flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => registerLeadThenOpen(() => setShowContact(true))}
@@ -159,19 +196,22 @@ export default function PartnerPage() {
               </button>
             </div>
           </div>
+          </div>
         </div>
       </section>
 
       {/* Descrição completa */}
       {partner.fullDescription && (
-        <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
-          <h2 className="text-sm font-semibold text-zinc-900">
+        <>
+          <h2 className="mb-3 text-sm font-semibold text-zinc-900">
             Sobre {partner.name}
           </h2>
-          <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-zinc-700">
-            {partner.fullDescription}
-          </p>
-        </section>
+          <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
+            <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-700">
+              {partner.fullDescription}
+            </p>
+          </section>
+        </>
       )}
 
       {/* Lista de serviços */}

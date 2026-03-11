@@ -32,6 +32,7 @@ export default function DashboardLayout({
     { id: string; slug: string; name: string }[]
   >([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const [activeCategorySlug, setActiveCategorySlug] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -53,6 +54,49 @@ export default function DashboardLayout({
       }
     })();
   }, [mounted, authLoading, user]);
+
+  // Sincroniza categoria ativa no menu com rota atual (categoria ou parceiro)
+  useEffect(() => {
+    // Página de listagem por categoria
+    if (pathname.startsWith('/dashboard/category/')) {
+      const segments = pathname.split('/');
+      const slug = segments[segments.length - 1] || null;
+      setActiveCategorySlug(slug);
+      return;
+    }
+
+    // Página de parceiro dentro do dashboard
+    if (pathname.startsWith('/dashboard/partner/')) {
+      const segments = pathname.split('/');
+      const partnerId = segments[segments.length - 1];
+      if (!partnerId) return;
+
+      // Não limpamos activeCategorySlug aqui para evitar "piscar"
+      // ao navegar de /dashboard/category/[slug] -> /dashboard/partner/[id].
+
+      (async () => {
+        try {
+          const data = await api.marketplace.partnerDetails(partnerId);
+          // category pode ser null se o parceiro não tiver categoria associada
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const category = (data as any).category as
+            | { slug: string }
+            | null
+            | undefined;
+          if (category?.slug) {
+            setActiveCategorySlug(category.slug);
+          }
+        } catch {
+          // mantemos o slug atual (se existir) em caso de erro
+        }
+      })();
+
+      return;
+    }
+
+    // Outras páginas não relacionadas a categorias/parceiros
+    setActiveCategorySlug(null);
+  }, [pathname]);
 
   // Permite que outras páginas abram o modal de auth (por exemplo, página do parceiro)
   useEffect(() => {
@@ -114,19 +158,25 @@ export default function DashboardLayout({
             Início
           </Link>
           {categoriesLoaded &&
-            categories.map((c) => (
-              <Link
-                key={c.id}
-                href={`/dashboard/category/${c.slug}`}
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === `/dashboard/category/${c.slug}`
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
-                }`}
-              >
-                {c.name}
-              </Link>
-            ))}
+            categories.map((c) => {
+              const isActive =
+                pathname === `/dashboard/category/${c.slug}` ||
+                (pathname.startsWith('/dashboard/partner/') &&
+                  activeCategorySlug === c.slug);
+              return (
+                <Link
+                  key={c.id}
+                  href={`/dashboard/category/${c.slug}`}
+                  className={`block rounded-md px-3 py-2 text-sm ${
+                    isActive
+                      ? 'bg-primary-3 font-medium text-primary-2'
+                      : 'text-primary-1 hover:bg-secondary-3'
+                  }`}
+                >
+                  {c.name}
+                </Link>
+              );
+            })}
         </nav>
       </div>
 

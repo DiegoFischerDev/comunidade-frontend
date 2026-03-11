@@ -147,14 +147,16 @@ export default async function PartnerPublicPage({ params }: PageProps) {
 
       {/* Descrição completa */}
       {partner.fullDescription && (
-        <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
-          <h2 className="text-sm font-semibold text-zinc-900">
+        <>
+          <h2 className="mb-3 text-sm font-semibold text-zinc-900">
             Sobre {partner.name}
           </h2>
-          <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-zinc-700">
-            {partner.fullDescription}
-          </p>
-        </section>
+          <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
+            <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-700">
+              {partner.fullDescription}
+            </p>
+          </section>
+        </>
       )}
 
       {/* Lista de serviços */}
