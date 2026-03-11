@@ -184,7 +184,13 @@ export const api = {
             sortOrder: number;
           }[]
         >('/partners/admin/categories', { method: 'GET' }),
-      create: (input: { slug: string; name: string; sortOrder?: number }) =>
+      create: (input: {
+        slug: string;
+        name: string;
+        description?: string;
+        backgroundImageUrl?: string;
+        sortOrder?: number;
+      }) =>
         request<{
           id: string;
           slug: string;
