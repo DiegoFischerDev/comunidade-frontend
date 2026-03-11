@@ -58,13 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const { user: u, token: t } = await api.auth.login(email, password);
+      const { token: t } = await api.auth.login(email, password);
       setAuthToken(t);
-      setUser(u);
-      setTokenState(t);
+      await loadUser(t);
       router.push('/dashboard');
     },
-    [router],
+    [loadUser, router],
   );
 
   const register = useCallback(
@@ -74,20 +73,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       name: string;
       whatsapp: string;
     }) => {
-      const { user: u, token: t } = await api.auth.register(params);
+      const { token: t } = await api.auth.register(params);
       setAuthToken(t);
-      setUser(u);
-      setTokenState(t);
+      await loadUser(t);
       router.push('/dashboard');
     },
-    [router],
+    [loadUser, router],
   );
 
   const logout = useCallback(() => {
     clearAuthToken();
     setUser(null);
     setTokenState(null);
-    router.push('/login');
+    router.push('/dashboard');
   }, [router]);
 
   const value: AuthContextValue = {

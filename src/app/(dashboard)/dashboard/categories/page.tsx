@@ -35,6 +35,7 @@ export default function CategoriesPage() {
     useState('');
   const [savingEdit, setSavingEdit] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
+  const [uploadingEditBackground, setUploadingEditBackground] = useState(false);
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -144,6 +145,42 @@ export default function CategoriesPage() {
     setEditingSortOrder(String(row.sortOrder ?? ''));
     setEditingDescription(row.description ?? '');
     setEditingBackgroundImageUrl(row.backgroundImageUrl ?? '');
+  }
+
+  async function handleEditBackgroundUpload(
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = e.target.files?.[0];
+    if (!file || !editingId) return;
+    setError('');
+    setUploadingEditBackground(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = getAuthToken();
+      const res = await fetch(`${API_URL}/uploads`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(
+          data.message ||
+            'Erro ao fazer upload da imagem de background da categoria.',
+        );
+      }
+      const url = `${API_URL}${data.url}`;
+      setEditingBackgroundImageUrl(url);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Erro ao fazer upload da imagem de background da categoria.',
+      );
+    } finally {
+      setUploadingEditBackground(false);
+    }
   }
 
   async function handleSaveEdit(e: React.FormEvent) {
@@ -323,6 +360,7 @@ export default function CategoriesPage() {
                 <th className="px-4 py-2 text-left">Slug</th>
                 <th className="px-4 py-2 text-left">Nome</th>
                 <th className="px-4 py-2 text-left">Ordem</th>
+                <th className="px-4 py-2 text-left">Background</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
             </thead>
@@ -366,6 +404,44 @@ export default function CategoriesPage() {
                       />
                     ) : (
                       c.sortOrder
+                    )}
+                  </td>
+                  <td className="px-4 py-2 align-top">
+                    {editingId === c.id ? (
+                      <div className="space-y-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEditBackgroundUpload}
+                          className="block w-full text-xs text-zinc-900 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
+                        />
+                        <p className="text-[11px] text-zinc-500">
+                          {uploadingEditBackground
+                            ? 'Enviando imagem…'
+                            : editingBackgroundImageUrl
+                            ? 'Imagem carregada.'
+                            : 'Selecione uma imagem para o banner.'}
+                        </p>
+                        {editingBackgroundImageUrl && (
+                          <div className="mt-1 h-10 w-full overflow-hidden rounded border border-zinc-200 bg-zinc-100">
+                            <div
+                              className="h-full w-full bg-cover bg-center"
+                              style={{
+                                backgroundImage: `url(${editingBackgroundImageUrl})`,
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ) : c.backgroundImageUrl ? (
+                      <div className="h-10 w-24 overflow-hidden rounded border border-zinc-200 bg-zinc-100">
+                        <div
+                          className="h-full w-full bg-cover bg-center"
+                          style={{ backgroundImage: `url(${c.backgroundImageUrl})` }}
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-xs text-zinc-400">Sem imagem</span>
                     )}
                   </td>
                   <td className="px-4 py-2 text-right align-top space-x-2">

@@ -367,5 +367,10 @@ export const api = {
           commissionEuro: number | null;
         }[];
       }>(`/partners/${id}/public`, { method: 'GET' }),
+    registerLead: (partnerId: string) =>
+      request<{ id: string }>(`/partners/${partnerId}/leads`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }),
   },
 };

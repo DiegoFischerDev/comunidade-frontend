@@ -25,6 +25,9 @@ export default function CategoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
   useEffect(() => {
     (async () => {
       try {
@@ -69,13 +72,19 @@ export default function CategoryPage() {
     );
   }
 
+  const heroBg =
+    category.backgroundImageUrl &&
+    (category.backgroundImageUrl.startsWith('/uploads/')
+      ? `${API_URL}${category.backgroundImageUrl}`
+      : category.backgroundImageUrl);
+
   return (
     <div className="space-y-8">
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-        {category.backgroundImageUrl && (
+        {heroBg && (
           <div
             className="absolute inset-0 bg-cover bg-center opacity-40"
-            style={{ backgroundImage: `url(${category.backgroundImageUrl})` }}
+            style={{ backgroundImage: `url(${heroBg})` }}
           />
         )}
         <div className="relative z-10 px-6 py-10 sm:px-10 sm:py-14">
@@ -99,17 +108,23 @@ export default function CategoryPage() {
         </p>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {category.partners.map((partner) => (
+          {category.partners.map((partner) => {
+            const partnerBg =
+              partner.backgroundImageUrl &&
+              (partner.backgroundImageUrl.startsWith('/uploads/')
+                ? `${API_URL}${partner.backgroundImageUrl}`
+                : partner.backgroundImageUrl);
+            return (
             <Link
               key={partner.id}
               href={`/dashboard/partner/${partner.id}`}
               className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
             >
               <div className="relative h-28 w-full overflow-hidden bg-gradient-to-r from-zinc-100 to-zinc-200">
-                {partner.backgroundImageUrl && (
+                {partnerBg && (
                   <div
                     className="absolute inset-0 bg-cover bg-center transition group-hover:scale-105"
-                    style={{ backgroundImage: `url(${partner.backgroundImageUrl})` }}
+                    style={{ backgroundImage: `url(${partnerBg})` }}
                   />
                 )}
                 <div className="relative z-10 flex h-full items-end bg-gradient-to-t from-black/50 via-black/10 to-transparent px-4 pb-3">
@@ -124,7 +139,8 @@ export default function CategoryPage() {
                 </p>
               )}
             </Link>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

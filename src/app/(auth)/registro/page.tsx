@@ -74,7 +74,7 @@ export default function RegistroPage() {
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
             required
-            placeholder="Ex: 351 912 345 678"
+            placeholder="Ex: 351256854756"
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
