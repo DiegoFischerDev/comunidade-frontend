@@ -61,9 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { token: t } = await api.auth.login(email, password);
       setAuthToken(t);
       await loadUser(t);
-      router.push('/dashboard');
+      // não alteramos a rota: o utilizador permanece na página atual
     },
-    [loadUser, router],
+    [loadUser],
   );
 
   const register = useCallback(
@@ -76,17 +76,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { token: t } = await api.auth.register(params);
       setAuthToken(t);
       await loadUser(t);
-      router.push('/dashboard');
+      // não alteramos a rota: o utilizador permanece na página atual
     },
-    [loadUser, router],
+    [loadUser],
   );
 
   const logout = useCallback(() => {
     clearAuthToken();
     setUser(null);
     setTokenState(null);
-    router.push('/dashboard');
-  }, [router]);
+    // não alteramos a rota: o utilizador permanece na página atual
+  }, []);
 
   const value: AuthContextValue = {
     user,

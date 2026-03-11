@@ -54,6 +54,26 @@ export default function DashboardLayout({
     })();
   }, [mounted, authLoading, user]);
 
+  // Permite que outras páginas abram o modal de auth (por exemplo, página do parceiro)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handler = (event: Event) => {
+      const custom = event as CustomEvent<{ mode?: 'login' | 'register' }>;
+      if (custom.detail?.mode) {
+        setAuthMode(custom.detail.mode);
+      } else {
+        setAuthMode('login');
+      }
+      setIsAuthModalOpen(true);
+    };
+
+    window.addEventListener('open-auth-modal', handler as EventListener);
+    return () => {
+      window.removeEventListener('open-auth-modal', handler as EventListener);
+    };
+  }, []);
+
   // Fecha o menu mobile ao trocar de rota
   useEffect(() => {
     setIsMenuOpen(false);
@@ -115,7 +135,7 @@ export default function DashboardLayout({
         {/* Bloco do usuário */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-3 text-[11px] font-semibold text-primary-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-3 text-[16px] font-semibold text-primary-2">
               {firstName.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
@@ -144,7 +164,10 @@ export default function DashboardLayout({
           ) : (
             <button
               type="button"
-              onClick={() => setIsAuthModalOpen(true)}
+              onClick={() => {
+                setAuthMode('login');
+                setIsAuthModalOpen(true);
+              }}
               className="cursor-pointer text-xs font-medium text-primary-3 underline-offset-2 hover:text-primary-1 hover:underline"
             >
               Login
@@ -291,7 +314,9 @@ export default function DashboardLayout({
               </div>
               <button
                 type="button"
-                onClick={() => setIsAuthModalOpen(false)}
+                onClick={() => {
+                  setIsAuthModalOpen(false);
+                }}
                 className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50"
                 aria-label="Fechar"
               >
@@ -303,7 +328,7 @@ export default function DashboardLayout({
               <button
                 type="button"
                 onClick={() => setAuthMode('login')}
-                className={`flex-1 rounded-full px-3 py-1.5 ${
+                className={`flex-1 cursor-pointer rounded-full px-3 py-1.5 ${
                   authMode === 'login'
                     ? 'bg-white text-zinc-900 shadow-sm'
                     : 'hover:text-zinc-900'
@@ -314,7 +339,7 @@ export default function DashboardLayout({
               <button
                 type="button"
                 onClick={() => setAuthMode('register')}
-                className={`flex-1 rounded-full px-3 py-1.5 ${
+                className={`flex-1 cursor-pointer rounded-full px-3 py-1.5 ${
                   authMode === 'register'
                     ? 'bg-white text-zinc-900 shadow-sm'
                     : 'hover:text-zinc-900'

@@ -30,7 +30,6 @@ export default function PartnerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showContact, setShowContact] = useState(false);
-  const [authWarning, setAuthWarning] = useState('');
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -90,8 +89,12 @@ export default function PartnerPage() {
 
   async function registerLeadThenOpen(openContact: () => void) {
     if (!user) {
-      setAuthWarning(
-        'Para ver os contactos dos parceiros, entre na Comunidade RPM ou crie a sua conta.',
+      window.dispatchEvent(
+        new CustomEvent('open-auth-modal', {
+          detail: {
+            mode: 'login',
+          },
+        }),
       );
       return;
     }
@@ -159,12 +162,6 @@ export default function PartnerPage() {
         </div>
       </section>
 
-      {authWarning && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          {authWarning}
-        </div>
-      )}
-
       {/* Descrição completa */}
       {partner.fullDescription && (
         <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
@@ -216,8 +213,12 @@ export default function PartnerPage() {
                     onClick={(e) => {
                       if (!user) {
                         e.preventDefault();
-                        setAuthWarning(
-                          'Para falar sobre um serviço com o parceiro, entre na Comunidade RPM ou crie a sua conta.',
+                        window.dispatchEvent(
+                          new CustomEvent('open-auth-modal', {
+                            detail: {
+                              mode: 'login',
+                            },
+                          }),
                         );
                       } else {
                         // registo de lead não é obrigatório aqui, apenas contacto direto
