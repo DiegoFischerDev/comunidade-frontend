@@ -150,8 +150,8 @@ export default function DashboardLayout({
         : 'Visitante';
 
   const sidebarContent = (
-    <>
-      <div>
+    <div className="flex h-full flex-col">
+      <div className="flex-1 min-h-0">
         <div className="flex items-center justify-center">
           <Image
             src="/logo_bg_clara.png"
@@ -163,7 +163,7 @@ export default function DashboardLayout({
         </div>
 
         {/* Grupo 1 - comum a todos (topo) */}
-        <nav className="mt-4 space-y-1 rounded-lg bg-secondary-3/40 p-1">
+        <nav className="mt-4 max-h-full space-y-1 overflow-y-auto rounded-lg bg-secondary-3/40 p-1 pr-1">
           <Link
             href="/dashboard"
             className={`block rounded-md px-3 py-2 text-sm ${
@@ -200,7 +200,7 @@ export default function DashboardLayout({
       {/* Grupo 2 - parceiro/admin (base do menu) */}
       <div className="mt-auto border-t border-secondary-2 pt-4 text-sm text-primary-1">
         {/* Bloco do usuário */}
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-3 text-[16px] font-semibold text-primary-2">
               {firstName.charAt(0).toUpperCase()}
@@ -221,18 +221,7 @@ export default function DashboardLayout({
               )}
             </div>
           </div>
-          <div className="flex flex-col items-end gap-1">
-            {isImpersonating && (
-              <button
-                type="button"
-                onClick={async () => {
-                  await stopImpersonation();
-                }}
-                className="cursor-pointer rounded-full border border-primary-3 px-3 py-1 text-[10px] font-medium text-primary-3 hover:bg-primary-3 hover:text-primary-2"
-              >
-                Voltar ao modo admin
-              </button>
-            )}
+          <div>
             {user ? (
               <button
                 type="button"
@@ -255,6 +244,18 @@ export default function DashboardLayout({
             )}
           </div>
         </div>
+
+        {isImpersonating && (
+          <button
+            type="button"
+            onClick={async () => {
+              await stopImpersonation();
+            }}
+            className="mt-3 w-full cursor-pointer rounded-full border border-primary-3 px-3 py-1.5 text-[11px] font-medium text-primary-3 hover:bg-primary-3 hover:text-primary-2"
+          >
+            Voltar ao modo admin
+          </button>
+        )}
 
         {/* Links de ações (parceiro/admin) */}
         <nav className="mt-4 space-y-1 text-xs">
@@ -289,6 +290,16 @@ export default function DashboardLayout({
                 }`}
               >
                 Meus serviços
+              </Link>
+              <Link
+                href="/dashboard/my-sales"
+                className={`block rounded-md px-3 py-2 ${
+                  pathname === '/dashboard/my-sales'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Minhas vendas
               </Link>
             </>
           )}
@@ -336,13 +347,25 @@ export default function DashboardLayout({
               </Link>
             </>
           )}
+          {user && (
+            <Link
+              href="/dashboard/my-purchases"
+              className={`block rounded-md px-3 py-2 ${
+                pathname === '/dashboard/my-purchases'
+                  ? 'bg-primary-3 font-medium text-primary-2'
+                  : 'text-primary-1 hover:bg-secondary-3'
+              }`}
+            >
+              Minhas compras
+            </Link>
+          )}
         </nav>
       </div>
-    </>
+    </div>
   );
 
   return (
-    <div className="flex min-h-screen flex-col bg-primary-1 md:flex-row">
+    <div className="flex min-h-screen flex-col bg-primary-1 md:pl-56">
       {/* Header mobile com menu hamburguer */}
       <header className="flex items-center justify-between border-b border-secondary-2 bg-primary-2 px-4 py-2 md:hidden">
         <div className="flex items-center">
@@ -369,7 +392,7 @@ export default function DashboardLayout({
       </header>
 
       {/* Sidebar desktop */}
-      <aside className="hidden w-56 shrink-0 flex-col border-r border-secondary-2 bg-primary-2 p-4 md:flex">
+      <aside className="hidden border-r border-secondary-2 bg-primary-2 p-4 md:fixed md:inset-y-0 md:left-0 md:flex md:w-56 md:flex-col md:overflow-hidden">
         {sidebarContent}
       </aside>
 
@@ -614,23 +637,7 @@ export default function DashboardLayout({
         </div>
       )}
 
-      <main className="flex-1 p-4 text-primary-2 md:p-6">
-        {isImpersonating && user && (
-          <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            <p className="font-medium">
-              Você está a ver o painel como:{' '}
-              <span className="font-semibold">
-                {user.name?.trim() || user.email}
-              </span>
-            </p>
-            <p className="mt-1">
-              Use o botão <span className="font-semibold">"Voltar ao modo admin"</span> no menu
-              lateral para regressar à sua sessão de administrador.
-            </p>
-          </div>
-        )}
-        {children}
-      </main>
+      <main className="flex-1 p-4 text-primary-2 md:p-6">{children}</main>
     </div>
   );
 }

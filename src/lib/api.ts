@@ -391,4 +391,88 @@ export const api = {
         body: JSON.stringify({}),
       }),
   },
+  sales: {
+    partnerLookup: () =>
+      request<{
+        leads: {
+          id: string;
+          createdAt: string;
+          user: { id: string; name: string | null; email: string; whatsapp: string | null };
+        }[];
+        services: {
+          id: string;
+          title: string;
+          price: string | null;
+          commissionEuro: number | null;
+        }[];
+      }>('/sales/partner/lookup', { method: 'GET' }),
+    partnerCreate: (input: {
+      leadId: string;
+      serviceId: string;
+      month: number;
+      year: number;
+      amount?: number;
+    }) =>
+      request<{
+        id: string;
+      }>('/sales/partner', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    partnerList: () =>
+      request<{
+        pending: any[];
+        approved: any[];
+        rejected: any[];
+      }>('/sales/partner', { method: 'GET' }),
+    partnerUpdateStatus: (id: string, status: 'APPROVED' | 'REJECTED') =>
+      request<unknown>(`/sales/partner/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      }),
+    userLookup: () =>
+      request<{
+        partners: {
+          id: string;
+          name: string;
+          category?: { name: string } | null;
+        }[];
+      }>('/sales/user/lookup', { method: 'GET' }),
+    userPartnerServices: (partnerId: string) =>
+      request<
+        {
+          id: string;
+          title: string;
+          price: string | null;
+          commissionEuro: number | null;
+        }[]
+      >(`/sales/user/partners/${partnerId}/services`, { method: 'GET' }),
+    userCreate: (input: {
+      partnerId: string;
+      serviceId: string;
+      month: number;
+      year: number;
+      amount?: number;
+    }) =>
+      request<{ id: string }>('/sales/user', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    userList: () =>
+      request<
+        {
+          id: string;
+          partner: { id: string; name: string };
+          service: { title: string };
+          month: number;
+          year: number;
+          amount: number;
+          commissionEuro: number;
+          status: string;
+          commissionPaymentStatus: string;
+          cashbackEligible: boolean;
+          createdAt: string;
+        }[]
+      >('/sales/user', { method: 'GET' }),
+  },
 };
