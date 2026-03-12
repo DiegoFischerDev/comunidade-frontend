@@ -347,7 +347,7 @@ export default function PartnersPage() {
                           );
                         }
                       }}
-                      className="mr-2 rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                      className="mr-2 cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
                     >
                       Logar como este parceiro
                     </button>
@@ -374,7 +374,7 @@ export default function PartnersPage() {
                           );
                         }
                       }}
-                      className="rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                      className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
                     >
                       Remover
                     </button>

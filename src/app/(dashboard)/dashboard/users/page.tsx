@@ -161,7 +161,7 @@ export default function UsersPage() {
                     <button
                       type="button"
                       onClick={() => openEdit(u)}
-                      className="mr-2 rounded bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
+                      className="mr-2 cursor-pointer rounded bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
                     >
                       Editar
                     </button>
@@ -179,7 +179,7 @@ export default function UsersPage() {
                           );
                         }
                       }}
-                      className="mr-2 rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                      className="mr-2 cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
                     >
                       Logar como este usuário
                     </button>
@@ -204,7 +204,7 @@ export default function UsersPage() {
                           );
                         }
                       }}
-                      className="rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                      className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
                     >
                       Remover
                     </button>

@@ -179,10 +179,12 @@ export default function PartnerServicesPage() {
             Valor (opcional)
           </label>
           <input
-            type="text"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            placeholder="Ex.: 50€ ou Sob consulta"
+            placeholder="Ex.: 50.00"
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
@@ -275,14 +277,14 @@ export default function PartnerServicesPage() {
                     <button
                       type="button"
                       onClick={() => startEdit(s)}
-                      className="rounded bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                      className="cursor-pointer rounded bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
                     >
                       Editar
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDelete(s.id)}
-                      className="rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                      className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
                     >
                       Remover
                     </button>

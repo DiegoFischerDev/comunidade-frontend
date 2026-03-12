@@ -167,7 +167,7 @@ export default function AdminServicesPage() {
                       type="button"
                       onClick={() => handleSaveCommission(s.id)}
                       disabled={savingId === s.id}
-                      className="rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                      className="cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
                     >
                       {savingId === s.id ? 'Salvando…' : 'Salvar'}
                     </button>

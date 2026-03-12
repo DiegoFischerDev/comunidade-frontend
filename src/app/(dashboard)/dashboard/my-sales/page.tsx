@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -26,6 +26,7 @@ export default function PartnerSalesPage() {
 
   const [selectedLeadId, setSelectedLeadId] = useState<string>('');
   const [leadFilter, setLeadFilter] = useState('');
+  const [leadDropdownOpen, setLeadDropdownOpen] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
   const [month, setMonth] = useState<number>(new Date().getMonth() + 1);
   const [year, setYear] = useState<number>(new Date().getFullYear());
@@ -36,6 +37,8 @@ export default function PartnerSalesPage() {
   const [salesApproved, setSalesApproved] = useState<any[]>([]);
   const [salesRejected, setSalesRejected] = useState<any[]>([]);
   const [loadingSales, setLoadingSales] = useState(true);
+
+  const leadDropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -69,6 +72,21 @@ export default function PartnerSalesPage() {
       }
     })();
   }, [user]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (!leadDropdownRef.current) return;
+      if (!(event.target instanceof Node)) return;
+      if (!leadDropdownRef.current.contains(event.target)) {
+        setLeadDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const filteredLeads = useMemo(() => {
     const term = leadFilter.trim().toLowerCase();
@@ -183,44 +201,56 @@ export default function PartnerSalesPage() {
         ) : (
           <>
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-1">
+              <div className="space-y-1" ref={leadDropdownRef}>
                 <label className="block text-xs font-medium text-zinc-700">
                   Lead (cliente)
                 </label>
-                <input
-                  type="text"
-                  placeholder="Filtrar por nome, email ou WhatsApp"
-                  value={leadFilter}
-                  onChange={(e) => setLeadFilter(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-                <div className="mt-2 max-h-40 space-y-1 overflow-y-auto rounded-lg border border-zinc-200 bg-zinc-50">
-                  {filteredLeads.length === 0 ? (
-                    <p className="px-3 py-2 text-xs text-zinc-500">
-                      Nenhum lead encontrado com este filtro.
-                    </p>
-                  ) : (
-                    filteredLeads.map((lead) => {
-                      const label = `${
-                        lead.user.name || 'Sem nome'
-                      } • ${lead.user.email} ${
-                        lead.user.whatsapp ? `• ${lead.user.whatsapp}` : ''
-                      }`;
-                      return (
-                        <button
-                          key={lead.id}
-                          type="button"
-                          onClick={() => setSelectedLeadId(lead.id)}
-                          className={`block w-full cursor-pointer px-3 py-2 text-left text-xs ${
-                            selectedLeadId === lead.id
-                              ? 'bg-blue-600 text-white'
-                              : 'text-zinc-800 hover:bg-zinc-100'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      );
-                    })
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Filtrar por nome, email ou WhatsApp"
+                    value={leadFilter}
+                    onChange={(e) => {
+                      setLeadFilter(e.target.value);
+                      setLeadDropdownOpen(true);
+                    }}
+                    onFocus={() => setLeadDropdownOpen(true)}
+                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  {leadDropdownOpen && (
+                    <div className="absolute left-0 right-0 z-10 mt-1 max-h-48 space-y-1 overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-lg">
+                      {filteredLeads.length === 0 ? (
+                        <p className="px-3 py-2 text-xs text-zinc-500">
+                          Nenhum lead encontrado com este filtro.
+                        </p>
+                      ) : (
+                        filteredLeads.slice(0, 7).map((lead) => {
+                          const label = `${
+                            lead.user.name || 'Sem nome'
+                          } • ${lead.user.email} ${
+                            lead.user.whatsapp ? `• ${lead.user.whatsapp}` : ''
+                          }`;
+                          return (
+                            <button
+                              key={lead.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedLeadId(lead.id);
+                                setLeadFilter(label);
+                                setLeadDropdownOpen(false);
+                              }}
+                              className={`block w-full cursor-pointer px-3 py-2 text-left text-xs ${
+                                selectedLeadId === lead.id
+                                  ? 'bg-blue-600 text-white'
+                                  : 'text-zinc-800 hover:bg-zinc-100'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -289,7 +319,9 @@ export default function PartnerSalesPage() {
                   Valor da venda (opcional)
                 </label>
                 <input
-                  type="text"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="Ex: 120.50"
@@ -339,6 +371,7 @@ export default function PartnerSalesPage() {
                     <th className="px-3 py-2 text-left">Mês/ano</th>
                     <th className="px-3 py-2 text-left">Valor</th>
                     <th className="px-3 py-2 text-left">Comissão RPM</th>
+                    <th className="px-3 py-2 text-left">Registrado por</th>
                     <th className="px-3 py-2 text-right">Ações</th>
                   </tr>
                 </thead>
@@ -369,18 +402,23 @@ export default function PartnerSalesPage() {
                       <td className="px-3 py-2 text-xs text-zinc-700">
                         {s.commissionEuro.toFixed(2)} €
                       </td>
+                      <td className="px-3 py-2 text-xs text-zinc-700">
+                        {s.createdByUser
+                          ? s.createdByUser.name || s.createdByUser.email
+                          : '—'}
+                      </td>
                       <td className="px-3 py-2 text-right">
                         <button
                           type="button"
                           onClick={() => updateSaleStatus(s.id, 'APPROVED')}
-                          className="mr-2 rounded bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
+                          className="mr-2 cursor-pointer rounded bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
                         >
                           Aprovar
                         </button>
                         <button
                           type="button"
                           onClick={() => updateSaleStatus(s.id, 'REJECTED')}
-                          className="rounded bg-red-50 px-3 py-1 text-[11px] font-medium text-red-700 hover:bg-red-100"
+                          className="cursor-pointer rounded bg-red-50 px-3 py-1 text-[11px] font-medium text-red-700 hover:bg-red-100"
                         >
                           Recusar
                         </button>
@@ -406,14 +444,16 @@ export default function PartnerSalesPage() {
           ) : (
             <div className="mt-3 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
               <table className="min-w-full text-xs md:text-sm">
-                <thead className="bg-zinc-50 text-zinc-600">
+                <thead className="bg-emerald-50 text-emerald-800">
                   <tr>
                     <th className="px-3 py-2 text-left">Cliente</th>
                     <th className="px-3 py-2 text-left">Serviço</th>
                     <th className="px-3 py-2 text-left">Mês/ano</th>
                     <th className="px-3 py-2 text-left">Valor</th>
                     <th className="px-3 py-2 text-left">Comissão RPM</th>
+                    <th className="px-3 py-2 text-left">Registrado por</th>
                     <th className="px-3 py-2 text-left">Comissão</th>
+                    <th className="px-3 py-2 text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -442,9 +482,23 @@ export default function PartnerSalesPage() {
                         {s.commissionEuro.toFixed(2)} €
                       </td>
                       <td className="px-3 py-2 text-xs text-zinc-700">
+                        {s.createdByUser
+                          ? s.createdByUser.name || s.createdByUser.email
+                          : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-zinc-700">
                         {s.commissionPaymentStatus === 'PAID'
                           ? 'Comissão paga'
                           : 'Comissão pendente'}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          type="button"
+                          className="cursor-pointer rounded bg-amber-50 px-3 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
+                          disabled={false}
+                        >
+                          Pagar
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -467,13 +521,14 @@ export default function PartnerSalesPage() {
           ) : (
             <div className="mt-3 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
               <table className="min-w-full text-xs md:text-sm">
-                <thead className="bg-zinc-50 text-zinc-600">
+                <thead className="bg-red-50 text-red-800">
                   <tr>
                     <th className="px-3 py-2 text-left">Cliente</th>
                     <th className="px-3 py-2 text-left">Serviço</th>
                     <th className="px-3 py-2 text-left">Mês/ano</th>
                     <th className="px-3 py-2 text-left">Valor</th>
                     <th className="px-3 py-2 text-left">Comissão RPM</th>
+                    <th className="px-3 py-2 text-left">Registrado por</th>
                     <th className="px-3 py-2 text-right">Ações</th>
                   </tr>
                 </thead>
@@ -502,11 +557,16 @@ export default function PartnerSalesPage() {
                       <td className="px-3 py-2 text-xs text-zinc-700">
                         {s.commissionEuro.toFixed(2)} €
                       </td>
+                      <td className="px-3 py-2 text-xs text-zinc-700">
+                        {s.createdByUser
+                          ? s.createdByUser.name || s.createdByUser.email
+                          : '—'}
+                      </td>
                       <td className="px-3 py-2 text-right">
                         <button
                           type="button"
                           onClick={() => updateSaleStatus(s.id, 'APPROVED')}
-                          className="rounded bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
+                          className="cursor-pointer rounded bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
                         >
                           Aprovar
                         </button>
