@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getAuthToken, clearAuthToken, api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -13,7 +14,15 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, logout, loading: authLoading, login, register } = useAuth();
+  const {
+    user,
+    logout,
+    loading: authLoading,
+    login,
+    register,
+    isImpersonating,
+    stopImpersonation,
+  } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -143,7 +152,15 @@ export default function DashboardLayout({
   const sidebarContent = (
     <>
       <div>
-        <p className="text-sm font-medium text-primary-1">Comunidade RPM</p>
+        <div className="flex items-center justify-center">
+          <Image
+            src="/logo_bg_clara.png"
+            alt="Comunidade RPM"
+            width={140}
+            height={32}
+            priority
+          />
+        </div>
 
         {/* Grupo 1 - comum a todos (topo) */}
         <nav className="mt-4 space-y-1 rounded-lg bg-secondary-3/40 p-1">
@@ -183,7 +200,7 @@ export default function DashboardLayout({
       {/* Grupo 2 - parceiro/admin (base do menu) */}
       <div className="mt-auto border-t border-secondary-2 pt-4 text-sm text-primary-1">
         {/* Bloco do usuário */}
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-3 text-[16px] font-semibold text-primary-2">
               {firstName.charAt(0).toUpperCase()}
@@ -199,30 +216,44 @@ export default function DashboardLayout({
               {user && (
                 <p className="text-[10px] uppercase tracking-wide text-primary-3">
                   {roleLabel}
+                  {isImpersonating && ' (modo admin)'}
                 </p>
               )}
             </div>
           </div>
-          {user ? (
-            <button
-              type="button"
-              onClick={logout}
-              className="cursor-pointer text-xs font-medium text-primary-3 underline-offset-2 hover:text-primary-1 hover:underline"
-            >
-              Sair
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('login');
-                setIsAuthModalOpen(true);
-              }}
-              className="cursor-pointer text-xs font-medium text-primary-3 underline-offset-2 hover:text-primary-1 hover:underline"
-            >
-              Login
-            </button>
-          )}
+          <div className="flex flex-col items-end gap-1">
+            {isImpersonating && (
+              <button
+                type="button"
+                onClick={async () => {
+                  await stopImpersonation();
+                }}
+                className="cursor-pointer rounded-full border border-primary-3 px-3 py-1 text-[10px] font-medium text-primary-3 hover:bg-primary-3 hover:text-primary-2"
+              >
+                Voltar ao modo admin
+              </button>
+            )}
+            {user ? (
+              <button
+                type="button"
+                onClick={logout}
+                className="cursor-pointer text-xs font-medium text-primary-3 underline-offset-2 hover:text-primary-1 hover:underline"
+              >
+                Sair
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('login');
+                  setIsAuthModalOpen(true);
+                }}
+                className="cursor-pointer text-xs font-medium text-primary-3 underline-offset-2 hover:text-primary-1 hover:underline"
+              >
+                Login
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Links de ações (parceiro/admin) */}
@@ -313,8 +344,16 @@ export default function DashboardLayout({
   return (
     <div className="flex min-h-screen flex-col bg-primary-1 md:flex-row">
       {/* Header mobile com menu hamburguer */}
-      <header className="flex items-center justify-between border-b border-secondary-2 bg-primary-2 px-4 py-3 md:hidden">
-        <span className="text-sm font-medium text-primary-1">Comunidade RPM</span>
+      <header className="flex items-center justify-between border-b border-secondary-2 bg-primary-2 px-4 py-2 md:hidden">
+        <div className="flex items-center">
+          <Image
+            src="/logo_bg_clara.png"
+            alt="Comunidade RPM"
+            width={96}
+            height={22}
+            priority
+          />
+        </div>
         <button
           type="button"
           onClick={() => setIsMenuOpen((open) => !open)}
@@ -575,7 +614,23 @@ export default function DashboardLayout({
         </div>
       )}
 
-      <main className="flex-1 p-4 text-primary-2 md:p-6">{children}</main>
+      <main className="flex-1 p-4 text-primary-2 md:p-6">
+        {isImpersonating && user && (
+          <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            <p className="font-medium">
+              Você está a ver o painel como:{' '}
+              <span className="font-semibold">
+                {user.name?.trim() || user.email}
+              </span>
+            </p>
+            <p className="mt-1">
+              Use o botão <span className="font-semibold">"Voltar ao modo admin"</span> no menu
+              lateral para regressar à sua sessão de administrador.
+            </p>
+          </div>
+        )}
+        {children}
+      </main>
     </div>
   );
 }

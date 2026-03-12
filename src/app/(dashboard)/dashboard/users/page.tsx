@@ -16,7 +16,7 @@ type UserRow = {
 const ROLES: UserRow['role'][] = ['USER', 'PARTNER', 'ADMIN'];
 
 export default function UsersPage() {
-  const { user } = useAuth();
+  const { user, impersonateAsUser } = useAuth();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -164,6 +164,24 @@ export default function UsersPage() {
                       className="mr-2 rounded bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
                     >
                       Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setError('');
+                        try {
+                          await impersonateAsUser(u.id);
+                        } catch (err) {
+                          setError(
+                            err instanceof Error
+                              ? err.message
+                              : 'Erro ao entrar como este usuário.',
+                          );
+                        }
+                      }}
+                      className="mr-2 rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                    >
+                      Logar como este usuário
                     </button>
                     <button
                       type="button"

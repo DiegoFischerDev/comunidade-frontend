@@ -63,9 +63,20 @@ export const api = {
         { method: 'POST', body: JSON.stringify({ email, password }) },
       ),
     me: (token: string) =>
-      request<{ id: string; email: string; role: string }>('/auth/me', {
-        method: 'GET',
-        token,
+      request<{ id: string; email: string; role: string; name?: string; whatsapp?: string }>(
+        '/auth/me',
+        {
+          method: 'GET',
+          token,
+        },
+      ),
+    impersonate: (userId: string) =>
+      request<{
+        user: { id: string; email: string; role: string; name?: string; whatsapp?: string };
+        token: string;
+      }>('/auth/impersonate', {
+        method: 'POST',
+        body: JSON.stringify({ userId }),
       }),
   },
   admin: {

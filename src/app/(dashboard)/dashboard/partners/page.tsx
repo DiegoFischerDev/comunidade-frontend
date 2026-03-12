@@ -15,7 +15,7 @@ type PartnerRow = {
 };
 
 export default function PartnersPage() {
-  const { user } = useAuth();
+  const { user, impersonateAsUser } = useAuth();
   const [partners, setPartners] = useState<PartnerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -333,6 +333,24 @@ export default function PartnersPage() {
                     {new Date(p.createdAt).toLocaleString('pt-PT')}
                   </td>
                   <td className="px-4 py-2 text-right">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setError('');
+                        try {
+                          await impersonateAsUser(p.user.id);
+                        } catch (err) {
+                          setError(
+                            err instanceof Error
+                              ? err.message
+                              : 'Erro ao entrar como este parceiro.',
+                          );
+                        }
+                      }}
+                      className="mr-2 rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                    >
+                      Logar como este parceiro
+                    </button>
                     <button
                       type="button"
                       onClick={async () => {
