@@ -349,7 +349,7 @@ export default function PartnersPage() {
                       }}
                       className="mr-2 cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
                     >
-                      Logar como este parceiro
+                      Logar
                     </button>
                     <button
                       type="button"
