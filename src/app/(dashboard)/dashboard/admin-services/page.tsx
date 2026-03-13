@@ -9,7 +9,9 @@ type ServiceRow = {
   title: string;
   description: string | null;
   price: string | null;
+  priceOnRequest?: boolean;
   commissionEuro: number | null;
+  commissionPercent: number | null;
   createdAt: string;
   partner: { id: string; name: string };
 };
@@ -61,17 +63,28 @@ export default function AdminServicesPage() {
     );
   }
 
-  async function handleSaveCommission(id: string) {
+  async function handleSaveCommission(service: ServiceRow) {
+    const id = service.id;
     const raw = editingCommission[id];
     const value =
       raw === undefined || raw === '' ? null : Number(raw.replace(',', '.'));
     setError('');
     setSavingId(id);
     try {
-      const updated = await api.admin.services.updateCommission(id, value);
+      const body = service.priceOnRequest
+        ? { commissionPercent: value }
+        : { commissionEuro: value };
+      const updated = await api.admin.services.updateCommission(id, body);
       setServices((prev) =>
         prev.map((s) =>
-          s.id === id ? { ...s, commissionEuro: updated.commissionEuro } : s,
+          s.id === id
+            ? {
+                ...s,
+                commissionEuro: updated.commissionEuro ?? s.commissionEuro,
+                commissionPercent:
+                  updated.commissionPercent ?? s.commissionPercent,
+              }
+            : s,
         ),
       );
     } catch (err) {
@@ -91,8 +104,9 @@ export default function AdminServicesPage() {
         Serviços (admin)
       </h1>
       <p className="mt-2 text-zinc-600">
-        Veja os serviços cadastrados pelos parceiros e defina/edite a comissão
-        da RPM (valor em euros) para cada serviço.
+        Veja os serviços cadastrados pelos parceiros e defina a comissão da
+        RPM. Para serviços com preço fixo use valor em euros; para serviços
+        &quot;sob consulta&quot; use percentual (%).
       </p>
 
       {error && (
@@ -117,7 +131,7 @@ export default function AdminServicesPage() {
                 <th className="px-4 py-2 text-left">Parceiro</th>
                 <th className="px-4 py-2 text-left">Serviço</th>
                 <th className="px-4 py-2 text-left">Preço</th>
-                <th className="px-4 py-2 text-left">Comissão (EUR)</th>
+                <th className="px-4 py-2 text-left">Comissão (EUR / %)</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
@@ -137,18 +151,35 @@ export default function AdminServicesPage() {
                     )}
                   </td>
                   <td className="px-4 py-2 align-top">
-                    {s.price ?? <span className="text-zinc-400">—</span>}
+                    {s.priceOnRequest ? (
+                      <span className="text-zinc-600">Sob consulta</span>
+                    ) : s.price != null ? (
+                      s.price
+                    ) : (
+                      <span className="text-zinc-400">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-2 align-top">
+                    <span className="mr-1 text-xs text-zinc-500">
+                      {s.priceOnRequest ? '%' : '€'}
+                    </span>
                     <input
                       type="number"
-                      step="0.01"
+                      step={s.priceOnRequest ? '1' : '0.01'}
                       min={0}
+                      max={s.priceOnRequest ? 100 : undefined}
+                      placeholder={s.priceOnRequest ? 'Ex: 10' : 'Ex: 5'}
                       value={
                         editingCommission[s.id] ??
-                        (s.commissionEuro !== null && s.commissionEuro !== undefined
-                          ? String(s.commissionEuro)
-                          : '')
+                        (s.priceOnRequest
+                          ? s.commissionPercent !== null &&
+                            s.commissionPercent !== undefined
+                            ? String(s.commissionPercent)
+                            : ''
+                          : s.commissionEuro !== null &&
+                              s.commissionEuro !== undefined
+                            ? String(s.commissionEuro)
+                            : '')
                       }
                       onChange={(e) =>
                         setEditingCommission((prev) => ({
@@ -156,7 +187,7 @@ export default function AdminServicesPage() {
                           [s.id]: e.target.value,
                         }))
                       }
-                      className="w-24 rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-20 rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </td>
                   <td className="px-4 py-2 align-top">
@@ -165,7 +196,7 @@ export default function AdminServicesPage() {
                   <td className="px-4 py-2 text-right align-top">
                     <button
                       type="button"
-                      onClick={() => handleSaveCommission(s.id)}
+                      onClick={() => handleSaveCommission(s)}
                       disabled={savingId === s.id}
                       className="cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
                     >

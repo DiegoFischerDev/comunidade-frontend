@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -14,6 +14,7 @@ type ServiceOption = {
   id: string;
   title: string;
   price: string | null;
+  priceOnRequest: boolean;
   commissionEuro: number | null;
 };
 
@@ -59,9 +60,27 @@ export default function UserPurchasesPage() {
     })();
   }, [user]);
 
+  const selectedService = useMemo(
+    () => services.find((s) => s.id === selectedServiceId) ?? null,
+    [services, selectedServiceId],
+  );
+  const isAmountRequired = selectedService?.priceOnRequest ?? false;
+
+  useEffect(() => {
+    if (!selectedServiceId || !selectedService) return;
+    if (selectedService.priceOnRequest) {
+      setAmount('');
+    } else if (selectedService.price) {
+      setAmount(selectedService.price.replace(',', '.'));
+    } else {
+      setAmount('');
+    }
+  }, [selectedServiceId, selectedService?.id, selectedService?.priceOnRequest, selectedService?.price]);
+
   async function handlePartnerChange(partnerId: string) {
     setSelectedPartnerId(partnerId);
     setSelectedServiceId('');
+    setAmount('');
     if (!partnerId) {
       setServices([]);
       return;
@@ -95,10 +114,14 @@ export default function UserPurchasesPage() {
   async function handleCreateSale(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedPartnerId || !selectedServiceId || !month || !year) return;
+    const numericAmount = amount ? Number(amount.replace(',', '.')) : undefined;
+    if (isAmountRequired && (numericAmount == null || !Number.isFinite(numericAmount) || numericAmount <= 0)) {
+      setError('Para serviços "sob consulta" o valor da compra é obrigatório.');
+      return;
+    }
     setCreating(true);
     setError('');
     try {
-      const numericAmount = amount ? Number(amount.replace(',', '.')) : undefined;
       await api.sales.userCreate({
         partnerId: selectedPartnerId,
         serviceId: selectedServiceId,
@@ -190,7 +213,7 @@ export default function UserPurchasesPage() {
                   {services.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.title}
-                      {s.price ? ` — ${s.price}` : ''}
+                      {s.priceOnRequest ? ' — Sob consulta' : s.price ? ` — ${s.price}` : ''}
                     </option>
                   ))}
                 </select>
@@ -238,13 +261,17 @@ export default function UserPurchasesPage() {
               </div>
               <div className="space-y-1">
                 <label className="block text-xs font-medium text-zinc-700">
-                  Valor da compra (opcional)
+                  {isAmountRequired
+                    ? 'Valor da compra (obrigatório para serviço sob consulta)'
+                    : 'Valor da compra'}
                 </label>
                 <input
                   type="text"
+                  inputMode="decimal"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder="Ex: 120.50"
+                  placeholder={isAmountRequired ? 'Ex: 120.50' : 'Preenchido pelo valor do serviço'}
+                  required={isAmountRequired}
                   className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
@@ -258,7 +285,8 @@ export default function UserPurchasesPage() {
                   !selectedPartnerId ||
                   !selectedServiceId ||
                   !month ||
-                  !year
+                  !year ||
+                  (isAmountRequired && (!amount.trim() || !Number.isFinite(Number(amount.replace(',', '.'))) || Number(amount.replace(',', '.')) <= 0))
                 }
                 className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
               >
@@ -298,7 +326,7 @@ export default function UserPurchasesPage() {
                       {s.partner?.name}
                     </td>
                     <td className="px-3 py-2 text-xs text-zinc-800">
-                      {s.service?.title}
+                      {s.service?.title ?? s.serviceTitle ?? 'Serviço removido'}
                     </td>
                     <td className="px-3 py-2 text-xs text-zinc-700">
                       {s.month.toString().padStart(2, '0')}/{s.year}

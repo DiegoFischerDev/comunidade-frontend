@@ -278,18 +278,27 @@ export const api = {
             title: string;
             description: string | null;
             price: string | null;
+            priceOnRequest: boolean;
             commissionEuro: number | null;
+            commissionPercent: number | null;
             createdAt: string;
             partner: { id: string; name: string };
           }[]
         >('/partners/admin/services', { method: 'GET' }),
-      updateCommission: (id: string, commissionEuro: number | null) =>
+      updateCommission: (
+        id: string,
+        body: {
+          commissionEuro?: number | null;
+          commissionPercent?: number | null;
+        },
+      ) =>
         request<{
           id: string;
           commissionEuro: number | null;
+          commissionPercent: number | null;
         }>(`/partners/admin/services/${id}`, {
           method: 'PATCH',
-          body: JSON.stringify({ commissionEuro }),
+          body: JSON.stringify(body),
         }),
     },
   },
@@ -330,13 +339,15 @@ export const api = {
             title: string;
             description: string | null;
             price: string | null;
+            priceOnRequest: boolean;
             createdAt: string;
             commissionEuro: number | null;
           }[]
         >('/partners/me/services', { method: 'GET' }),
       create: (input: {
         title: string;
-        description?: string;
+        description: string;
+        priceOnRequest?: boolean;
         price?: string;
         commissionEuro?: number;
       }) =>
@@ -345,6 +356,7 @@ export const api = {
           title: string;
           description: string | null;
           price: string | null;
+          priceOnRequest: boolean;
           createdAt: string;
           commissionEuro: number | null;
         }>('/partners/me/services', {
@@ -353,13 +365,19 @@ export const api = {
         }),
       update: (
         id: string,
-        input: { title?: string; description?: string; price?: string },
+        input: {
+          title?: string;
+          description?: string;
+          priceOnRequest?: boolean;
+          price?: string;
+        },
       ) =>
         request<{
           id: string;
           title: string;
           description: string | null;
           price: string | null;
+          priceOnRequest: boolean;
           createdAt: string;
           commissionEuro: number | null;
         }>(`/partners/me/services/${id}`, {
@@ -413,6 +431,7 @@ export const api = {
           title: string;
           description: string | null;
           price: string | null;
+          priceOnRequest: boolean;
           commissionEuro: number | null;
         }[];
       }>(`/partners/${id}/public`, { method: 'GET' }),
@@ -434,6 +453,7 @@ export const api = {
           id: string;
           title: string;
           price: string | null;
+          priceOnRequest: boolean;
           commissionEuro: number | null;
         }[];
       }>('/sales/partner/lookup', { method: 'GET' }),
@@ -475,6 +495,7 @@ export const api = {
           id: string;
           title: string;
           price: string | null;
+          priceOnRequest: boolean;
           commissionEuro: number | null;
         }[]
       >(`/sales/user/partners/${partnerId}/services`, { method: 'GET' }),
