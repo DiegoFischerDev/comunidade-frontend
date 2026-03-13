@@ -26,7 +26,9 @@ export default function DashboardLayout({
   const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'verify'>(
+    'login',
+  );
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -37,6 +39,14 @@ export default function DashboardLayout({
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerError, setRegisterError] = useState('');
   const [registerLoading, setRegisterLoading] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState('');
+  const [verifyCode, setVerifyCode] = useState('');
+  const [verifyError, setVerifyError] = useState('');
+  const [verifyInfo, setVerifyInfo] = useState('');
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyOrigin, setVerifyOrigin] = useState<'login' | 'register' | null>(
+    null,
+  );
   const [categories, setCategories] = useState<
     { id: string; slug: string; name: string }[]
   >([]);
@@ -112,7 +122,9 @@ export default function DashboardLayout({
     if (typeof window === 'undefined') return;
 
     const handler = (event: Event) => {
-      const custom = event as CustomEvent<{ mode?: 'login' | 'register' }>;
+      const custom = event as CustomEvent<{
+        mode?: 'login' | 'register' | 'verify';
+      }>;
       if (custom.detail?.mode) {
         setAuthMode(custom.detail.mode);
       } else {
@@ -421,7 +433,9 @@ export default function DashboardLayout({
                   Entrar na Comunidade RPM
                 </h2>
                 <p className="mt-1 text-xs text-zinc-500">
-                  Faça login ou crie a sua conta para continuar.
+                  {authMode === 'verify'
+                    ? 'Confirme o seu e-mail para concluir o acesso.'
+                    : 'Faça login ou crie a sua conta para continuar.'}
                 </p>
               </div>
               <button
@@ -439,7 +453,11 @@ export default function DashboardLayout({
             <div className="mt-4 flex rounded-full bg-zinc-100 p-1 text-xs font-medium text-zinc-600">
               <button
                 type="button"
-                onClick={() => setAuthMode('login')}
+                onClick={() => {
+                  setAuthMode('login');
+                  setVerifyError('');
+                  setVerifyInfo('');
+                }}
                 className={`flex-1 cursor-pointer rounded-full px-3 py-1.5 ${
                   authMode === 'login'
                     ? 'bg-white text-zinc-900 shadow-sm'
@@ -450,7 +468,11 @@ export default function DashboardLayout({
               </button>
               <button
                 type="button"
-                onClick={() => setAuthMode('register')}
+                onClick={() => {
+                  setAuthMode('register');
+                  setVerifyError('');
+                  setVerifyInfo('');
+                }}
                 className={`flex-1 cursor-pointer rounded-full px-3 py-1.5 ${
                   authMode === 'register'
                     ? 'bg-white text-zinc-900 shadow-sm'
@@ -467,14 +489,31 @@ export default function DashboardLayout({
                 onSubmit={async (e) => {
                   e.preventDefault();
                   setLoginError('');
+                  setVerifyError('');
+                  setVerifyInfo('');
                   setLoginLoading(true);
                   try {
                     await login(loginEmail, loginPassword);
                     setIsAuthModalOpen(false);
                   } catch (err) {
-                    setLoginError(
-                      err instanceof Error ? err.message : 'Erro ao entrar.',
-                    );
+                    const message =
+                      err instanceof Error ? err.message : 'Erro ao entrar.';
+
+                    if (
+                      message.includes('confirmar o seu e-mail antes de entrar')
+                    ) {
+                      setAuthMode('verify');
+                      setVerifyOrigin('login');
+                      setVerifyEmail(loginEmail);
+                      setVerifyCode('');
+                      setVerifyError('');
+                      setVerifyInfo(
+                        'É necessário confirmar o seu e-mail antes de entrar. Verifique a sua caixa de entrada, incluindo a pasta de spam/lixo eletrónico. Se não encontrar, peça o reenvio do código abaixo.',
+                      );
+                      setLoginError('');
+                    } else {
+                      setLoginError(message);
+                    }
                   } finally {
                     setLoginLoading(false);
                   }
@@ -525,12 +564,14 @@ export default function DashboardLayout({
                   {loginLoading ? 'Entrando…' : 'Entrar'}
                 </button>
               </form>
-            ) : (
+            ) : authMode === 'register' ? (
               <form
                 className="mt-5 space-y-4"
                 onSubmit={async (e) => {
                   e.preventDefault();
                   setRegisterError('');
+                  setVerifyError('');
+                  setVerifyInfo('');
                   setRegisterLoading(true);
                   try {
                     await register({
@@ -539,7 +580,14 @@ export default function DashboardLayout({
                       name: registerName,
                       whatsapp: registerWhatsapp,
                     });
-                    setIsAuthModalOpen(false);
+                    setAuthMode('verify');
+                    setVerifyOrigin('register');
+                    setVerifyEmail(registerEmail);
+                    setVerifyCode('');
+                    setVerifyError('');
+                    setVerifyInfo(
+                      'Enviámos um código de confirmação para o seu e-mail. Verifique a sua caixa de entrada, incluindo a pasta de spam/lixo eletrónico, e insira o código abaixo.',
+                    );
                   } catch (err) {
                     setRegisterError(
                       err instanceof Error
@@ -631,6 +679,121 @@ export default function DashboardLayout({
                 >
                   {registerLoading ? 'Criando conta…' : 'Criar conta'}
                 </button>
+              </form>
+            ) : (
+              <form
+                className="mt-5 space-y-4"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setVerifyError('');
+                  setVerifyInfo('');
+                  setVerifyLoading(true);
+                  try {
+                    if (!verifyEmail) {
+                      throw new Error(
+                        'E-mail para verificação não encontrado. Volte a tentar o login ou o registo.',
+                      );
+                    }
+
+                    await api.auth.verifyEmail(verifyEmail, verifyCode);
+
+                    const passwordToUse =
+                      verifyOrigin === 'login'
+                        ? loginPassword
+                        : registerPassword;
+
+                    if (!passwordToUse) {
+                      setVerifyInfo(
+                        'E-mail confirmado com sucesso. Agora pode entrar com a sua senha.',
+                      );
+                      setAuthMode('login');
+                      setLoginEmail(verifyEmail);
+                      return;
+                    }
+
+                    await login(verifyEmail, passwordToUse);
+                    setIsAuthModalOpen(false);
+                  } catch (err) {
+                    setVerifyError(
+                      err instanceof Error
+                        ? err.message
+                        : 'Erro ao confirmar o e-mail. Verifique o código e tente novamente.',
+                    );
+                  } finally {
+                    setVerifyLoading(false);
+                  }
+                }}
+              >
+                {verifyError && (
+                  <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+                    {verifyError}
+                  </div>
+                )}
+                {verifyInfo && !verifyError && (
+                  <div className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                    {verifyInfo}
+                  </div>
+                )}
+                <p className="text-xs text-zinc-600">
+                  Introduza o código de 6 dígitos que enviámos para{' '}
+                  <span className="font-medium">{verifyEmail}</span>. Verifique
+                  também a pasta de spam/lixo eletrónico.
+                </p>
+                <div>
+                  <label
+                    htmlFor="auth-verification-code"
+                    className="block text-xs font-medium text-zinc-700"
+                  >
+                    Código de confirmação
+                  </label>
+                  <input
+                    id="auth-verification-code"
+                    type="text"
+                    value={verifyCode}
+                    onChange={(e) => setVerifyCode(e.target.value)}
+                    required
+                    maxLength={10}
+                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    disabled={verifyLoading}
+                    onClick={async () => {
+                      setVerifyError('');
+                      setVerifyInfo('');
+                      if (!verifyEmail) {
+                        setVerifyError(
+                          'E-mail para verificação não encontrado. Volte a tentar o login ou o registo.',
+                        );
+                        return;
+                      }
+                      try {
+                        await api.auth.resendVerification(verifyEmail);
+                        setVerifyInfo(
+                          'Novo código enviado. Verifique a sua caixa de entrada e a pasta de spam/lixo eletrónico.',
+                        );
+                      } catch (err) {
+                        setVerifyError(
+                          err instanceof Error
+                            ? err.message
+                            : 'Erro ao reenviar o código. Tente novamente.',
+                        );
+                      }
+                    }}
+                    className="cursor-pointer text-xs font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline disabled:opacity-50"
+                  >
+                    Reenviar código
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={verifyLoading}
+                    className="flex cursor-pointer items-center justify-center rounded-full bg-blue-600 px-4 py-2.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {verifyLoading ? 'Confirmando…' : 'Confirmar e entrar'}
+                  </button>
+                </div>
               </form>
             )}
           </div>
