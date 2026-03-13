@@ -51,8 +51,15 @@ export const api = {
       whatsapp: string;
     }) =>
       request<{
-        user: { id: string; email: string; role: string; name: string; whatsapp: string; createdAt: string };
-        token: string;
+        user: {
+          id: string;
+          email: string;
+          role: string;
+          name: string;
+          whatsapp: string;
+          createdAt: string;
+        };
+        requiresEmailVerification: boolean;
       }>('/auth/register', {
         method: 'POST',
         body: JSON.stringify(params),
@@ -62,6 +69,11 @@ export const api = {
         '/auth/login',
         { method: 'POST', body: JSON.stringify({ email, password }) },
       ),
+    verifyEmail: (email: string, code: string) =>
+      request<{ success: boolean }>('/auth/verify-email', {
+        method: 'POST',
+        body: JSON.stringify({ email, code }),
+      }),
     me: (token: string) =>
       request<{ id: string; email: string; role: string; name?: string; whatsapp?: string }>(
         '/auth/me',

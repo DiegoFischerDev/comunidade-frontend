@@ -89,12 +89,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       name: string;
       whatsapp: string;
     }) => {
-      const { token: t } = await api.auth.register(params);
-      setAuthToken(t);
-      await loadUser(t);
-      // não alteramos a rota: o utilizador permanece na página atual
+      await api.auth.register(params);
     },
-    [loadUser],
+    [],
   );
 
   const logout = useCallback(() => {
