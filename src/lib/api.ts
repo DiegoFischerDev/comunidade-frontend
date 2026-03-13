@@ -79,6 +79,20 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ email }),
       }),
+    forgotPassword: (email: string) =>
+      request<{ success: boolean }>('/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      }),
+    resetPassword: (params: {
+      email: string;
+      code: string;
+      newPassword: string;
+    }) =>
+      request<{ success: boolean }>('/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }),
     me: (token: string) =>
       request<{ id: string; email: string; role: string; name?: string; whatsapp?: string }>(
         '/auth/me',
