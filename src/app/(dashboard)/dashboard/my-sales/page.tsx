@@ -426,7 +426,7 @@ export default function PartnerSalesPage() {
                         {s.amount.toFixed(2)} €
                       </td>
                       <td className="px-3 py-2 text-xs text-zinc-700">
-                        {s.commissionEuro.toFixed(2)} €
+                        {s.service?.commission ?? '—'}
                       </td>
                       <td className="px-3 py-2 text-xs text-zinc-700">
                         {s.createdByUser
@@ -505,7 +505,7 @@ export default function PartnerSalesPage() {
                         {s.amount.toFixed(2)} €
                       </td>
                       <td className="px-3 py-2 text-xs text-zinc-700">
-                        {s.commissionEuro.toFixed(2)} €
+                        {s.service?.commission ?? '—'}
                       </td>
                       <td className="px-3 py-2 text-xs text-zinc-700">
                         {s.createdByUser
@@ -581,7 +581,7 @@ export default function PartnerSalesPage() {
                         {s.amount.toFixed(2)} €
                       </td>
                       <td className="px-3 py-2 text-xs text-zinc-700">
-                        {s.commissionEuro.toFixed(2)} €
+                        {s.service?.commission ?? '—'}
                       </td>
                       <td className="px-3 py-2 text-xs text-zinc-700">
                         {s.createdByUser
