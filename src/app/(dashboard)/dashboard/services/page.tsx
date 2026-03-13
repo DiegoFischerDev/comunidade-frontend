@@ -12,6 +12,7 @@ type PartnerServiceRow = {
   priceOnRequest: boolean;
   createdAt: string;
   commissionEuro: number | null;
+  commissionPercent: number | null;
 };
 
 export default function PartnerServicesPage() {
@@ -192,34 +193,32 @@ export default function PartnerServicesPage() {
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2">
           <label className="block text-sm font-medium text-zinc-700">
             Valor
           </label>
-          <div className="flex items-center gap-3">
+          <input
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder="Ex.: 50.00"
+            disabled={priceOnRequest}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-zinc-100 disabled:text-zinc-500"
+          />
+          <label className="flex items-center gap-2 text-sm text-zinc-700">
             <input
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="Ex.: 50.00"
-              disabled={priceOnRequest}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-zinc-100 disabled:text-zinc-500"
+              type="checkbox"
+              checked={priceOnRequest}
+              onChange={(e) => {
+                setPriceOnRequest(e.target.checked);
+                if (e.target.checked) setPrice('');
+              }}
+              className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
             />
-            <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm text-zinc-700">
-              <input
-                type="checkbox"
-                checked={priceOnRequest}
-                onChange={(e) => {
-                  setPriceOnRequest(e.target.checked);
-                  if (e.target.checked) setPrice('');
-                }}
-                className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
-              />
-              Sob consulta
-            </label>
-          </div>
+            Sob consulta
+          </label>
         </div>
         <div>
           <button
@@ -268,7 +267,7 @@ export default function PartnerServicesPage() {
                 <th className="px-4 py-2 text-left">Título</th>
                 <th className="px-4 py-2 text-left">Descrição</th>
                 <th className="px-4 py-2 text-left">Valor (EUR)</th>
-                <th className="px-4 py-2 text-left">Comissão RPM (EUR)</th>
+                <th className="px-4 py-2 text-left">Comissão RPM</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
@@ -298,7 +297,11 @@ export default function PartnerServicesPage() {
                     )}
                   </td>
                   <td className="px-4 py-2 align-top">
-                    {s.commissionEuro != null ? (
+                    {s.priceOnRequest && s.commissionPercent != null ? (
+                      <span className="text-xs font-medium text-emerald-700">
+                        {Number(s.commissionPercent)} %
+                      </span>
+                    ) : s.commissionEuro != null ? (
                       <span className="text-xs font-medium text-emerald-700">
                         {Math.round(s.commissionEuro)} €
                       </span>

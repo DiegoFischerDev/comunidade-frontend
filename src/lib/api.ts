@@ -342,6 +342,7 @@ export const api = {
             priceOnRequest: boolean;
             createdAt: string;
             commissionEuro: number | null;
+            commissionPercent: number | null;
           }[]
         >('/partners/me/services', { method: 'GET' }),
       create: (input: {
