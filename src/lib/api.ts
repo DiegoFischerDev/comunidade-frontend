@@ -279,18 +279,18 @@ export const api = {
             description: string | null;
             price: string | null;
             priceOnRequest: boolean;
-            commissionPercent: number | null;
+            commission: string | null;
             createdAt: string;
             partner: { id: string; name: string };
           }[]
         >('/partners/admin/services', { method: 'GET' }),
       updateCommission: (
         id: string,
-        body: { commissionPercent?: number | null },
+        body: { commission?: string | null },
       ) =>
         request<{
           id: string;
-          commissionPercent: number | null;
+          commission: string | null;
         }>(`/partners/admin/services/${id}`, {
           method: 'PATCH',
           body: JSON.stringify(body),
@@ -336,7 +336,7 @@ export const api = {
             price: string | null;
             priceOnRequest: boolean;
             createdAt: string;
-            commissionPercent: number | null;
+            commission: string | null;
           }[]
         >('/partners/me/services', { method: 'GET' }),
       create: (input: {
@@ -352,7 +352,7 @@ export const api = {
           price: string | null;
           priceOnRequest: boolean;
           createdAt: string;
-          commissionPercent: number | null;
+          commission: string | null;
         }>('/partners/me/services', {
           method: 'POST',
           body: JSON.stringify(input),
@@ -373,7 +373,7 @@ export const api = {
           price: string | null;
           priceOnRequest: boolean;
           createdAt: string;
-          commissionPercent: number | null;
+          commission: string | null;
         }>(`/partners/me/services/${id}`, {
           method: 'PATCH',
           body: JSON.stringify(input),
@@ -426,7 +426,7 @@ export const api = {
           description: string | null;
           price: string | null;
           priceOnRequest: boolean;
-          commissionPercent: number | null;
+          commission: string | null;
         }[];
       }>(`/partners/${id}/public`, { method: 'GET' }),
     registerLead: (partnerId: string) =>
@@ -448,7 +448,7 @@ export const api = {
           title: string;
           price: string | null;
           priceOnRequest: boolean;
-          commissionPercent: number | null;
+          commission: string | null;
         }[];
       }>('/sales/partner/lookup', { method: 'GET' }),
     partnerCreate: (input: {
@@ -490,7 +490,7 @@ export const api = {
           title: string;
           price: string | null;
           priceOnRequest: boolean;
-          commissionPercent: number | null;
+          commission: string | null;
         }[]
       >(`/sales/user/partners/${partnerId}/services`, { method: 'GET' }),
     userCreate: (input: {

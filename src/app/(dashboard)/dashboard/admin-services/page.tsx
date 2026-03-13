@@ -10,7 +10,7 @@ type ServiceRow = {
   description: string | null;
   price: string | null;
   priceOnRequest?: boolean;
-  commissionPercent: number | null;
+  commission: string | null;
   createdAt: string;
   partner: { id: string; name: string };
 };
@@ -65,18 +65,17 @@ export default function AdminServicesPage() {
   async function handleSaveCommission(service: ServiceRow) {
     const id = service.id;
     const raw = editingCommission[id];
-    const value =
-      raw === undefined || raw === '' ? null : Number(raw.replace(',', '.'));
+    const value = raw === undefined || raw === '' ? null : raw.trim();
     setError('');
     setSavingId(id);
     try {
       const updated = await api.admin.services.updateCommission(id, {
-        commissionPercent: value,
+        commission: value,
       });
       setServices((prev) =>
         prev.map((s) =>
           s.id === id
-            ? { ...s, commissionPercent: updated.commissionPercent ?? s.commissionPercent }
+            ? { ...s, commission: updated.commission ?? s.commission }
             : s,
         ),
       );
@@ -98,7 +97,7 @@ export default function AdminServicesPage() {
       </h1>
       <p className="mt-2 text-zinc-600">
         Veja os serviços cadastrados pelos parceiros e defina a comissão da
-        RPM em percentual (%).
+        RPM. Indique o valor e o símbolo ao final (ex.: 10% ou 5 €).
       </p>
 
       {error && (
@@ -123,7 +122,7 @@ export default function AdminServicesPage() {
                 <th className="px-4 py-2 text-left">Parceiro</th>
                 <th className="px-4 py-2 text-left">Serviço</th>
                 <th className="px-4 py-2 text-left">Preço</th>
-                <th className="px-4 py-2 text-left">Comissão RPM (%)</th>
+                <th className="px-4 py-2 text-left">Comissão RPM</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
@@ -152,18 +151,11 @@ export default function AdminServicesPage() {
                     )}
                   </td>
                   <td className="px-4 py-2 align-top">
-                    <span className="mr-1 text-xs text-zinc-500">%</span>
                     <input
-                      type="number"
-                      step="0.01"
-                      min={0}
-                      max={100}
-                      placeholder="Ex: 10"
+                      type="text"
+                      placeholder="Ex: 10% ou 5 €"
                       value={
-                        editingCommission[s.id] ??
-                        (s.commissionPercent != null
-                          ? String(s.commissionPercent)
-                          : '')
+                        editingCommission[s.id] ?? (s.commission ?? '')
                       }
                       onChange={(e) =>
                         setEditingCommission((prev) => ({
@@ -171,7 +163,7 @@ export default function AdminServicesPage() {
                           [s.id]: e.target.value,
                         }))
                       }
-                      className="w-20 rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-24 rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </td>
                   <td className="px-4 py-2 align-top">

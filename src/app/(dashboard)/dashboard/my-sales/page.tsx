@@ -15,7 +15,7 @@ type ServiceOption = {
   title: string;
   price: string | null;
   priceOnRequest: boolean;
-  commissionPercent: number | null;
+  commission: string | null;
 };
 
 export default function PartnerSalesPage() {
