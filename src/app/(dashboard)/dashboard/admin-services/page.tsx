@@ -10,7 +10,6 @@ type ServiceRow = {
   description: string | null;
   price: string | null;
   priceOnRequest?: boolean;
-  commissionEuro: number | null;
   commissionPercent: number | null;
   createdAt: string;
   partner: { id: string; name: string };
@@ -71,19 +70,13 @@ export default function AdminServicesPage() {
     setError('');
     setSavingId(id);
     try {
-      const body = service.priceOnRequest
-        ? { commissionPercent: value }
-        : { commissionEuro: value };
-      const updated = await api.admin.services.updateCommission(id, body);
+      const updated = await api.admin.services.updateCommission(id, {
+        commissionPercent: value,
+      });
       setServices((prev) =>
         prev.map((s) =>
           s.id === id
-            ? {
-                ...s,
-                commissionEuro: updated.commissionEuro ?? s.commissionEuro,
-                commissionPercent:
-                  updated.commissionPercent ?? s.commissionPercent,
-              }
+            ? { ...s, commissionPercent: updated.commissionPercent ?? s.commissionPercent }
             : s,
         ),
       );
@@ -105,8 +98,7 @@ export default function AdminServicesPage() {
       </h1>
       <p className="mt-2 text-zinc-600">
         Veja os serviços cadastrados pelos parceiros e defina a comissão da
-        RPM. Para serviços com preço fixo use valor em euros; para serviços
-        &quot;sob consulta&quot; use percentual (%).
+        RPM em percentual (%).
       </p>
 
       {error && (
@@ -131,7 +123,7 @@ export default function AdminServicesPage() {
                 <th className="px-4 py-2 text-left">Parceiro</th>
                 <th className="px-4 py-2 text-left">Serviço</th>
                 <th className="px-4 py-2 text-left">Preço</th>
-                <th className="px-4 py-2 text-left">Comissão (EUR / %)</th>
+                <th className="px-4 py-2 text-left">Comissão RPM (%)</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
@@ -160,26 +152,18 @@ export default function AdminServicesPage() {
                     )}
                   </td>
                   <td className="px-4 py-2 align-top">
-                    <span className="mr-1 text-xs text-zinc-500">
-                      {s.priceOnRequest ? '%' : '€'}
-                    </span>
+                    <span className="mr-1 text-xs text-zinc-500">%</span>
                     <input
                       type="number"
-                      step={s.priceOnRequest ? '1' : '0.01'}
+                      step="0.01"
                       min={0}
-                      max={s.priceOnRequest ? 100 : undefined}
-                      placeholder={s.priceOnRequest ? 'Ex: 10' : 'Ex: 5'}
+                      max={100}
+                      placeholder="Ex: 10"
                       value={
                         editingCommission[s.id] ??
-                        (s.priceOnRequest
-                          ? s.commissionPercent !== null &&
-                            s.commissionPercent !== undefined
-                            ? String(s.commissionPercent)
-                            : ''
-                          : s.commissionEuro !== null &&
-                              s.commissionEuro !== undefined
-                            ? String(s.commissionEuro)
-                            : '')
+                        (s.commissionPercent != null
+                          ? String(s.commissionPercent)
+                          : '')
                       }
                       onChange={(e) =>
                         setEditingCommission((prev) => ({

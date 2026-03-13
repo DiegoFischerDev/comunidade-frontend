@@ -11,7 +11,6 @@ type PartnerServiceRow = {
   price: string | null;
   priceOnRequest: boolean;
   createdAt: string;
-  commissionEuro: number | null;
   commissionPercent: number | null;
 };
 
@@ -297,13 +296,9 @@ export default function PartnerServicesPage() {
                     )}
                   </td>
                   <td className="px-4 py-2 align-top">
-                    {s.priceOnRequest && s.commissionPercent != null ? (
+                    {s.commissionPercent != null ? (
                       <span className="text-xs font-medium text-emerald-700">
                         {Number(s.commissionPercent)} %
-                      </span>
-                    ) : s.commissionEuro != null ? (
-                      <span className="text-xs font-medium text-emerald-700">
-                        {Math.round(s.commissionEuro)} €
                       </span>
                     ) : (
                       <span className="text-zinc-400 text-xs">—</span>

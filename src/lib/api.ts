@@ -279,7 +279,6 @@ export const api = {
             description: string | null;
             price: string | null;
             priceOnRequest: boolean;
-            commissionEuro: number | null;
             commissionPercent: number | null;
             createdAt: string;
             partner: { id: string; name: string };
@@ -287,14 +286,10 @@ export const api = {
         >('/partners/admin/services', { method: 'GET' }),
       updateCommission: (
         id: string,
-        body: {
-          commissionEuro?: number | null;
-          commissionPercent?: number | null;
-        },
+        body: { commissionPercent?: number | null },
       ) =>
         request<{
           id: string;
-          commissionEuro: number | null;
           commissionPercent: number | null;
         }>(`/partners/admin/services/${id}`, {
           method: 'PATCH',
@@ -341,7 +336,6 @@ export const api = {
             price: string | null;
             priceOnRequest: boolean;
             createdAt: string;
-            commissionEuro: number | null;
             commissionPercent: number | null;
           }[]
         >('/partners/me/services', { method: 'GET' }),
@@ -350,7 +344,6 @@ export const api = {
         description: string;
         priceOnRequest?: boolean;
         price?: string;
-        commissionEuro?: number;
       }) =>
         request<{
           id: string;
@@ -359,7 +352,7 @@ export const api = {
           price: string | null;
           priceOnRequest: boolean;
           createdAt: string;
-          commissionEuro: number | null;
+          commissionPercent: number | null;
         }>('/partners/me/services', {
           method: 'POST',
           body: JSON.stringify(input),
@@ -380,7 +373,7 @@ export const api = {
           price: string | null;
           priceOnRequest: boolean;
           createdAt: string;
-          commissionEuro: number | null;
+          commissionPercent: number | null;
         }>(`/partners/me/services/${id}`, {
           method: 'PATCH',
           body: JSON.stringify(input),
@@ -433,7 +426,7 @@ export const api = {
           description: string | null;
           price: string | null;
           priceOnRequest: boolean;
-          commissionEuro: number | null;
+          commissionPercent: number | null;
         }[];
       }>(`/partners/${id}/public`, { method: 'GET' }),
     registerLead: (partnerId: string) =>
@@ -455,7 +448,7 @@ export const api = {
           title: string;
           price: string | null;
           priceOnRequest: boolean;
-          commissionEuro: number | null;
+          commissionPercent: number | null;
         }[];
       }>('/sales/partner/lookup', { method: 'GET' }),
     partnerCreate: (input: {
@@ -497,7 +490,7 @@ export const api = {
           title: string;
           price: string | null;
           priceOnRequest: boolean;
-          commissionEuro: number | null;
+          commissionPercent: number | null;
         }[]
       >(`/sales/user/partners/${partnerId}/services`, { method: 'GET' }),
     userCreate: (input: {

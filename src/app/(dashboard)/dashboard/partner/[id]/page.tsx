@@ -25,6 +25,7 @@ type PartnerDetails = {
     description: string | null;
     price: string | null;
     priceOnRequest: boolean;
+    commissionPercent: number | null;
   }[];
 };
 

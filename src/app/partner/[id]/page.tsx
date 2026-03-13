@@ -6,7 +6,7 @@ type PartnerService = {
   description: string | null;
   price: string | null;
   priceOnRequest: boolean;
-  commissionEuro: number | null;
+  commissionPercent: number | null;
 };
 
 type PartnerPublic = {
