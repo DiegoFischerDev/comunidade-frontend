@@ -17,8 +17,10 @@ export default function PartnerProfilePage() {
   const [shortDescription, setShortDescription] = useState('');
   const [fullDescription, setFullDescription] = useState('');
   const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
+  const [catalogImageUrls, setCatalogImageUrls] = useState<string[]>([]);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
+  const [uploadingCatalogIdx, setUploadingCatalogIdx] = useState<number | null>(null);
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -39,6 +41,7 @@ export default function PartnerProfilePage() {
         setShortDescription(data.shortDescription ?? '');
         setFullDescription(data.fullDescription ?? '');
         setBackgroundImageUrl(data.backgroundImageUrl ?? '');
+        setCatalogImageUrls(Array.isArray(data.catalogImageUrls) ? data.catalogImageUrls : []);
       } catch (err) {
         setError(
           err instanceof Error
@@ -76,12 +79,14 @@ export default function PartnerProfilePage() {
         shortDescription: shortDescription || undefined,
         fullDescription: fullDescription || undefined,
         backgroundImageUrl: backgroundImageUrl || undefined,
+        catalogImageUrls: catalogImageUrls.length ? catalogImageUrls : undefined,
       });
 
       setLogoUrl(updated.logoUrl ?? '');
       setShortDescription(updated.shortDescription ?? '');
       setFullDescription(updated.fullDescription ?? '');
       setBackgroundImageUrl(updated.backgroundImageUrl ?? '');
+      setCatalogImageUrls(Array.isArray(updated.catalogImageUrls) ? updated.catalogImageUrls : []);
 
       setSuccess('Perfil atualizado com sucesso.');
     } catch (err) {
@@ -165,6 +170,65 @@ export default function PartnerProfilePage() {
     } finally {
       setUploadingBackground(false);
     }
+  }
+
+  async function saveCatalogImages(newUrls: string[]) {
+    const updated = await api.partner.updateMe({
+      logoUrl: logoUrl || undefined,
+      shortDescription: shortDescription || undefined,
+      fullDescription: fullDescription || undefined,
+      backgroundImageUrl: backgroundImageUrl || undefined,
+      catalogImageUrls: newUrls,
+    });
+    setCatalogImageUrls(Array.isArray(updated.catalogImageUrls) ? updated.catalogImageUrls : []);
+  }
+
+  async function handleCatalogUpload(
+    e: React.ChangeEvent<HTMLInputElement>,
+    slotIndex: number,
+  ) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (catalogImageUrls.length >= 5 && slotIndex >= catalogImageUrls.length) {
+      setError('Só é possível adicionar até 5 imagens de catálogo.');
+      return;
+    }
+    setError('');
+    setUploadingCatalogIdx(slotIndex);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = getAuthToken();
+      const res = await fetch(`${API_URL}/uploads`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Erro ao fazer upload da imagem.');
+      }
+      const newUrl = `${API_URL}${data.url}`;
+      const newUrls =
+        slotIndex < catalogImageUrls.length
+          ? catalogImageUrls.map((u, i) => (i === slotIndex ? newUrl : u))
+          : [...catalogImageUrls, newUrl];
+      await saveCatalogImages(newUrls);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Erro ao fazer upload. Tente novamente.',
+      );
+    } finally {
+      setUploadingCatalogIdx(null);
+    }
+    e.target.value = '';
+  }
+
+  function handleRemoveCatalogImage(slotIndex: number) {
+    const newUrls = catalogImageUrls.filter((_, i) => i !== slotIndex);
+    saveCatalogImages(newUrls);
   }
 
   return (
@@ -296,6 +360,74 @@ export default function PartnerProfilePage() {
                 />
               </div>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-zinc-700">
+              Imagens de catálogo (até 5)
+            </label>
+            <p className="text-xs text-amber-700">
+              Que as imagens devem ser verticais nas mesmas dimensões dos stories do Instagram.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-3">
+              {[0, 1, 2, 3, 4].map((slotIndex) => {
+                const url = catalogImageUrls[slotIndex];
+                const isUploading = uploadingCatalogIdx === slotIndex;
+                const canAdd = catalogImageUrls.length < 5 && slotIndex <= catalogImageUrls.length;
+                return (
+                  <div
+                    key={slotIndex}
+                    className="flex flex-col items-center gap-1 rounded-lg border border-zinc-200 bg-zinc-50 p-2"
+                  >
+                    <div
+                      className="relative overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100"
+                      style={{ width: 72, aspectRatio: '9/16' }}
+                    >
+                      {url ? (
+                        <>
+                          <img
+                            src={url}
+                            alt={`Catálogo ${slotIndex + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/40 opacity-0 transition-opacity hover:opacity-100">
+                            <label className="cursor-pointer rounded bg-white/90 px-2 py-1 text-xs font-medium text-zinc-800">
+                              {isUploading ? 'A enviar…' : 'Substituir'}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="sr-only"
+                                disabled={isUploading}
+                                onChange={(e) => handleCatalogUpload(e, slotIndex)}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCatalogImage(slotIndex)}
+                              className="rounded bg-red-500/90 px-2 py-1 text-xs font-medium text-white hover:bg-red-600"
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        </>
+                      ) : canAdd ? (
+                        <label className="flex h-full w-full cursor-pointer flex-col items-center justify-center text-xs text-zinc-500 hover:bg-zinc-200/50">
+                          {isUploading ? 'A enviar…' : '+ Adicionar'}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="sr-only"
+                            disabled={isUploading}
+                            onChange={(e) => handleCatalogUpload(e, slotIndex)}
+                          />
+                        </label>
+                      ) : null}
+                    </div>
+                    <span className="text-xs text-zinc-500">{slotIndex + 1}/5</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div>

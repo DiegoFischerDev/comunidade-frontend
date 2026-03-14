@@ -393,11 +393,11 @@ export default function PartnerSalesPage() {
                 <thead className="bg-zinc-50 text-zinc-600">
                   <tr>
                     <th className="px-3 py-2 text-left">Cliente</th>
+                    <th className="px-3 py-2 text-left">Registrado por</th>
                     <th className="px-3 py-2 text-left">Serviço</th>
                     <th className="px-3 py-2 text-left">Mês/ano</th>
                     <th className="px-3 py-2 text-left">Valor</th>
                     <th className="px-3 py-2 text-left">Comissão RPM</th>
-                    <th className="px-3 py-2 text-left">Registrado por</th>
                     <th className="px-3 py-2 text-right">Ações</th>
                   </tr>
                 </thead>
@@ -414,6 +414,11 @@ export default function PartnerSalesPage() {
                           </div>
                         </div>
                       </td>
+                      <td className="px-3 py-2 text-xs text-zinc-700">
+                        {s.createdByUser
+                          ? s.createdByUser.name || s.createdByUser.email
+                          : '—'}
+                      </td>
                       <td className="px-3 py-2">
                         <span className="text-xs text-zinc-800">
                           {s.service?.title ?? s.serviceTitle ?? 'Serviço removido'}
@@ -428,11 +433,7 @@ export default function PartnerSalesPage() {
                       <td className="px-3 py-2 text-xs text-zinc-700">
                         {s.service?.commission ?? '—'}
                       </td>
-                      <td className="px-3 py-2 text-xs text-zinc-700">
-                        {s.createdByUser
-                          ? s.createdByUser.name || s.createdByUser.email
-                          : '—'}
-                      </td>
+                      
                       <td className="px-3 py-2 text-right">
                         <button
                           type="button"
@@ -473,12 +474,12 @@ export default function PartnerSalesPage() {
                 <thead className="bg-emerald-50 text-emerald-800">
                   <tr>
                     <th className="px-3 py-2 text-left">Cliente</th>
+                    <th className="px-3 py-2 text-left">Registrado por</th>
                     <th className="px-3 py-2 text-left">Serviço</th>
                     <th className="px-3 py-2 text-left">Mês/ano</th>
                     <th className="px-3 py-2 text-left">Valor</th>
                     <th className="px-3 py-2 text-left">Comissão RPM</th>
-                    <th className="px-3 py-2 text-left">Registrado por</th>
-                    <th className="px-3 py-2 text-left">Comissão</th>
+                    <th className="px-3 py-2 text-left">Comissão paga</th>
                     <th className="px-3 py-2 text-right">Ações</th>
                   </tr>
                 </thead>
@@ -495,6 +496,11 @@ export default function PartnerSalesPage() {
                           </div>
                         </div>
                       </td>
+                      <td className="px-3 py-2 text-xs text-zinc-700">
+                        {s.createdByUser
+                          ? s.createdByUser.name || s.createdByUser.email
+                          : '—'}
+                      </td>
                       <td className="px-3 py-2 text-xs text-zinc-800">
                         {s.service?.title ?? s.serviceTitle ?? 'Serviço removido'}
                       </td>
@@ -507,15 +513,15 @@ export default function PartnerSalesPage() {
                       <td className="px-3 py-2 text-xs text-zinc-700">
                         {s.service?.commission ?? '—'}
                       </td>
+                      
                       <td className="px-3 py-2 text-xs text-zinc-700">
-                        {s.createdByUser
-                          ? s.createdByUser.name || s.createdByUser.email
-                          : '—'}
-                      </td>
-                      <td className="px-3 py-2 text-xs text-zinc-700">
-                        {s.commissionPaymentStatus === 'PAID'
-                          ? 'Comissão paga'
-                          : 'Comissão pendente'}
+                        {s.commissionPaymentStatus === 'PAID' ? (
+                          '—'
+                        ) : (
+                          <span className="font-medium text-red-600">
+                            Pendente
+                          </span>
+                        )}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <button
@@ -550,11 +556,11 @@ export default function PartnerSalesPage() {
                 <thead className="bg-red-50 text-red-800">
                   <tr>
                     <th className="px-3 py-2 text-left">Cliente</th>
+                    <th className="px-3 py-2 text-left">Registrado por</th>
                     <th className="px-3 py-2 text-left">Serviço</th>
                     <th className="px-3 py-2 text-left">Mês/ano</th>
                     <th className="px-3 py-2 text-left">Valor</th>
                     <th className="px-3 py-2 text-left">Comissão RPM</th>
-                    <th className="px-3 py-2 text-left">Registrado por</th>
                     <th className="px-3 py-2 text-right">Ações</th>
                   </tr>
                 </thead>
@@ -571,6 +577,11 @@ export default function PartnerSalesPage() {
                           </div>
                         </div>
                       </td>
+                      <td className="px-3 py-2 text-xs text-zinc-700">
+                        {s.createdByUser
+                          ? s.createdByUser.name || s.createdByUser.email
+                          : '—'}
+                      </td>
                       <td className="px-3 py-2 text-xs text-zinc-800">
                         {s.service?.title ?? s.serviceTitle ?? 'Serviço removido'}
                       </td>
@@ -582,11 +593,6 @@ export default function PartnerSalesPage() {
                       </td>
                       <td className="px-3 py-2 text-xs text-zinc-700">
                         {s.service?.commission ?? '—'}
-                      </td>
-                      <td className="px-3 py-2 text-xs text-zinc-700">
-                        {s.createdByUser
-                          ? s.createdByUser.name || s.createdByUser.email
-                          : '—'}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <button

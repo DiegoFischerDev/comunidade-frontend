@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { CatalogCarousel } from '@/components/CatalogCarousel';
 
 type PartnerService = {
   id: string;
@@ -17,6 +18,7 @@ type PartnerPublic = {
   shortDescription: string | null;
   fullDescription: string | null;
   backgroundImageUrl: string | null;
+  catalogImageUrls?: string[];
   category: {
     id: string;
     name: string;
@@ -145,6 +147,17 @@ export default async function PartnerPublicPage({ params }: PageProps) {
           </div>
         </div>
       </section>
+
+      {/* Carrossel de catálogo */}
+      {partner.catalogImageUrls && partner.catalogImageUrls.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-zinc-900">Catálogo</h2>
+          <CatalogCarousel
+            images={partner.catalogImageUrls}
+            apiBaseUrl={API_URL}
+          />
+        </section>
+      )}
 
       {/* Descrição completa */}
       {partner.fullDescription && (

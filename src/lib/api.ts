@@ -307,12 +307,14 @@ export const api = {
         shortDescription: string | null;
         fullDescription: string | null;
         backgroundImageUrl: string | null;
+        catalogImageUrls: string[];
       }>('/partners/me', { method: 'GET' }),
     updateMe: (input: {
       logoUrl?: string;
       shortDescription?: string;
       fullDescription?: string;
       backgroundImageUrl?: string;
+      catalogImageUrls?: string[];
     }) =>
       request<{
         id: string;
@@ -322,6 +324,7 @@ export const api = {
         shortDescription: string | null;
         fullDescription: string | null;
         backgroundImageUrl: string | null;
+        catalogImageUrls: string[];
       }>('/partners/me', {
         method: 'PATCH',
         body: JSON.stringify(input),
@@ -418,6 +421,7 @@ export const api = {
         shortDescription: string | null;
         fullDescription: string | null;
         backgroundImageUrl: string | null;
+        catalogImageUrls: string[];
         category?: { id: string; name: string; slug: string } | null;
         user: { email: string };
         services: {
