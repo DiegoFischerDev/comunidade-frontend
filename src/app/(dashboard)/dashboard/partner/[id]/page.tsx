@@ -15,6 +15,7 @@ type PartnerDetails = {
   fullDescription: string | null;
   backgroundImageUrl: string | null;
   catalogImageUrls?: string[];
+  instagram?: string | null;
   category?: {
     id: string;
     name: string;
@@ -204,17 +205,6 @@ export default function PartnerPage() {
         </div>
       </section>
 
-      {/* Carrossel de catálogo */}
-      {partner.catalogImageUrls && partner.catalogImageUrls.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-zinc-900">Catálogo</h2>
-          <CatalogCarousel
-            images={partner.catalogImageUrls}
-            apiBaseUrl={API_URL}
-          />
-        </section>
-      )}
-
       {/* Descrição completa */}
       {partner.fullDescription && (
         <>
@@ -227,6 +217,16 @@ export default function PartnerPage() {
             </p>
           </section>
         </>
+      )}
+
+      {/* Carrossel de catálogo */}
+      {partner.catalogImageUrls && partner.catalogImageUrls.length > 0 && (
+        <section>
+          <CatalogCarousel
+            images={partner.catalogImageUrls}
+            apiBaseUrl={API_URL}
+          />
+        </section>
       )}
 
       {/* Lista de serviços */}
@@ -345,6 +345,27 @@ export default function PartnerPage() {
                   {partner.whatsapp}
                 </a>
               </div>
+              {partner.instagram && partner.instagram.trim() && (
+                <div>
+                  <p className="text-xs font-medium uppercase text-zinc-500">
+                    Instagram
+                  </p>
+                  <a
+                    href={
+                      partner.instagram.startsWith('http')
+                        ? partner.instagram
+                        : partner.instagram.startsWith('@')
+                          ? `https://instagram.com/${partner.instagram.slice(1)}`
+                          : `https://instagram.com/${partner.instagram}`
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-0.5 text-zinc-800 underline-offset-2 hover:underline"
+                  >
+                    {partner.instagram}
+                  </a>
+                </div>
+              )}
             </div>
             <div className="mt-5 flex justify-end gap-3">
               <button

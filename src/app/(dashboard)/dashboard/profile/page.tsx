@@ -18,6 +18,7 @@ export default function PartnerProfilePage() {
   const [fullDescription, setFullDescription] = useState('');
   const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
   const [catalogImageUrls, setCatalogImageUrls] = useState<string[]>([]);
+  const [instagram, setInstagram] = useState('');
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
   const [uploadingCatalogIdx, setUploadingCatalogIdx] = useState<number | null>(null);
@@ -42,6 +43,7 @@ export default function PartnerProfilePage() {
         setFullDescription(data.fullDescription ?? '');
         setBackgroundImageUrl(data.backgroundImageUrl ?? '');
         setCatalogImageUrls(Array.isArray(data.catalogImageUrls) ? data.catalogImageUrls : []);
+        setInstagram(data.instagram ?? '');
       } catch (err) {
         setError(
           err instanceof Error
@@ -80,6 +82,7 @@ export default function PartnerProfilePage() {
         fullDescription: fullDescription || undefined,
         backgroundImageUrl: backgroundImageUrl || undefined,
         catalogImageUrls: catalogImageUrls.length ? catalogImageUrls : undefined,
+        instagram: instagram || undefined,
       });
 
       setLogoUrl(updated.logoUrl ?? '');
@@ -87,6 +90,7 @@ export default function PartnerProfilePage() {
       setFullDescription(updated.fullDescription ?? '');
       setBackgroundImageUrl(updated.backgroundImageUrl ?? '');
       setCatalogImageUrls(Array.isArray(updated.catalogImageUrls) ? updated.catalogImageUrls : []);
+      setInstagram(updated.instagram ?? '');
 
       setSuccess('Perfil atualizado com sucesso.');
     } catch (err) {
@@ -179,6 +183,7 @@ export default function PartnerProfilePage() {
       fullDescription: fullDescription || undefined,
       backgroundImageUrl: backgroundImageUrl || undefined,
       catalogImageUrls: newUrls,
+      instagram: instagram || undefined,
     });
     setCatalogImageUrls(Array.isArray(updated.catalogImageUrls) ? updated.catalogImageUrls : []);
   }
@@ -280,6 +285,24 @@ export default function PartnerProfilePage() {
                 disabled
                 className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-500"
               />
+            </div>
+            <div className="space-y-1 md:col-span-2">
+              <label className="block text-sm font-medium text-zinc-700">
+                Instagram
+              </label>
+              <input
+                type="text"
+                value={instagram}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === '') setInstagram('');
+                  else if (v.startsWith('@')) setInstagram(v);
+                  else setInstagram('@' + v);
+                }}
+                placeholder="@utilizador"
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <p className="text-xs text-zinc-500">Apenas utilizador com @ (ex: @minha_conta)</p>
             </div>
           </div>
 
@@ -390,7 +413,7 @@ export default function PartnerProfilePage() {
                             alt={`Catálogo ${slotIndex + 1}`}
                             className="h-full w-full object-cover"
                           />
-                          <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/40 opacity-0 transition-opacity hover:opacity-100">
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/40 opacity-0 transition-opacity hover:opacity-100">
                             <label className="cursor-pointer rounded bg-white/90 px-2 py-1 text-xs font-medium text-zinc-800">
                               {isUploading ? 'A enviar…' : 'Substituir'}
                               <input

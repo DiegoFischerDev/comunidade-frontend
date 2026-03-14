@@ -32,4 +32,5 @@ body {
   background: var(--color-primary-1);
   color: var(--color-primary-2);
   font-family: Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
 }
