@@ -149,11 +149,9 @@ export default function UserPurchasesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-zinc-900">Minhas compras</h1>
+      <h1 className="text-2xl font-semibold text-zinc-900">Cash Back</h1>
       <p className="mt-2 text-sm text-zinc-600">
-        Registe serviços que comprou a parceiros da Comunidade RPM e acompanhe o
-        estado de aprovação. Em breve poderá solicitar cash back em compras
-        aprovadas.
+        Registe serviços que comprou a parceiros da Comunidade RPM e receba CASH BACK (exclusivo para membros)
       </p>
 
       {error && (
@@ -288,7 +286,7 @@ export default function UserPurchasesPage() {
                   !year ||
                   (isAmountRequired && (!amount.trim() || !Number.isFinite(Number(amount.replace(',', '.'))) || Number(amount.replace(',', '.')) <= 0))
                 }
-                className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                className="cursor-pointer inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
               >
                 {creating ? 'A registar…' : 'Registar compra'}
               </button>
@@ -317,6 +315,7 @@ export default function UserPurchasesPage() {
                   <th className="px-3 py-2 text-left">Valor</th>
                   <th className="px-3 py-2 text-left">Estado</th>
                   <th className="px-3 py-2 text-left">Cash back</th>
+                  <th className="px-3 py-2 text-left">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -344,13 +343,23 @@ export default function UserPurchasesPage() {
                     <td className="px-3 py-2 text-xs text-zinc-700">
                       {s.cashbackEligible ? (
                         <span className="text-emerald-700">
-                          Elegível — funcionalidade em breve
+                          Elegível
                         </span>
                       ) : (
                         <span className="text-zinc-400">
                           Não disponível ou ainda pendente
                         </span>
                       )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <button
+                        type="button"
+                        disabled={!s.cashbackEligible}
+                        className="cursor-pointer rounded-md bg-emerald-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:hover:bg-zinc-300"
+                        onClick={() => {}}
+                      >
+                        Solicitar cash back
+                      </button>
                     </td>
                   </tr>
                 ))}

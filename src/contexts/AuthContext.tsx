@@ -16,6 +16,8 @@ type User = {
   role: string;
   name?: string;
   whatsapp?: string;
+  tier?: string;
+  membershipExpiresAt?: string | null;
 } | null;
 
 type AuthContextValue = {

@@ -186,7 +186,9 @@ export default function DashboardLayout({
       ? 'Admin'
       : user?.role === 'PARTNER'
         ? 'Parceiro'
-        : 'Visitante';
+        : user?.tier === 'MEMBER'
+          ? 'Membro'
+          : 'Visitante';
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -395,7 +397,7 @@ export default function DashboardLayout({
                   : 'text-primary-1 hover:bg-secondary-3'
               }`}
             >
-              Minhas compras
+              Cash Back
             </Link>
           )}
         </nav>

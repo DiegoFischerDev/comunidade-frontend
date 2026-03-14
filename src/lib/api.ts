@@ -94,7 +94,7 @@ export const api = {
         body: JSON.stringify(params),
       }),
     me: (token: string) =>
-      request<{ id: string; email: string; role: string; name?: string; whatsapp?: string }>(
+      request<{ id: string; email: string; role: string; name?: string; whatsapp?: string; tier?: string; membershipExpiresAt?: string | null }>(
         '/auth/me',
         {
           method: 'GET',
@@ -103,7 +103,7 @@ export const api = {
       ),
     impersonate: (userId: string) =>
       request<{
-        user: { id: string; email: string; role: string; name?: string; whatsapp?: string };
+        user: { id: string; email: string; role: string; name?: string; whatsapp?: string; tier?: string; membershipExpiresAt?: string | null };
         token: string;
       }>('/auth/impersonate', {
         method: 'POST',
@@ -120,6 +120,8 @@ export const api = {
             email: string;
             whatsapp: string;
             role: string;
+            tier: string;
+            membershipExpiresAt: string | null;
             createdAt: string;
           }[]
         >(
@@ -136,6 +138,8 @@ export const api = {
           email: string;
           whatsapp: string;
           role: string;
+          tier: string;
+          membershipExpiresAt: string | null;
           createdAt: string;
         }>(`/users/${id}`, {
           method: 'PATCH',
@@ -148,11 +152,27 @@ export const api = {
           email: string;
           whatsapp: string;
           role: string;
+          tier: string;
+          membershipExpiresAt: string | null;
           createdAt: string;
         }>(
           `/users/${id}/role`,
           { method: 'PATCH', body: JSON.stringify({ role }) },
         ),
+      updateTier: (id: string, body: { tier: 'VISITOR' | 'MEMBER' }) =>
+        request<{
+          id: string;
+          name: string;
+          email: string;
+          whatsapp: string;
+          role: string;
+          tier: string;
+          membershipExpiresAt: string | null;
+          createdAt: string;
+        }>(`/users/${id}/tier`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        }),
       delete: (id: string) =>
         request<void>(`/users/${id}`, { method: 'DELETE' }),
     },

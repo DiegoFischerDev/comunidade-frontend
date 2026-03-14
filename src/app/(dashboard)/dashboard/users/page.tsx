@@ -10,10 +10,14 @@ type UserRow = {
   email: string;
   whatsapp: string;
   role: string;
+  tier: string;
+  membershipExpiresAt: string | null;
   createdAt: string;
 };
 
 const ROLES: UserRow['role'][] = ['USER', 'PARTNER', 'ADMIN'];
+const TIERS = ['VISITOR', 'MEMBER'] as const;
+const TIER_LABELS: Record<string, string> = { VISITOR: 'Visitante', MEMBER: 'Membro' };
 
 export default function UsersPage() {
   const { user, impersonateAsUser } = useAuth();
@@ -63,7 +67,7 @@ export default function UsersPage() {
         whatsapp: editWhatsapp,
       });
       setUsers((prev) =>
-        prev.map((row) => (row.id === editingUser.id ? updated : row)),
+        prev.map((row) => (row.id === editingUser.id ? { ...row, ...updated } : row)),
       );
       setEditingUser(null);
     } catch (err) {
@@ -112,6 +116,7 @@ export default function UsersPage() {
                 <th className="px-4 py-2 text-left">E-mail</th>
                 <th className="px-4 py-2 text-left">WhatsApp</th>
                 <th className="px-4 py-2 text-left">Role</th>
+                <th className="px-4 py-2 text-left">Tier</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
@@ -134,7 +139,7 @@ export default function UsersPage() {
                           );
                           setUsers((prev) =>
                             prev.map((row) =>
-                              row.id === u.id ? { ...row, role: updated.role } : row,
+                              row.id === u.id ? { ...row, ...updated } : row,
                             ),
                           );
                         } catch (err) {
@@ -150,6 +155,38 @@ export default function UsersPage() {
                       {ROLES.map((r) => (
                         <option key={r} value={r}>
                           {r}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="px-4 py-2">
+                    <select
+                      value={u.tier}
+                      onChange={async (e) => {
+                        const newTier = e.target.value as 'VISITOR' | 'MEMBER';
+                        try {
+                          const updated = await api.admin.users.updateTier(
+                            u.id,
+                            { tier: newTier },
+                          );
+                          setUsers((prev) =>
+                            prev.map((row) =>
+                              row.id === u.id ? { ...row, ...updated } : row,
+                            ),
+                          );
+                        } catch (err) {
+                          setError(
+                            err instanceof Error
+                              ? err.message
+                              : 'Erro ao atualizar tier.',
+                          );
+                        }
+                      }}
+                      className="cursor-pointer rounded border border-zinc-300 px-2 py-1 text-sm"
+                    >
+                      {TIERS.map((t) => (
+                        <option key={t} value={t}>
+                          {TIER_LABELS[t]}
                         </option>
                       ))}
                     </select>
@@ -214,7 +251,7 @@ export default function UsersPage() {
               {users.length === 0 && (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-4 py-4 text-center text-sm text-zinc-500"
                   >
                     Nenhum usuário encontrado.
