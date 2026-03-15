@@ -122,19 +122,19 @@ export default function PartnerServicesPage() {
     setPriceOnRequest(service.priceOnRequest ?? false);
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(service: PartnerServiceRow) {
     if (
       !window.confirm(
-        'Tem certeza que deseja remover este serviço? Esta ação é irreversível.',
+        `Tem certeza que deseja remover este serviço? Esta ação é irreversível.\n\nServiço: ${service.title}`,
       )
     ) {
       return;
     }
     setError('');
     try {
-      await api.partner.services.delete(id);
-      setServices((prev) => prev.filter((s) => s.id !== id));
-      if (editingId === id) {
+      await api.partner.services.delete(service.id);
+      setServices((prev) => prev.filter((s) => s.id !== service.id));
+      if (editingId === service.id) {
         setEditingId(null);
         setTitle('');
         setDescription('');
@@ -317,7 +317,7 @@ export default function PartnerServicesPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDelete(s.id)}
+                      onClick={() => handleDelete(s)}
                       className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
                     >
                       Remover

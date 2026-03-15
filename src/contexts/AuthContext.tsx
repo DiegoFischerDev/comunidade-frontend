@@ -33,6 +33,7 @@ type AuthContextValue = {
     whatsapp: string;
   }) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   impersonateAsUser: (userId: string) => Promise<void>;
   stopImpersonation: () => Promise<void>;
 };
@@ -137,6 +138,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsImpersonating(false);
   }, [loadUser]);
 
+  const refreshUser = useCallback(async () => {
+    const t = getAuthToken();
+    if (t) await loadUser(t);
+  }, [loadUser]);
+
   const value: AuthContextValue = {
     user,
     token,
@@ -145,6 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     register,
     logout,
+    refreshUser,
     impersonateAsUser,
     stopImpersonation,
   };

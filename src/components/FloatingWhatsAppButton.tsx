@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
 
 const WHATSAPP_NUMBER = '351927398547';
 const WHATSAPP_MESSAGE = 'Oi Rafa, preciso de ajuda na comunidade RPM';
@@ -12,9 +13,26 @@ export const OPEN_MEMBERSHIP_MODAL_EVENT = 'open-membership-modal';
 export function FloatingWhatsAppButton() {
   const [open, setOpen] = useState(false);
   const [showMembershipModal, setShowMembershipModal] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const isMember = user?.tier === 'MEMBER';
+
+  async function handleStartCheckout() {
+    if (checkoutLoading || typeof window === 'undefined') return;
+    const origin = window.location.origin;
+    const successUrl = `${origin}/dashboard/membership/success`;
+    const cancelUrl = `${origin}/dashboard/membership/cancel`;
+    setCheckoutLoading(true);
+    try {
+      const { url } = await api.stripe.createCheckoutSession({ successUrl, cancelUrl });
+      window.location.href = url;
+    } catch (e) {
+      setCheckoutLoading(false);
+      const msg = e instanceof Error ? e.message : 'Erro ao iniciar o pagamento.';
+      alert(msg);
+    }
+  }
 
   useEffect(() => {
     if (!open || showMembershipModal) return;
@@ -162,10 +180,11 @@ export function FloatingWhatsAppButton() {
                 <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                   <button
                     type="button"
-                    disabled
-                    className="cursor-not-allowed w-full shrink-0 rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white opacity-80 shadow-md sm:w-auto"
+                    disabled={checkoutLoading}
+                    onClick={handleStartCheckout}
+                    className="w-full shrink-0 rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
                   >
-                    Quero ser membro — 23 €/ano
+                    {checkoutLoading ? 'A redirecionar…' : 'Quero ser membro — 23 €/ano'}
                   </button>
                   <button
                     type="button"

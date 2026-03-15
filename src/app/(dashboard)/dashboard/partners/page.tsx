@@ -356,7 +356,7 @@ export default function PartnersPage() {
                       onClick={async () => {
                         if (
                           !window.confirm(
-                            'Tem certeza que deseja remover este parceiro? Esta ação é irreversível.',
+                            `Tem certeza que deseja remover este parceiro? Esta ação é irreversível.\n\nNome: ${p.name}\nEmail: ${p.user.email}\nCategoria: ${p.category?.name ?? '—'}`,
                           )
                         ) {
                           return;

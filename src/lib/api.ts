@@ -110,6 +110,13 @@ export const api = {
         body: JSON.stringify({ userId }),
       }),
   },
+  stripe: {
+    createCheckoutSession: (params: { successUrl: string; cancelUrl: string }) =>
+      request<{ url: string }>('/stripe/create-checkout-session', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }),
+  },
   admin: {
     users: {
       list: () =>

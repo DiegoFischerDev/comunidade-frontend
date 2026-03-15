@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -58,6 +58,55 @@ export default function AdminPurchasesPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [filterSalesInput, setFilterSalesInput] = useState('');
+
+  function saleMatchesFilter(s: SaleRow, term: string) {
+    const t = term.trim().toLowerCase();
+    if (!t) return true;
+
+    const userName = s.user?.name ?? '';
+    const userEmail = s.user?.email ?? '';
+    const partnerName = s.partner?.name ?? '';
+    const serviceTitle = s.service?.title ?? s.serviceTitle ?? '';
+    const monthYear = `${s.month.toString().padStart(2, '0')}/${s.year}`;
+    const amount = `${s.amount.toFixed(2)} €`;
+    const commissionStatus =
+      s.commissionPaymentStatus === 'PAID' ? 'pago' : 'pendente';
+    const cashbackStatus = s.cashbackPaidAt
+      ? 'pago 20 €'
+      : s.cashbackRequestedAt
+      ? 'solicitado 20 €'
+      : '';
+    const cashbackName = s.cashbackMbwayName ?? '';
+    const cashbackNumber = s.cashbackMbwayNumber ?? '';
+    const statusText = statusLabel(s);
+
+    const haystack = [
+      userName,
+      userEmail,
+      partnerName,
+      serviceTitle,
+      monthYear,
+      amount,
+      commissionStatus,
+      cashbackStatus,
+      cashbackName,
+      cashbackNumber,
+      statusText,
+    ]
+      .join(' ')
+      .toLowerCase();
+
+    return haystack.includes(t);
+  }
+
+  const filteredSales = useMemo(
+    () =>
+      filterSalesInput.trim()
+        ? sales.filter((s) => saleMatchesFilter(s, filterSalesInput))
+        : sales,
+    [sales, filterSalesInput],
+  );
 
   function refetchSales() {
     const params: { partnerId?: string; status?: string; cashbackOnly?: boolean } = {};
@@ -83,12 +132,15 @@ export default function AdminPurchasesPage() {
     }
   }
 
-  async function handleDelete(saleId: string) {
-    if (!window.confirm('Tem a certeza que deseja excluir este registo de compra? Esta ação não pode ser desfeita.')) return;
-    setDeletingId(saleId);
+  async function handleDelete(sale: SaleRow) {
+    const utilizador = sale.user ? `${sale.user.name} (${sale.user.email})` : '—';
+    const parceiro = sale.partner?.name ?? '—';
+    const servico = sale.service?.title ?? sale.serviceTitle ?? '—';
+    if (!window.confirm(`Tem a certeza que deseja excluir este registo de compra? Esta ação não pode ser desfeita.\n\nUtilizador: ${utilizador}\nParceiro: ${parceiro}\nServiço: ${servico}`)) return;
+    setDeletingId(sale.id);
     setError('');
     try {
-      await api.sales.adminDeleteSale(saleId);
+      await api.sales.adminDeleteSale(sale.id);
       await refetchSales();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao excluir.');
@@ -153,13 +205,27 @@ export default function AdminPurchasesPage() {
         </div>
       )}
 
-      <div className="mt-6 flex flex-wrap gap-4 rounded-lg border border-zinc-200 bg-white p-4">
+      <div className="mt-6 flex flex-wrap gap-4">
+        {sales.length > 0 && (
+          <div className="w-full md:max-w-md">
+            <label className="block text-xs font-medium text-zinc-700">
+              Filtrar lista
+            </label>
+            <input
+              type="text"
+              value={filterSalesInput}
+              onChange={(e) => setFilterSalesInput(e.target.value)}
+              placeholder="Pesquisar por utilizador, parceiro, serviço, mês/ano, valor, cashback…"
+              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+        )}
         <div className="min-w-[180px]">
           <label className="block text-xs font-medium text-zinc-700">Parceiro</label>
           <select
             value={filterPartnerId}
             onChange={(e) => setFilterPartnerId(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
             <option value="">Todos</option>
             {partners.map((p) => (
@@ -174,7 +240,7 @@ export default function AdminPurchasesPage() {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
             {STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -189,7 +255,7 @@ export default function AdminPurchasesPage() {
         <h2 className="text-sm font-semibold text-zinc-900">Listagem</h2>
         {loading ? (
           <p className="mt-2 text-sm text-zinc-600">A carregar…</p>
-        ) : sales.length === 0 ? (
+        ) : filteredSales.length === 0 ? (
           <p className="mt-2 text-sm text-zinc-500">Nenhuma compra encontrada.</p>
         ) : (
           <div className="mt-3 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
@@ -210,7 +276,7 @@ export default function AdminPurchasesPage() {
                 </tr>
               </thead>
               <tbody>
-                {sales.map((s) => (
+                {filteredSales.map((s) => (
                   <tr key={s.id} className="border-t border-zinc-200">
                     <td className="px-3 py-2 text-zinc-800">
                       {s.user ? (
@@ -267,7 +333,7 @@ export default function AdminPurchasesPage() {
                       <button
                         type="button"
                         disabled={deletingId === s.id}
-                        onClick={() => handleDelete(s.id)}
+                        onClick={() => handleDelete(s)}
                         className="cursor-pointer rounded-md border border-red-300 bg-white px-2 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {deletingId === s.id ? 'A excluir…' : 'Excluir'}

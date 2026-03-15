@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -29,6 +29,25 @@ export default function UsersPage() {
   const [editEmail, setEditEmail] = useState('');
   const [editWhatsapp, setEditWhatsapp] = useState('');
   const [saving, setSaving] = useState(false);
+  const [filterInput, setFilterInput] = useState('');
+
+  const filteredUsers = useMemo(() => {
+    const term = filterInput.trim().toLowerCase();
+    if (!term) return users;
+    return users.filter((u) => {
+      const createdAt = u.createdAt
+        ? new Date(u.createdAt).toLocaleDateString('pt-PT')
+        : '';
+      return (
+        u.name.toLowerCase().includes(term) ||
+        u.email.toLowerCase().includes(term) ||
+        (u.whatsapp || '').toLowerCase().includes(term) ||
+        u.role.toLowerCase().includes(term) ||
+        (TIER_LABELS[u.tier] || u.tier || '').toLowerCase().includes(term) ||
+        createdAt.toLowerCase().includes(term)
+      );
+    });
+  }, [users, filterInput]);
 
   useEffect(() => {
     if (!user) return;
@@ -107,22 +126,48 @@ export default function UsersPage() {
 
       {loading ? (
         <p className="mt-4 text-sm text-zinc-600">Carregando usuários…</p>
+      ) : users.length === 0 ? (
+        <p className="mt-4 text-sm text-zinc-500">Nenhum usuário encontrado.</p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-          <table className="min-w-full text-sm">
-            <thead className="bg-zinc-50 text-zinc-600">
-              <tr>
-                <th className="px-4 py-2 text-left">Nome</th>
-                <th className="px-4 py-2 text-left">E-mail</th>
-                <th className="px-4 py-2 text-left">WhatsApp</th>
-                <th className="px-4 py-2 text-left">Role</th>
-                <th className="px-4 py-2 text-left">Tier</th>
-                <th className="px-4 py-2 text-left">Criado em</th>
-                <th className="px-4 py-2 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
+        <>
+          <div className="mt-6">
+            <label className="block text-xs font-medium text-zinc-700">
+              Filtrar lista
+            </label>
+            <input
+              type="text"
+              value={filterInput}
+              onChange={(e) => setFilterInput(e.target.value)}
+              placeholder="Pesquisar por nome, email, WhatsApp, role, tier ou data…"
+              className="mt-1 w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+            <table className="min-w-full text-sm">
+              <thead className="bg-zinc-50 text-zinc-600">
+                <tr>
+                  <th className="px-4 py-2 text-left">Nome</th>
+                  <th className="px-4 py-2 text-left">E-mail</th>
+                  <th className="px-4 py-2 text-left">WhatsApp</th>
+                  <th className="px-4 py-2 text-left">Role</th>
+                  <th className="px-4 py-2 text-left">Tier</th>
+                  <th className="px-4 py-2 text-left">Criado em</th>
+                  <th className="px-4 py-2 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-4 py-4 text-center text-sm text-zinc-500"
+                    >
+                      Nenhum usuário corresponde ao filtro.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredUsers.map((u) => (
                 <tr key={u.id} className="border-t border-zinc-200">
                     <td className="px-4 py-2">{u.name}</td>
                     <td className="px-4 py-2">{u.email}</td>
@@ -225,7 +270,7 @@ export default function UsersPage() {
                       onClick={async () => {
                         if (
                           !window.confirm(
-                            'Tem certeza que deseja remover este usuário? Esta ação é irreversível.',
+                            `Tem certeza que deseja remover este usuário? Esta ação é irreversível.\n\nNome: ${u.name}\nEmail: ${u.email}\nFunção: ${u.role}`,
                           )
                         ) {
                           return;
@@ -247,20 +292,12 @@ export default function UsersPage() {
                     </button>
                   </td>
                 </tr>
-              ))}
-              {users.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-4 text-center text-sm text-zinc-500"
-                  >
-                    Nenhum usuário encontrado.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {editingUser && (

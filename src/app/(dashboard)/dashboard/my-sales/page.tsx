@@ -18,6 +18,35 @@ type ServiceOption = {
   commission: string | null;
 };
 
+type SaleForFilter = {
+  user?: { name?: string; email?: string } | null;
+  createdByUser?: { name?: string; email?: string } | null;
+  service?: { title?: string; commission?: string | null } | null;
+  serviceTitle?: string | null;
+  month: number;
+  year: number;
+  amount: number;
+};
+
+function saleMatchesFilter(sale: SaleForFilter, filter: string): boolean {
+  if (!filter.trim()) return true;
+  const q = filter.trim().toLowerCase();
+  const cliente = `${sale.user?.name ?? ''} ${sale.user?.email ?? ''}`.toLowerCase();
+  const registradoPor = (sale.createdByUser?.name ?? sale.createdByUser?.email ?? '').toLowerCase();
+  const servico = (sale.service?.title ?? sale.serviceTitle ?? '').toLowerCase();
+  const mesAno = `${sale.month.toString().padStart(2, '0')}/${sale.year}`.toLowerCase();
+  const valor = sale.amount.toFixed(2).toLowerCase();
+  const comissao = (sale.service?.commission ?? '').toLowerCase();
+  return (
+    cliente.includes(q) ||
+    registradoPor.includes(q) ||
+    servico.includes(q) ||
+    mesAno.includes(q) ||
+    valor.includes(q) ||
+    comissao.includes(q)
+  );
+}
+
 export default function PartnerSalesPage() {
   const { user } = useAuth();
   const [leads, setLeads] = useState<LeadOption[]>([]);
@@ -38,8 +67,22 @@ export default function PartnerSalesPage() {
   const [salesApproved, setSalesApproved] = useState<any[]>([]);
   const [salesRejected, setSalesRejected] = useState<any[]>([]);
   const [loadingSales, setLoadingSales] = useState(true);
+  const [filterSalesInput, setFilterSalesInput] = useState('');
 
   const leadDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  const filteredSalesPending = useMemo(
+    () => salesPending.filter((s) => saleMatchesFilter(s, filterSalesInput)),
+    [salesPending, filterSalesInput],
+  );
+  const filteredSalesApproved = useMemo(
+    () => salesApproved.filter((s) => saleMatchesFilter(s, filterSalesInput)),
+    [salesApproved, filterSalesInput],
+  );
+  const filteredSalesRejected = useMemo(
+    () => salesRejected.filter((s) => saleMatchesFilter(s, filterSalesInput)),
+    [salesRejected, filterSalesInput],
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -180,6 +223,44 @@ export default function PartnerSalesPage() {
           : 'Erro ao atualizar estado da venda.',
       );
     }
+  }
+
+  function confirmUpdateStatus(
+    sale: { id: string; user?: { name?: string; email?: string } | null; service?: { title?: string } | null; serviceTitle?: string | null; month: number; year: number; amount: number },
+    status: 'APPROVED' | 'REJECTED',
+  ) {
+    const cliente = sale.user?.name || sale.user?.email || '—';
+    const servico = sale.service?.title ?? sale.serviceTitle ?? '—';
+    const mesAno = `${sale.month.toString().padStart(2, '0')}/${sale.year}`;
+    const valor = `${sale.amount.toFixed(2)} €`;
+    const acao = status === 'APPROVED' ? 'Aprovar' : 'Recusar';
+    const aviso = status === 'APPROVED' ? '\n\nEsta ação não poderá ser desfeita.' : '';
+    if (
+      !window.confirm(
+        `${acao} esta venda?${aviso}\n\nCliente: ${cliente}\nServiço: ${servico}\nMês/ano: ${mesAno}\nValor: ${valor}`,
+      )
+    ) {
+      return;
+    }
+    updateSaleStatus(sale.id, status);
+  }
+
+  function confirmPagarComissao(
+    sale: { user?: { name?: string; email?: string } | null; service?: { title?: string; commission?: string | null } | null; serviceTitle?: string | null; month: number; year: number; amount: number },
+  ) {
+    const cliente = sale.user?.name || sale.user?.email || '—';
+    const servico = sale.service?.title ?? sale.serviceTitle ?? '—';
+    const mesAno = `${sale.month.toString().padStart(2, '0')}/${sale.year}`;
+    const valor = `${sale.amount.toFixed(2)} €`;
+    const comissao = sale.service?.commission ?? '—';
+    if (
+      !window.confirm(
+        `Marcar comissão como paga?\n\nCliente: ${cliente}\nServiço: ${servico}\nMês/ano: ${mesAno}\nValor: ${valor}\nComissão RPM: ${comissao}`,
+      )
+    ) {
+      return;
+    }
+    // TODO: chamar API quando existir endpoint para marcar comissão como paga
   }
 
   if (!user) return null;
@@ -377,6 +458,20 @@ export default function PartnerSalesPage() {
 
       {/* Tabelas de vendas */}
       <div className="mt-8 space-y-6">
+        {!loadingSales && (salesPending.length > 0 || salesApproved.length > 0 || salesRejected.length > 0) && (
+          <div>
+            <label className="block text-xs font-medium text-zinc-700">
+              Filtrar lista
+            </label>
+            <input
+              type="text"
+              value={filterSalesInput}
+              onChange={(e) => setFilterSalesInput(e.target.value)}
+              placeholder="Pesquisar por cliente, serviço, mês/ano, valor, comissão…"
+              className="mt-1 w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+        )}
         <section>
           <h2 className="text-sm font-semibold text-zinc-900">
             Vendas pendentes de reconhecimento
@@ -386,6 +481,10 @@ export default function PartnerSalesPage() {
           ) : salesPending.length === 0 ? (
             <p className="mt-2 text-sm text-zinc-500">
               Não há vendas pendentes de reconhecimento.
+            </p>
+          ) : filteredSalesPending.length === 0 ? (
+            <p className="mt-2 text-sm text-zinc-500">
+              Nenhum registo corresponde ao filtro.
             </p>
           ) : (
             <div className="mt-3 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
@@ -402,7 +501,7 @@ export default function PartnerSalesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {salesPending.map((s) => (
+                  {filteredSalesPending.map((s) => (
                     <tr key={s.id} className="border-t border-zinc-200">
                       <td className="px-3 py-2">
                         <div className="max-w-[220px]">
@@ -437,14 +536,14 @@ export default function PartnerSalesPage() {
                       <td className="px-3 py-2 text-right">
                         <button
                           type="button"
-                          onClick={() => updateSaleStatus(s.id, 'APPROVED')}
+                          onClick={() => confirmUpdateStatus(s, 'APPROVED')}
                           className="mr-2 cursor-pointer rounded bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
                         >
                           Aprovar
                         </button>
                         <button
                           type="button"
-                          onClick={() => updateSaleStatus(s.id, 'REJECTED')}
+                          onClick={() => confirmUpdateStatus(s, 'REJECTED')}
                           className="cursor-pointer rounded bg-red-50 px-3 py-1 text-[11px] font-medium text-red-700 hover:bg-red-100"
                         >
                           Recusar
@@ -468,6 +567,10 @@ export default function PartnerSalesPage() {
             <p className="mt-2 text-sm text-zinc-500">
               Ainda não há vendas reconhecidas.
             </p>
+          ) : filteredSalesApproved.length === 0 ? (
+            <p className="mt-2 text-sm text-zinc-500">
+              Nenhum registo corresponde ao filtro.
+            </p>
           ) : (
             <div className="mt-3 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
               <table className="min-w-full text-xs md:text-sm">
@@ -484,7 +587,7 @@ export default function PartnerSalesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {salesApproved.map((s) => (
+                  {filteredSalesApproved.map((s) => (
                     <tr key={s.id} className="border-t border-zinc-200">
                       <td className="px-3 py-2">
                         <div className="max-w-[220px]">
@@ -526,6 +629,7 @@ export default function PartnerSalesPage() {
                       <td className="px-3 py-2 text-right">
                         <button
                           type="button"
+                          onClick={() => confirmPagarComissao(s)}
                           className="cursor-pointer rounded bg-amber-50 px-3 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
                           disabled={false}
                         >
@@ -550,6 +654,10 @@ export default function PartnerSalesPage() {
             <p className="mt-2 text-sm text-zinc-500">
               Não há vendas recusadas.
             </p>
+          ) : filteredSalesRejected.length === 0 ? (
+            <p className="mt-2 text-sm text-zinc-500">
+              Nenhum registo corresponde ao filtro.
+            </p>
           ) : (
             <div className="mt-3 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
               <table className="min-w-full text-xs md:text-sm">
@@ -565,7 +673,7 @@ export default function PartnerSalesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {salesRejected.map((s) => (
+                  {filteredSalesRejected.map((s) => (
                     <tr key={s.id} className="border-t border-zinc-200">
                       <td className="px-3 py-2">
                         <div className="max-w-[220px]">
@@ -597,7 +705,7 @@ export default function PartnerSalesPage() {
                       <td className="px-3 py-2 text-right">
                         <button
                           type="button"
-                          onClick={() => updateSaleStatus(s.id, 'APPROVED')}
+                          onClick={() => confirmUpdateStatus(s, 'APPROVED')}
                           className="cursor-pointer rounded bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
                         >
                           Aprovar
