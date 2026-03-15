@@ -3,6 +3,32 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
+
+const MBWAY_STORAGE_KEY = 'comunidade_rpm_mbway';
+
+function getStoredMbway(): { number: string; name: string } {
+  if (typeof window === 'undefined') return { number: '', name: '' };
+  try {
+    const raw = localStorage.getItem(MBWAY_STORAGE_KEY);
+    if (!raw) return { number: '', name: '' };
+    const parsed = JSON.parse(raw) as { number?: string; name?: string };
+    return {
+      number: typeof parsed?.number === 'string' ? parsed.number : '',
+      name: typeof parsed?.name === 'string' ? parsed.name : '',
+    };
+  } catch {
+    return { number: '', name: '' };
+  }
+}
+
+function setStoredMbway(number: string, name: string) {
+  try {
+    localStorage.setItem(MBWAY_STORAGE_KEY, JSON.stringify({ number, name }));
+  } catch {
+    // ignore
+  }
+}
 
 type PartnerOption = {
   id: string;
@@ -34,6 +60,18 @@ export default function UserPurchasesPage() {
   const [sales, setSales] = useState<any[]>([]);
   const [loadingSales, setLoadingSales] = useState(true);
   const [error, setError] = useState('');
+  const [mbwayModalSaleId, setMbwayModalSaleId] = useState<string | null>(null);
+  const [mbwayNumber, setMbwayNumber] = useState('');
+  const [mbwayName, setMbwayName] = useState('');
+  const [mbwaySubmitting, setMbwaySubmitting] = useState(false);
+
+  useEffect(() => {
+    if (mbwayModalSaleId) {
+      const stored = getStoredMbway();
+      setMbwayNumber(stored.number);
+      setMbwayName(stored.name);
+    }
+  }, [mbwayModalSaleId]);
 
   useEffect(() => {
     if (!user) return;
@@ -149,9 +187,9 @@ export default function UserPurchasesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-zinc-900">Cash Back</h1>
+      <h1 className="text-2xl font-semibold text-zinc-900">Cashback</h1>
       <p className="mt-2 text-sm text-zinc-600">
-        Registe serviços que comprou a parceiros da Comunidade RPM e receba CASH BACK (exclusivo para membros)
+        Registe serviços que comprou a parceiros da Comunidade RPM e receba cashback (exclusivo para membros)
       </p>
 
       {error && (
@@ -314,7 +352,7 @@ export default function UserPurchasesPage() {
                   <th className="px-3 py-2 text-left">Mês/ano</th>
                   <th className="px-3 py-2 text-left">Valor</th>
                   <th className="px-3 py-2 text-left">Estado</th>
-                  <th className="px-3 py-2 text-left">Cash back</th>
+                  <th className="px-3 py-2 text-left">Cashback</th>
                   <th className="px-3 py-2 text-left">Ações</th>
                 </tr>
               </thead>
@@ -334,7 +372,9 @@ export default function UserPurchasesPage() {
                       {s.amount.toFixed(2)} €
                     </td>
                     <td className="px-3 py-2 text-xs text-zinc-700">
-                      {s.status === 'PENDING_PARTNER'
+                      {s.cashbackRequestedAt && s.cashbackMbwayNumber
+                        ? `Mbway para ${s.cashbackMbwayNumber}`
+                        : s.status === 'PENDING_PARTNER'
                         ? 'Aguardando aprovação do parceiro'
                         : s.status === 'APPROVED'
                         ? 'Compra aprovada'
@@ -342,12 +382,20 @@ export default function UserPurchasesPage() {
                     </td>
                     <td className="px-3 py-2 text-xs text-zinc-700">
                       {s.cashbackEligible ? (
-                        <span className="text-emerald-700">
-                          Elegível
+                        <span className="font-semibold text-emerald-700">
+                          20 €
+                        </span>
+                      ) : s.cashbackRequestedAt ? (
+                        <span className="text-zinc-600">
+                          Solicitado
+                        </span>
+                      ) : s.status === 'PENDING_PARTNER' ? (
+                        <span className="text-zinc-600">
+                          20 €
                         </span>
                       ) : (
                         <span className="text-zinc-400">
-                          Não disponível ou ainda pendente
+                          Não disponível
                         </span>
                       )}
                     </td>
@@ -356,9 +404,15 @@ export default function UserPurchasesPage() {
                         type="button"
                         disabled={!s.cashbackEligible}
                         className="cursor-pointer rounded-md bg-emerald-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:hover:bg-zinc-300"
-                        onClick={() => {}}
+                        onClick={() => {
+                          if (user?.tier !== 'MEMBER') {
+                            window.dispatchEvent(new CustomEvent(OPEN_MEMBERSHIP_MODAL_EVENT));
+                            return;
+                          }
+                          setMbwayModalSaleId(s.id);
+                        }}
                       >
-                        Solicitar cash back
+                        Solicitar cashback
                       </button>
                     </td>
                   </tr>
@@ -368,6 +422,102 @@ export default function UserPurchasesPage() {
           </div>
         )}
       </section>
+
+      {/* Modal MB Way — só para membros */}
+      {mbwayModalSaleId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setMbwayModalSaleId(null)}
+          role="presentation"
+        >
+          <div
+            className="relative w-full max-w-sm rounded-xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setMbwayModalSaleId(null)}
+              className="absolute right-3 top-3 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-zinc-200 text-zinc-700 transition-colors hover:bg-white hover:text-zinc-900"
+              aria-label="Fechar"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h3 className="pr-8 text-lg font-semibold text-zinc-900">
+              Solicitar cashback
+            </h3>
+            <p className="mt-1 text-sm text-zinc-600">
+              Indique o número MB Way e o nome do titular para receber os 20 €.
+            </p>
+            <form
+              className="mt-4 space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!mbwayModalSaleId || !mbwayNumber.trim() || !mbwayName.trim()) return;
+                setMbwaySubmitting(true);
+                try {
+                  await api.sales.userRequestCashback(mbwayModalSaleId, {
+                    mbwayNumber: mbwayNumber.trim().replace(/\s/g, ''),
+                    mbwayName: mbwayName.trim(),
+                  });
+                  setStoredMbway(mbwayNumber.trim().replace(/\s/g, ''), mbwayName.trim());
+                  setMbwayModalSaleId(null);
+                  setError('');
+                  await reloadUserSales();
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : 'Erro ao solicitar cashback.');
+                } finally {
+                  setMbwaySubmitting(false);
+                }
+              }}
+            >
+              <div>
+                <label className="block text-sm font-medium text-zinc-700">
+                  Número MB Way
+                </label>
+                <input
+                  type="tel"
+                  value={mbwayNumber}
+                  onChange={(e) => setMbwayNumber(e.target.value)}
+                  placeholder="ex: 912 345 678"
+                  className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-700">
+                  Nome do titular do MB Way
+                </label>
+                <input
+                  type="text"
+                  value={mbwayName}
+                  onChange={(e) => setMbwayName(e.target.value)}
+                  placeholder="Nome como está no MB Way"
+                  className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  required
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setMbwayModalSaleId(null)}
+                  className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={mbwaySubmitting || !mbwayNumber.trim() || !mbwayName.trim()}
+                  className="flex-1 cursor-pointer rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+                >
+                  {mbwaySubmitting ? 'A enviar…' : 'Enviar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

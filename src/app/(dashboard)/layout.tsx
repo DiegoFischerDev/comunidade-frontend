@@ -386,6 +386,16 @@ export default function DashboardLayout({
               >
                 Parceiros
               </Link>
+              <Link
+                href="/dashboard/admin-purchases"
+                className={`block rounded-md px-3 py-2 ${
+                  pathname === '/dashboard/admin-purchases'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Compras (admin)
+              </Link>
             </>
           )}
           {user && (
@@ -397,7 +407,7 @@ export default function DashboardLayout({
                   : 'text-primary-1 hover:bg-secondary-3'
               }`}
             >
-              Cash Back
+              Cashback
             </Link>
           )}
         </nav>

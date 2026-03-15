@@ -25,8 +25,10 @@ export default function RootLayout({
   return (
     <html lang="pt">
       <body className="antialiased">
-        <Providers>{children}</Providers>
-        <FloatingWhatsAppButton />
+        <Providers>
+          {children}
+          <FloatingWhatsAppButton />
+        </Providers>
       </body>
     </html>
   );

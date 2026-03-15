@@ -545,8 +545,41 @@ export const api = {
           status: string;
           commissionPaymentStatus: string;
           cashbackEligible: boolean;
+          cashbackRequestedAt: string | null;
+          cashbackMbwayNumber: string | null;
+          cashbackMbwayName: string | null;
           createdAt: string;
         }[]
       >('/sales/user', { method: 'GET' }),
+    userRequestCashback: (saleId: string, body: { mbwayNumber: string; mbwayName: string }) =>
+      request<{ id: string }>(`/sales/user/${saleId}/cashback`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    adminList: (params?: { partnerId?: string; status?: string; cashbackOnly?: boolean }) => {
+      const search = new URLSearchParams();
+      if (params?.partnerId) search.set('partnerId', params.partnerId);
+      if (params?.status) search.set('status', params.status);
+      if (params?.cashbackOnly) search.set('cashbackOnly', 'true');
+      const q = search.toString();
+      return request<
+        {
+          id: string;
+          partnerId: string;
+          userId: string | null;
+          month: number;
+          year: number;
+          amount: number;
+          status: string;
+          cashbackRequestedAt: string | null;
+          cashbackMbwayNumber: string | null;
+          cashbackMbwayName: string | null;
+          user: { id: string; name: string; email: string } | null;
+          partner: { id: string; name: string };
+          service: { title: string } | null;
+          serviceTitle: string | null;
+        }[]
+      >(`/sales/admin${q ? `?${q}` : ''}`, { method: 'GET' });
+    },
   },
 };
