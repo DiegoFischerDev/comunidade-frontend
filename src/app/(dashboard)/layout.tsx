@@ -310,7 +310,7 @@ export default function DashboardLayout({
                     : 'text-primary-1 hover:bg-secondary-3'
                 }`}
               >
-                Leads
+                Meus leads
               </Link>
               <Link
                 href="/dashboard/profile"
@@ -398,7 +398,7 @@ export default function DashboardLayout({
               </Link>
             </>
           )}
-          {user && (
+          {user && user.role !== 'ADMIN' && (
             <Link
               href="/dashboard/my-purchases"
               className={`block rounded-md px-3 py-2 ${

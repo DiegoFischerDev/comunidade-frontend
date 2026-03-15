@@ -548,6 +548,7 @@ export const api = {
           cashbackRequestedAt: string | null;
           cashbackMbwayNumber: string | null;
           cashbackMbwayName: string | null;
+          cashbackPaidAt: string | null;
           createdAt: string;
         }[]
       >('/sales/user', { method: 'GET' }),
@@ -571,9 +572,11 @@ export const api = {
           year: number;
           amount: number;
           status: string;
+          commissionPaymentStatus: string;
           cashbackRequestedAt: string | null;
           cashbackMbwayNumber: string | null;
           cashbackMbwayName: string | null;
+          cashbackPaidAt: string | null;
           user: { id: string; name: string; email: string } | null;
           partner: { id: string; name: string };
           service: { title: string } | null;
@@ -581,5 +584,13 @@ export const api = {
         }[]
       >(`/sales/admin${q ? `?${q}` : ''}`, { method: 'GET' });
     },
+    adminMarkCashbackPaid: (saleId: string) =>
+      request<{ id: string }>(`/sales/admin/${saleId}/cashback-paid`, {
+        method: 'PATCH',
+      }),
+    adminDeleteSale: (saleId: string) =>
+      request<{ id: string }>(`/sales/admin/${saleId}`, {
+        method: 'DELETE',
+      }),
   },
 };

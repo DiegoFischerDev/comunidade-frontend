@@ -13,9 +13,11 @@ type SaleRow = {
   year: number;
   amount: number;
   status: string;
+  commissionPaymentStatus: string;
   cashbackRequestedAt: string | null;
   cashbackMbwayNumber: string | null;
   cashbackMbwayName: string | null;
+  cashbackPaidAt: string | null;
   user: { id: string; name: string; email: string } | null;
   partner: { id: string; name: string };
   service: { title: string } | null;
@@ -54,6 +56,46 @@ export default function AdminPurchasesPage() {
   const [error, setError] = useState('');
   const [filterPartnerId, setFilterPartnerId] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  function refetchSales() {
+    const params: { partnerId?: string; status?: string; cashbackOnly?: boolean } = {};
+    if (filterPartnerId) params.partnerId = filterPartnerId;
+    if (filterStatus === 'CASHBACK') params.cashbackOnly = true;
+    else if (filterStatus) params.status = filterStatus;
+    return api.sales.adminList(params).then(setSales);
+  }
+
+  async function handleMarkCashbackPaid(sale: SaleRow) {
+    const nome = sale.cashbackMbwayName ?? '—';
+    const numero = sale.cashbackMbwayNumber ?? '—';
+    if (!window.confirm(`Confirmar que o cashback foi pago?\n\nNome: ${nome}\nNúmero: ${numero}`)) return;
+    setMarkingPaidId(sale.id);
+    setError('');
+    try {
+      await api.sales.adminMarkCashbackPaid(sale.id);
+      await refetchSales();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao marcar como pago.');
+    } finally {
+      setMarkingPaidId(null);
+    }
+  }
+
+  async function handleDelete(saleId: string) {
+    if (!window.confirm('Tem a certeza que deseja excluir este registo de compra? Esta ação não pode ser desfeita.')) return;
+    setDeletingId(saleId);
+    setError('');
+    try {
+      await api.sales.adminDeleteSale(saleId);
+      await refetchSales();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao excluir.');
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   useEffect(() => {
     if (user?.role !== 'ADMIN') return;
@@ -160,8 +202,11 @@ export default function AdminPurchasesPage() {
                   <th className="px-3 py-2 text-left">Mês/ano</th>
                   <th className="px-3 py-2 text-left">Valor</th>
                   <th className="px-3 py-2 text-left">Estado</th>
-                  <th className="px-3 py-2 text-left">Nome MB Way</th>
-                  <th className="px-3 py-2 text-left">Número MB Way</th>
+                  <th className="px-3 py-2 text-left">Comissão paga</th>
+                  <th className="px-3 py-2 text-left">Cashback</th>
+                  <th className="px-3 py-2 text-left">Nome Cashback</th>
+                  <th className="px-3 py-2 text-left">Número Cashback</th>
+                  <th className="px-3 py-2 text-left">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -187,10 +232,46 @@ export default function AdminPurchasesPage() {
                     <td className="px-3 py-2 text-zinc-700">{s.amount.toFixed(2)} €</td>
                     <td className="px-3 py-2 text-zinc-700">{statusLabel(s)}</td>
                     <td className="px-3 py-2 text-zinc-700">
+                      {s.commissionPaymentStatus === 'PAID' ? (
+                        'Pago'
+                      ) : (
+                        <span className="font-medium text-red-600">Pendente</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-zinc-700">
+                      {s.cashbackPaidAt ? (
+                        <span className="font-semibold text-emerald-700">Pago 20 €</span>
+                      ) : s.cashbackRequestedAt ? (
+                        <span className="font-semibold text-emerald-700">Solicitado 20 €</span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-zinc-700">
                       {s.cashbackMbwayName ?? '—'}
                     </td>
                     <td className="px-3 py-2 text-zinc-700">
                       {s.cashbackMbwayNumber ?? '—'}
+                    </td>
+                    <td className="px-3 py-2 flex flex-wrap gap-2">
+                      {s.cashbackRequestedAt && !s.cashbackPaidAt && (
+                        <button
+                          type="button"
+                          disabled={markingPaidId === s.id}
+                          onClick={() => handleMarkCashbackPaid(s)}
+                          className="cursor-pointer rounded-md bg-emerald-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+                        >
+                          {markingPaidId === s.id ? 'A marcar…' : 'Pagar MB Way'}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        disabled={deletingId === s.id}
+                        onClick={() => handleDelete(s.id)}
+                        className="cursor-pointer rounded-md border border-red-300 bg-white px-2 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {deletingId === s.id ? 'A excluir…' : 'Excluir'}
+                      </button>
                     </td>
                   </tr>
                 ))}

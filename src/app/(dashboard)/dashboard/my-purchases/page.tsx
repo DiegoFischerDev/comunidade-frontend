@@ -381,13 +381,17 @@ export default function UserPurchasesPage() {
                         : 'Compra recusada'}
                     </td>
                     <td className="px-3 py-2 text-xs text-zinc-700">
-                      {s.cashbackEligible ? (
+                      {s.cashbackPaidAt ? (
                         <span className="font-semibold text-emerald-700">
-                          20 €
+                          Pago 20 €
                         </span>
                       ) : s.cashbackRequestedAt ? (
-                        <span className="text-zinc-600">
-                          Solicitado
+                        <span className="font-semibold text-emerald-700">
+                          Solicitado 20 €
+                        </span>
+                      ) : s.cashbackEligible ? (
+                        <span className="font-semibold text-emerald-700">
+                          20 €
                         </span>
                       ) : s.status === 'PENDING_PARTNER' ? (
                         <span className="text-zinc-600">
