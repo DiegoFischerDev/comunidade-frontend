@@ -18,14 +18,22 @@ export function FloatingWhatsAppButton() {
   const { user } = useAuth();
   const isMember = user?.tier === 'MEMBER';
 
-  async function handleStartCheckout() {
+  const successUrl =
+    typeof window !== 'undefined' ? `${window.location.origin}/dashboard/membership/success` : '';
+  const cancelUrl =
+    typeof window !== 'undefined' ? `${window.location.origin}/dashboard/membership/cancel` : '';
+
+  type PaymentMethod = 'card' | 'mbway' | 'pix';
+  async function handleStartCheckout(method: PaymentMethod) {
     if (checkoutLoading || typeof window === 'undefined') return;
-    const origin = window.location.origin;
-    const successUrl = `${origin}/dashboard/membership/success`;
-    const cancelUrl = `${origin}/dashboard/membership/cancel`;
     setCheckoutLoading(true);
     try {
-      const { url } = await api.stripe.createCheckoutSession({ successUrl, cancelUrl });
+      const { url } =
+        method === 'pix'
+          ? await api.stripe.createPixCheckoutSession({ successUrl, cancelUrl })
+          : method === 'mbway'
+            ? await api.stripe.createMbWayCheckoutSession({ successUrl, cancelUrl })
+            : await api.stripe.createCheckoutSession({ successUrl, cancelUrl });
       window.location.href = url;
     } catch (e) {
       setCheckoutLoading(false);
@@ -177,14 +185,30 @@ export function FloatingWhatsAppButton() {
                     <span><strong className="text-zinc-800">Grupos exclusivos no WhatsApp</strong> — rede e conteúdo só para membros.</span>
                   </li>
                 </ul>
-                <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
                   <button
                     type="button"
                     disabled={checkoutLoading}
-                    onClick={handleStartCheckout}
+                    onClick={() => handleStartCheckout('card')}
                     className="w-full shrink-0 rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
                   >
-                    {checkoutLoading ? 'A redirecionar…' : 'Quero ser membro — 23 €/ano'}
+                    {checkoutLoading ? 'A redirecionar…' : 'Cartão'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={checkoutLoading}
+                    onClick={() => handleStartCheckout('mbway')}
+                    className="w-full shrink-0 rounded-full border-2 border-emerald-600 bg-white px-5 py-3 text-sm font-semibold text-emerald-700 shadow-sm transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+                  >
+                    {checkoutLoading ? 'A redirecionar…' : 'MB WAY'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={checkoutLoading}
+                    onClick={() => handleStartCheckout('pix')}
+                    className="w-full shrink-0 rounded-full border-2 border-emerald-600 bg-white px-5 py-3 text-sm font-semibold text-emerald-700 shadow-sm transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+                  >
+                    {checkoutLoading ? 'A redirecionar…' : 'Pix'}
                   </button>
                   <button
                     type="button"

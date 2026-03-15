@@ -153,6 +153,7 @@ export default function UsersPage() {
                   <th className="px-4 py-2 text-left">Role</th>
                   <th className="px-4 py-2 text-left">Tier</th>
                   <th className="px-4 py-2 text-left">Criado em</th>
+                  <th className="px-4 py-2 text-left">Membro até</th>
                   <th className="px-4 py-2 text-right">Ações</th>
                 </tr>
               </thead>
@@ -237,7 +238,12 @@ export default function UsersPage() {
                     </select>
                   </td>
                   <td className="px-4 py-2">
-                    {new Date(u.createdAt).toLocaleString('pt-PT')}
+                    {new Date(u.createdAt).toLocaleDateString('pt-PT')}
+                  </td>
+                  <td className="px-4 py-2">
+                    {u.membershipExpiresAt
+                      ? new Date(u.membershipExpiresAt).toLocaleDateString('pt-PT')
+                      : '—'}
                   </td>
                   <td className="px-4 py-2 text-right">
                     <button

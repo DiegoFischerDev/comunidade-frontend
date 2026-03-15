@@ -116,6 +116,16 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(params),
       }),
+    createMbWayCheckoutSession: (params: { successUrl: string; cancelUrl: string }) =>
+      request<{ url: string }>('/stripe/create-mbway-checkout-session', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }),
+    createPixCheckoutSession: (params: { successUrl: string; cancelUrl: string }) =>
+      request<{ url: string }>('/stripe/create-pix-checkout-session', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }),
   },
   admin: {
     users: {
