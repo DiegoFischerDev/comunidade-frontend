@@ -10,9 +10,30 @@ const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent
 
 export const OPEN_MEMBERSHIP_MODAL_EVENT = 'open-membership-modal';
 
+function formatEur(cents: number): string {
+  return new Intl.NumberFormat('pt-PT', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
+}
+
+function formatBrl(centavos: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(centavos / 100);
+}
+
 export function FloatingWhatsAppButton() {
   const [open, setOpen] = useState(false);
   const [showMembershipModal, setShowMembershipModal] = useState(false);
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
+  const [amounts, setAmounts] = useState<{ eurCents: number; pixCentavos: number } | null>(null);
+  const [amountsLoading, setAmountsLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -64,6 +85,22 @@ export function FloatingWhatsAppButton() {
   function closeAll() {
     setOpen(false);
     setShowMembershipModal(false);
+    setShowPaymentOptions(false);
+  }
+
+  async function handleQueroSerMembro() {
+    setShowPaymentOptions(true);
+    if (amounts === null && !amountsLoading) {
+      setAmountsLoading(true);
+      try {
+        const data = await api.stripe.getMembershipAmounts();
+        setAmounts(data);
+      } catch {
+        setAmounts({ eurCents: 2300, pixCentavos: 2300 });
+      } finally {
+        setAmountsLoading(false);
+      }
+    }
   }
 
   return (
@@ -144,81 +181,140 @@ export function FloatingWhatsAppButton() {
             </button>
             <>
               <div className="-mx-5 -mt-5 mb-4 overflow-hidden rounded-t-2xl">
-                  <div className="relative h-40 w-full">
-                    <img
-                      src="/comunidade_bg.svg"
-                      alt=""
-                      className="h-full w-full object-cover object-center"
-                    />
-                  </div>
-                  <div className="bg-white px-4 pb-3 pt-3 text-center">
-                    <h3 className="text-lg font-bold tracking-tight text-zinc-900">
-                      Junte-se à Comunidade RPM
-                    </h3>
-                    <p className="mt-0.5 text-sm font-medium text-zinc-600">
-                      23 €/ano — menos de 2 € por mês
-                    </p>
-                  </div>
+                <div className="relative h-40 w-full">
+                  <img
+                    src="/comunidade_bg.svg"
+                    alt=""
+                    className="h-full w-full object-cover object-center"
+                  />
                 </div>
-                <p className="text-sm leading-relaxed text-zinc-700 mb-6">
-                  Por menos de um café por mês, 
-                  tenha acesso a tudo o que a comunidade oferece e tenha descontos exclusivos em forma de cashback
-                </p>
-                <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                  O que inclui:
-                </p>
-                <ul className="mt-2 space-y-2 text-sm text-zinc-700">
-                  <li className="flex items-start gap-2">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                    <span><strong className="text-zinc-800">até 20 € de cashback</strong> em cada serviço que contratar aos parceiros.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                    <span><strong className="text-zinc-800">Ebook Portugal Sem Perrenge</strong> — acesso completo ao guia.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                    <span><strong className="text-zinc-800">Suporte de imigração</strong> — contacto direto com a Rafa e a equipe.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                    <span><strong className="text-zinc-800">Grupos exclusivos no WhatsApp</strong> — rede e conteúdo só para membros.</span>
-                  </li>
-                </ul>
-                <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
+                <div className="bg-white px-4 pb-3 pt-3 text-center">
+                  <h3 className="text-lg font-bold tracking-tight text-zinc-900">
+                    Junte-se à Comunidade RPM
+                  </h3>
+                  {!showPaymentOptions && (
+                    <p className="mt-0.5 text-sm font-medium text-zinc-600">
+                      Acesso por 1 ano — escolha a forma de pagamento
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {!showPaymentOptions ? (
+                <>
+                  <p className="text-sm leading-relaxed text-zinc-700 mb-4">
+                    Tenha acesso a tudo o que a comunidade oferece e descontos exclusivos em forma de cashback.
+                  </p>
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                    O que inclui:
+                  </p>
+                  <ul className="mt-2 space-y-2 text-sm text-zinc-700">
+                    <li className="flex items-start gap-2">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
+                      <span><strong className="text-zinc-800">até 20 € de cashback</strong> em cada serviço que contratar aos parceiros.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
+                      <span><strong className="text-zinc-800">Ebook Portugal Sem Perrenge</strong> — acesso completo ao guia.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
+                      <span><strong className="text-zinc-800">Suporte de imigração</strong> — contacto direto com a Rafa e a equipe.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
+                      <span><strong className="text-zinc-800">Grupos exclusivos no WhatsApp</strong> — rede e conteúdo só para membros.</span>
+                    </li>
+                  </ul>
+                  <div className="mt-6">
+                    <button
+                      type="button"
+                      onClick={handleQueroSerMembro}
+                      className="w-full rounded-full bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white shadow-md transition-colors hover:bg-emerald-700"
+                    >
+                      Quero ser membro
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-zinc-600 mb-4">
+                    Escolha a forma de pagamento. Acesso válido por 1 ano.
+                  </p>
+                  {amountsLoading ? (
+                    <p className="text-sm text-zinc-500 mb-4">A carregar preços…</p>
+                  ) : amounts && (
+                    <div className="mb-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm">
+                      <span className="font-medium text-zinc-800">
+                        Cartão / MB WAY: {formatEur(amounts.eurCents)}
+                      </span>
+                      <span className="text-zinc-400">·</span>
+                      <span className="font-medium text-zinc-800">
+                        Pix: {formatBrl(amounts.pixCentavos)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="mt-4 flex flex-col gap-3">
+                    <button
+                      type="button"
+                      disabled={checkoutLoading}
+                      onClick={() => handleStartCheckout('card')}
+                      className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border-2 border-zinc-200 bg-white px-4 py-3 text-left transition-colors hover:border-emerald-400 hover:bg-emerald-50/50 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-600">
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                      </span>
+                      <span className="flex-1 font-medium text-zinc-800">Cartão</span>
+                      {amounts && <span className="text-sm font-semibold text-emerald-700">{formatEur(amounts.eurCents)}</span>}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={checkoutLoading}
+                      onClick={() => handleStartCheckout('mbway')}
+                      className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border-2 border-zinc-200 bg-white px-4 py-3 text-left transition-colors hover:border-emerald-400 hover:bg-emerald-50/50 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-600">
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                      </span>
+                      <span className="flex-1 font-medium text-zinc-800">MB WAY</span>
+                      {amounts && <span className="text-sm font-semibold text-emerald-700">{formatEur(amounts.eurCents)}</span>}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={checkoutLoading}
+                      onClick={() => handleStartCheckout('pix')}
+                      className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border-2 border-zinc-200 bg-white px-4 py-3 text-left transition-colors hover:border-emerald-400 hover:bg-emerald-50/50 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                          <path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 15h6v6H3v-6zm2 2v2h2v-2H5zm8-2h6v6h-6v-6zm2 2v2h2v-2h-2zm4-12h2v2h-2V3zm0 4h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z" />
+                        </svg>
+                      </span>
+                      <span className="flex-1 font-medium text-zinc-800">Pix</span>
+                      {amounts && <span className="text-sm font-semibold text-emerald-700">{formatBrl(amounts.pixCentavos)}</span>}
+                    </button>
+                  </div>
                   <button
                     type="button"
-                    disabled={checkoutLoading}
-                    onClick={() => handleStartCheckout('card')}
-                    className="w-full shrink-0 rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+                    onClick={() => setShowPaymentOptions(false)}
+                    className="mt-4 w-full rounded-full border border-zinc-200 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50"
                   >
-                    {checkoutLoading ? 'A redirecionar…' : 'Cartão'}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={checkoutLoading}
-                    onClick={() => handleStartCheckout('mbway')}
-                    className="w-full shrink-0 rounded-full border-2 border-emerald-600 bg-white px-5 py-3 text-sm font-semibold text-emerald-700 shadow-sm transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
-                  >
-                    {checkoutLoading ? 'A redirecionar…' : 'MB WAY'}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={checkoutLoading}
-                    onClick={() => handleStartCheckout('pix')}
-                    className="w-full shrink-0 rounded-full border-2 border-emerald-600 bg-white px-5 py-3 text-sm font-semibold text-emerald-700 shadow-sm transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
-                  >
-                    {checkoutLoading ? 'A redirecionar…' : 'Pix'}
+                    Voltar
                   </button>
                   <button
                     type="button"
                     onClick={closeAll}
-                    className="w-full shrink-0 rounded-full border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 md:hidden"
+                    className="mt-2 w-full rounded-full border border-zinc-200 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50"
                   >
                     Fechar
                   </button>
-                </div>
-              </>
+                </>
+              )}
+            </>
           </div>
         </div>
       )}
