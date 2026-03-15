@@ -84,6 +84,17 @@ export function FloatingWhatsAppButton() {
     return () => window.removeEventListener(OPEN_MEMBERSHIP_MODAL_EVENT, handler);
   }, []);
 
+  // Carregar preços ao abrir o modal para exibir no primeiro passo
+  useEffect(() => {
+    if (!showMembershipModal || amounts !== null || amountsLoading) return;
+    setAmountsLoading(true);
+    api.stripe
+      .getMembershipAmounts()
+      .then(setAmounts)
+      .catch(() => setAmounts({ eurCents: 2300, pixCentavos: 2300 }))
+      .finally(() => setAmountsLoading(false));
+  }, [showMembershipModal, amounts, amountsLoading]);
+
   function closeAll() {
     setOpen(false);
     setShowMembershipModal(false);
@@ -196,7 +207,16 @@ export function FloatingWhatsAppButton() {
                   </h3>
                   {!showPaymentOptions && (
                     <p className="mt-0.5 text-sm font-medium text-zinc-600">
-                      Acesso por 1 ano — escolha a forma de pagamento
+                      {amountsLoading ? (
+                        'A carregar…'
+                      ) : amounts ? (
+                        <>
+                          {formatEur(amounts.eurCents)}/ano — menos de{' '}
+                          {Math.ceil(amounts.eurCents / 100 / 12)} € por mês
+                        </>
+                      ) : (
+                        'Acesso por 1 ano — escolha a forma de pagamento'
+                      )}
                     </p>
                   )}
                 </div>
@@ -205,7 +225,8 @@ export function FloatingWhatsAppButton() {
               {!showPaymentOptions ? (
                 <>
                   <p className="text-sm leading-relaxed text-zinc-700 mb-4">
-                    Tenha acesso a tudo o que a comunidade oferece e descontos exclusivos em forma de cashback.
+                    Por menos de um café por mês, tenha acesso a tudo o que a comunidade oferece e
+                    descontos exclusivos em forma de cashback.
                   </p>
                   <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700">
                     O que inclui:
