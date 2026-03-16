@@ -68,6 +68,10 @@ export default function PartnerSalesPage() {
   const [salesRejected, setSalesRejected] = useState<any[]>([]);
   const [loadingSales, setLoadingSales] = useState(true);
   const [filterSalesInput, setFilterSalesInput] = useState('');
+  const [commissionModalSale, setCommissionModalSale] = useState<any | null>(null);
+  const [commissionAmount, setCommissionAmount] = useState<string>('');
+  const [commissionSubmitting, setCommissionSubmitting] = useState(false);
+  const [commissionError, setCommissionError] = useState<string | null>(null);
 
   const leadDropdownRef = useRef<HTMLDivElement | null>(null);
 
@@ -246,21 +250,23 @@ export default function PartnerSalesPage() {
   }
 
   function confirmPagarComissao(
-    sale: { user?: { name?: string; email?: string } | null; service?: { title?: string; commission?: string | null } | null; serviceTitle?: string | null; month: number; year: number; amount: number },
+    sale: {
+      id: string;
+      user?: { name?: string; email?: string } | null;
+      service?: { title?: string; commission?: string | null } | null;
+      serviceTitle?: string | null;
+      month: number;
+      year: number;
+      amount: number;
+      commissionEuro: number;
+      commissionPaidEuro?: number | null;
+    },
   ) {
-    const cliente = sale.user?.name || sale.user?.email || '—';
-    const servico = sale.service?.title ?? sale.serviceTitle ?? '—';
-    const mesAno = `${sale.month.toString().padStart(2, '0')}/${sale.year}`;
-    const valor = `${sale.amount.toFixed(2)} €`;
-    const comissao = sale.service?.commission ?? '—';
-    if (
-      !window.confirm(
-        `Marcar comissão como paga?\n\nCliente: ${cliente}\nServiço: ${servico}\nMês/ano: ${mesAno}\nValor: ${valor}\nComissão RPM: ${comissao}`,
-      )
-    ) {
-      return;
-    }
-    // TODO: chamar API quando existir endpoint para marcar comissão como paga
+    setCommissionError(null);
+    setCommissionAmount(
+      (sale.commissionPaidEuro ?? sale.commissionEuro).toFixed(2),
+    );
+    setCommissionModalSale(sale);
   }
 
   if (!user) return null;
@@ -616,10 +622,9 @@ export default function PartnerSalesPage() {
                       <td className="px-3 py-2 text-xs text-zinc-700">
                         {s.service?.commission ?? '—'}
                       </td>
-                      
                       <td className="px-3 py-2 text-xs text-zinc-700">
-                        {s.commissionPaymentStatus === 'PAID' ? (
-                          '—'
+                        {s.commissionPaymentStatus === 'PAID' && s.commissionPaidEuro != null ? (
+                          `${s.commissionPaidEuro.toFixed(2)} €`
                         ) : (
                           <span className="font-medium text-red-600">
                             Pendente

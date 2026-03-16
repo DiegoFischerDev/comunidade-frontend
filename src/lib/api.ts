@@ -524,6 +524,11 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify({ status }),
       }),
+    partnerPayCommission: (saleId: string, body: { amountEuro: number; successUrl: string; cancelUrl: string }) =>
+      request<{ url: string }>(`/sales/partner/${saleId}/pay-commission`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
     userLookup: () =>
       request<{
         partners: {
@@ -594,6 +599,7 @@ export const api = {
           amount: number;
           status: string;
           commissionPaymentStatus: string;
+          commissionPaidEuro: number | null;
           cashbackRequestedAt: string | null;
           cashbackMbwayNumber: string | null;
           cashbackMbwayName: string | null;
