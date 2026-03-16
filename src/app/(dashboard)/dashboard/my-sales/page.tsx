@@ -480,91 +480,6 @@ export default function PartnerSalesPage() {
         )}
         <section>
           <h2 className="text-sm font-semibold text-zinc-900">
-            Vendas pendentes de reconhecimento
-          </h2>
-          {loadingSales ? (
-            <p className="mt-2 text-sm text-zinc-600">Carregando vendas…</p>
-          ) : salesPending.length === 0 ? (
-            <p className="mt-2 text-sm text-zinc-500">
-              Não há vendas pendentes de reconhecimento.
-            </p>
-          ) : filteredSalesPending.length === 0 ? (
-            <p className="mt-2 text-sm text-zinc-500">
-              Nenhum registo corresponde ao filtro.
-            </p>
-          ) : (
-            <div className="mt-3 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-              <table className="min-w-full text-xs md:text-sm">
-                <thead className="bg-zinc-50 text-zinc-600">
-                  <tr>
-                    <th className="px-3 py-2 text-left">Cliente</th>
-                    <th className="px-3 py-2 text-left">Registrado por</th>
-                    <th className="px-3 py-2 text-left">Serviço</th>
-                    <th className="px-3 py-2 text-left">Mês/ano</th>
-                    <th className="px-3 py-2 text-left">Valor</th>
-                    <th className="px-3 py-2 text-left">Comissão RPM</th>
-                    <th className="px-3 py-2 text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredSalesPending.map((s) => (
-                    <tr key={s.id} className="border-t border-zinc-200">
-                      <td className="px-3 py-2">
-                        <div className="max-w-[220px]">
-                          <div className="truncate text-xs font-medium text-zinc-900">
-                            {s.user?.name || 'Sem nome'}
-                          </div>
-                          <div className="truncate text-[11px] text-zinc-500">
-                            {s.user?.email}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 text-xs text-zinc-700">
-                        {s.createdByUser
-                          ? s.createdByUser.name || s.createdByUser.email
-                          : '—'}
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className="text-xs text-zinc-800">
-                          {s.service?.title ?? s.serviceTitle ?? 'Serviço removido'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-xs text-zinc-700">
-                        {s.month.toString().padStart(2, '0')}/{s.year}
-                      </td>
-                      <td className="px-3 py-2 text-xs text-zinc-700">
-                        {s.amount.toFixed(2)} €
-                      </td>
-                      <td className="px-3 py-2 text-xs text-zinc-700">
-                        {s.service?.commission ?? '—'}
-                      </td>
-                      
-                      <td className="px-3 py-2 text-right">
-                        <button
-                          type="button"
-                          onClick={() => confirmUpdateStatus(s, 'APPROVED')}
-                          className="mr-2 cursor-pointer rounded bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
-                        >
-                          Aprovar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => confirmUpdateStatus(s, 'REJECTED')}
-                          className="cursor-pointer rounded bg-red-50 px-3 py-1 text-[11px] font-medium text-red-700 hover:bg-red-100"
-                        >
-                          Recusar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        <section>
-          <h2 className="text-sm font-semibold text-zinc-900">
             Vendas reconhecidas
           </h2>
           {loadingSales ? (
@@ -632,13 +547,98 @@ export default function PartnerSalesPage() {
                         )}
                       </td>
                       <td className="px-3 py-2 text-right">
+                        {s.commissionPaymentStatus === 'PAID' ? null : (
+                          <button
+                            type="button"
+                            onClick={() => confirmPagarComissao(s)}
+                            className="cursor-pointer rounded bg-amber-50 px-3 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
+                          >
+                            Pagar comissão
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section>
+          <h2 className="text-sm font-semibold text-zinc-900">
+            Vendas pendentes de reconhecimento
+          </h2>
+          {loadingSales ? (
+            <p className="mt-2 text-sm text-zinc-600">Carregando vendas…</p>
+          ) : salesPending.length === 0 ? (
+            <p className="mt-2 text-sm text-zinc-500">
+              Não há vendas pendentes de reconhecimento.
+            </p>
+          ) : filteredSalesPending.length === 0 ? (
+            <p className="mt-2 text-sm text-zinc-500">
+              Nenhum registo corresponde ao filtro.
+            </p>
+          ) : (
+            <div className="mt-3 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+              <table className="min-w-full text-xs md:text-sm">
+                <thead className="bg-zinc-50 text-zinc-600">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Cliente</th>
+                    <th className="px-3 py-2 text-left">Registrado por</th>
+                    <th className="px-3 py-2 text-left">Serviço</th>
+                    <th className="px-3 py-2 text-left">Mês/ano</th>
+                    <th className="px-3 py-2 text-left">Valor</th>
+                    <th className="px-3 py-2 text-left">Comissão RPM</th>
+                    <th className="px-3 py-2 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSalesPending.map((s) => (
+                    <tr key={s.id} className="border-t border-zinc-200">
+                      <td className="px-3 py-2">
+                        <div className="max-w-[220px]">
+                          <div className="truncate text-xs font-medium text-zinc-900">
+                            {s.user?.name || 'Sem nome'}
+                          </div>
+                          <div className="truncate text-[11px] text-zinc-500">
+                            {s.user?.email}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-zinc-700">
+                        {s.createdByUser
+                          ? s.createdByUser.name || s.createdByUser.email
+                          : '—'}
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className="text-xs text-zinc-800">
+                          {s.service?.title ?? s.serviceTitle ?? 'Serviço removido'}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-zinc-700">
+                        {s.month.toString().padStart(2, '0')}/{s.year}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-zinc-700">
+                        {s.amount.toFixed(2)} €
+                      </td>
+                      <td className="px-3 py-2 text-xs text-zinc-700">
+                        {s.service?.commission ?? '—'}
+                      </td>
+                      <td className="px-3 py-2 text-right">
                         <button
                           type="button"
-                          onClick={() => confirmPagarComissao(s)}
-                          className="cursor-pointer rounded bg-amber-50 px-3 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
-                          disabled={false}
+                          onClick={() => confirmUpdateStatus(s, 'APPROVED')}
+                          className="mr-2 cursor-pointer rounded bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
                         >
-                          Pagar comissão
+                          Aprovar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => confirmUpdateStatus(s, 'REJECTED')}
+                          className="cursor-pointer rounded bg-red-50 px-3 py-1 text-[11px] font-medium text-red-700 hover:bg-red-100"
+                        >
+                          Recusar
                         </button>
                       </td>
                     </tr>
@@ -724,6 +724,138 @@ export default function PartnerSalesPage() {
           )}
         </section>
       </div>
+
+      {commissionModalSale && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => {
+            if (!commissionSubmitting) {
+              setCommissionModalSale(null);
+            }
+          }}
+          role="presentation"
+        >
+          <div
+            className="relative w-full max-w-md rounded-2xl bg-white p-5 pt-10 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => !commissionSubmitting && setCommissionModalSale(null)}
+              className="absolute right-3 top-3 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-zinc-200 text-zinc-700 shadow-sm transition-colors hover:bg-white hover:text-zinc-900"
+              aria-label="Fechar"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="mb-4">
+              <h3 className="text-base font-bold tracking-tight text-zinc-900">
+                Pagar comissão desta venda
+              </h3>
+            </div>
+            <div className="space-y-3 text-xs text-zinc-700">
+              <div className="rounded-lg bg-zinc-50 p-3">
+                <p>
+                  <span className="font-semibold">Cliente:</span>{' '}
+                  {commissionModalSale.user?.name ||
+                    commissionModalSale.user?.email ||
+                    '—'}
+                </p>
+                <p>
+                  <span className="font-semibold">Serviço:</span>{' '}
+                  {commissionModalSale.service?.title ??
+                    commissionModalSale.serviceTitle ??
+                    '—'}
+                </p>
+                <p>
+                  <span className="font-semibold">Mês/ano:</span>{' '}
+                  {commissionModalSale.month.toString().padStart(2, '0')}/
+                  {commissionModalSale.year}
+                </p>
+                <p>
+                  <span className="font-semibold">Valor da venda:</span>{' '}
+                  {commissionModalSale.amount.toFixed(2)} €
+                </p>
+                <p>
+                  <span className="font-semibold">Comissão sugerida RPM:</span>{' '}
+                  {commissionModalSale.commissionEuro > 0
+                    ? `${commissionModalSale.commissionEuro.toFixed(2)} €`
+                    : 'Indefinido'}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold text-zinc-800">
+                  Valor da comissão a pagar (EUR)
+                </label>
+                <input
+                  type="number"
+                  min={0.01}
+                  step={0.01}
+                  value={commissionAmount}
+                  onChange={(e) => setCommissionAmount(e.target.value)}
+                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  disabled={commissionSubmitting}
+                />
+              </div>
+              {commissionError && (
+                <p className="text-xs text-red-600">{commissionError}</p>
+              )}
+              <div className="mt-3 flex flex-col gap-3">
+                <button
+                  type="button"
+                  disabled={commissionSubmitting}
+                  onClick={async () => {
+                    if (!commissionModalSale) return;
+                    const amount = parseFloat(
+                      commissionAmount.replace(',', '.'),
+                    );
+                    if (!amount || amount <= 0) {
+                      setCommissionError('Informe um valor válido em euros.');
+                      return;
+                    }
+                    setCommissionError(null);
+                    setCommissionSubmitting(true);
+                    try {
+                      const successUrl =
+                        typeof window !== 'undefined'
+                          ? `${window.location.origin}/dashboard/my-sales?commission=success`
+                          : '';
+                      const cancelUrl =
+                        typeof window !== 'undefined'
+                          ? `${window.location.origin}/dashboard/my-sales?commission=cancel`
+                          : '';
+                      const { url } = await api.sales.partnerPayCommission(
+                        commissionModalSale.id,
+                        { amountEuro: amount, successUrl, cancelUrl },
+                      );
+                      if (typeof window !== 'undefined') {
+                        window.open(
+                          url,
+                          '_blank',
+                          'noopener,noreferrer',
+                        );
+                      }
+                      setCommissionSubmitting(false);
+                      setCommissionModalSale(null);
+                    } catch (e) {
+                      setCommissionSubmitting(false);
+                      setCommissionError(
+                        e instanceof Error
+                          ? e.message
+                          : 'Erro ao iniciar o pagamento de comissão.',
+                      );
+                    }
+                  }}
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {commissionSubmitting ? 'A redirecionar…' : 'Pagar com MB WAY'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -14,6 +14,7 @@ type SaleRow = {
   amount: number;
   status: string;
   commissionPaymentStatus: string;
+  commissionPaidEuro: number | null;
   cashbackRequestedAt: string | null;
   cashbackMbwayNumber: string | null;
   cashbackMbwayName: string | null;
@@ -45,6 +46,27 @@ function statusLabel(s: SaleRow): string {
       return 'Compra recusada';
     default:
       return s.status;
+  }
+}
+
+function statusBadgeClass(s: SaleRow): string {
+  if (s.cashbackPaidAt) {
+    // Cashback já pago
+    return 'bg-emerald-100 text-emerald-800';
+  }
+  if (s.cashbackRequestedAt && s.cashbackMbwayNumber) {
+    // Cashback solicitado via MB WAY
+    return 'bg-sky-50 text-sky-700';
+  }
+  switch (s.status) {
+    case 'PENDING_PARTNER':
+      return 'bg-amber-50 text-amber-700';
+    case 'APPROVED':
+      return 'bg-emerald-50 text-emerald-700';
+    case 'REJECTED':
+      return 'bg-red-50 text-red-700';
+    default:
+      return 'bg-zinc-100 text-zinc-700';
   }
 }
 
@@ -296,10 +318,21 @@ export default function AdminPurchasesPage() {
                       {s.month.toString().padStart(2, '0')}/{s.year}
                     </td>
                     <td className="px-3 py-2 text-zinc-700">{s.amount.toFixed(2)} €</td>
-                    <td className="px-3 py-2 text-zinc-700">{statusLabel(s)}</td>
                     <td className="px-3 py-2 text-zinc-700">
-                      {s.commissionPaymentStatus === 'PAID' ? (
-                        'Pago'
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${statusBadgeClass(
+                          s,
+                        )}`}
+                      >
+                        {statusLabel(s)}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-zinc-700">
+                      {s.status === 'REJECTED' ? (
+                        '—'
+                      ) : s.commissionPaymentStatus === 'PAID' &&
+                        s.commissionPaidEuro != null ? (
+                        `${s.commissionPaidEuro.toFixed(2)} €`
                       ) : (
                         <span className="font-medium text-red-600">Pendente</span>
                       )}
