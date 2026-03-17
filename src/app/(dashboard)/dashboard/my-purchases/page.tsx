@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { api } from '@/lib/api';
+import { api, getAuthToken } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
 
 const MBWAY_STORAGE_KEY = 'comunidade_rpm_mbway';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 function getStoredMbway(): { number: string; name: string } {
   if (typeof window === 'undefined') return { number: '', name: '' };
