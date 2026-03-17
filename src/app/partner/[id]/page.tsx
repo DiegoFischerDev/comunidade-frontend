@@ -1,11 +1,13 @@
 import { notFound } from 'next/navigation';
+import { CatalogCarousel } from '@/components/CatalogCarousel';
 
 type PartnerService = {
   id: string;
   title: string;
   description: string | null;
   price: string | null;
-  commissionEuro: number | null;
+  priceOnRequest: boolean;
+  commission: string | null;
 };
 
 type PartnerPublic = {
@@ -16,6 +18,7 @@ type PartnerPublic = {
   shortDescription: string | null;
   fullDescription: string | null;
   backgroundImageUrl: string | null;
+  catalogImageUrls?: string[];
   category: {
     id: string;
     name: string;
@@ -159,6 +162,16 @@ export default async function PartnerPublicPage({ params }: PageProps) {
         </>
       )}
 
+      {/* Carrossel de catálogo */}
+      {partner.catalogImageUrls && partner.catalogImageUrls.length > 0 && (
+        <section>
+          <CatalogCarousel
+            images={partner.catalogImageUrls}
+            apiBaseUrl={API_URL}
+          />
+        </section>
+      )}
+
       {/* Lista de serviços */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-zinc-900">
@@ -179,11 +192,15 @@ export default async function PartnerPublicPage({ params }: PageProps) {
                   <h3 className="text-sm font-semibold text-zinc-900">
                     {service.title}
                   </h3>
-                  {service.price && (
+                  {service.priceOnRequest ? (
+                    <span className="shrink-0 rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700">
+                      Sob consulta
+                    </span>
+                  ) : service.price ? (
                     <span className="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
                       {service.price} €
                     </span>
-                  )}
+                  ) : null}
                 </div>
                 {service.description && (
                   <p className="mt-2 text-sm text-zinc-700">

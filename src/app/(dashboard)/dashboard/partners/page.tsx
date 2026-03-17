@@ -15,7 +15,7 @@ type PartnerRow = {
 };
 
 export default function PartnersPage() {
-  const { user } = useAuth();
+  const { user, impersonateAsUser } = useAuth();
   const [partners, setPartners] = useState<PartnerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -196,7 +196,7 @@ export default function PartnersPage() {
         </div>
         <div className="space-y-1">
           <label className="block text-sm font-medium text-zinc-700">
-            Nome do parceiro
+            Nome
           </label>
           <input
             type="text"
@@ -336,9 +336,27 @@ export default function PartnersPage() {
                     <button
                       type="button"
                       onClick={async () => {
+                        setError('');
+                        try {
+                          await impersonateAsUser(p.user.id);
+                        } catch (err) {
+                          setError(
+                            err instanceof Error
+                              ? err.message
+                              : 'Erro ao entrar como este parceiro.',
+                          );
+                        }
+                      }}
+                      className="mr-2 cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                    >
+                      Logar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
                         if (
                           !window.confirm(
-                            'Tem certeza que deseja remover este parceiro? Esta ação é irreversível.',
+                            `Tem certeza que deseja remover este parceiro? Esta ação é irreversível.\n\nNome: ${p.name}\nEmail: ${p.user.email}\nCategoria: ${p.category?.name ?? '—'}`,
                           )
                         ) {
                           return;
@@ -356,7 +374,7 @@ export default function PartnersPage() {
                           );
                         }
                       }}
-                      className="rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                      className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
                     >
                       Remover
                     </button>

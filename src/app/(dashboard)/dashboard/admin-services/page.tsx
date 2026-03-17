@@ -9,7 +9,8 @@ type ServiceRow = {
   title: string;
   description: string | null;
   price: string | null;
-  commissionEuro: number | null;
+  priceOnRequest?: boolean;
+  commission: string | null;
   createdAt: string;
   partner: { id: string; name: string };
 };
@@ -61,17 +62,21 @@ export default function AdminServicesPage() {
     );
   }
 
-  async function handleSaveCommission(id: string) {
+  async function handleSaveCommission(service: ServiceRow) {
+    const id = service.id;
     const raw = editingCommission[id];
-    const value =
-      raw === undefined || raw === '' ? null : Number(raw.replace(',', '.'));
+    const value = raw === undefined || raw === '' ? null : raw.trim();
     setError('');
     setSavingId(id);
     try {
-      const updated = await api.admin.services.updateCommission(id, value);
+      const updated = await api.admin.services.updateCommission(id, {
+        commission: value,
+      });
       setServices((prev) =>
         prev.map((s) =>
-          s.id === id ? { ...s, commissionEuro: updated.commissionEuro } : s,
+          s.id === id
+            ? { ...s, commission: updated.commission ?? s.commission }
+            : s,
         ),
       );
     } catch (err) {
@@ -91,8 +96,8 @@ export default function AdminServicesPage() {
         Serviços (admin)
       </h1>
       <p className="mt-2 text-zinc-600">
-        Veja os serviços cadastrados pelos parceiros e defina/edite a comissão
-        da RPM (valor em euros) para cada serviço.
+        Veja os serviços cadastrados pelos parceiros e defina a comissão da
+        RPM. Indique o valor e o símbolo ao final (ex.: 10% ou 5 €).
       </p>
 
       {error && (
@@ -117,7 +122,7 @@ export default function AdminServicesPage() {
                 <th className="px-4 py-2 text-left">Parceiro</th>
                 <th className="px-4 py-2 text-left">Serviço</th>
                 <th className="px-4 py-2 text-left">Preço</th>
-                <th className="px-4 py-2 text-left">Comissão (EUR)</th>
+                <th className="px-4 py-2 text-left">Comissão RPM</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
@@ -137,18 +142,20 @@ export default function AdminServicesPage() {
                     )}
                   </td>
                   <td className="px-4 py-2 align-top">
-                    {s.price ?? <span className="text-zinc-400">—</span>}
+                    {s.priceOnRequest ? (
+                      <span className="text-zinc-600">Sob consulta</span>
+                    ) : s.price != null ? (
+                      s.price
+                    ) : (
+                      <span className="text-zinc-400">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-2 align-top">
                     <input
-                      type="number"
-                      step="0.01"
-                      min={0}
+                      type="text"
+                      placeholder="Ex: 10% ou 5 €"
                       value={
-                        editingCommission[s.id] ??
-                        (s.commissionEuro !== null && s.commissionEuro !== undefined
-                          ? String(s.commissionEuro)
-                          : '')
+                        editingCommission[s.id] ?? (s.commission ?? '')
                       }
                       onChange={(e) =>
                         setEditingCommission((prev) => ({
@@ -165,9 +172,9 @@ export default function AdminServicesPage() {
                   <td className="px-4 py-2 text-right align-top">
                     <button
                       type="button"
-                      onClick={() => handleSaveCommission(s.id)}
+                      onClick={() => handleSaveCommission(s)}
                       disabled={savingId === s.id}
-                      className="rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                      className="cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
                     >
                       {savingId === s.id ? 'Salvando…' : 'Salvar'}
                     </button>

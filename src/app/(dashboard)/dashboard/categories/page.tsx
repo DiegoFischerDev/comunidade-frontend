@@ -218,19 +218,19 @@ export default function CategoriesPage() {
     }
   }
 
-  async function handleDeleteCategory(id: string) {
+  async function handleDeleteCategory(category: CategoryRow) {
     if (
       !window.confirm(
-        'Tem certeza que deseja remover esta categoria? Se houver parceiros ou serviços associados, a remoção pode falhar.',
+        `Tem certeza que deseja remover esta categoria? Se houver parceiros ou serviços associados, a remoção pode falhar.\n\nNome: ${category.name}\nSlug: ${category.slug}`,
       )
     ) {
       return;
     }
     setError('');
     try {
-      await api.admin.categories.delete(id);
-      setCategories((prev) => prev.filter((row) => row.id !== id));
-      if (editingId === id) {
+      await api.admin.categories.delete(category.id);
+      setCategories((prev) => prev.filter((row) => row.id !== category.id));
+      if (editingId === category.id) {
         setEditingId(null);
         setEditingSlug('');
         setEditingName('');
@@ -470,7 +470,7 @@ export default function CategoriesPage() {
                           type="button"
                           onClick={handleSaveEdit}
                           disabled={savingEdit}
-                          className="rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                          className="cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
                         >
                           {savingEdit ? 'Salvando…' : 'Salvar'}
                         </button>
@@ -482,7 +482,7 @@ export default function CategoriesPage() {
                             setEditingName('');
                             setEditingSortOrder('');
                           }}
-                          className="rounded bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                          className="cursor-pointer rounded bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
                         >
                           Cancelar
                         </button>
@@ -492,14 +492,14 @@ export default function CategoriesPage() {
                         <button
                           type="button"
                           onClick={() => startEdit(c)}
-                          className="rounded bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                          className="cursor-pointer rounded bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
                         >
                           Editar
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDeleteCategory(c.id)}
-                          className="rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                          onClick={() => handleDeleteCategory(c)}
+                          className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
                         >
                           Remover
                         </button>

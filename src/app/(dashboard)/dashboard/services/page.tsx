@@ -9,8 +9,9 @@ type PartnerServiceRow = {
   title: string;
   description: string | null;
   price: string | null;
+  priceOnRequest: boolean;
   createdAt: string;
-  commissionEuro: number | null;
+  commission: string | null;
 };
 
 export default function PartnerServicesPage() {
@@ -22,6 +23,7 @@ export default function PartnerServicesPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [priceOnRequest, setPriceOnRequest] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -66,11 +68,22 @@ export default function PartnerServicesPage() {
     setSubmitting(true);
 
     try {
+      if (!description.trim()) {
+        setError('A descrição é obrigatória.');
+        setSubmitting(false);
+        return;
+      }
+      if (!priceOnRequest && !price.trim()) {
+        setError('O valor é obrigatório quando o serviço não é "sob consulta".');
+        setSubmitting(false);
+        return;
+      }
       if (editingId) {
         const updated = await api.partner.services.update(editingId, {
           title,
-          description: description || undefined,
-          price: price || undefined,
+          description: description.trim(),
+          priceOnRequest,
+          price: priceOnRequest ? undefined : price.trim() || undefined,
         });
         setServices((prev) =>
           prev.map((s) => (s.id === editingId ? updated : s)),
@@ -78,8 +91,9 @@ export default function PartnerServicesPage() {
       } else {
         const created = await api.partner.services.create({
           title,
-          description: description || undefined,
-          price: price || undefined,
+          description: description.trim(),
+          priceOnRequest,
+          price: priceOnRequest ? undefined : price.trim() || undefined,
         });
         setServices((prev) => [created, ...prev]);
       }
@@ -87,6 +101,7 @@ export default function PartnerServicesPage() {
       setTitle('');
       setDescription('');
       setPrice('');
+      setPriceOnRequest(false);
       setEditingId(null);
     } catch (err) {
       setError(
@@ -104,25 +119,27 @@ export default function PartnerServicesPage() {
     setTitle(service.title);
     setDescription(service.description ?? '');
     setPrice(service.price ?? '');
+    setPriceOnRequest(service.priceOnRequest ?? false);
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(service: PartnerServiceRow) {
     if (
       !window.confirm(
-        'Tem certeza que deseja remover este serviço? Esta ação é irreversível.',
+        `Tem certeza que deseja remover este serviço? Esta ação é irreversível.\n\nServiço: ${service.title}`,
       )
     ) {
       return;
     }
     setError('');
     try {
-      await api.partner.services.delete(id);
-      setServices((prev) => prev.filter((s) => s.id !== id));
-      if (editingId === id) {
+      await api.partner.services.delete(service.id);
+      setServices((prev) => prev.filter((s) => s.id !== service.id));
+      if (editingId === service.id) {
         setEditingId(null);
         setTitle('');
         setDescription('');
         setPrice('');
+        setPriceOnRequest(false);
       }
     } catch (err) {
       setError(
@@ -165,26 +182,42 @@ export default function PartnerServicesPage() {
         </div>
         <div className="space-y-1">
           <label className="block text-sm font-medium text-zinc-700">
-            Descrição (opcional)
+            Descrição
           </label>
           <textarea
+            required
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2">
           <label className="block text-sm font-medium text-zinc-700">
-            Valor (opcional)
+            Valor
           </label>
           <input
-            type="text"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            placeholder="Ex.: 50€ ou Sob consulta"
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            placeholder="Ex.: 50.00"
+            disabled={priceOnRequest}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-zinc-100 disabled:text-zinc-500"
           />
+          <label className="flex items-center gap-2 text-sm text-zinc-700">
+            <input
+              type="checkbox"
+              checked={priceOnRequest}
+              onChange={(e) => {
+                setPriceOnRequest(e.target.checked);
+                if (e.target.checked) setPrice('');
+              }}
+              className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+            />
+            Sob consulta
+          </label>
         </div>
         <div>
           <button
@@ -206,6 +239,7 @@ export default function PartnerServicesPage() {
                 setTitle('');
                 setDescription('');
                 setPrice('');
+                setPriceOnRequest(false);
               }}
               className="ml-3 inline-flex items-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
             >
@@ -232,7 +266,7 @@ export default function PartnerServicesPage() {
                 <th className="px-4 py-2 text-left">Título</th>
                 <th className="px-4 py-2 text-left">Descrição</th>
                 <th className="px-4 py-2 text-left">Valor (EUR)</th>
-                <th className="px-4 py-2 text-left">Comissão RPM (EUR)</th>
+                <th className="px-4 py-2 text-left">Comissão RPM</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
@@ -251,7 +285,9 @@ export default function PartnerServicesPage() {
                     )}
                   </td>
                   <td className="px-4 py-2 align-top">
-                    {s.price ? (
+                    {s.priceOnRequest ? (
+                      <span className="text-xs text-zinc-600">Sob consulta</span>
+                    ) : s.price ? (
                       <span className="text-xs font-medium text-emerald-700">
                         {s.price} €
                       </span>
@@ -260,9 +296,9 @@ export default function PartnerServicesPage() {
                     )}
                   </td>
                   <td className="px-4 py-2 align-top">
-                    {s.commissionEuro != null ? (
+                    {s.commission ? (
                       <span className="text-xs font-medium text-emerald-700">
-                        {Math.round(s.commissionEuro)} €
+                        {s.commission}
                       </span>
                     ) : (
                       <span className="text-zinc-400 text-xs">—</span>
@@ -275,14 +311,14 @@ export default function PartnerServicesPage() {
                     <button
                       type="button"
                       onClick={() => startEdit(s)}
-                      className="rounded bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                      className="cursor-pointer rounded bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
                     >
                       Editar
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDelete(s.id)}
-                      className="rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                      onClick={() => handleDelete(s)}
+                      className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
                     >
                       Remover
                     </button>
