@@ -196,7 +196,7 @@ export default function PartnersPage() {
         </div>
         <div className="space-y-1">
           <label className="block text-sm font-medium text-zinc-700">
-            Nome do parceiro
+            Nome
           </label>
           <input
             type="text"

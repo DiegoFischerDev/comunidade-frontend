@@ -313,7 +313,7 @@ export default function PartnerPage() {
               )}
               <div>
                 <h2 className="text-base font-semibold text-zinc-900">
-                  Contactos do parceiro
+                  Informações de contatos
                 </h2>
                 <p className="mt-0.5 text-xs text-zinc-500">
                   Use estes dados para falar diretamente com {partner.name}.

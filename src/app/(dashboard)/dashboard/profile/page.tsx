@@ -5,12 +5,13 @@ import { api, getAuthToken } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function PartnerProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
@@ -36,8 +37,9 @@ export default function PartnerProfilePage() {
     (async () => {
       try {
         const data = await api.partner.me();
+        setEmail(user.email ?? '');
         setName(data.name);
-        setWhatsapp(data.whatsapp);
+        setWhatsapp(data.whatsapp || user.whatsapp || '');
         setLogoUrl(data.logoUrl ?? '');
         setShortDescription(data.shortDescription ?? '');
         setFullDescription(data.fullDescription ?? '');
@@ -76,6 +78,11 @@ export default function PartnerProfilePage() {
     setSaving(true);
 
     try {
+      // Atualiza primeiro o utilizador autenticado (email)
+      if (email && user && email !== user.email) {
+        await api.auth.updateMe({ email });
+      }
+
       const updated = await api.partner.updateMe({
         logoUrl: logoUrl || undefined,
         shortDescription: shortDescription || undefined,
@@ -92,6 +99,7 @@ export default function PartnerProfilePage() {
       setCatalogImageUrls(Array.isArray(updated.catalogImageUrls) ? updated.catalogImageUrls : []);
       setInstagram(updated.instagram ?? '');
 
+      await refreshUser();
       setSuccess('Perfil atualizado com sucesso.');
     } catch (err) {
       setError(
@@ -266,7 +274,7 @@ export default function PartnerProfilePage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1">
               <label className="block text-sm font-medium text-zinc-700">
-                Nome do parceiro
+                Nome
               </label>
               <input
                 type="text"
@@ -277,16 +285,28 @@ export default function PartnerProfilePage() {
             </div>
             <div className="space-y-1">
               <label className="block text-sm font-medium text-zinc-700">
-                WhatsApp (definido no cadastro)
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-zinc-700">
+                WhatsApp
               </label>
               <input
                 type="text"
                 value={whatsapp}
-                disabled
-                className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-500"
+                onChange={(e) => setWhatsapp(e.target.value)}
+                placeholder="Ex.: 351912345678"
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
-            <div className="space-y-1 md:col-span-2">
+            <div className="space-y-1">
               <label className="block text-sm font-medium text-zinc-700">
                 Instagram
               </label>
@@ -307,6 +327,15 @@ export default function PartnerProfilePage() {
           </div>
 
           <div className="space-y-1">
+            {logoUrl && (
+              <div className="mb-2">
+                <img
+                  src={logoUrl}
+                  alt="Pré-visualização da logo"
+                  className="h-12 w-12 rounded object-contain border border-zinc-200 bg-white"
+                />
+              </div>
+            )}
             <label className="block text-sm font-medium text-zinc-700">
               Logo (upload)
             </label>
@@ -314,7 +343,7 @@ export default function PartnerProfilePage() {
               type="file"
               accept="image/*"
               onChange={handleLogoUpload}
-              className="block w-full text-sm text-zinc-900 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
+              className="block w-full text-sm text-zinc-900 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
             />
             <p className="mt-1 text-xs text-zinc-500">
               {uploadingLogo
@@ -323,15 +352,6 @@ export default function PartnerProfilePage() {
                 ? 'Logo carregada com sucesso.'
                 : 'Selecione uma imagem de logo para o seu perfil de parceiro.'}
             </p>
-            {logoUrl && (
-              <div className="mt-2">
-                <img
-                  src={logoUrl}
-                  alt="Pré-visualização da logo"
-                  className="h-12 w-12 rounded object-contain border border-zinc-200 bg-white"
-                />
-              </div>
-            )}
           </div>
 
           <div className="space-y-1">
@@ -366,7 +386,7 @@ export default function PartnerProfilePage() {
               type="file"
               accept="image/*"
               onChange={handleBackgroundUpload}
-              className="block w-full text-sm text-zinc-900 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 py-1.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
+              className="block w-full text-sm text-zinc-900 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
             />
             <p className="mt-1 text-xs text-zinc-500">
               {uploadingBackground
@@ -376,7 +396,7 @@ export default function PartnerProfilePage() {
                 : 'Selecione uma imagem para o banner do seu perfil de parceiro.'}
             </p>
             {backgroundImageUrl && (
-              <div className="mt-2 h-20 w-full overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100">
+              <div className="mt-2 h-56 w-full overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100">
                 <div
                   className="h-full w-full bg-cover bg-center"
                   style={{ backgroundImage: `url(${backgroundImageUrl})` }}

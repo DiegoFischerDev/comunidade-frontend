@@ -398,7 +398,7 @@ export default function DashboardLayout({
               </Link>
             </>
           )}
-          {user && user.role !== 'ADMIN' && (
+          {user && user.role === 'USER' && (
             <Link
               href="/dashboard/my-purchases"
               className={`block rounded-md px-3 py-2 ${

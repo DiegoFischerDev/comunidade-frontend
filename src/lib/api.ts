@@ -93,6 +93,19 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(params),
       }),
+    updateMe: (body: { email?: string }) =>
+      request<{
+        id: string;
+        email: string;
+        role: string;
+        name?: string;
+        whatsapp?: string;
+        tier?: string;
+        membershipExpiresAt?: string | null;
+      }>('/auth/me', {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }),
     me: (token: string) =>
       request<{ id: string; email: string; role: string; name?: string; whatsapp?: string; tier?: string; membershipExpiresAt?: string | null }>(
         '/auth/me',
