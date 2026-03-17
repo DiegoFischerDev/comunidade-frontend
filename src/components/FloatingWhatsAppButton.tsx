@@ -47,6 +47,13 @@ export function FloatingWhatsAppButton() {
   type PaymentMethod = 'card' | 'mbway' | 'pix';
   async function handleStartCheckout(method: PaymentMethod) {
     if (checkoutLoading || typeof window === 'undefined') return;
+
+    // Trava de segurança: membros ativos não devem pagar novamente
+    if (isMember) {
+      alert('Você já é membro ativo da Comunidade RPM. Não é necessário pagar novamente a anuidade.');
+      closeAll();
+      return;
+    }
     setCheckoutLoading(true);
     try {
       const { url } =
@@ -102,6 +109,13 @@ export function FloatingWhatsAppButton() {
   }
 
   async function handleQueroSerMembro() {
+    // Se já for membro, não abre opções de pagamento
+    if (isMember) {
+      alert('Você já é membro ativo da Comunidade RPM. Se precisar de ajuda, fale com a Rafa pelo WhatsApp.');
+      closeAll();
+      return;
+    }
+
     setShowPaymentOptions(true);
     if (amounts === null && !amountsLoading) {
       setAmountsLoading(true);

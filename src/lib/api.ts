@@ -93,7 +93,13 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(params),
       }),
-    updateMe: (body: { email?: string }) =>
+    updateMe: (body: {
+      name?: string;
+      email?: string;
+      whatsapp?: string;
+      instagram?: string;
+      profileImageUrl?: string;
+    }) =>
       request<{
         id: string;
         email: string;
@@ -102,6 +108,8 @@ export const api = {
         whatsapp?: string;
         tier?: string;
         membershipExpiresAt?: string | null;
+        instagram?: string | null;
+        profileImageUrl?: string | null;
       }>('/auth/me', {
         method: 'PATCH',
         body: JSON.stringify(body),

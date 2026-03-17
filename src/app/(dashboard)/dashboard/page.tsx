@@ -1,7 +1,17 @@
+/* eslint-disable react/no-array-index-key */
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 
+import { useAuth } from "@/contexts/AuthContext";
+
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const isMember = user?.tier === "MEMBER";
+
+  const pdfHref = isMember ? "/psp/psp-completo.pdf" : "/psp";
+
   return (
     <div className="space-y-8">
       <div>
@@ -38,7 +48,9 @@ export default function DashboardPage() {
 
             <div className="flex flex-wrap items-center gap-3">
               <Link
-                href="/psp"
+                href={pdfHref}
+                target={isMember ? "_blank" : undefined}
+                rel={isMember ? "noopener noreferrer" : undefined}
                 className="inline-flex items-center rounded-lg bg-[#edbfbf] px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-[#e3afaf]"
               >
                 Acessar PDF

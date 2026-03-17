@@ -18,6 +18,8 @@ type User = {
   whatsapp?: string;
   tier?: string;
   membershipExpiresAt?: string | null;
+  instagram?: string | null;
+  profileImageUrl?: string | null;
 } | null;
 
 type AuthContextValue = {

@@ -300,6 +300,18 @@ export default function DashboardLayout({
 
         {/* Links de ações (parceiro/admin) */}
         <nav className="mt-4 space-y-1 text-xs">
+          {user && (
+            <Link
+              href="/dashboard/profile"
+              className={`block rounded-md px-3 py-2 ${
+                pathname === '/dashboard/profile'
+                  ? 'bg-primary-3 font-medium text-primary-2'
+                  : 'text-primary-1 hover:bg-secondary-3'
+              }`}
+            >
+              Meu perfil
+            </Link>
+          )}
           {user?.role === 'PARTNER' && (
             <>
               <Link
@@ -313,14 +325,14 @@ export default function DashboardLayout({
                 Meus leads
               </Link>
               <Link
-                href="/dashboard/profile"
+                href="/dashboard/business"
                 className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/profile'
+                  pathname === '/dashboard/business'
                     ? 'bg-primary-3 font-medium text-primary-2'
                     : 'text-primary-1 hover:bg-secondary-3'
                 }`}
               >
-                Meu perfil
+                Minha empresa
               </Link>
               <Link
                 href="/dashboard/services"
