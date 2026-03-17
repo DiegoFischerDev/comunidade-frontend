@@ -42,16 +42,14 @@ export default function PSPPage() {
         {isMember && (
           <div className="flex flex-wrap items-center gap-3">
             <Link
-              href="/psp/psp-completo.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/psp/full"
               className="inline-flex items-center rounded-lg bg-[#edbfbf] px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-[#e3afaf]"
             >
-              Abrir PDF completo
+              Ver PDF completo
             </Link>
             <p className="text-xs text-zinc-500 max-w-xs">
               Como membro da Comunidade RPM, você tem acesso integral ao ebook
-              em PDF em uma nova aba.
+              em PDF dentro da Comunidade RPM.
             </p>
           </div>
         )}

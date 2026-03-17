@@ -60,10 +60,13 @@ export default function UserPurchasesPage() {
   const [sales, setSales] = useState<any[]>([]);
   const [loadingSales, setLoadingSales] = useState(true);
   const [error, setError] = useState('');
+  const [newSaleModalOpen, setNewSaleModalOpen] = useState(false);
   const [mbwayModalSaleId, setMbwayModalSaleId] = useState<string | null>(null);
   const [mbwayNumber, setMbwayNumber] = useState('');
   const [mbwayName, setMbwayName] = useState('');
   const [mbwaySubmitting, setMbwaySubmitting] = useState(false);
+  const [uploadProofModalSaleId, setUploadProofModalSaleId] = useState<string | null>(null);
+  const [uploadingProof, setUploadingProof] = useState(false);
 
   useEffect(() => {
     if (mbwayModalSaleId) {
@@ -172,6 +175,7 @@ export default function UserPurchasesPage() {
       setSelectedServiceId('');
       setAmount('');
       await reloadUserSales();
+      setNewSaleModalOpen(false);
     } catch (err) {
       setError(
         err instanceof Error
@@ -198,140 +202,17 @@ export default function UserPurchasesPage() {
         </div>
       )}
 
-      {/* Novo registro */}
-      <form
-        onSubmit={handleCreateSale}
-        className="mt-6 space-y-4 rounded-lg border border-zinc-200 bg-white p-4"
-      >
-        <h2 className="text-sm font-semibold text-zinc-900">
+      {/* Botão para abrir modal de novo registro */}
+      <div className="mt-6">
+        <button
+          type="button"
+          disabled={loadingLookup}
+          onClick={() => setNewSaleModalOpen(true)}
+          className="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+        >
           Registar nova compra
-        </h2>
-
-        {loadingLookup ? (
-          <p className="text-sm text-zinc-600">Carregando dados…</p>
-        ) : (
-          <>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-zinc-700">
-                  Parceiro
-                </label>
-                <select
-                  value={selectedPartnerId}
-                  onChange={(e) => handlePartnerChange(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="">Selecione um parceiro</option>
-                  {partners.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                      {p.category?.name ? ` — ${p.category.name}` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-zinc-700">
-                  Serviço / produto
-                </label>
-                <select
-                  value={selectedServiceId}
-                  onChange={(e) => setSelectedServiceId(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  disabled={!selectedPartnerId}
-                >
-                  <option value="">
-                    {selectedPartnerId
-                      ? 'Selecione um serviço'
-                      : 'Selecione primeiro um parceiro'}
-                  </option>
-                  {services.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.title}
-                      {s.priceOnRequest ? ' — Sob consulta' : s.price ? ` — ${s.price}` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-zinc-700">
-                  Mês da compra
-                </label>
-                <select
-                  value={month}
-                  onChange={(e) => setMonth(Number(e.target.value))}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  {Array.from({ length: 12 }).map((_, idx) => {
-                    const m = idx + 1;
-                    return (
-                      <option key={m} value={m}>
-                        {m.toString().padStart(2, '0')}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-zinc-700">
-                  Ano da compra
-                </label>
-                <select
-                  value={year}
-                  onChange={(e) => setYear(Number(e.target.value))}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  {Array.from({ length: 5 }).map((_, idx) => {
-                    const y = new Date().getFullYear() - 2 + idx;
-                    return (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-zinc-700">
-                  {isAmountRequired
-                    ? 'Valor da compra (obrigatório para serviço sob consulta)'
-                    : 'Valor da compra'}
-                </label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder={isAmountRequired ? 'Ex: 120.50' : 'Preenchido pelo valor do serviço'}
-                  required={isAmountRequired}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                disabled={
-                  creating ||
-                  !selectedPartnerId ||
-                  !selectedServiceId ||
-                  !month ||
-                  !year ||
-                  (isAmountRequired && (!amount.trim() || !Number.isFinite(Number(amount.replace(',', '.'))) || Number(amount.replace(',', '.')) <= 0))
-                }
-                className="cursor-pointer inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-              >
-                {creating ? 'A registar…' : 'Registar compra'}
-              </button>
-            </div>
-          </>
-        )}
-      </form>
+        </button>
+      </div>
 
       {/* Lista de compras */}
       <section className="mt-8">
@@ -371,26 +252,38 @@ export default function UserPurchasesPage() {
                     <td className="px-3 py-2 text-xs text-zinc-700">
                       {s.amount.toFixed(2)} €
                     </td>
-                    <td className="px-3 py-2 text-xs text-zinc-700">
-                      {s.cashbackRequestedAt && s.cashbackMbwayNumber
-                        ? `Mbway para ${s.cashbackMbwayNumber}`
-                        : s.status === 'PENDING_PARTNER'
-                        ? 'Aguardando aprovação do parceiro'
-                        : s.status === 'APPROVED'
-                        ? 'Compra aprovada'
-                        : 'Compra recusada'}
+                    <td className="px-3 py-2 text-xs">
+                      {s.cashbackRequestedAt && s.cashbackMbwayNumber ? (
+                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-100">
+                          Mbway para {s.cashbackMbwayNumber}
+                        </span>
+                      ) : s.status === 'PENDING_PARTNER' ? (
+                        <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 ring-1 ring-amber-100">
+                          Aguardando aprovação do parceiro
+                        </span>
+                      ) : s.status === 'APPROVED' ? (
+                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-100">
+                          Compra aprovada
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700 ring-1 ring-red-100">
+                          Compra negada
+                          {s.partner?.name ? ` por ${s.partner.name}` : ''}
+                        </span>
+                      )}
                     </td>
                     <td className="px-3 py-2 text-xs text-zinc-700">
                       {s.cashbackPaidAt ? (
-                        <span className="font-semibold text-emerald-700">
-                          Pago 20 €
+                        <span className="text-zinc-800">
+                          Pago 20 € em{" "}
+                          {new Date(s.cashbackPaidAt).toLocaleDateString('pt-PT')}
                         </span>
                       ) : s.cashbackRequestedAt ? (
-                        <span className="font-semibold text-emerald-700">
+                        <span className="text-zinc-800">
                           Solicitado 20 €
                         </span>
                       ) : s.cashbackEligible ? (
-                        <span className="font-semibold text-emerald-700">
+                        <span className="text-zinc-800">
                           20 €
                         </span>
                       ) : s.status === 'PENDING_PARTNER' ? (
@@ -404,20 +297,32 @@ export default function UserPurchasesPage() {
                       )}
                     </td>
                     <td className="px-3 py-2">
-                      <button
-                        type="button"
-                        disabled={!s.cashbackEligible}
-                        className="cursor-pointer rounded-md bg-emerald-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:hover:bg-zinc-300"
-                        onClick={() => {
-                          if (user?.tier !== 'MEMBER') {
-                            window.dispatchEvent(new CustomEvent(OPEN_MEMBERSHIP_MODAL_EVENT));
-                            return;
-                          }
-                          setMbwayModalSaleId(s.id);
-                        }}
-                      >
-                        Solicitar cashback
-                      </button>
+                      {s.status === 'REJECTED' ? (
+                        <button
+                          type="button"
+                          className="cursor-pointer rounded-md bg-amber-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-amber-700"
+                          onClick={() => setUploadProofModalSaleId(s.id)}
+                        >
+                          Enviar print do pagamento
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={!s.cashbackEligible}
+                          className="cursor-pointer rounded-md bg-emerald-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:hover:bg-zinc-300"
+                          onClick={() => {
+                            if (user?.tier !== 'MEMBER') {
+                              window.dispatchEvent(
+                                new CustomEvent(OPEN_MEMBERSHIP_MODAL_EVENT),
+                              );
+                              return;
+                            }
+                            setMbwayModalSaleId(s.id);
+                          }}
+                        >
+                          Solicitar cashback
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -426,6 +331,183 @@ export default function UserPurchasesPage() {
           </div>
         )}
       </section>
+
+      {/* Modal de novo registro de compra */}
+      {newSaleModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setNewSaleModalOpen(false)}
+          role="presentation"
+        >
+          <div
+            className="relative w-full max-w-lg rounded-xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setNewSaleModalOpen(false)}
+              className="absolute right-3 top-3 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-zinc-200 text-zinc-700 transition-colors hover:bg-white hover:text-zinc-900"
+              aria-label="Fechar"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h2 className="pr-8 text-base font-semibold text-zinc-900">
+              Registar nova compra
+            </h2>
+            <p className="mt-1 text-xs text-zinc-600">
+              Informe os detalhes da compra realizada com um parceiro da Comunidade RPM.
+            </p>
+
+            {loadingLookup ? (
+              <p className="mt-4 text-sm text-zinc-600">Carregando dados…</p>
+            ) : (
+              <form
+                onSubmit={handleCreateSale}
+                className="mt-4 space-y-4"
+              >
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-medium text-zinc-700">
+                      Parceiro
+                    </label>
+                    <select
+                      value={selectedPartnerId}
+                      onChange={(e) => handlePartnerChange(e.target.value)}
+                      className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="">Selecione um parceiro</option>
+                      {partners.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                          {p.category?.name ? ` — ${p.category.name}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-medium text-zinc-700">
+                      Serviço / produto
+                    </label>
+                    <select
+                      value={selectedServiceId}
+                      onChange={(e) => setSelectedServiceId(e.target.value)}
+                      className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      disabled={!selectedPartnerId}
+                    >
+                      <option value="">
+                        {selectedPartnerId
+                          ? 'Selecione um serviço'
+                          : 'Selecione primeiro um parceiro'}
+                      </option>
+                      {services.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.title}
+                          {s.priceOnRequest
+                            ? ' — Sob consulta'
+                            : s.price
+                            ? ` — ${s.price}`
+                            : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-medium text-zinc-700">
+                      Mês da compra
+                    </label>
+                    <select
+                      value={month}
+                      onChange={(e) => setMonth(Number(e.target.value))}
+                      className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      {Array.from({ length: 12 }).map((_, idx) => {
+                        const m = idx + 1;
+                        return (
+                          <option key={m} value={m}>
+                            {m.toString().padStart(2, '0')}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-medium text-zinc-700">
+                      Ano da compra
+                    </label>
+                    <select
+                      value={year}
+                      onChange={(e) => setYear(Number(e.target.value))}
+                      className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      {Array.from({ length: 5 }).map((_, idx) => {
+                        const y = new Date().getFullYear() - 2 + idx;
+                        return (
+                          <option key={y} value={y}>
+                            {y}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-medium text-zinc-700">
+                      Valor da compra
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder={
+                        isAmountRequired
+                          ? 'Ex: 120.50'
+                          : 'Preenchido pelo valor do serviço'
+                      }
+                      required={isAmountRequired}
+                      className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewSaleModalOpen(false)}
+                    className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={
+                      creating ||
+                      !selectedPartnerId ||
+                      !selectedServiceId ||
+                      !month ||
+                      !year ||
+                      (isAmountRequired &&
+                        (!amount.trim() ||
+                          !Number.isFinite(
+                            Number(amount.replace(',', '.')),
+                          ) ||
+                          Number(amount.replace(',', '.')) <= 0))
+                    }
+                    className="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+                  >
+                    {creating ? 'A guardar…' : 'Salvar compra'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modal MB Way — só para membros */}
       {mbwayModalSaleId && (
@@ -516,6 +598,125 @@ export default function UserPurchasesPage() {
                   className="flex-1 cursor-pointer rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
                 >
                   {mbwaySubmitting ? 'A enviar…' : 'Enviar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal upload comprovativo de pagamento */}
+      {uploadProofModalSaleId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => !uploadingProof && setUploadProofModalSaleId(null)}
+          role="presentation"
+        >
+          <div
+            className="relative w-full max-w-sm rounded-xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => !uploadingProof && setUploadProofModalSaleId(null)}
+              className="absolute right-3 top-3 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-zinc-200 text-zinc-700 transition-colors hover:bg-white hover:text-zinc-900"
+              aria-label="Fechar"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h3 className="pr-8 text-base font-semibold text-zinc-900">
+              Enviar print do pagamento
+            </h3>
+            <p className="mt-1 text-xs text-zinc-600">
+              Envie uma imagem do comprovativo de pagamento para que o parceiro
+              possa voltar a analisar esta compra.
+            </p>
+            <form
+              className="mt-4 space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!uploadProofModalSaleId) return;
+                const input = e.currentTarget.elements.namedItem(
+                  'payment-proof',
+                ) as HTMLInputElement | null;
+                const file = input?.files?.[0];
+                if (!file) {
+                  setError('Selecione uma imagem do comprovativo.');
+                  return;
+                }
+                setUploadingProof(true);
+                setError('');
+                try {
+                  const formData = new FormData();
+                  formData.append('file', file);
+                  const token = getAuthToken();
+                  const res = await fetch(
+                    `${API_URL}/uploads`,
+                    {
+                      method: 'POST',
+                      headers: token
+                        ? { Authorization: `Bearer ${token}` }
+                        : undefined,
+                      body: formData,
+                    },
+                  );
+                  const data = await res.json();
+                  if (!res.ok) {
+                    throw new Error(
+                      data.message ||
+                        'Erro ao fazer upload do comprovativo.',
+                    );
+                  }
+                  const url = `${API_URL}${data.url}`;
+                  await api.sales.userAddPaymentProof(
+                    uploadProofModalSaleId,
+                    { paymentProofUrl: url },
+                  );
+                  setUploadProofModalSaleId(null);
+                  await reloadUserSales();
+                } catch (err) {
+                  setError(
+                    err instanceof Error
+                      ? err.message
+                      : 'Erro ao enviar print do pagamento.',
+                  );
+                } finally {
+                  setUploadingProof(false);
+                }
+              }}
+            >
+              <div>
+                <label className="block text-sm font-medium text-zinc-700">
+                  Imagem do comprovativo
+                </label>
+                <input
+                  type="file"
+                  name="payment-proof"
+                  accept="image/*"
+                  className="mt-1 block w-full text-xs text-zinc-900 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
+                  disabled={uploadingProof}
+                />
+                <p className="mt-1 text-[11px] text-zinc-500">
+                  Formatos suportados: JPG, PNG, WebP. Tamanho máximo recomendado
+                  5MB.
+                </p>
+              </div>
+              <div className="mt-2 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => !uploadingProof && setUploadProofModalSaleId(null)}
+                  className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={uploadingProof}
+                  className="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+                >
+                  {uploadingProof ? 'Enviando…' : 'Salvar print'}
                 </button>
               </div>
             </form>

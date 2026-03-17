@@ -590,6 +590,7 @@ export default function PartnerSalesPage() {
                     <th className="px-3 py-2 text-left">Mês/ano</th>
                     <th className="px-3 py-2 text-left">Valor</th>
                     <th className="px-3 py-2 text-left">Comissão RPM</th>
+                    <th className="px-3 py-2 text-left">Comprovativo</th>
                     <th className="px-3 py-2 text-right">Ações</th>
                   </tr>
                 </thead>
@@ -624,6 +625,20 @@ export default function PartnerSalesPage() {
                       </td>
                       <td className="px-3 py-2 text-xs text-zinc-700">
                         {s.service?.commission ?? '—'}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-zinc-700">
+                        {s.paymentProofUrl ? (
+                          <a
+                            href={s.paymentProofUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="cursor-pointer text-xs font-medium text-blue-600 hover:underline"
+                          >
+                            Ver comprovativo
+                          </a>
+                        ) : (
+                          <span className="text-zinc-400">—</span>
+                        )}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <button

@@ -604,6 +604,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(body),
       }),
+    userAddPaymentProof: (saleId: string, body: { paymentProofUrl: string }) =>
+      request<void>(`/sales/user/${saleId}/payment-proof`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
     adminList: (params?: { partnerId?: string; status?: string; cashbackOnly?: boolean }) => {
       const search = new URLSearchParams();
       if (params?.partnerId) search.set('partnerId', params.partnerId);
