@@ -25,8 +25,11 @@ type SaleRow = {
   invoicePdfUrl?: string | null;
   invoiceSentAt?: string | null;
   cashbackRequestedAt: string | null;
+  cashbackPayoutMethod?: 'MBWAY' | 'PIX' | null;
   cashbackMbwayNumber: string | null;
   cashbackMbwayName: string | null;
+  cashbackPixKey?: string | null;
+  cashbackPixName?: string | null;
   cashbackPaymentProofUrl?: string | null;
   cashbackPaidAt: string | null;
   user: { id: string; name: string; email: string } | null;
@@ -35,12 +38,20 @@ type SaleRow = {
   serviceTitle: string | null;
 };
 
-const STATUS_OPTIONS = [
-  { value: '', label: 'Todos os estados' },
-  { value: 'PENDING_PARTNER', label: 'Aguardando aprovação' },
-  { value: 'APPROVED', label: 'Aprovada' },
-  { value: 'REJECTED', label: 'Recusada' },
-  { value: 'CASHBACK', label: 'Cashback solicitado' },
+const COMMISSION_STATUS_OPTIONS = [
+  { value: '', label: 'Todos (comissão)' },
+  { value: 'PENDING', label: 'Comissão pendente' },
+  { value: 'PAID', label: 'Comissão paga' },
+  { value: 'INVOICE_WAITING', label: 'Aguardando emissão de fatura' },
+  { value: 'INVOICE_SENT', label: 'Fatura enviada' },
+  { value: 'REJECTED', label: 'Compra recusada' },
+];
+
+const CASHBACK_STATUS_OPTIONS = [
+  { value: '', label: 'Todos (cashback)' },
+  { value: 'NONE', label: 'Não solicitado' },
+  { value: 'REQUESTED', label: 'Cashback solicitado' },
+  { value: 'PAID', label: 'Cashback pago' },
 ];
 
 function commissionStatusLabel(s: SaleRow): string {
@@ -66,13 +77,13 @@ function commissionStatusBadgeClass(s: SaleRow): string {
 
 function cashbackStatusLabel(s: SaleRow): string {
   if (s.cashbackPaidAt) return 'Cashback pago';
-  if (s.cashbackRequestedAt && s.cashbackMbwayNumber) return 'Cashback solicitado';
+  if (s.cashbackRequestedAt) return 'Cashback solicitado';
   return '—';
 }
 
 function cashbackStatusBadgeClass(s: SaleRow): string {
   if (s.cashbackPaidAt) return 'bg-emerald-100 text-emerald-800';
-  if (s.cashbackRequestedAt && s.cashbackMbwayNumber) return 'bg-sky-50 text-sky-700';
+  if (s.cashbackRequestedAt) return 'bg-sky-50 text-sky-700';
   return 'bg-zinc-100 text-zinc-700';
 }
 
@@ -83,7 +94,8 @@ export default function AdminPurchasesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filterPartnerId, setFilterPartnerId] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterCommissionStatus, setFilterCommissionStatus] = useState('');
+  const [filterCashbackStatus, setFilterCashbackStatus] = useState('');
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [filterSalesInput, setFilterSalesInput] = useState('');
@@ -129,8 +141,14 @@ export default function AdminPurchasesPage() {
       : s.cashbackRequestedAt
       ? 'cashback solicitado'
       : '';
-    const cashbackName = s.cashbackMbwayName ?? '';
-    const cashbackNumber = s.cashbackMbwayNumber ?? '';
+    const cashbackName =
+      s.cashbackPayoutMethod === 'PIX'
+        ? s.cashbackPixName ?? ''
+        : s.cashbackMbwayName ?? '';
+    const cashbackNumber =
+      s.cashbackPayoutMethod === 'PIX'
+        ? s.cashbackPixKey ?? ''
+        : s.cashbackMbwayNumber ?? '';
     const statusText = `${commissionStatusLabel(s)} ${cashbackStatusLabel(s)}`;
     const invoiceText = s.wantsInvoice
       ? [
@@ -165,26 +183,69 @@ export default function AdminPurchasesPage() {
     return haystack.includes(t);
   }
 
-  const filteredSales = useMemo(
-    () =>
-      filterSalesInput.trim()
-        ? sales.filter((s) => saleMatchesFilter(s, filterSalesInput))
-        : sales,
-    [sales, filterSalesInput],
-  );
+  function matchesCommissionFilter(s: SaleRow) {
+    switch (filterCommissionStatus) {
+      case 'PENDING':
+        return s.status !== 'REJECTED' && s.commissionPaymentStatus !== 'PAID';
+      case 'PAID':
+        return (
+          s.status !== 'REJECTED' &&
+          s.commissionPaymentStatus === 'PAID' &&
+          !s.wantsInvoice
+        );
+      case 'INVOICE_WAITING':
+        return (
+          s.status !== 'REJECTED' &&
+          s.commissionPaymentStatus === 'PAID' &&
+          !!s.wantsInvoice &&
+          !s.invoiceSentAt
+        );
+      case 'INVOICE_SENT':
+        return !!s.invoiceSentAt;
+      case 'REJECTED':
+        return s.status === 'REJECTED';
+      default:
+        return true;
+    }
+  }
+
+  function matchesCashbackFilter(s: SaleRow) {
+    switch (filterCashbackStatus) {
+      case 'NONE':
+        return !s.cashbackRequestedAt;
+      case 'REQUESTED':
+        return !!s.cashbackRequestedAt && !s.cashbackPaidAt;
+      case 'PAID':
+        return !!s.cashbackPaidAt;
+      default:
+        return true;
+    }
+  }
+
+  const filteredSales = useMemo(() => {
+    const byText = filterSalesInput.trim()
+      ? sales.filter((s) => saleMatchesFilter(s, filterSalesInput))
+      : sales;
+    return byText.filter((s) => matchesCommissionFilter(s) && matchesCashbackFilter(s));
+  }, [sales, filterSalesInput, filterCommissionStatus, filterCashbackStatus]);
 
   function refetchSales() {
-    const params: { partnerId?: string; status?: string; cashbackOnly?: boolean } = {};
+    const params: { partnerId?: string } = {};
     if (filterPartnerId) params.partnerId = filterPartnerId;
-    if (filterStatus === 'CASHBACK') params.cashbackOnly = true;
-    else if (filterStatus) params.status = filterStatus;
     return api.sales.adminList(params).then(setSales);
   }
 
   async function handleMarkCashbackPaid(sale: SaleRow) {
-    const nome = sale.cashbackMbwayName ?? '—';
-    const numero = sale.cashbackMbwayNumber ?? '—';
-    if (!window.confirm(`Confirmar que o cashback foi pago?\n\nNome: ${nome}\nNúmero: ${numero}`)) return;
+    const method = sale.cashbackPayoutMethod === 'PIX' ? 'PIX' : 'MB Way';
+    const nome =
+      sale.cashbackPayoutMethod === 'PIX'
+        ? sale.cashbackPixName ?? '—'
+        : sale.cashbackMbwayName ?? '—';
+    const numero =
+      sale.cashbackPayoutMethod === 'PIX'
+        ? sale.cashbackPixKey ?? '—'
+        : sale.cashbackMbwayNumber ?? '—';
+    if (!window.confirm(`Confirmar que o cashback foi pago?\n\nMétodo: ${method}\nNome: ${nome}\nChave/Número: ${numero}`)) return;
     setMarkingPaidId(sale.id);
     setError('');
     try {
@@ -264,13 +325,8 @@ export default function AdminPurchasesPage() {
     setError('');
     (async () => {
       try {
-        const params: { partnerId?: string; status?: string; cashbackOnly?: boolean } = {};
+        const params: { partnerId?: string } = {};
         if (filterPartnerId) params.partnerId = filterPartnerId;
-        if (filterStatus === 'CASHBACK') {
-          params.cashbackOnly = true;
-        } else if (filterStatus) {
-          params.status = filterStatus;
-        }
         const data = await api.sales.adminList(params);
         setSales(data);
       } catch (err) {
@@ -279,7 +335,7 @@ export default function AdminPurchasesPage() {
         setLoading(false);
       }
     })();
-  }, [user?.role, filterPartnerId, filterStatus]);
+  }, [user?.role, filterPartnerId]);
 
   if (user?.role !== 'ADMIN') {
     return (
@@ -332,14 +388,32 @@ export default function AdminPurchasesPage() {
             ))}
           </select>
         </div>
-        <div className="min-w-[200px]">
-          <label className="block text-xs font-medium text-zinc-700">Estado</label>
+        <div className="min-w-[220px]">
+          <label className="block text-xs font-medium text-zinc-700">
+            Estado da comissão
+          </label>
           <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            value={filterCommissionStatus}
+            onChange={(e) => setFilterCommissionStatus(e.target.value)}
             className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
-            {STATUS_OPTIONS.map((opt) => (
+            {COMMISSION_STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="min-w-[220px]">
+          <label className="block text-xs font-medium text-zinc-700">
+            Estado do cashback
+          </label>
+          <select
+            value={filterCashbackStatus}
+            onChange={(e) => setFilterCashbackStatus(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            {CASHBACK_STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
@@ -646,12 +720,30 @@ export default function AdminPurchasesPage() {
 
             <div className="mt-3 rounded-lg bg-zinc-50 p-3 text-xs text-zinc-700">
               <p>
-                <span className="font-semibold">Nome MB Way:</span>{' '}
-                {cashbackModalSale.cashbackMbwayName ?? '—'}
+                <span className="font-semibold">Método:</span>{' '}
+                {cashbackModalSale.cashbackPayoutMethod === 'PIX'
+                  ? 'PIX'
+                  : 'MB Way'}
               </p>
               <p className="mt-1">
-                <span className="font-semibold">Número MB Way:</span>{' '}
-                {cashbackModalSale.cashbackMbwayNumber ?? '—'}
+                <span className="font-semibold">
+                  {cashbackModalSale.cashbackPayoutMethod === 'PIX'
+                    ? 'Nome PIX:'
+                    : 'Nome MB Way:'}
+                </span>{' '}
+                {cashbackModalSale.cashbackPayoutMethod === 'PIX'
+                  ? cashbackModalSale.cashbackPixName ?? '—'
+                  : cashbackModalSale.cashbackMbwayName ?? '—'}
+              </p>
+              <p className="mt-1">
+                <span className="font-semibold">
+                  {cashbackModalSale.cashbackPayoutMethod === 'PIX'
+                    ? 'Chave PIX:'
+                    : 'Número MB Way:'}
+                </span>{' '}
+                {cashbackModalSale.cashbackPayoutMethod === 'PIX'
+                  ? cashbackModalSale.cashbackPixKey ?? '—'
+                  : cashbackModalSale.cashbackMbwayNumber ?? '—'}
               </p>
               <p className="mt-1">
                 <span className="font-semibold">Valor cashback:</span>{' '}

@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
 
 const MBWAY_STORAGE_KEY = 'comunidade_rpm_mbway';
+const PIX_STORAGE_KEY = 'comunidade_rpm_pix';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 function getStoredMbway(): { number: string; name: string } {
@@ -26,6 +27,29 @@ function getStoredMbway(): { number: string; name: string } {
 function setStoredMbway(number: string, name: string) {
   try {
     localStorage.setItem(MBWAY_STORAGE_KEY, JSON.stringify({ number, name }));
+  } catch {
+    // ignore
+  }
+}
+
+function getStoredPix(): { key: string; name: string } {
+  if (typeof window === 'undefined') return { key: '', name: '' };
+  try {
+    const raw = localStorage.getItem(PIX_STORAGE_KEY);
+    if (!raw) return { key: '', name: '' };
+    const parsed = JSON.parse(raw) as { key?: string; name?: string };
+    return {
+      key: typeof parsed?.key === 'string' ? parsed.key : '',
+      name: typeof parsed?.name === 'string' ? parsed.name : '',
+    };
+  } catch {
+    return { key: '', name: '' };
+  }
+}
+
+function setStoredPix(key: string, name: string) {
+  try {
+    localStorage.setItem(PIX_STORAGE_KEY, JSON.stringify({ key, name }));
   } catch {
     // ignore
   }
@@ -64,8 +88,11 @@ export default function UserPurchasesPage() {
   const [error, setError] = useState('');
   const [newSaleModalOpen, setNewSaleModalOpen] = useState(false);
   const [mbwayModalSaleId, setMbwayModalSaleId] = useState<string | null>(null);
+  const [cashbackMethod, setCashbackMethod] = useState<'MBWAY' | 'PIX'>('MBWAY');
   const [mbwayNumber, setMbwayNumber] = useState('');
   const [mbwayName, setMbwayName] = useState('');
+  const [pixKey, setPixKey] = useState('');
+  const [pixName, setPixName] = useState('');
   const [mbwaySubmitting, setMbwaySubmitting] = useState(false);
   const [uploadProofModalSaleId, setUploadProofModalSaleId] = useState<string | null>(null);
   const [uploadingProof, setUploadingProof] = useState(false);
@@ -75,6 +102,9 @@ export default function UserPurchasesPage() {
       const stored = getStoredMbway();
       setMbwayNumber(stored.number);
       setMbwayName(stored.name);
+      const storedPix = getStoredPix();
+      setPixKey(storedPix.key);
+      setPixName(storedPix.name);
     }
   }, [mbwayModalSaleId]);
 
@@ -255,9 +285,19 @@ export default function UserPurchasesPage() {
                       {s.amount.toFixed(2)} €
                     </td>
                     <td className="px-3 py-2 text-xs">
-                      {s.cashbackRequestedAt && s.cashbackMbwayNumber ? (
+                      {s.cashbackPaidAt &&
+                      (s.cashbackMbwayNumber || s.cashbackPixKey) ? (
                         <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-100">
-                          Mbway para {s.cashbackMbwayNumber}
+                          {s.cashbackPayoutMethod === 'PIX' && s.cashbackPixKey
+                            ? `Cashback pago por Pix para ${s.cashbackPixKey}`
+                            : `Cashback pago por Mbway para ${s.cashbackMbwayNumber}`}
+                        </span>
+                      ) : s.cashbackRequestedAt &&
+                        (s.cashbackMbwayNumber || s.cashbackPixKey) ? (
+                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-100">
+                          {s.cashbackPayoutMethod === 'PIX' && s.cashbackPixKey
+                            ? `Pix solicitado para ${s.cashbackPixKey}`
+                            : `Mbway solicitado para ${s.cashbackMbwayNumber}`}
                         </span>
                       ) : s.status === 'PENDING_PARTNER' ? (
                         <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 ring-1 ring-amber-100">
@@ -581,20 +621,36 @@ export default function UserPurchasesPage() {
               Solicitar cashback
             </h3>
             <p className="mt-1 text-sm text-zinc-600">
-              Indique o número MB Way e o nome do titular para receber o cashback.
+              Escolha o método e preencha os dados para receber o cashback.
             </p>
             <form
               className="mt-4 space-y-4"
               onSubmit={async (e) => {
                 e.preventDefault();
-                if (!mbwayModalSaleId || !mbwayNumber.trim() || !mbwayName.trim()) return;
+                if (!mbwayModalSaleId) return;
+                if (cashbackMethod === 'MBWAY' && (!mbwayNumber.trim() || !mbwayName.trim())) return;
+                if (cashbackMethod === 'PIX' && (!pixKey.trim() || !pixName.trim())) return;
                 setMbwaySubmitting(true);
                 try {
-                  await api.sales.userRequestCashback(mbwayModalSaleId, {
-                    mbwayNumber: mbwayNumber.trim().replace(/\s/g, ''),
-                    mbwayName: mbwayName.trim(),
-                  });
-                  setStoredMbway(mbwayNumber.trim().replace(/\s/g, ''), mbwayName.trim());
+                  if (cashbackMethod === 'MBWAY') {
+                    const cleanNumber = mbwayNumber.trim().replace(/\s/g, '');
+                    const cleanName = mbwayName.trim();
+                    await api.sales.userRequestCashback(mbwayModalSaleId, {
+                      method: 'MBWAY',
+                      mbwayNumber: cleanNumber,
+                      mbwayName: cleanName,
+                    });
+                    setStoredMbway(cleanNumber, cleanName);
+                  } else {
+                    const cleanKey = pixKey.trim();
+                    const cleanName = pixName.trim();
+                    await api.sales.userRequestCashback(mbwayModalSaleId, {
+                      method: 'PIX',
+                      pixKey: cleanKey,
+                      pixName: cleanName,
+                    });
+                    setStoredPix(cleanKey, cleanName);
+                  }
                   setMbwayModalSaleId(null);
                   setError('');
                   await reloadUserSales();
@@ -607,26 +663,64 @@ export default function UserPurchasesPage() {
             >
               <div>
                 <label className="block text-sm font-medium text-zinc-700">
-                  Número MB Way
+                  Método de recebimento
+                </label>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCashbackMethod('MBWAY')}
+                    className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+                      cashbackMethod === 'MBWAY'
+                        ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                        : 'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50'
+                    }`}
+                  >
+                    MB Way
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCashbackMethod('PIX')}
+                    className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+                      cashbackMethod === 'PIX'
+                        ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                        : 'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50'
+                    }`}
+                  >
+                    PIX
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-700">
+                  {cashbackMethod === 'PIX' ? 'Chave PIX' : 'Número MB Way'}
                 </label>
                 <input
-                  type="tel"
-                  value={mbwayNumber}
-                  onChange={(e) => setMbwayNumber(e.target.value)}
-                  placeholder="ex: 912 345 678"
+                  type={cashbackMethod === 'PIX' ? 'text' : 'tel'}
+                  value={cashbackMethod === 'PIX' ? pixKey : mbwayNumber}
+                  onChange={(e) =>
+                    cashbackMethod === 'PIX'
+                      ? setPixKey(e.target.value)
+                      : setMbwayNumber(e.target.value)
+                  }
+                  placeholder={cashbackMethod === 'PIX' ? 'ex: email/CPF/telefone/chave aleatória' : 'ex: 912 345 678'}
                   className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   required
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-zinc-700">
-                  Nome do titular do MB Way
+                  Nome do titular
                 </label>
                 <input
                   type="text"
-                  value={mbwayName}
-                  onChange={(e) => setMbwayName(e.target.value)}
-                  placeholder="Nome como está no MB Way"
+                  value={cashbackMethod === 'PIX' ? pixName : mbwayName}
+                  onChange={(e) =>
+                    cashbackMethod === 'PIX'
+                      ? setPixName(e.target.value)
+                      : setMbwayName(e.target.value)
+                  }
+                  placeholder={cashbackMethod === 'PIX' ? 'Nome como está no PIX' : 'Nome como está no MB Way'}
                   className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   required
                 />
@@ -641,7 +735,13 @@ export default function UserPurchasesPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={mbwaySubmitting || !mbwayNumber.trim() || !mbwayName.trim()}
+                  disabled={
+                    mbwaySubmitting ||
+                    (cashbackMethod === 'MBWAY' &&
+                      (!mbwayNumber.trim() || !mbwayName.trim())) ||
+                    (cashbackMethod === 'PIX' &&
+                      (!pixKey.trim() || !pixName.trim()))
+                  }
                   className="flex-1 cursor-pointer rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
                 >
                   {mbwaySubmitting ? 'A enviar…' : 'Enviar'}

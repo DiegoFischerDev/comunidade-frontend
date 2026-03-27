@@ -641,13 +641,21 @@ export const api = {
           commissionPaymentStatus: string;
           cashbackEligible: boolean;
           cashbackRequestedAt: string | null;
+          cashbackPayoutMethod?: 'MBWAY' | 'PIX' | null;
           cashbackMbwayNumber: string | null;
           cashbackMbwayName: string | null;
+          cashbackPixKey?: string | null;
+          cashbackPixName?: string | null;
           cashbackPaidAt: string | null;
           createdAt: string;
         }[]
       >('/sales/user', { method: 'GET' }),
-    userRequestCashback: (saleId: string, body: { mbwayNumber: string; mbwayName: string }) =>
+    userRequestCashback: (
+      saleId: string,
+      body:
+        | { method: 'MBWAY'; mbwayNumber: string; mbwayName: string }
+        | { method: 'PIX'; pixKey: string; pixName: string },
+    ) =>
       request<{ id: string }>(`/sales/user/${saleId}/cashback`, {
         method: 'POST',
         body: JSON.stringify(body),
@@ -684,8 +692,11 @@ export const api = {
           invoicePdfUrl?: string | null;
           invoiceSentAt?: string | null;
           cashbackRequestedAt: string | null;
+          cashbackPayoutMethod?: 'MBWAY' | 'PIX' | null;
           cashbackMbwayNumber: string | null;
           cashbackMbwayName: string | null;
+          cashbackPixKey?: string | null;
+          cashbackPixName?: string | null;
           cashbackPaymentProofUrl?: string | null;
           cashbackPaidAt: string | null;
           user: { id: string; name: string; email: string } | null;
