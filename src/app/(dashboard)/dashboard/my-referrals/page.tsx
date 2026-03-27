@@ -21,6 +21,21 @@ function resolveAffiliateProofUrl(pathOrUrl: string | null | undefined): string 
   return `${API_BASE}${u.startsWith('/') ? u : `/${u}`}`;
 }
 
+function TierPlanoBadge({ tier }: { tier: 'VISITOR' | 'MEMBER' }) {
+  if (tier === 'MEMBER') {
+    return (
+      <span className="inline-flex rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-900">
+        Membro
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex rounded-full border border-zinc-200/90 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-800">
+      Visitante
+    </span>
+  );
+}
+
 export default function MyReferralsPage() {
   const { user } = useAuth();
   const isVisitor = user?.tier !== 'MEMBER';
@@ -189,10 +204,6 @@ export default function MyReferralsPage() {
     return h.startsWith('@') ? h : `@${h}`;
   }
 
-  function tierPlanoAtual(tier: 'VISITOR' | 'MEMBER'): string {
-    return tier === 'MEMBER' ? 'Membro' : 'Visitante';
-  }
-
   function formatComissaoGerada(
     commission: { amount: number; currency: 'EUR' | 'BRL' } | null | undefined,
   ): string {
@@ -273,7 +284,6 @@ export default function MyReferralsPage() {
               className="min-w-0 w-full"
               affiliateCode={affiliate!.affiliateCode}
               inviteLink={inviteLink}
-              payoutMethod={affiliate!.payoutMethod}
               pendingTotal={commissions?.totals.pending ?? affiliate!.totals?.pending ?? 0}
               paidTotal={commissions?.totals.paid ?? affiliate!.totals?.paid ?? 0}
             />
@@ -358,7 +368,7 @@ export default function MyReferralsPage() {
             <section className="min-w-0 w-full rounded-lg border border-zinc-200 bg-white p-4">
               <h2 className="text-sm font-semibold text-zinc-900">Pagamentos recebidos</h2>
               <p className="mt-1 text-xs text-zinc-500">
-                Comissões pagas pela equipe, com data e comprovante quando disponível.
+                As comissões são geralmente pagas no final de cada mês.
               </p>
               {!paidCommissionPayments.length ? (
                 <p className="mt-3 text-sm text-zinc-500">Ainda não há pagamentos de comissão registados.</p>
@@ -431,7 +441,9 @@ export default function MyReferralsPage() {
                       <tr key={r.id} className="border-t border-zinc-200">
                         <td className="px-3 py-2">{r.name}</td>
                         <td className="px-3 py-2">{formatReferralInstagram(r.instagram)}</td>
-                        <td className="px-3 py-2">{tierPlanoAtual(r.tier)}</td>
+                        <td className="px-3 py-2">
+                          <TierPlanoBadge tier={r.tier} />
+                        </td>
                         <td className="px-3 py-2 tabular-nums">
                           {formatComissaoGerada(r.commission)}
                         </td>

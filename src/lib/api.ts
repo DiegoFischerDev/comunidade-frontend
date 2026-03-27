@@ -868,6 +868,18 @@ export const api = {
           referralsByTier: { visitor: number; member: number; partner: number; admin: number };
         }[]
       >('/affiliate/admin/list', { method: 'GET' }),
+    adminPaidCommissions: (affiliateId: string) =>
+      request<
+        {
+          id: string;
+          amount: number;
+          currency: 'EUR' | 'BRL';
+          paidAt: string | null;
+          createdAt: string;
+          paymentProofUrl: string | null;
+          referredUser: { name: string; email: string };
+        }[]
+      >(`/affiliate/admin/${affiliateId}/paid-commissions`, { method: 'GET' }),
     adminPay: (affiliateId: string, file: File, commissionIds?: string[]) => {
       const token = getToken();
       const form = new FormData();

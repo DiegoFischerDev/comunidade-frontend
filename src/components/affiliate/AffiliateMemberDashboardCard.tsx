@@ -40,47 +40,18 @@ function CheckIcon({ className }: { className?: string }) {
   );
 }
 
-function CommissionCurrencyMark({
-  payoutMethod,
-  variant,
-}: {
-  payoutMethod: "MBWAY" | "PIX";
-  variant: "amber" | "emerald";
-}) {
-  const textClass = variant === "amber" ? "text-amber-950" : "text-emerald-950";
-  const label = payoutMethod === "MBWAY" ? "Euro (€)" : "Real (R$)";
-
-  return (
-    <span
-      className={`shrink-0 select-none font-semibold leading-none ${textClass}`}
-      title={label}
-      aria-hidden
-    >
-      {payoutMethod === "MBWAY" ? (
-        <span className="text-xl">€</span>
-      ) : (
-        <span className="text-lg font-extrabold tracking-tight">R$</span>
-      )}
-    </span>
-  );
-}
-
-function formatAmountForPayout(method: "MBWAY" | "PIX", value: number): string {
-  return method === "MBWAY"
-    ? new Intl.NumberFormat("pt-PT", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value)
-    : new Intl.NumberFormat("pt-BR", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
+function formatEuroCommissionTotal(value: number): string {
+  return new Intl.NumberFormat("pt-PT", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
 type AffiliateMemberDashboardCardProps = {
   affiliateCode: string;
   inviteLink: string;
-  payoutMethod: "MBWAY" | "PIX";
   pendingTotal: number;
   paidTotal: number;
   className?: string;
@@ -89,7 +60,6 @@ type AffiliateMemberDashboardCardProps = {
 export function AffiliateMemberDashboardCard({
   affiliateCode,
   inviteLink,
-  payoutMethod,
   pendingTotal,
   paidTotal,
   className = "",
@@ -177,22 +147,16 @@ export function AffiliateMemberDashboardCard({
           <p className="text-[11px] font-semibold tracking-wide text-amber-900/70 uppercase">
             Comissões pendentes
           </p>
-          <p className="mt-1 flex items-center gap-2.5">
-            <CommissionCurrencyMark payoutMethod={payoutMethod} variant="amber" />
-            <span className="text-2xl font-bold tabular-nums tracking-tight text-amber-950">
-              {formatAmountForPayout(payoutMethod, pendingTotal)}
-            </span>
+          <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-amber-950">
+            {formatEuroCommissionTotal(pendingTotal)}
           </p>
         </div>
         <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3 shadow-sm">
           <p className="text-[11px] font-semibold tracking-wide text-emerald-900/70 uppercase">
             Comissões pagas
           </p>
-          <p className="mt-1 flex items-center gap-2.5">
-            <CommissionCurrencyMark payoutMethod={payoutMethod} variant="emerald" />
-            <span className="text-2xl font-bold tabular-nums tracking-tight text-emerald-950">
-              {formatAmountForPayout(payoutMethod, paidTotal)}
-            </span>
+          <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-emerald-950">
+            {formatEuroCommissionTotal(paidTotal)}
           </p>
         </div>
       </div>
