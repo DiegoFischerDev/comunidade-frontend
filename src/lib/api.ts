@@ -396,6 +396,10 @@ export const api = {
         backgroundImageUrl: string | null;
         catalogImageUrls: string[];
         instagram: string | null;
+        billingName?: string | null;
+        billingNif?: string | null;
+        billingAddress?: string | null;
+        billingPostalCode?: string | null;
       }>('/partners/me', { method: 'GET' }),
     updateMe: (input: {
       logoUrl?: string;
@@ -404,6 +408,10 @@ export const api = {
       backgroundImageUrl?: string;
       catalogImageUrls?: string[];
       instagram?: string;
+      billingName?: string | null;
+      billingNif?: string | null;
+      billingAddress?: string | null;
+      billingPostalCode?: string | null;
     }) =>
       request<{
         id: string;
@@ -415,6 +423,10 @@ export const api = {
         backgroundImageUrl: string | null;
         catalogImageUrls: string[];
         instagram: string | null;
+        billingName?: string | null;
+        billingNif?: string | null;
+        billingAddress?: string | null;
+        billingPostalCode?: string | null;
       }>('/partners/me', {
         method: 'PATCH',
         body: JSON.stringify(input),
@@ -579,14 +591,6 @@ export const api = {
         successUrl: string;
         cancelUrl: string;
         wantsInvoice?: boolean;
-        invoice?: {
-          name: string;
-          nif: string;
-          email?: string;
-          address: string;
-          postalCode: string;
-          city: string;
-        };
       },
     ) =>
       request<{ url: string }>(`/sales/partner/${saleId}/pay-commission`, {
@@ -673,10 +677,8 @@ export const api = {
           wantsInvoice?: boolean;
           invoiceName?: string | null;
           invoiceNif?: string | null;
-          invoiceEmail?: string | null;
           invoiceAddress?: string | null;
           invoicePostalCode?: string | null;
-          invoiceCity?: string | null;
           invoiceRequestedAt?: string | null;
           invoicePdfUrl?: string | null;
           invoiceSentAt?: string | null;

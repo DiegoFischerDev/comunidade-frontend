@@ -19,6 +19,10 @@ export default function BusinessPage() {
   const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
   const [catalogImageUrls, setCatalogImageUrls] = useState<string[]>([]);
   const [instagram, setInstagram] = useState('');
+  const [billingName, setBillingName] = useState('');
+  const [billingNif, setBillingNif] = useState('');
+  const [billingAddress, setBillingAddress] = useState('');
+  const [billingPostalCode, setBillingPostalCode] = useState('');
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
   const [uploadingCatalogIdx, setUploadingCatalogIdx] = useState<number | null>(null);
@@ -45,6 +49,10 @@ export default function BusinessPage() {
           Array.isArray(data.catalogImageUrls) ? data.catalogImageUrls : [],
         );
         setInstagram(data.instagram ?? '');
+        setBillingName(data.billingName ?? '');
+        setBillingNif(data.billingNif ?? '');
+        setBillingAddress(data.billingAddress ?? '');
+        setBillingPostalCode(data.billingPostalCode ?? '');
       } catch (err) {
         setError(
           err instanceof Error
@@ -84,6 +92,10 @@ export default function BusinessPage() {
         backgroundImageUrl: backgroundImageUrl || undefined,
         catalogImageUrls: catalogImageUrls.length ? catalogImageUrls : undefined,
         instagram: instagram || undefined,
+        billingName: billingName.trim() || null,
+        billingNif: billingNif.trim() || null,
+        billingAddress: billingAddress.trim() || null,
+        billingPostalCode: billingPostalCode.trim() || null,
         // whatsapp da empresa sincronizado via serviço de parceiro
       });
 
@@ -95,6 +107,10 @@ export default function BusinessPage() {
         Array.isArray(updated.catalogImageUrls) ? updated.catalogImageUrls : [],
       );
       setInstagram(updated.instagram ?? '');
+      setBillingName(updated.billingName ?? '');
+      setBillingNif(updated.billingNif ?? '');
+      setBillingAddress(updated.billingAddress ?? '');
+      setBillingPostalCode(updated.billingPostalCode ?? '');
 
       setSuccess('Dados da empresa atualizados com sucesso.');
     } catch (err) {
@@ -178,6 +194,10 @@ export default function BusinessPage() {
       backgroundImageUrl: backgroundImageUrl || undefined,
       catalogImageUrls: newUrls,
       instagram: instagram || undefined,
+      billingName: billingName.trim() || null,
+      billingNif: billingNif.trim() || null,
+      billingAddress: billingAddress.trim() || null,
+      billingPostalCode: billingPostalCode.trim() || null,
     });
     setCatalogImageUrls(
       Array.isArray(updated.catalogImageUrls) ? updated.catalogImageUrls : [],
@@ -452,6 +472,65 @@ export default function BusinessPage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+            <h2 className="text-sm font-semibold text-zinc-900">
+              Dados de faturação (Portugal)
+            </h2>
+            <p className="mt-1 text-xs text-zinc-600">
+              Estes dados serão usados quando você marcar &quot;Quero fatura&quot; no pagamento
+              da comissão.
+            </p>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-zinc-700">
+                  Nome / Empresa
+                </label>
+                <input
+                  type="text"
+                  value={billingName}
+                  onChange={(e) => setBillingName(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-zinc-700">
+                  NIF
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={billingNif}
+                  onChange={(e) => setBillingNif(e.target.value)}
+                  placeholder="9 dígitos"
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-zinc-700">
+                  Morada
+                </label>
+                <input
+                  type="text"
+                  value={billingAddress}
+                  onChange={(e) => setBillingAddress(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-zinc-700">
+                  Código postal
+                </label>
+                <input
+                  type="text"
+                  value={billingPostalCode}
+                  onChange={(e) => setBillingPostalCode(e.target.value)}
+                  placeholder="0000-000"
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
             </div>
           </div>
 

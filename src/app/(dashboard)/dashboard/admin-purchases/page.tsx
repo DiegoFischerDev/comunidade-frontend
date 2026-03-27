@@ -18,10 +18,8 @@ type SaleRow = {
   wantsInvoice?: boolean;
   invoiceName?: string | null;
   invoiceNif?: string | null;
-  invoiceEmail?: string | null;
   invoiceAddress?: string | null;
   invoicePostalCode?: string | null;
-  invoiceCity?: string | null;
   invoiceRequestedAt?: string | null;
   invoicePdfUrl?: string | null;
   invoiceSentAt?: string | null;
@@ -139,10 +137,8 @@ export default function AdminPurchasesPage() {
       ? [
           s.invoiceName ?? '',
           s.invoiceNif ?? '',
-          s.invoiceEmail ?? '',
           s.invoiceAddress ?? '',
           s.invoicePostalCode ?? '',
-          s.invoiceCity ?? '',
         ]
           .join(' ')
           .trim()
@@ -408,13 +404,10 @@ export default function AdminPurchasesPage() {
                             {s.invoiceNif ? `• NIF ${s.invoiceNif}` : ''}
                           </div>
                           <div className="text-zinc-600">
-                            {[s.invoiceAddress, s.invoicePostalCode, s.invoiceCity]
+                            {[s.invoiceAddress, s.invoicePostalCode]
                               .filter(Boolean)
                               .join(', ')}
                           </div>
-                          {s.invoiceEmail && (
-                            <div className="text-zinc-600">{s.invoiceEmail}</div>
-                          )}
                           <div className="mt-1 font-semibold text-zinc-800">
                             Valor fatura:{' '}
                             {s.commissionPaymentStatus === 'PAID' &&
