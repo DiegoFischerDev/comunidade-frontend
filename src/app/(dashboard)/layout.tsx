@@ -99,9 +99,12 @@ export default function DashboardLayout({
     setRegisterAffiliateCode(stored);
   }
 
+  // Lê o localStorage só quando o modal está aberto no separador "Criar conta"
+  // (evita corrida com ReferralFromUrlSync na montagem inicial do site)
   useEffect(() => {
+    if (!isAuthModalOpen || authMode !== 'register') return;
     syncRegisterAffiliateFromStorage();
-  }, []);
+  }, [isAuthModalOpen, authMode]);
 
   // Sincroniza categoria ativa no menu com rota atual (categoria ou parceiro)
   useEffect(() => {
@@ -156,9 +159,6 @@ export default function DashboardLayout({
       }>;
       const mode = custom.detail?.mode ?? 'login';
       setAuthMode(mode);
-      if (mode === 'register') {
-        syncRegisterAffiliateFromStorage();
-      }
       setIsAuthModalOpen(true);
     };
 
