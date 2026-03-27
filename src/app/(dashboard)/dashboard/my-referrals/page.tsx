@@ -163,7 +163,10 @@ export default function MyReferralsPage() {
       {loading ? (
         <p className="mt-4 text-sm text-zinc-600">Carregando dados…</p>
       ) : !affiliate ? (
-        <div className="mt-4">{affiliatePromoCard}</div>
+        // Visitante: o card já está na grelha acima com "Torne-se membro"
+        !isVisitor ? (
+          <div className="mt-4">{affiliatePromoCard}</div>
+        ) : null
       ) : (
         <div className="mt-6 space-y-4">
           <div className="grid gap-4 md:grid-cols-2 md:items-start">
