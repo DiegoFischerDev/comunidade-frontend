@@ -33,6 +33,7 @@ type AuthContextValue = {
     password: string;
     name: string;
     whatsapp: string;
+    affiliateCode?: string;
   }) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -93,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: string;
       name: string;
       whatsapp: string;
+      affiliateCode?: string;
     }) => {
       await api.auth.register(params);
     },

@@ -49,6 +49,7 @@ export const api = {
       password: string;
       name: string;
       whatsapp: string;
+      affiliateCode?: string;
     }) =>
       request<{
         user: {
@@ -760,5 +761,124 @@ export const api = {
       request<{ id: string }>(`/sales/admin/${saleId}`, {
         method: 'DELETE',
       }),
+  },
+  affiliate: {
+    enroll: (body: {
+      instagramHandle: string;
+      termsAccepted: boolean;
+      payoutMethod: 'MBWAY' | 'PIX';
+      mbwayNumber?: string;
+      mbwayName?: string;
+      pixKey?: string;
+      pixName?: string;
+    }) =>
+      request<{
+        id: string;
+        instagramHandle: string;
+        affiliateCode: string;
+        payoutMethod: 'MBWAY' | 'PIX';
+        mbwayNumber?: string | null;
+        mbwayName?: string | null;
+        pixKey?: string | null;
+        pixName?: string | null;
+        createdAt: string;
+      }>('/affiliate/enroll', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    me: () =>
+      request<{
+        id: string;
+        affiliateCode: string;
+        instagramHandle: string;
+        payoutMethod: 'MBWAY' | 'PIX';
+        mbwayNumber?: string | null;
+        mbwayName?: string | null;
+        pixKey?: string | null;
+        pixName?: string | null;
+        totals: { pending: number; paid: number };
+      } | null>('/affiliate/me', { method: 'GET' }),
+    updatePayout: (body: {
+      payoutMethod: 'MBWAY' | 'PIX';
+      mbwayNumber?: string;
+      mbwayName?: string;
+      pixKey?: string;
+      pixName?: string;
+    }) =>
+      request<{
+        id: string;
+        payoutMethod: 'MBWAY' | 'PIX';
+        mbwayNumber?: string | null;
+        mbwayName?: string | null;
+        pixKey?: string | null;
+        pixName?: string | null;
+      }>('/affiliate/me/payout', {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }),
+    myReferrals: () =>
+      request<{
+        affiliateCode: string;
+        referrals: {
+          id: string;
+          name: string;
+          email: string;
+          tier: 'VISITOR' | 'MEMBER';
+          role: 'USER' | 'PARTNER' | 'ADMIN';
+          createdAt: string;
+        }[];
+      }>('/affiliate/my-referrals', { method: 'GET' }),
+    myCommissions: () =>
+      request<{
+        totals: { pending: number; paid: number };
+        commissions: {
+          id: string;
+          amount: number;
+          currency: 'EUR' | 'BRL';
+          status: 'PENDING' | 'PAID';
+          paymentProofUrl?: string | null;
+          paidAt?: string | null;
+          createdAt: string;
+          referredUser: { id: string; name: string; email: string; tier: 'VISITOR' | 'MEMBER' };
+        }[];
+      }>('/affiliate/my-commissions', { method: 'GET' }),
+    adminList: () =>
+      request<
+        {
+          id: string;
+          affiliateCode: string;
+          instagramHandle: string;
+          payoutMethod: 'MBWAY' | 'PIX';
+          mbwayNumber?: string | null;
+          mbwayName?: string | null;
+          pixKey?: string | null;
+          pixName?: string | null;
+          user: { id: string; name: string; email: string; role: 'USER' | 'PARTNER' | 'ADMIN'; tier: 'VISITOR' | 'MEMBER' };
+          totals: { pending: number; paid: number };
+          referralsByTier: { visitor: number; member: number; partner: number; admin: number };
+        }[]
+      >('/affiliate/admin/list', { method: 'GET' }),
+    adminPay: (affiliateId: string, file: File, commissionIds?: string[]) => {
+      const token = getToken();
+      const form = new FormData();
+      form.append('file', file);
+      if (commissionIds?.length) {
+        commissionIds.forEach((id) => form.append('commissionIds', id));
+      }
+      return fetch(`${API_URL}/affiliate/admin/${affiliateId}/pay`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: form,
+      }).then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = Array.isArray(data.message)
+            ? data.message[0]
+            : data.message || data.error || `Erro ${res.status}`;
+          throw new Error(msg);
+        }
+        return data as { paidCount: number; paymentProofUrl: string };
+      });
+    },
   },
 };

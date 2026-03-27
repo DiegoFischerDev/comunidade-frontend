@@ -245,7 +245,7 @@ export default function PartnerPage() {
             {partner.services.map((service) => (
               <div
                 key={service.id}
-                className="relative flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+                className="relative flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 pb-[50px] shadow-sm"
               >
                 <h3 className="text-sm font-semibold text-zinc-900">
                   {service.title}
@@ -274,7 +274,7 @@ export default function PartnerPage() {
                     </p>
                   )}
                 </div>
-                <div className="absolute bottom-4 right-4 inline-flex items-center gap-2">
+                <div className="absolute bottom-4 left-4 inline-flex items-center gap-2">
                   <Image
                     src="/euro2.png"
                     alt="Valor do serviço"
@@ -304,7 +304,7 @@ export default function PartnerPage() {
                     </>
                   )}
                 </div>
-                <div className="mt-3">
+                <div className="absolute bottom-4 right-4">
                   <a
                     href={user ? buildServiceWhatsAppUrl(service.title) : '#'}
                     target="_blank"

@@ -11,6 +11,7 @@ export default function BusinessPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const [partnerId, setPartnerId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
@@ -39,6 +40,7 @@ export default function BusinessPage() {
     (async () => {
       try {
         const data = await api.partner.me();
+        setPartnerId(data.id);
         setName(data.name);
         setWhatsapp(data.whatsapp || '');
         setLogoUrl(data.logoUrl ?? '');
@@ -258,6 +260,18 @@ export default function BusinessPage() {
       <p className="mt-2 text-sm text-zinc-600">
         Ajuste as informações públicas da sua empresa dentro da Comunidade RPM.
       </p>
+      {partnerId && (
+        <div className="mt-4">
+          <a
+            href={`/partner/${partnerId}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          >
+            Ver minha página
+          </a>
+        </div>
+      )}
 
       {error && (
         <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">

@@ -75,9 +75,17 @@ function commissionStatusBadgeClass(s: SaleRow): string {
   return 'bg-red-50 text-red-700';
 }
 
+function cashbackAmountLabel(s: SaleRow): string {
+  const euro = s.service?.cashbackEuro != null ? s.service.cashbackEuro : 20;
+  if (s.cashbackPayoutMethod === 'PIX') {
+    return `R$ ${Math.round(euro * 6)}`;
+  }
+  return `€ ${Math.round(euro)}`;
+}
+
 function cashbackStatusLabel(s: SaleRow): string {
-  if (s.cashbackPaidAt) return 'Cashback pago';
-  if (s.cashbackRequestedAt) return 'Cashback solicitado';
+  if (s.cashbackPaidAt) return `Cashback pago ${cashbackAmountLabel(s)}`;
+  if (s.cashbackRequestedAt) return `Cashback solicitado ${cashbackAmountLabel(s)}`;
   return '—';
 }
 
@@ -105,11 +113,33 @@ export default function AdminPurchasesPage() {
   const [cashbackModalSale, setCashbackModalSale] = useState<SaleRow | null>(null);
   const [cashbackProofFile, setCashbackProofFile] = useState<File | null>(null);
   const [payingCashbackId, setPayingCashbackId] = useState<string | null>(null);
+  const [openActionsSaleId, setOpenActionsSaleId] = useState<string | null>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
   const actionClass =
     'cursor-pointer rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50';
   const actionLinkClass =
     'inline-flex items-center cursor-pointer rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50';
+  const actionMenuItemClass =
+    'w-full text-left px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-50 disabled:text-zinc-400 disabled:cursor-not-allowed';
+
+  useEffect(() => {
+    if (!openActionsSaleId) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenActionsSaleId(null);
+    };
+    const onMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest('[data-actions-menu-root="true"]')) return;
+      setOpenActionsSaleId(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('mousedown', onMouseDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('mousedown', onMouseDown);
+    };
+  }, [openActionsSaleId]);
 
   function resolveInvoiceUrl(url?: string | null) {
     if (!url) return null;
@@ -505,70 +535,143 @@ export default function AdminPurchasesPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 flex flex-wrap gap-2">
-                      {s.invoicePdfUrl && (
-                        <a
-                          href={resolveInvoiceUrl(s.invoicePdfUrl) ?? undefined}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={actionLinkClass}
-                        >
-                          Ver fatura
-                        </a>
-                      )}
-                      {s.wantsInvoice &&
-                        s.commissionPaymentStatus === 'PAID' &&
-                        s.invoicePdfUrl && (
-                          <button
-                            type="button"
-                            disabled={sendingInvoiceId === s.id}
-                            onClick={() => {
-                              setInvoiceModalSale(s);
-                              setInvoiceFile(null);
-                            }}
-                            className={actionClass}
-                          >
-                            Editar fatura
-                          </button>
-                        )}
-                      {s.wantsInvoice &&
-                        s.commissionPaymentStatus === 'PAID' &&
-                        !s.invoiceSentAt && (
-                          <button
-                            type="button"
-                            disabled={sendingInvoiceId === s.id}
-                            onClick={() => {
-                              setInvoiceModalSale(s);
-                              setInvoiceFile(null);
-                            }}
-                            className={actionClass}
-                          >
-                            {sendingInvoiceId === s.id
-                              ? 'A enviar…'
-                              : 'Enviar fatura'}
-                          </button>
-                        )}
-                      {s.cashbackRequestedAt && !s.cashbackPaidAt && (
+                    <td className="px-3 py-2">
+                      <div
+                        className="relative inline-flex"
+                        data-actions-menu-root="true"
+                      >
                         <button
                           type="button"
-                          disabled={payingCashbackId === s.id}
-                          onClick={() => {
-                            setCashbackModalSale(s);
-                            setCashbackProofFile(null);
-                          }}
                           className={actionClass}
+                          aria-haspopup="menu"
+                          aria-expanded={openActionsSaleId === s.id}
+                          onClick={() =>
+                            setOpenActionsSaleId((cur) => (cur === s.id ? null : s.id))
+                          }
                         >
-                          {payingCashbackId === s.id ? 'A abrir…' : 'Pagar cashback'}
+                          <span className="sr-only">Abrir ações</span>
+                          ⋯
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        disabled={deletingId === s.id}
-                        onClick={() => handleDelete(s)}
-                        className={actionClass}
-                      >
-                        {deletingId === s.id ? 'A excluir…' : 'Excluir'}
-                      </button>
+
+                        {openActionsSaleId === s.id && (
+                          <div
+                            className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg"
+                            role="menu"
+                          >
+                            {s.invoicePdfUrl && (
+                              <a
+                                href={resolveInvoiceUrl(s.invoicePdfUrl) ?? undefined}
+                                target="_blank"
+                                rel="noreferrer"
+                                role="menuitem"
+                                className={`${actionMenuItemClass} block`}
+                                onClick={() => setOpenActionsSaleId(null)}
+                              >
+                                Ver fatura
+                              </a>
+                            )}
+                            {s.wantsInvoice &&
+                              s.commissionPaymentStatus === 'PAID' &&
+                              s.invoicePdfUrl && (
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  disabled={sendingInvoiceId === s.id}
+                                  onClick={() => {
+                                    setOpenActionsSaleId(null);
+                                    setInvoiceModalSale(s);
+                                    setInvoiceFile(null);
+                                  }}
+                                  className={actionMenuItemClass}
+                                >
+                                  Editar fatura
+                                </button>
+                              )}
+                            {s.wantsInvoice &&
+                              s.commissionPaymentStatus === 'PAID' &&
+                              !s.invoiceSentAt && (
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  disabled={sendingInvoiceId === s.id}
+                                  onClick={() => {
+                                    setOpenActionsSaleId(null);
+                                    setInvoiceModalSale(s);
+                                    setInvoiceFile(null);
+                                  }}
+                                  className={actionMenuItemClass}
+                                >
+                                  {sendingInvoiceId === s.id
+                                    ? 'A enviar…'
+                                    : 'Enviar fatura'}
+                                </button>
+                              )}
+
+                            {(s.cashbackPaidAt || s.cashbackRequestedAt) &&
+                              s.cashbackPaymentProofUrl && (
+                                <a
+                                  href={
+                                    resolveUploadUrl(s.cashbackPaymentProofUrl) ??
+                                    undefined
+                                  }
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  role="menuitem"
+                                  className={`${actionMenuItemClass} block`}
+                                  onClick={() => setOpenActionsSaleId(null)}
+                                >
+                                  Ver comprovante
+                                </a>
+                              )}
+                            {s.cashbackPaidAt && s.cashbackPaymentProofUrl && (
+                              <button
+                                type="button"
+                                role="menuitem"
+                                disabled={payingCashbackId === s.id}
+                                onClick={() => {
+                                  setOpenActionsSaleId(null);
+                                  setCashbackModalSale(s);
+                                  setCashbackProofFile(null);
+                                }}
+                                className={actionMenuItemClass}
+                              >
+                                Editar comprovante
+                              </button>
+                            )}
+                            {s.cashbackRequestedAt && !s.cashbackPaidAt && (
+                              <button
+                                type="button"
+                                role="menuitem"
+                                disabled={payingCashbackId === s.id}
+                                onClick={() => {
+                                  setOpenActionsSaleId(null);
+                                  setCashbackModalSale(s);
+                                  setCashbackProofFile(null);
+                                }}
+                                className={actionMenuItemClass}
+                              >
+                                {payingCashbackId === s.id
+                                  ? 'A abrir…'
+                                  : 'Pagar cashback'}
+                              </button>
+                            )}
+
+                            <div className="my-1 h-px bg-zinc-100" />
+                            <button
+                              type="button"
+                              role="menuitem"
+                              disabled={deletingId === s.id}
+                              onClick={() => {
+                                setOpenActionsSaleId(null);
+                                handleDelete(s);
+                              }}
+                              className={actionMenuItemClass}
+                            >
+                              {deletingId === s.id ? 'A excluir…' : 'Excluir'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -706,7 +809,9 @@ export default function AdminPurchasesPage() {
           >
             <div className="flex items-center justify-between">
               <h3 className="text-base font-semibold text-zinc-900">
-                Pagar cashback
+                {cashbackModalSale.cashbackPaymentProofUrl
+                  ? 'Editar comprovante do cashback'
+                  : 'Pagar cashback'}
               </h3>
               <button
                 type="button"
@@ -752,7 +857,10 @@ export default function AdminPurchasesPage() {
                     cashbackModalSale.service?.cashbackEuro != null
                       ? cashbackModalSale.service.cashbackEuro
                       : 20;
-                  return `${value.toFixed(2)} €`;
+                  if (cashbackModalSale.cashbackPayoutMethod === 'PIX') {
+                    return `R$ ${Math.round(value * 6)}`;
+                  }
+                  return `€ ${Math.round(value)}`;
                 })()}
               </p>
             </div>
@@ -808,7 +916,9 @@ export default function AdminPurchasesPage() {
               >
                 {payingCashbackId === cashbackModalSale.id
                   ? 'A enviar…'
-                  : 'Confirmar pagamento'}
+                  : cashbackModalSale.cashbackPaymentProofUrl
+                    ? 'Enviar novo comprovante'
+                    : 'Confirmar pagamento'}
               </button>
             </div>
           </div>

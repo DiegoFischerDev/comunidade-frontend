@@ -282,7 +282,7 @@ export default function UserPurchasesPage() {
                       {s.month.toString().padStart(2, '0')}/{s.year}
                     </td>
                     <td className="px-3 py-2 text-xs text-zinc-700">
-                      {s.amount.toFixed(2)} €
+                      € {s.amount.toFixed(2)}
                     </td>
                     <td className="px-3 py-2 text-xs">
                       {s.cashbackPaidAt &&
@@ -316,14 +316,18 @@ export default function UserPurchasesPage() {
                     </td>
                     <td className="px-3 py-2 text-xs text-zinc-700">
                       {(() => {
-                        const cashbackValue =
+                        const cashbackValueEuro =
                           s.service?.cashbackEuro != null
                             ? s.service.cashbackEuro
                             : 20;
+                        const isPix = s.cashbackPayoutMethod === 'PIX';
+                        const cashbackValueLabel = isPix
+                          ? `R$ ${Math.round(cashbackValueEuro * 6)}`
+                          : `€ ${Math.round(cashbackValueEuro)}`;
                         if (s.cashbackPaidAt) {
                           return (
                             <span className="text-zinc-800">
-                              Pago {cashbackValue.toFixed(2)} € em{' '}
+                              Pago {cashbackValueLabel} em{' '}
                               {new Date(s.cashbackPaidAt).toLocaleDateString(
                                 'pt-PT',
                               )}
@@ -333,21 +337,21 @@ export default function UserPurchasesPage() {
                         if (s.cashbackRequestedAt) {
                           return (
                             <span className="text-zinc-800">
-                              Solicitado {cashbackValue.toFixed(2)} €
+                              Solicitado {cashbackValueLabel}
                             </span>
                           );
                         }
                         if (s.cashbackEligible) {
                           return (
                             <span className="text-zinc-800">
-                              {cashbackValue.toFixed(2)} €
+                              € {Math.round(cashbackValueEuro)}
                             </span>
                           );
                         }
                         if (s.status === 'PENDING_PARTNER') {
                           return (
                             <span className="text-zinc-600">
-                              {cashbackValue.toFixed(2)} €
+                              € {Math.round(cashbackValueEuro)}
                             </span>
                           );
                         }
@@ -603,7 +607,7 @@ export default function UserPurchasesPage() {
               return (
                 <div className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
                   <span className="font-semibold">Cashback a receber:</span>{' '}
-                  {cashbackValue.toFixed(2)} €
+                  € {Math.round(cashbackValue)}
                 </div>
               );
             })()}

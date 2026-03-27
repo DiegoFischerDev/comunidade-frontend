@@ -190,7 +190,7 @@ export default async function PartnerPublicPage({ params }: PageProps) {
             {visibleServices.map((service) => (
               <article
                 key={service.id}
-                className="relative flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+                className="relative flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 pb-[50px] shadow-sm"
               >
                 <h3 className="text-sm font-semibold text-zinc-900">
                   {service.title}
