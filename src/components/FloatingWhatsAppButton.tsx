@@ -219,20 +219,18 @@ export function FloatingWhatsAppButton() {
                   <h3 className="text-lg font-bold tracking-tight text-zinc-900">
                     Junte-se à Comunidade RPM
                   </h3>
-                  {!showPaymentOptions && (
-                    <p className="mt-0.5 text-sm font-medium text-zinc-600">
-                      {amountsLoading ? (
-                        'A carregar…'
-                      ) : amounts ? (
-                        <>
-                          {formatEur(amounts.eurCents)}/ano — menos de{' '}
-                          {Math.ceil(amounts.eurCents / 100 / 12)} € por mês
-                        </>
-                      ) : (
-                        'Acesso por 1 ano — escolha a forma de pagamento'
-                      )}
-                    </p>
-                  )}
+                  <p className="mt-0.5 text-sm font-medium text-zinc-600">
+                    {amountsLoading ? (
+                      'A carregar…'
+                    ) : amounts ? (
+                      <>
+                        {formatEur(amounts.eurCents)}/ano — menos de{' '}
+                        {Math.ceil(amounts.eurCents / 100 / 12)} € por mês
+                      </>
+                    ) : (
+                      'Acesso por 1 ano — escolha a forma de pagamento'
+                    )}
+                  </p>
                 </div>
               </div>
 
@@ -275,6 +273,13 @@ export function FloatingWhatsAppButton() {
                 </>
               ) : (
                 <>
+                  <p className="text-sm leading-relaxed text-zinc-700 mb-4">
+                    Por menos de um café por mês, tenha acesso a tudo o que a comunidade oferece e
+                    descontos exclusivos em forma de cashback.
+                  </p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                    Escolha a forma de pagamento
+                  </p>
                   <div className="mt-4 flex flex-col gap-3">
                     <button
                       type="button"

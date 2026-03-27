@@ -74,8 +74,8 @@ export default function AdminAffiliatesPage() {
                   <td className="px-3 py-2">
                     VISITOR {a.referralsByTier.visitor} / MEMBER {a.referralsByTier.member}
                   </td>
-                  <td className="px-3 py-2">{a.totals.pending.toFixed(2)}</td>
-                  <td className="px-3 py-2">{a.totals.paid.toFixed(2)}</td>
+                  <td className="px-3 py-2">{(a.totals?.pending ?? 0).toFixed(2)}</td>
+                  <td className="px-3 py-2">{(a.totals?.paid ?? 0).toFixed(2)}</td>
                   <td className="px-3 py-2">
                     <button
                       type="button"
@@ -115,7 +115,7 @@ export default function AdminAffiliatesPage() {
                   ? `${modalAffiliate.pixName ?? '—'} / ${modalAffiliate.pixKey ?? '—'}`
                   : `${modalAffiliate.mbwayName ?? '—'} / ${modalAffiliate.mbwayNumber ?? '—'}`}
               </p>
-              <p className="mt-1"><span className="font-semibold">Total pendente:</span> {modalAffiliate.totals.pending.toFixed(2)}</p>
+              <p className="mt-1"><span className="font-semibold">Total pendente:</span> {(modalAffiliate.totals?.pending ?? 0).toFixed(2)}</p>
             </div>
             <div className="mt-4">
               <label className="block text-xs font-medium text-zinc-700">
