@@ -523,6 +523,7 @@ export const api = {
           priceOnRequest: boolean;
           commission: string | null;
           cashbackEuro: number | null;
+          pendingApproval: boolean;
         }[];
       }>(`/partners/${id}/public`, { method: 'GET' }),
     registerLead: (partnerId: string) =>
@@ -571,7 +572,23 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify({ status }),
       }),
-    partnerPayCommission: (saleId: string, body: { amountEuro: number; successUrl: string; cancelUrl: string }) =>
+    partnerPayCommission: (
+      saleId: string,
+      body: {
+        amountEuro: number;
+        successUrl: string;
+        cancelUrl: string;
+        wantsInvoice?: boolean;
+        invoice?: {
+          name: string;
+          nif: string;
+          email?: string;
+          address: string;
+          postalCode: string;
+          city: string;
+        };
+      },
+    ) =>
       request<{ url: string }>(`/sales/partner/${saleId}/pay-commission`, {
         method: 'POST',
         body: JSON.stringify(body),
@@ -653,6 +670,16 @@ export const api = {
           status: string;
           commissionPaymentStatus: string;
           commissionPaidEuro: number | null;
+          wantsInvoice?: boolean;
+          invoiceName?: string | null;
+          invoiceNif?: string | null;
+          invoiceEmail?: string | null;
+          invoiceAddress?: string | null;
+          invoicePostalCode?: string | null;
+          invoiceCity?: string | null;
+          invoiceRequestedAt?: string | null;
+          invoicePdfUrl?: string | null;
+          invoiceSentAt?: string | null;
           cashbackRequestedAt: string | null;
           cashbackMbwayNumber: string | null;
           cashbackMbwayName: string | null;
@@ -663,6 +690,29 @@ export const api = {
           serviceTitle: string | null;
         }[]
       >(`/sales/admin${q ? `?${q}` : ''}`, { method: 'GET' });
+    },
+    adminSendInvoice: (saleId: string, file: File) => {
+      const token = getToken();
+      const form = new FormData();
+      form.append('file', file);
+      return fetch(`${API_URL}/sales/admin/${saleId}/invoice`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: form,
+      }).then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = Array.isArray(data.message)
+            ? data.message[0]
+            : data.message || data.error || `Erro ${res.status}`;
+          throw new Error(msg);
+        }
+        return data as {
+          id: string;
+          invoicePdfUrl: string | null;
+          invoiceSentAt: string | null;
+        };
+      });
     },
     adminMarkCashbackPaid: (saleId: string) =>
       request<{ id: string }>(`/sales/admin/${saleId}/cashback-paid`, {

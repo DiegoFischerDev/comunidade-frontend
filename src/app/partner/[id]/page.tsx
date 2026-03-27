@@ -10,6 +10,7 @@ type PartnerService = {
   priceOnRequest: boolean;
   commission: string | null;
   cashbackEuro: number | null;
+  pendingApproval?: boolean;
 };
 
 type PartnerPublic = {
@@ -34,8 +35,8 @@ const API_URL =
 
 async function fetchPartner(id: string): Promise<PartnerPublic> {
   const res = await fetch(`${API_URL}/partners/${id}/public`, {
-    // Páginas de parceiros podem ser cacheadas e revalidadas periodicamente
-    next: { revalidate: 3600 },
+    // Não cachear: serviços pendentes não devem aparecer após alterações
+    cache: 'no-store',
   });
 
   if (res.status === 404) {
@@ -102,6 +103,7 @@ export const revalidate = 3600;
 export default async function PartnerPublicPage({ params }: PageProps) {
   const { id } = await params;
   const partner = await fetchPartner(id);
+  const visibleServices = partner.services.filter((s) => !s.pendingApproval);
 
   const heroBgImage =
     partner.backgroundImageUrl &&
@@ -179,13 +181,13 @@ export default async function PartnerPublicPage({ params }: PageProps) {
         <h2 className="text-sm font-semibold text-zinc-900">
           Serviços oferecidos
         </h2>
-        {partner.services.length === 0 ? (
+        {visibleServices.length === 0 ? (
           <p className="text-sm text-zinc-500">
             Este parceiro ainda não cadastrou serviços.
           </p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {partner.services.map((service) => (
+            {visibleServices.map((service) => (
               <article
                 key={service.id}
                 className="relative flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"

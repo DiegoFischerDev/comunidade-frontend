@@ -12,6 +12,7 @@ type ServiceRow = {
   priceOnRequest?: boolean;
   commission: string | null;
   cashbackEuro: number | null;
+  pendingApproval: boolean;
   createdAt: string;
   partner: { id: string; name: string };
 };
@@ -127,20 +128,18 @@ export default function AdminServicesPage() {
         commission: value,
         cashbackEuro: cashbackValue,
       });
-      setServices((prev) =>
-        prev.map((s) =>
-          s.id === id
-            ? {
-                ...s,
-                commission: updated.commission ?? s.commission,
-                cashbackEuro:
-                  updated.cashbackEuro !== null
-                    ? updated.cashbackEuro
-                    : s.cashbackEuro,
-              }
-            : s,
-        ),
-      );
+      const applyUpdated = (s: ServiceRow): ServiceRow =>
+        s.id !== id
+          ? s
+          : {
+              ...s,
+              commission: updated.commission ?? s.commission,
+              cashbackEuro:
+                updated.cashbackEuro !== null ? updated.cashbackEuro : s.cashbackEuro,
+            };
+
+      setServices((prev) => prev.map(applyUpdated));
+      setPendingServices((prev) => prev.map(applyUpdated));
     } catch (err) {
       setError(
         err instanceof Error
@@ -157,6 +156,11 @@ export default function AdminServicesPage() {
     try {
       await api.admin.services.approve(service.id);
       setPendingServices((prev) => prev.filter((s) => s.id !== service.id));
+      setServices((prev) =>
+        prev.map((s) =>
+          s.id === service.id ? { ...s, pendingApproval: false } : s,
+        ),
+      );
     } catch (err) {
       setError(
         err instanceof Error
@@ -219,6 +223,7 @@ export default function AdminServicesPage() {
                       <th className="px-4 py-2 text-left">Parceiro</th>
                       <th className="px-4 py-2 text-left">Serviço</th>
                       <th className="px-4 py-2 text-left">Preço</th>
+                      <th className="px-4 py-2 text-left">Comissão RPM</th>
                       <th className="px-4 py-2 text-left">Cashback (EUR)</th>
                       <th className="px-4 py-2 text-left">Criado em</th>
                       <th className="px-4 py-2 text-right">Ações</th>
@@ -248,21 +253,59 @@ export default function AdminServicesPage() {
                           )}
                         </td>
                         <td className="px-4 py-2 align-top">
-                          {s.cashbackEuro != null
-                            ? `${s.cashbackEuro.toFixed(2)} €`
-                            : '—'}
+                          <input
+                            type="text"
+                            placeholder="Ex: 10% ou 5 €"
+                            value={editingCommission[s.id] ?? (s.commission ?? '')}
+                            onChange={(e) =>
+                              setEditingCommission((prev) => ({
+                                ...prev,
+                                [s.id]: e.target.value,
+                              }))
+                            }
+                            className="w-28 rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          />
+                        </td>
+                        <td className="px-4 py-2 align-top">
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            placeholder="Ex: 20"
+                            value={
+                              editingCashback[s.id] ??
+                              (s.cashbackEuro != null ? String(s.cashbackEuro) : '')
+                            }
+                            onChange={(e) =>
+                              setEditingCashback((prev) => ({
+                                ...prev,
+                                [s.id]: e.target.value,
+                              }))
+                            }
+                            className="w-24 rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          />
                         </td>
                         <td className="px-4 py-2 align-top">
                           {new Date(s.createdAt).toLocaleString('pt-PT')}
                         </td>
                         <td className="px-4 py-2 text-right align-top">
-                          <button
-                            type="button"
-                            onClick={() => handleApprove(s)}
-                            className="cursor-pointer rounded bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
-                          >
-                            Aprovar
-                          </button>
+                          <div className="inline-flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleSaveCommission(s)}
+                              disabled={savingId === s.id}
+                              className="cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                            >
+                              {savingId === s.id ? 'Salvando…' : 'Salvar'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleApprove(s)}
+                              className="cursor-pointer rounded bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+                            >
+                              Aprovar
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

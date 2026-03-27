@@ -72,6 +72,13 @@ export default function PartnerSalesPage() {
   const [commissionAmount, setCommissionAmount] = useState<string>('');
   const [commissionSubmitting, setCommissionSubmitting] = useState(false);
   const [commissionError, setCommissionError] = useState<string | null>(null);
+  const [wantsInvoice, setWantsInvoice] = useState(false);
+  const [invoiceName, setInvoiceName] = useState('');
+  const [invoiceNif, setInvoiceNif] = useState('');
+  const [invoiceEmail, setInvoiceEmail] = useState('');
+  const [invoiceAddress, setInvoiceAddress] = useState('');
+  const [invoicePostalCode, setInvoicePostalCode] = useState('');
+  const [invoiceCity, setInvoiceCity] = useState('');
 
   const leadDropdownRef = useRef<HTMLDivElement | null>(null);
 
@@ -266,6 +273,13 @@ export default function PartnerSalesPage() {
     setCommissionAmount(
       (sale.commissionPaidEuro ?? sale.commissionEuro).toFixed(2),
     );
+    setWantsInvoice(false);
+    setInvoiceName('');
+    setInvoiceNif('');
+    setInvoiceEmail('');
+    setInvoiceAddress('');
+    setInvoicePostalCode('');
+    setInvoiceCity('');
     setCommissionModalSale(sale);
   }
 
@@ -831,6 +845,107 @@ export default function PartnerSalesPage() {
               {commissionError && (
                 <p className="text-xs text-red-600">{commissionError}</p>
               )}
+              <div className="mt-1">
+                <label className="flex items-center gap-2 text-xs font-medium text-zinc-800">
+                  <input
+                    type="checkbox"
+                    checked={wantsInvoice}
+                    onChange={(e) => setWantsInvoice(e.target.checked)}
+                    disabled={commissionSubmitting}
+                    className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  Quero fatura
+                </label>
+              </div>
+
+              {wantsInvoice && (
+                <div className="rounded-lg border border-zinc-200 bg-white p-3">
+                  <p className="mb-2 text-[11px] text-zinc-500">
+                    Dados para emissão de fatura (Portugal)
+                  </p>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-semibold text-zinc-800">
+                        Nome / Empresa
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceName}
+                        onChange={(e) => setInvoiceName(e.target.value)}
+                        className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                        disabled={commissionSubmitting}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="space-y-1">
+                        <label className="block text-[11px] font-semibold text-zinc-800">
+                          NIF
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={invoiceNif}
+                          onChange={(e) => setInvoiceNif(e.target.value)}
+                          placeholder="9 dígitos"
+                          className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                          disabled={commissionSubmitting}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[11px] font-semibold text-zinc-800">
+                          Email (opcional)
+                        </label>
+                        <input
+                          type="email"
+                          value={invoiceEmail}
+                          onChange={(e) => setInvoiceEmail(e.target.value)}
+                          className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                          disabled={commissionSubmitting}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-semibold text-zinc-800">
+                        Morada
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceAddress}
+                        onChange={(e) => setInvoiceAddress(e.target.value)}
+                        className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                        disabled={commissionSubmitting}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="space-y-1">
+                        <label className="block text-[11px] font-semibold text-zinc-800">
+                          Código postal
+                        </label>
+                        <input
+                          type="text"
+                          value={invoicePostalCode}
+                          onChange={(e) => setInvoicePostalCode(e.target.value)}
+                          placeholder="0000-000"
+                          className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                          disabled={commissionSubmitting}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[11px] font-semibold text-zinc-800">
+                          Localidade
+                        </label>
+                        <input
+                          type="text"
+                          value={invoiceCity}
+                          onChange={(e) => setInvoiceCity(e.target.value)}
+                          className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                          disabled={commissionSubmitting}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="mt-3 flex flex-col gap-3">
                 <button
                   type="button"
@@ -843,6 +958,25 @@ export default function PartnerSalesPage() {
                     if (!amount || amount <= 0) {
                       setCommissionError('Informe um valor válido em euros.');
                       return;
+                    }
+                    if (wantsInvoice) {
+                      const nifSan = invoiceNif.replace(/\s+/g, '').trim();
+                      if (
+                        !invoiceName.trim() ||
+                        !nifSan ||
+                        !invoiceAddress.trim() ||
+                        !invoicePostalCode.trim() ||
+                        !invoiceCity.trim()
+                      ) {
+                        setCommissionError(
+                          'Preencha os dados obrigatórios para emissão de fatura.',
+                        );
+                        return;
+                      }
+                      if (!/^\d{9}$/.test(nifSan)) {
+                        setCommissionError('NIF inválido. Deve conter 9 dígitos.');
+                        return;
+                      }
                     }
                     setCommissionError(null);
                     setCommissionSubmitting(true);
@@ -857,7 +991,22 @@ export default function PartnerSalesPage() {
                           : '';
                       const { url } = await api.sales.partnerPayCommission(
                         commissionModalSale.id,
-                        { amountEuro: amount, successUrl, cancelUrl },
+                        {
+                          amountEuro: amount,
+                          successUrl,
+                          cancelUrl,
+                          wantsInvoice,
+                          invoice: wantsInvoice
+                            ? {
+                                name: invoiceName.trim(),
+                                nif: invoiceNif.replace(/\s+/g, '').trim(),
+                                email: invoiceEmail.trim() || undefined,
+                                address: invoiceAddress.trim(),
+                                postalCode: invoicePostalCode.trim(),
+                                city: invoiceCity.trim(),
+                              }
+                            : undefined,
+                        },
                       );
                       if (typeof window !== 'undefined') {
                         window.open(

@@ -15,6 +15,16 @@ type SaleRow = {
   status: string;
   commissionPaymentStatus: string;
   commissionPaidEuro: number | null;
+  wantsInvoice?: boolean;
+  invoiceName?: string | null;
+  invoiceNif?: string | null;
+  invoiceEmail?: string | null;
+  invoiceAddress?: string | null;
+  invoicePostalCode?: string | null;
+  invoiceCity?: string | null;
+  invoiceRequestedAt?: string | null;
+  invoicePdfUrl?: string | null;
+  invoiceSentAt?: string | null;
   cashbackRequestedAt: string | null;
   cashbackMbwayNumber: string | null;
   cashbackMbwayName: string | null;
@@ -34,6 +44,16 @@ const STATUS_OPTIONS = [
 ];
 
 function statusLabel(s: SaleRow): string {
+  if (
+    s.wantsInvoice &&
+    s.commissionPaymentStatus === 'PAID' &&
+    !s.invoiceSentAt
+  ) {
+    return 'Aguardando emissão de fatura';
+  }
+  if (s.invoiceSentAt) {
+    return 'Fatura enviada';
+  }
   if (s.cashbackRequestedAt && s.cashbackMbwayNumber) {
     return `Mbway para ${s.cashbackMbwayNumber}`;
   }
@@ -50,6 +70,16 @@ function statusLabel(s: SaleRow): string {
 }
 
 function statusBadgeClass(s: SaleRow): string {
+  if (
+    s.wantsInvoice &&
+    s.commissionPaymentStatus === 'PAID' &&
+    !s.invoiceSentAt
+  ) {
+    return 'bg-amber-50 text-amber-700';
+  }
+  if (s.invoiceSentAt) {
+    return 'bg-violet-50 text-violet-700';
+  }
   if (s.cashbackPaidAt) {
     // Cashback já pago
     return 'bg-emerald-100 text-emerald-800';
@@ -81,6 +111,9 @@ export default function AdminPurchasesPage() {
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [filterSalesInput, setFilterSalesInput] = useState('');
+  const [invoiceModalSale, setInvoiceModalSale] = useState<SaleRow | null>(null);
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+  const [sendingInvoiceId, setSendingInvoiceId] = useState<string | null>(null);
 
   function saleMatchesFilter(s: SaleRow, term: string) {
     const t = term.trim().toLowerCase();
@@ -102,6 +135,18 @@ export default function AdminPurchasesPage() {
     const cashbackName = s.cashbackMbwayName ?? '';
     const cashbackNumber = s.cashbackMbwayNumber ?? '';
     const statusText = statusLabel(s);
+    const invoiceText = s.wantsInvoice
+      ? [
+          s.invoiceName ?? '',
+          s.invoiceNif ?? '',
+          s.invoiceEmail ?? '',
+          s.invoiceAddress ?? '',
+          s.invoicePostalCode ?? '',
+          s.invoiceCity ?? '',
+        ]
+          .join(' ')
+          .trim()
+      : '';
 
     const haystack = [
       userName,
@@ -115,6 +160,7 @@ export default function AdminPurchasesPage() {
       cashbackName,
       cashbackNumber,
       statusText,
+      invoiceText,
     ]
       .join(' ')
       .toLowerCase();
@@ -168,6 +214,22 @@ export default function AdminPurchasesPage() {
       setError(err instanceof Error ? err.message : 'Erro ao excluir.');
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function handleSendInvoice() {
+    if (!invoiceModalSale || !invoiceFile) return;
+    setError('');
+    setSendingInvoiceId(invoiceModalSale.id);
+    try {
+      await api.sales.adminSendInvoice(invoiceModalSale.id, invoiceFile);
+      setInvoiceModalSale(null);
+      setInvoiceFile(null);
+      await refetchSales();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao enviar fatura.');
+    } finally {
+      setSendingInvoiceId(null);
     }
   }
 
@@ -291,6 +353,7 @@ export default function AdminPurchasesPage() {
                   <th className="px-3 py-2 text-left">Valor</th>
                   <th className="px-3 py-2 text-left">Estado</th>
                   <th className="px-3 py-2 text-left">Comissão paga</th>
+                  <th className="px-3 py-2 text-left">Fatura para</th>
                   <th className="px-3 py-2 text-left">Cashback</th>
                   <th className="px-3 py-2 text-left">Nome Cashback</th>
                   <th className="px-3 py-2 text-left">Número Cashback</th>
@@ -338,6 +401,33 @@ export default function AdminPurchasesPage() {
                       )}
                     </td>
                     <td className="px-3 py-2 text-zinc-700">
+                      {s.wantsInvoice ? (
+                        <div className="max-w-[320px] text-[11px] leading-snug text-zinc-700">
+                          <div className="font-medium text-zinc-900">
+                            {s.invoiceName ?? '—'}{' '}
+                            {s.invoiceNif ? `• NIF ${s.invoiceNif}` : ''}
+                          </div>
+                          <div className="text-zinc-600">
+                            {[s.invoiceAddress, s.invoicePostalCode, s.invoiceCity]
+                              .filter(Boolean)
+                              .join(', ')}
+                          </div>
+                          {s.invoiceEmail && (
+                            <div className="text-zinc-600">{s.invoiceEmail}</div>
+                          )}
+                          <div className="mt-1 font-semibold text-zinc-800">
+                            Valor fatura:{' '}
+                            {s.commissionPaymentStatus === 'PAID' &&
+                            s.commissionPaidEuro != null
+                              ? `${s.commissionPaidEuro.toFixed(2)} €`
+                              : '—'}
+                          </div>
+                        </div>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-zinc-700">
                       {(() => {
                         if (!s.cashbackPaidAt && !s.cashbackRequestedAt) {
                           return '—';
@@ -367,6 +457,23 @@ export default function AdminPurchasesPage() {
                       {s.cashbackMbwayNumber ?? '—'}
                     </td>
                     <td className="px-3 py-2 flex flex-wrap gap-2">
+                      {s.wantsInvoice &&
+                        s.commissionPaymentStatus === 'PAID' &&
+                        !s.invoiceSentAt && (
+                          <button
+                            type="button"
+                            disabled={sendingInvoiceId === s.id}
+                            onClick={() => {
+                              setInvoiceModalSale(s);
+                              setInvoiceFile(null);
+                            }}
+                            className="cursor-pointer rounded-md bg-violet-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+                          >
+                            {sendingInvoiceId === s.id
+                              ? 'A enviar…'
+                              : 'Enviar fatura'}
+                          </button>
+                        )}
                       {s.cashbackRequestedAt && !s.cashbackPaidAt && (
                         <button
                           type="button"
@@ -393,6 +500,85 @@ export default function AdminPurchasesPage() {
           </div>
         )}
       </section>
+
+      {invoiceModalSale && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => {
+            if (!sendingInvoiceId) setInvoiceModalSale(null);
+          }}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold text-zinc-900">
+                Enviar fatura (PDF)
+              </h3>
+              <button
+                type="button"
+                onClick={() => !sendingInvoiceId && setInvoiceModalSale(null)}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50"
+                aria-label="Fechar"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-3 text-xs text-zinc-700">
+              <p>
+                <span className="font-semibold">Parceiro:</span>{' '}
+                {invoiceModalSale.partner.name}
+              </p>
+              <p>
+                <span className="font-semibold">Valor fatura:</span>{' '}
+                {invoiceModalSale.commissionPaidEuro != null
+                  ? `${invoiceModalSale.commissionPaidEuro.toFixed(2)} €`
+                  : '—'}
+              </p>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              <label className="block text-xs font-medium text-zinc-700">
+                Upload do PDF
+              </label>
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                disabled={sendingInvoiceId === invoiceModalSale.id}
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  setInvoiceFile(f);
+                }}
+                className="block w-full text-xs text-zinc-700 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
+              />
+            </div>
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={sendingInvoiceId === invoiceModalSale.id}
+                onClick={() => setInvoiceModalSale(null)}
+                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={!invoiceFile || sendingInvoiceId === invoiceModalSale.id}
+                onClick={handleSendInvoice}
+                className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+              >
+                {sendingInvoiceId === invoiceModalSale.id
+                  ? 'A enviar…'
+                  : 'Enviar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
