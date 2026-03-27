@@ -29,7 +29,7 @@ export function AffiliateMemberDashboardCard({
       </p>
       <p className="text-sm text-zinc-700">
         Crie stories e conteúdos nas redes sociais para que mais imigrantes conheçam a comunidade. Assim,
-        além de ajudar outras pessoas nesse caminho, você também pode receber uma comissão extra no fim do
+        além de ajudar outras pessoas nesse caminho, você também pode receber uma renda extra no fim do
         mês. 🙂
       </p>
       <p>
