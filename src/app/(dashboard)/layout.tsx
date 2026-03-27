@@ -89,7 +89,7 @@ export default function DashboardLayout({
     })();
   }, [mounted, authLoading, user]);
 
-  useEffect(() => {
+  function syncRegisterAffiliateFromStorage() {
     if (typeof window === 'undefined') return;
     const stored = window.localStorage.getItem('comunidade_ref_affiliate');
     if (!stored || stored === 'nenhum') {
@@ -97,6 +97,10 @@ export default function DashboardLayout({
       return;
     }
     setRegisterAffiliateCode(stored);
+  }
+
+  useEffect(() => {
+    syncRegisterAffiliateFromStorage();
   }, []);
 
   // Sincroniza categoria ativa no menu com rota atual (categoria ou parceiro)
@@ -150,10 +154,10 @@ export default function DashboardLayout({
       const custom = event as CustomEvent<{
         mode?: 'login' | 'register' | 'verify';
       }>;
-      if (custom.detail?.mode) {
-        setAuthMode(custom.detail.mode);
-      } else {
-        setAuthMode('login');
+      const mode = custom.detail?.mode ?? 'login';
+      setAuthMode(mode);
+      if (mode === 'register') {
+        syncRegisterAffiliateFromStorage();
       }
       setIsAuthModalOpen(true);
     };
@@ -781,7 +785,7 @@ export default function DashboardLayout({
                       htmlFor="auth-affiliate-code"
                       className="block text-xs font-medium text-zinc-700"
                     >
-                      Indicado por (código de afiliado)
+                      @ de quem te indicou (opcional)
                     </label>
                     <input
                       id="auth-affiliate-code"

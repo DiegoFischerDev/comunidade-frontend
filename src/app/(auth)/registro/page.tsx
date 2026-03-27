@@ -145,7 +145,7 @@ export default function RegistroPage() {
           </div>
           <div>
             <label htmlFor="affiliateCode" className="block text-sm font-medium text-zinc-700">
-              Indicado por (código de afiliado)
+              @ de quem te indicou (opcional)
             </label>
             <input
               id="affiliateCode"
