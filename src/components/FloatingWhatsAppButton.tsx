@@ -248,7 +248,7 @@ export function FloatingWhatsAppButton() {
                   <ul className="mt-2 space-y-2 text-sm text-zinc-700">
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span><strong className="text-zinc-800">até 20 € de cashback</strong> em cada serviço que contratar aos parceiros.</span>
+                      <span><strong className="text-zinc-800">cashback</strong> em cada serviço que contratar aos parceiros (valor definido pelo admin em cada serviço).</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>

@@ -21,7 +21,7 @@ type SaleRow = {
   cashbackPaidAt: string | null;
   user: { id: string; name: string; email: string } | null;
   partner: { id: string; name: string };
-  service: { title: string } | null;
+  service: { title: string; cashbackEuro: number | null } | null;
   serviceTitle: string | null;
 };
 
@@ -95,9 +95,9 @@ export default function AdminPurchasesPage() {
     const commissionStatus =
       s.commissionPaymentStatus === 'PAID' ? 'pago' : 'pendente';
     const cashbackStatus = s.cashbackPaidAt
-      ? 'pago 20 €'
+      ? 'cashback pago'
       : s.cashbackRequestedAt
-      ? 'solicitado 20 €'
+      ? 'cashback solicitado'
       : '';
     const cashbackName = s.cashbackMbwayName ?? '';
     const cashbackNumber = s.cashbackMbwayNumber ?? '';
@@ -338,13 +338,27 @@ export default function AdminPurchasesPage() {
                       )}
                     </td>
                     <td className="px-3 py-2 text-zinc-700">
-                      {s.cashbackPaidAt ? (
-                        <span className="font-semibold text-emerald-700">Pago 20 €</span>
-                      ) : s.cashbackRequestedAt ? (
-                        <span className="font-semibold text-emerald-700">Solicitado 20 €</span>
-                      ) : (
-                        '—'
-                      )}
+                      {(() => {
+                        if (!s.cashbackPaidAt && !s.cashbackRequestedAt) {
+                          return '—';
+                        }
+                        const cashbackValue =
+                          s.service?.cashbackEuro != null
+                            ? s.service.cashbackEuro
+                            : 20;
+                        if (s.cashbackPaidAt) {
+                          return (
+                            <span className="font-semibold text-emerald-700">
+                              Pago {cashbackValue.toFixed(2)} €
+                            </span>
+                          );
+                        }
+                        return (
+                          <span className="font-semibold text-emerald-700">
+                            Solicitado {cashbackValue.toFixed(2)} €
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-3 py-2 text-zinc-700">
                       {s.cashbackMbwayName ?? '—'}

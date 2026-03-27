@@ -43,6 +43,7 @@ type ServiceOption = {
   price: string | null;
   priceOnRequest: boolean;
   commission: string | null;
+  cashbackEuro: number | null;
 };
 
 export default function UserPurchasesPage() {
@@ -274,28 +275,46 @@ export default function UserPurchasesPage() {
                       )}
                     </td>
                     <td className="px-3 py-2 text-xs text-zinc-700">
-                      {s.cashbackPaidAt ? (
-                        <span className="text-zinc-800">
-                          Pago 20 € em{" "}
-                          {new Date(s.cashbackPaidAt).toLocaleDateString('pt-PT')}
-                        </span>
-                      ) : s.cashbackRequestedAt ? (
-                        <span className="text-zinc-800">
-                          Solicitado 20 €
-                        </span>
-                      ) : s.cashbackEligible ? (
-                        <span className="text-zinc-800">
-                          20 €
-                        </span>
-                      ) : s.status === 'PENDING_PARTNER' ? (
-                        <span className="text-zinc-600">
-                          20 €
-                        </span>
-                      ) : (
-                        <span className="text-zinc-400">
-                          Não disponível
-                        </span>
-                      )}
+                      {(() => {
+                        const cashbackValue =
+                          s.service?.cashbackEuro != null
+                            ? s.service.cashbackEuro
+                            : 20;
+                        if (s.cashbackPaidAt) {
+                          return (
+                            <span className="text-zinc-800">
+                              Pago {cashbackValue.toFixed(2)} € em{' '}
+                              {new Date(s.cashbackPaidAt).toLocaleDateString(
+                                'pt-PT',
+                              )}
+                            </span>
+                          );
+                        }
+                        if (s.cashbackRequestedAt) {
+                          return (
+                            <span className="text-zinc-800">
+                              Solicitado {cashbackValue.toFixed(2)} €
+                            </span>
+                          );
+                        }
+                        if (s.cashbackEligible) {
+                          return (
+                            <span className="text-zinc-800">
+                              {cashbackValue.toFixed(2)} €
+                            </span>
+                          );
+                        }
+                        if (s.status === 'PENDING_PARTNER') {
+                          return (
+                            <span className="text-zinc-600">
+                              {cashbackValue.toFixed(2)} €
+                            </span>
+                          );
+                        }
+                        return (
+                          <span className="text-zinc-400">Não disponível</span>
+                        );
+                      })()}
                     </td>
                     <td className="px-3 py-2">
                       {s.status === 'REJECTED' ? (
@@ -535,7 +554,7 @@ export default function UserPurchasesPage() {
               Solicitar cashback
             </h3>
             <p className="mt-1 text-sm text-zinc-600">
-              Indique o número MB Way e o nome do titular para receber os 20 €.
+              Indique o número MB Way e o nome do titular para receber o cashback.
             </p>
             <form
               className="mt-4 space-y-4"

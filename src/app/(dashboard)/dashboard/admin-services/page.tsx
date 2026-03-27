@@ -11,6 +11,7 @@ type ServiceRow = {
   price: string | null;
   priceOnRequest?: boolean;
   commission: string | null;
+  cashbackEuro: number | null;
   createdAt: string;
   partner: { id: string; name: string };
 };
@@ -22,6 +23,9 @@ export default function AdminServicesPage() {
   const [error, setError] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
   const [editingCommission, setEditingCommission] = useState<
+    Record<string, string>
+  >({});
+  const [editingCashback, setEditingCashback] = useState<
     Record<string, string>
   >({});
 
@@ -66,16 +70,33 @@ export default function AdminServicesPage() {
     const id = service.id;
     const raw = editingCommission[id];
     const value = raw === undefined || raw === '' ? null : raw.trim();
+    const rawCashback = editingCashback[id];
+    const cashbackValue =
+      rawCashback === undefined || rawCashback === ''
+        ? null
+        : Number(rawCashback.replace(',', '.'));
+    if (rawCashback && (Number.isNaN(cashbackValue) || cashbackValue! < 0)) {
+      setError('Valor de cashback inválido. Utilize apenas números positivos.');
+      return;
+    }
     setError('');
     setSavingId(id);
     try {
       const updated = await api.admin.services.updateCommission(id, {
         commission: value,
+        cashbackEuro: cashbackValue,
       });
       setServices((prev) =>
         prev.map((s) =>
           s.id === id
-            ? { ...s, commission: updated.commission ?? s.commission }
+            ? {
+                ...s,
+                commission: updated.commission ?? s.commission,
+                cashbackEuro:
+                  updated.cashbackEuro !== null
+                    ? updated.cashbackEuro
+                    : s.cashbackEuro,
+              }
             : s,
         ),
       );
@@ -123,6 +144,7 @@ export default function AdminServicesPage() {
                 <th className="px-4 py-2 text-left">Serviço</th>
                 <th className="px-4 py-2 text-left">Preço</th>
                 <th className="px-4 py-2 text-left">Comissão RPM</th>
+                <th className="px-4 py-2 text-left">Cashback (EUR)</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
@@ -159,6 +181,25 @@ export default function AdminServicesPage() {
                       }
                       onChange={(e) =>
                         setEditingCommission((prev) => ({
+                          ...prev,
+                          [s.id]: e.target.value,
+                        }))
+                      }
+                      className="w-24 rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </td>
+                  <td className="px-4 py-2 align-top">
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="Ex: 20"
+                      value={
+                        editingCashback[s.id] ??
+                        (s.cashbackEuro != null ? String(s.cashbackEuro) : '')
+                      }
+                      onChange={(e) =>
+                        setEditingCashback((prev) => ({
                           ...prev,
                           [s.id]: e.target.value,
                         }))

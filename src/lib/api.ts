@@ -342,17 +342,19 @@ export const api = {
             price: string | null;
             priceOnRequest: boolean;
             commission: string | null;
+            cashbackEuro: number | null;
             createdAt: string;
             partner: { id: string; name: string };
           }[]
         >('/partners/admin/services', { method: 'GET' }),
       updateCommission: (
         id: string,
-        body: { commission?: string | null },
+        body: { commission?: string | null; cashbackEuro?: number | null },
       ) =>
         request<{
           id: string;
           commission: string | null;
+          cashbackEuro: number | null;
         }>(`/partners/admin/services/${id}`, {
           method: 'PATCH',
           body: JSON.stringify(body),
@@ -497,6 +499,7 @@ export const api = {
           price: string | null;
           priceOnRequest: boolean;
           commission: string | null;
+          cashbackEuro: number | null;
         }[];
       }>(`/partners/${id}/public`, { method: 'GET' }),
     registerLead: (partnerId: string) =>
@@ -566,6 +569,7 @@ export const api = {
           price: string | null;
           priceOnRequest: boolean;
           commission: string | null;
+          cashbackEuro: number | null;
         }[]
       >(`/sales/user/partners/${partnerId}/services`, { method: 'GET' }),
     userCreate: (input: {
@@ -584,7 +588,7 @@ export const api = {
         {
           id: string;
           partner: { id: string; name: string };
-          service: { title: string };
+          service: { title: string; cashbackEuro: number | null } | null;
           month: number;
           year: number;
           amount: number;
@@ -632,7 +636,7 @@ export const api = {
           cashbackPaidAt: string | null;
           user: { id: string; name: string; email: string } | null;
           partner: { id: string; name: string };
-          service: { title: string } | null;
+          service: { title: string; cashbackEuro: number | null } | null;
           serviceTitle: string | null;
         }[]
       >(`/sales/admin${q ? `?${q}` : ''}`, { method: 'GET' });
