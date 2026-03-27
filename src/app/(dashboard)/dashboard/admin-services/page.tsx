@@ -19,6 +19,7 @@ type ServiceRow = {
 export default function AdminServicesPage() {
   const { user } = useAuth();
   const [services, setServices] = useState<ServiceRow[]>([]);
+  const [pendingServices, setPendingServices] = useState<ServiceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -28,6 +29,42 @@ export default function AdminServicesPage() {
   const [editingCashback, setEditingCashback] = useState<
     Record<string, string>
   >({});
+  const [filterText, setFilterText] = useState('');
+
+  function serviceMatchesFilter(s: ServiceRow, term: string) {
+    const t = term.trim().toLowerCase();
+    if (!t) return true;
+
+    const priceLabel = s.priceOnRequest
+      ? 'sob consulta'
+      : s.price != null
+      ? s.price
+      : '';
+    const cashbackLabel =
+      s.cashbackEuro != null && s.cashbackEuro > 0
+        ? `${s.cashbackEuro} €`
+        : '';
+
+    const haystack = [
+      s.title,
+      s.description ?? '',
+      s.partner.name,
+      priceLabel,
+      cashbackLabel,
+    ]
+      .join(' ')
+      .toLowerCase();
+
+    return haystack.includes(t);
+  }
+
+  const filteredServices = filterText
+    ? services.filter((s) => serviceMatchesFilter(s, filterText))
+    : services;
+
+  const filteredPendingServices = filterText
+    ? pendingServices.filter((s) => serviceMatchesFilter(s, filterText))
+    : pendingServices;
 
   useEffect(() => {
     if (!user) return;
@@ -37,8 +74,12 @@ export default function AdminServicesPage() {
     }
     (async () => {
       try {
-        const data = await api.admin.services.list();
-        setServices(data);
+        const [all, pending] = await Promise.all([
+          api.admin.services.list(),
+          api.admin.services.listPending(),
+        ]);
+        setServices(all);
+        setPendingServices(pending);
       } catch (err) {
         setError(
           err instanceof Error
@@ -111,6 +152,20 @@ export default function AdminServicesPage() {
     }
   }
 
+  async function handleApprove(service: ServiceRow) {
+    setError('');
+    try {
+      await api.admin.services.approve(service.id);
+      setPendingServices((prev) => prev.filter((s) => s.id !== service.id));
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Erro ao aprovar serviço. Tente novamente.',
+      );
+    }
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-semibold text-zinc-900">
@@ -127,104 +182,199 @@ export default function AdminServicesPage() {
         </div>
       )}
 
+      <div className="mt-4 flex flex-wrap gap-4">
+        <div className="w-full md:max-w-sm">
+          <label className="block text-xs font-medium text-zinc-700">
+            Filtrar serviços
+          </label>
+          <input
+            type="text"
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            placeholder="Pesquisar por parceiro, serviço, preço ou cashback…"
+            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
       {loading ? (
         <p className="mt-4 text-sm text-zinc-600">
           Carregando serviços cadastrados…
         </p>
-      ) : services.length === 0 ? (
-        <p className="mt-4 text-sm text-zinc-500">
-          Ainda não há serviços cadastrados.
-        </p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-          <table className="min-w-full text-sm">
-            <thead className="bg-zinc-50 text-zinc-600">
-              <tr>
-                <th className="px-4 py-2 text-left">Parceiro</th>
-                <th className="px-4 py-2 text-left">Serviço</th>
-                <th className="px-4 py-2 text-left">Preço</th>
-                <th className="px-4 py-2 text-left">Comissão RPM</th>
-                <th className="px-4 py-2 text-left">Cashback (EUR)</th>
-                <th className="px-4 py-2 text-left">Criado em</th>
-                <th className="px-4 py-2 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {services.map((s) => (
-                <tr key={s.id} className="border-t border-zinc-200">
-                  <td className="px-4 py-2 align-top">{s.partner.name}</td>
-                  <td className="px-4 py-2 align-top">
-                    <div className="font-medium text-zinc-900">
-                      {s.title}
-                    </div>
-                    {s.description && (
-                      <p className="mt-0.5 line-clamp-2 text-xs text-zinc-600">
-                        {s.description}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-4 py-2 align-top">
-                    {s.priceOnRequest ? (
-                      <span className="text-zinc-600">Sob consulta</span>
-                    ) : s.price != null ? (
-                      s.price
-                    ) : (
-                      <span className="text-zinc-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2 align-top">
-                    <input
-                      type="text"
-                      placeholder="Ex: 10% ou 5 €"
-                      value={
-                        editingCommission[s.id] ?? (s.commission ?? '')
-                      }
-                      onChange={(e) =>
-                        setEditingCommission((prev) => ({
-                          ...prev,
-                          [s.id]: e.target.value,
-                        }))
-                      }
-                      className="w-24 rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </td>
-                  <td className="px-4 py-2 align-top">
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      placeholder="Ex: 20"
-                      value={
-                        editingCashback[s.id] ??
-                        (s.cashbackEuro != null ? String(s.cashbackEuro) : '')
-                      }
-                      onChange={(e) =>
-                        setEditingCashback((prev) => ({
-                          ...prev,
-                          [s.id]: e.target.value,
-                        }))
-                      }
-                      className="w-24 rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </td>
-                  <td className="px-4 py-2 align-top">
-                    {new Date(s.createdAt).toLocaleString('pt-PT')}
-                  </td>
-                  <td className="px-4 py-2 text-right align-top">
-                    <button
-                      type="button"
-                      onClick={() => handleSaveCommission(s)}
-                      disabled={savingId === s.id}
-                      className="cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
-                    >
-                      {savingId === s.id ? 'Salvando…' : 'Salvar'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <section className="mt-6 space-y-2">
+            <h2 className="text-sm font-semibold text-zinc-900">
+              Serviços pendentes de aprovação
+            </h2>
+            {filteredPendingServices.length === 0 ? (
+              <p className="text-xs text-zinc-500">
+                Nenhum serviço pendente de aprovação no momento.
+              </p>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-amber-200 bg-white">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-amber-50 text-zinc-600">
+                    <tr>
+                      <th className="px-4 py-2 text-left">Parceiro</th>
+                      <th className="px-4 py-2 text-left">Serviço</th>
+                      <th className="px-4 py-2 text-left">Preço</th>
+                      <th className="px-4 py-2 text-left">Cashback (EUR)</th>
+                      <th className="px-4 py-2 text-left">Criado em</th>
+                      <th className="px-4 py-2 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPendingServices.map((s) => (
+                      <tr key={s.id} className="border-t border-zinc-200">
+                        <td className="px-4 py-2 align-top">{s.partner.name}</td>
+                        <td className="px-4 py-2 align-top">
+                          <div className="font-medium text-zinc-900">
+                            {s.title}
+                          </div>
+                          {s.description && (
+                            <p className="mt-0.5 line-clamp-2 text-xs text-zinc-600">
+                              {s.description}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 align-top">
+                          {s.priceOnRequest ? (
+                            <span className="text-zinc-600">Sob consulta</span>
+                          ) : s.price != null ? (
+                            s.price
+                          ) : (
+                            <span className="text-zinc-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 align-top">
+                          {s.cashbackEuro != null
+                            ? `${s.cashbackEuro.toFixed(2)} €`
+                            : '—'}
+                        </td>
+                        <td className="px-4 py-2 align-top">
+                          {new Date(s.createdAt).toLocaleString('pt-PT')}
+                        </td>
+                        <td className="px-4 py-2 text-right align-top">
+                          <button
+                            type="button"
+                            onClick={() => handleApprove(s)}
+                            className="cursor-pointer rounded bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+                          >
+                            Aprovar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section className="mt-8">
+            <h2 className="text-sm font-semibold text-zinc-900">
+              Todos os serviços
+            </h2>
+            {filteredServices.length === 0 ? (
+              <p className="mt-2 text-sm text-zinc-500">
+                Nenhum serviço encontrado com os filtros atuais.
+              </p>
+            ) : (
+              <div className="mt-3 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-zinc-50 text-zinc-600">
+                    <tr>
+                      <th className="px-4 py-2 text-left">Parceiro</th>
+                      <th className="px-4 py-2 text-left">Serviço</th>
+                      <th className="px-4 py-2 text-left">Preço</th>
+                      <th className="px-4 py-2 text-left">Comissão RPM</th>
+                      <th className="px-4 py-2 text-left">Cashback (EUR)</th>
+                      <th className="px-4 py-2 text-left">Criado em</th>
+                      <th className="px-4 py-2 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredServices.map((s) => (
+                      <tr key={s.id} className="border-t border-zinc-200">
+                        <td className="px-4 py-2 align-top">{s.partner.name}</td>
+                        <td className="px-4 py-2 align-top">
+                          <div className="font-medium text-zinc-900">
+                            {s.title}
+                          </div>
+                          {s.description && (
+                            <p className="mt-0.5 line-clamp-2 text-xs text-zinc-600">
+                              {s.description}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 align-top">
+                          {s.priceOnRequest ? (
+                            <span className="text-zinc-600">Sob consulta</span>
+                          ) : s.price != null ? (
+                            s.price
+                          ) : (
+                            <span className="text-zinc-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 align-top">
+                          <input
+                            type="text"
+                            placeholder="Ex: 10% ou 5 €"
+                            value={
+                              editingCommission[s.id] ?? (s.commission ?? '')
+                            }
+                            onChange={(e) =>
+                              setEditingCommission((prev) => ({
+                                ...prev,
+                                [s.id]: e.target.value,
+                              }))
+                            }
+                            className="w-24 rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          />
+                        </td>
+                        <td className="px-4 py-2 align-top">
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            placeholder="Ex: 20"
+                            value={
+                              editingCashback[s.id] ??
+                              (s.cashbackEuro != null
+                                ? String(s.cashbackEuro)
+                                : '')
+                            }
+                            onChange={(e) =>
+                              setEditingCashback((prev) => ({
+                                ...prev,
+                                [s.id]: e.target.value,
+                              }))
+                            }
+                            className="w-24 rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          />
+                        </td>
+                        <td className="px-4 py-2 align-top">
+                          {new Date(s.createdAt).toLocaleString('pt-PT')}
+                        </td>
+                        <td className="px-4 py-2 text-right align-top">
+                          <button
+                            type="button"
+                            onClick={() => handleSaveCommission(s)}
+                            disabled={savingId === s.id}
+                            className="cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                          >
+                            {savingId === s.id ? 'Salvando…' : 'Salvar'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </>
       )}
     </div>
   );

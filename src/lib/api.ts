@@ -343,10 +343,26 @@ export const api = {
             priceOnRequest: boolean;
             commission: string | null;
             cashbackEuro: number | null;
+            pendingApproval: boolean;
             createdAt: string;
             partner: { id: string; name: string };
           }[]
         >('/partners/admin/services', { method: 'GET' }),
+      listPending: () =>
+        request<
+          {
+            id: string;
+            title: string;
+            description: string | null;
+            price: string | null;
+            priceOnRequest: boolean;
+            commission: string | null;
+            cashbackEuro: number | null;
+            pendingApproval: boolean;
+            createdAt: string;
+            partner: { id: string; name: string };
+          }[]
+        >('/partners/admin/services/pending', { method: 'GET' }),
       updateCommission: (
         id: string,
         body: { commission?: string | null; cashbackEuro?: number | null },
@@ -358,6 +374,13 @@ export const api = {
         }>(`/partners/admin/services/${id}`, {
           method: 'PATCH',
           body: JSON.stringify(body),
+        }),
+      approve: (id: string) =>
+        request<{
+          id: string;
+          pendingApproval: boolean;
+        }>(`/partners/admin/services/${id}/approve`, {
+          method: 'PATCH',
         }),
     },
   },
