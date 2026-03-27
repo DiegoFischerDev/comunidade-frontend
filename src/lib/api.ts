@@ -835,6 +835,7 @@ export const api = {
           tier: 'VISITOR' | 'MEMBER';
           role: 'USER' | 'PARTNER' | 'ADMIN';
           createdAt: string;
+          commission: { amount: number; currency: 'EUR' | 'BRL' } | null;
         }[];
       }>('/affiliate/my-referrals', { method: 'GET' }),
     myCommissions: () =>

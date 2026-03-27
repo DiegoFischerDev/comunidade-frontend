@@ -369,6 +369,7 @@ export default function ProfilePage() {
               inviteLink={
                 `${typeof window !== 'undefined' ? window.location.origin : ''}/?aff=${affiliate.affiliateCode}`
               }
+              payoutMethod={affiliate.payoutMethod}
               pendingTotal={affiliate.totals?.pending ?? 0}
               paidTotal={affiliate.totals?.paid ?? 0}
             />

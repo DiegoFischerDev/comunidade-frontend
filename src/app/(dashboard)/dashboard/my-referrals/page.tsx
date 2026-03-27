@@ -12,6 +12,15 @@ import { AffiliatePromoCard } from '@/components/affiliate/AffiliatePromoCard';
 import { AffiliateEnrollModal } from '@/components/affiliate/AffiliateEnrollModal';
 import { AffiliateMemberDashboardCard } from '@/components/affiliate/AffiliateMemberDashboardCard';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+function resolveAffiliateProofUrl(pathOrUrl: string | null | undefined): string | null {
+  if (!pathOrUrl?.trim()) return null;
+  const u = pathOrUrl.trim();
+  if (u.startsWith('http://') || u.startsWith('https://')) return u;
+  return `${API_BASE}${u.startsWith('/') ? u : `/${u}`}`;
+}
+
 export default function MyReferralsPage() {
   const { user } = useAuth();
   const isVisitor = user?.tier !== 'MEMBER';
@@ -117,6 +126,17 @@ export default function MyReferralsPage() {
     return `${window.location.origin}/?aff=${affiliate.affiliateCode}`;
   }, [affiliate?.affiliateCode]);
 
+  const paidCommissionPayments = useMemo(() => {
+    const list = commissions?.commissions ?? [];
+    return list
+      .filter((c) => c.status === 'PAID')
+      .sort((a, b) => {
+        const ta = a.paidAt ? new Date(a.paidAt).getTime() : new Date(a.createdAt).getTime();
+        const tb = b.paidAt ? new Date(b.paidAt).getTime() : new Date(b.createdAt).getTime();
+        return tb - ta;
+      });
+  }, [commissions]);
+
   if (!user) return null;
 
   const hasAffiliateEnrollment = Boolean(affiliate?.affiliateCode?.trim());
@@ -171,6 +191,26 @@ export default function MyReferralsPage() {
 
   function tierPlanoAtual(tier: 'VISITOR' | 'MEMBER'): string {
     return tier === 'MEMBER' ? 'Membro' : 'Visitante';
+  }
+
+  function formatComissaoGerada(
+    commission: { amount: number; currency: 'EUR' | 'BRL' } | null | undefined,
+  ): string {
+    if (!commission) return '—';
+    if (commission.currency === 'EUR') {
+      return new Intl.NumberFormat('pt-PT', {
+        style: 'currency',
+        currency: 'EUR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(commission.amount);
+    }
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(commission.amount);
   }
 
   return (
@@ -228,16 +268,17 @@ export default function MyReferralsPage() {
         ) : null
       ) : (
         <div className="mt-6 space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 md:items-start">
+          <div className="mx-auto flex w-full max-w-[650px] flex-col gap-4">
             <AffiliateMemberDashboardCard
-              className="min-w-0"
-              affiliateCode={affiliate.affiliateCode}
+              className="min-w-0 w-full"
+              affiliateCode={affiliate!.affiliateCode}
               inviteLink={inviteLink}
-              pendingTotal={commissions?.totals.pending ?? affiliate.totals?.pending ?? 0}
-              paidTotal={commissions?.totals.paid ?? affiliate.totals?.paid ?? 0}
+              payoutMethod={affiliate!.payoutMethod}
+              pendingTotal={commissions?.totals.pending ?? affiliate!.totals?.pending ?? 0}
+              paidTotal={commissions?.totals.paid ?? affiliate!.totals?.paid ?? 0}
             />
 
-            <section className="min-w-0 rounded-lg border border-zinc-200 bg-white p-4">
+            <section className="min-w-0 w-full rounded-lg border border-zinc-200 bg-white p-4">
               <h2 className="text-sm font-semibold text-zinc-900">Dados para recebimento</h2>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <select
@@ -313,6 +354,60 @@ export default function MyReferralsPage() {
                 </button>
               </div>
             </section>
+
+            <section className="min-w-0 w-full rounded-lg border border-zinc-200 bg-white p-4">
+              <h2 className="text-sm font-semibold text-zinc-900">Pagamentos recebidos</h2>
+              <p className="mt-1 text-xs text-zinc-500">
+                Comissões pagas pela equipe, com data e comprovante quando disponível.
+              </p>
+              {!paidCommissionPayments.length ? (
+                <p className="mt-3 text-sm text-zinc-500">Ainda não há pagamentos de comissão registados.</p>
+              ) : (
+                <ul className="mt-3 space-y-2">
+                  {paidCommissionPayments.map((c) => {
+                    const proofUrl = resolveAffiliateProofUrl(c.paymentProofUrl ?? null);
+                    const paidDate = c.paidAt ?? c.createdAt;
+                    return (
+                      <li
+                        key={c.id}
+                        className="flex flex-col gap-3 rounded-lg border border-zinc-100 bg-zinc-50/80 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+                          <div>
+                            <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Data</p>
+                            <p className="font-medium text-zinc-900">
+                              {new Date(paidDate).toLocaleDateString('pt-PT', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Valor</p>
+                            <p className="tabular-nums font-semibold text-zinc-900">
+                              {formatComissaoGerada({ amount: c.amount, currency: c.currency })}
+                            </p>
+                          </div>
+                        </div>
+                        {proofUrl ? (
+                          <a
+                            href={proofUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-sm transition-colors hover:border-zinc-400 hover:bg-zinc-50"
+                          >
+                            Ver comprovante
+                          </a>
+                        ) : (
+                          <span className="shrink-0 text-xs text-zinc-500">Comprovante indisponível</span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </section>
           </div>
 
           <section className="rounded-lg border border-zinc-200 bg-white p-4">
@@ -327,6 +422,7 @@ export default function MyReferralsPage() {
                       <th className="px-3 py-2 text-left">Nome</th>
                       <th className="px-3 py-2 text-left">@ do Instagram</th>
                       <th className="px-3 py-2 text-left">Plano atual</th>
+                      <th className="px-3 py-2 text-left">Comissões geradas</th>
                       <th className="px-3 py-2 text-left">Criado em</th>
                     </tr>
                   </thead>
@@ -336,6 +432,9 @@ export default function MyReferralsPage() {
                         <td className="px-3 py-2">{r.name}</td>
                         <td className="px-3 py-2">{formatReferralInstagram(r.instagram)}</td>
                         <td className="px-3 py-2">{tierPlanoAtual(r.tier)}</td>
+                        <td className="px-3 py-2 tabular-nums">
+                          {formatComissaoGerada(r.commission)}
+                        </td>
                         <td className="px-3 py-2">
                           {new Date(r.createdAt).toLocaleDateString('pt-PT')}
                         </td>
