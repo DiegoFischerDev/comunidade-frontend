@@ -10,7 +10,7 @@ type AffiliatePromoCardProps = {
 
 export function AffiliatePromoCard({
   onAction,
-  actionLabel = "Ver programa de afiliados",
+  actionLabel = "Quero participar",
   className = "w-full max-w-2xl",
 }: AffiliatePromoCardProps) {
   return (

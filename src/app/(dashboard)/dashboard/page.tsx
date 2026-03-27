@@ -51,7 +51,8 @@ export default function DashboardPage() {
     (async () => {
       try {
         const a = await api.affiliate.me();
-        if (!cancelled) setAffiliateProfileExists(!!a);
+        if (!cancelled)
+          setAffiliateProfileExists(Boolean(a?.affiliateCode?.trim()));
       } catch {
         if (!cancelled) setAffiliateProfileExists(false);
       }

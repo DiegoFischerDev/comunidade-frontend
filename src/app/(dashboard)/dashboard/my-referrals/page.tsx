@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
+import {
+  OPEN_MEMBERSHIP_MODAL_EVENT,
+  USER_PROFILE_UPDATED_EVENT,
+} from '@/components/FloatingWhatsAppButton';
 import { AffiliatePromoCard } from '@/components/affiliate/AffiliatePromoCard';
 import { AffiliateEnrollModal } from '@/components/affiliate/AffiliateEnrollModal';
 import { AffiliateMemberDashboardCard } from '@/components/affiliate/AffiliateMemberDashboardCard';
@@ -38,14 +41,21 @@ export default function MyReferralsPage() {
     setAffiliateInstagram(
       user.instagram ? (user.instagram.startsWith('@') ? user.instagram : `@${user.instagram}`) : '',
     );
+  }, [user?.id, user?.instagram]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
     (async () => {
       try {
+        setLoading(true);
         setError('');
         const [a, r, c] = await Promise.all([
           api.affiliate.me(),
           api.affiliate.myReferrals(),
           api.affiliate.myCommissions(),
         ]);
+        if (cancelled) return;
         setAffiliate(a);
         setReferrals(r);
         setCommissions(c);
@@ -57,12 +67,49 @@ export default function MyReferralsPage() {
           setPixName(a.pixName ?? '');
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar indicações.');
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Erro ao carregar indicações.');
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const refreshFromServer = () => {
+      void (async () => {
+        try {
+          setError('');
+          const [a, r, c] = await Promise.all([
+            api.affiliate.me(),
+            api.affiliate.myReferrals(),
+            api.affiliate.myCommissions(),
+          ]);
+          setAffiliate(a);
+          setReferrals(r);
+          setCommissions(c);
+          if (a) {
+            setPayoutMethod(a.payoutMethod);
+            setMbwayNumber(a.mbwayNumber ?? '');
+            setMbwayName(a.mbwayName ?? '');
+            setPixKey(a.pixKey ?? '');
+            setPixName(a.pixName ?? '');
+          }
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Erro ao carregar indicações.');
+        }
+      })();
+    };
+
+    window.addEventListener(USER_PROFILE_UPDATED_EVENT, refreshFromServer);
+    return () => window.removeEventListener(USER_PROFILE_UPDATED_EVENT, refreshFromServer);
+  }, []);
 
   const inviteLink = useMemo(() => {
     if (!affiliate?.affiliateCode) return '';
@@ -71,6 +118,8 @@ export default function MyReferralsPage() {
   }, [affiliate?.affiliateCode]);
 
   if (!user) return null;
+
+  const hasAffiliateEnrollment = Boolean(affiliate?.affiliateCode?.trim());
 
   function openMembershipModal() {
     if (typeof window === 'undefined') return;
@@ -113,6 +162,16 @@ export default function MyReferralsPage() {
       onAction={isVisitor ? openMembershipModal : () => setAffiliateModalOpen(true)}
     />
   );
+
+  function formatReferralInstagram(handle: string | null | undefined): string {
+    if (!handle?.trim()) return '—';
+    const h = handle.trim();
+    return h.startsWith('@') ? h : `@${h}`;
+  }
+
+  function tierPlanoAtual(tier: 'VISITOR' | 'MEMBER'): string {
+    return tier === 'MEMBER' ? 'Membro' : 'Visitante';
+  }
 
   return (
     <div>
@@ -162,7 +221,7 @@ export default function MyReferralsPage() {
 
       {loading ? (
         <p className="mt-4 text-sm text-zinc-600">Carregando dados…</p>
-      ) : !affiliate ? (
+      ) : !hasAffiliateEnrollment ? (
         // Visitante: o card já está na grelha acima com "Torne-se membro"
         !isVisitor ? (
           <div className="mt-4">{affiliatePromoCard}</div>
@@ -266,8 +325,8 @@ export default function MyReferralsPage() {
                   <thead className="bg-zinc-50 text-zinc-600">
                     <tr>
                       <th className="px-3 py-2 text-left">Nome</th>
-                      <th className="px-3 py-2 text-left">E-mail</th>
-                      <th className="px-3 py-2 text-left">Tier</th>
+                      <th className="px-3 py-2 text-left">@ do Instagram</th>
+                      <th className="px-3 py-2 text-left">Plano atual</th>
                       <th className="px-3 py-2 text-left">Criado em</th>
                     </tr>
                   </thead>
@@ -275,8 +334,8 @@ export default function MyReferralsPage() {
                     {referrals.referrals.map((r) => (
                       <tr key={r.id} className="border-t border-zinc-200">
                         <td className="px-3 py-2">{r.name}</td>
-                        <td className="px-3 py-2">{r.email}</td>
-                        <td className="px-3 py-2">{r.tier}</td>
+                        <td className="px-3 py-2">{formatReferralInstagram(r.instagram)}</td>
+                        <td className="px-3 py-2">{tierPlanoAtual(r.tier)}</td>
                         <td className="px-3 py-2">
                           {new Date(r.createdAt).toLocaleDateString('pt-PT')}
                         </td>

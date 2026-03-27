@@ -21,6 +21,11 @@ export const getAuthToken = getToken;
 
 type RequestOptions = RequestInit & { token?: string | null };
 
+/** Mensagem antiga da API que não queremos mostrar ao utilizador (ex.: stage ainda no deploy anterior). */
+function shouldHideApiMessage(text: string): boolean {
+  return text.includes('Perfil de afiliado não encontrado');
+}
+
 async function request<T>(
   path: string,
   options: RequestOptions = {},
@@ -36,7 +41,11 @@ async function request<T>(
   const res = await fetch(`${API_URL}${path}`, { ...init, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const msg = Array.isArray(data.message) ? data.message[0] : data.message || data.error || `Erro ${res.status}`;
+    let msg = Array.isArray(data.message) ? data.message[0] : data.message || data.error || `Erro ${res.status}`;
+    msg = typeof msg === 'string' ? msg : String(msg);
+    if (shouldHideApiMessage(msg)) {
+      throw new Error('');
+    }
     throw new Error(msg);
   }
   return data as T;
@@ -822,7 +831,7 @@ export const api = {
         referrals: {
           id: string;
           name: string;
-          email: string;
+          instagram: string | null;
           tier: 'VISITOR' | 'MEMBER';
           role: 'USER' | 'PARTNER' | 'ADMIN';
           createdAt: string;

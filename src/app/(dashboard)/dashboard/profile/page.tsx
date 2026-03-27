@@ -4,7 +4,10 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { api, getAuthToken } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/components/FloatingWhatsAppButton";
+import {
+  OPEN_MEMBERSHIP_MODAL_EVENT,
+  USER_PROFILE_UPDATED_EVENT,
+} from "@/components/FloatingWhatsAppButton";
 import { AffiliatePromoCard } from "@/components/affiliate/AffiliatePromoCard";
 import { AffiliateEnrollModal } from "@/components/affiliate/AffiliateEnrollModal";
 import { AffiliateMemberDashboardCard } from "@/components/affiliate/AffiliateMemberDashboardCard";
@@ -61,6 +64,8 @@ export default function ProfilePage() {
   }, [user?.id]);
 
   if (!user) return null;
+
+  const hasAffiliateEnrollment = Boolean(affiliate?.affiliateCode?.trim());
 
   const isMember = user.tier === "MEMBER";
   const tierLabel =
@@ -122,6 +127,9 @@ export default function ProfilePage() {
         profileImageUrl: profileImageUrl || undefined,
       });
       await refreshUser();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event(USER_PROFILE_UPDATED_EVENT));
+      }
       setSuccess('Perfil atualizado com sucesso.');
     } catch (err) {
       setError(
@@ -355,13 +363,11 @@ export default function ProfilePage() {
 
       {(user.tier === 'MEMBER' || user.role === 'PARTNER' || user.role === 'ADMIN') && (
         <div className="w-full max-w-2xl">
-          {affiliate ? (
+          {hasAffiliateEnrollment && affiliate ? (
             <AffiliateMemberDashboardCard
               affiliateCode={affiliate.affiliateCode}
               inviteLink={
-                affiliate.affiliateCode
-                  ? `${typeof window !== 'undefined' ? window.location.origin : ''}/?aff=${affiliate.affiliateCode}`
-                  : ''
+                `${typeof window !== 'undefined' ? window.location.origin : ''}/?aff=${affiliate.affiliateCode}`
               }
               pendingTotal={affiliate.totals?.pending ?? 0}
               paidTotal={affiliate.totals?.paid ?? 0}

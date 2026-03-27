@@ -10,6 +10,9 @@ const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent
 
 export const OPEN_MEMBERSHIP_MODAL_EVENT = 'open-membership-modal';
 
+/** Disparado após guardar o perfil (ex.: para atualizar listagens que usam dados de utilizadores). */
+export const USER_PROFILE_UPDATED_EVENT = 'user-profile-updated';
+
 function formatEur(cents: number): string {
   return new Intl.NumberFormat('pt-PT', {
     style: 'currency',
