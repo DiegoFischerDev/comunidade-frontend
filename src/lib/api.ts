@@ -672,6 +672,7 @@ export const api = {
           year: number;
           amount: number;
           status: string;
+          commissionEuro: number;
           commissionPaymentStatus: string;
           commissionPaidEuro: number | null;
           wantsInvoice?: boolean;
@@ -685,6 +686,7 @@ export const api = {
           cashbackRequestedAt: string | null;
           cashbackMbwayNumber: string | null;
           cashbackMbwayName: string | null;
+          cashbackPaymentProofUrl?: string | null;
           cashbackPaidAt: string | null;
           user: { id: string; name: string; email: string } | null;
           partner: { id: string; name: string };
@@ -720,6 +722,29 @@ export const api = {
       request<{ id: string }>(`/sales/admin/${saleId}/cashback-paid`, {
         method: 'PATCH',
       }),
+    adminPayCashback: (saleId: string, file: File) => {
+      const token = getToken();
+      const form = new FormData();
+      form.append('file', file);
+      return fetch(`${API_URL}/sales/admin/${saleId}/cashback/pay`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: form,
+      }).then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = Array.isArray(data.message)
+            ? data.message[0]
+            : data.message || data.error || `Erro ${res.status}`;
+          throw new Error(msg);
+        }
+        return data as {
+          id: string;
+          cashbackPaidAt: string | null;
+          cashbackPaymentProofUrl: string | null;
+        };
+      });
+    },
     adminDeleteSale: (saleId: string) =>
       request<{ id: string }>(`/sales/admin/${saleId}`, {
         method: 'DELETE',

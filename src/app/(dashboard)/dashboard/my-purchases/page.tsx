@@ -326,22 +326,38 @@ export default function UserPurchasesPage() {
                           Enviar print do pagamento
                         </button>
                       ) : (
-                        <button
-                          type="button"
-                          disabled={!s.cashbackEligible}
-                          className="cursor-pointer rounded-md bg-emerald-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:hover:bg-zinc-300"
-                          onClick={() => {
-                            if (user?.tier !== 'MEMBER') {
-                              window.dispatchEvent(
-                                new CustomEvent(OPEN_MEMBERSHIP_MODAL_EVENT),
-                              );
-                              return;
-                            }
-                            setMbwayModalSaleId(s.id);
-                          }}
-                        >
-                          Solicitar cashback
-                        </button>
+                        <div className="flex flex-wrap gap-2">
+                          {s.cashbackPaymentProofUrl && (
+                            <a
+                              href={
+                                s.cashbackPaymentProofUrl.startsWith('/uploads/')
+                                  ? `${API_URL}${s.cashbackPaymentProofUrl}`
+                                  : s.cashbackPaymentProofUrl
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              className="cursor-pointer rounded-md bg-zinc-100 px-2 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
+                            >
+                              Ver comprovante
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            disabled={!s.cashbackEligible}
+                            className="cursor-pointer rounded-md bg-emerald-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:hover:bg-zinc-300"
+                            onClick={() => {
+                              if (user?.tier !== 'MEMBER') {
+                                window.dispatchEvent(
+                                  new CustomEvent(OPEN_MEMBERSHIP_MODAL_EVENT),
+                                );
+                                return;
+                              }
+                              setMbwayModalSaleId(s.id);
+                            }}
+                          >
+                            Solicitar cashback
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -540,6 +556,17 @@ export default function UserPurchasesPage() {
             className="relative w-full max-w-sm rounded-xl bg-white p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
+            {(() => {
+              const sale = sales.find((s) => s.id === mbwayModalSaleId);
+              const cashbackValue =
+                sale?.service?.cashbackEuro != null ? sale.service.cashbackEuro : 20;
+              return (
+                <div className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+                  <span className="font-semibold">Cashback a receber:</span>{' '}
+                  {cashbackValue.toFixed(2)} €
+                </div>
+              );
+            })()}
             <button
               type="button"
               onClick={() => setMbwayModalSaleId(null)}

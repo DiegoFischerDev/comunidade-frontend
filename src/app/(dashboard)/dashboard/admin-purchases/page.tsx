@@ -12,6 +12,7 @@ type SaleRow = {
   month: number;
   year: number;
   amount: number;
+  commissionEuro: number;
   status: string;
   commissionPaymentStatus: string;
   commissionPaidEuro: number | null;
@@ -26,6 +27,7 @@ type SaleRow = {
   cashbackRequestedAt: string | null;
   cashbackMbwayNumber: string | null;
   cashbackMbwayName: string | null;
+  cashbackPaymentProofUrl?: string | null;
   cashbackPaidAt: string | null;
   user: { id: string; name: string; email: string } | null;
   partner: { id: string; name: string };
@@ -41,61 +43,37 @@ const STATUS_OPTIONS = [
   { value: 'CASHBACK', label: 'Cashback solicitado' },
 ];
 
-function statusLabel(s: SaleRow): string {
-  if (
-    s.wantsInvoice &&
-    s.commissionPaymentStatus === 'PAID' &&
-    !s.invoiceSentAt
-  ) {
-    return 'Aguardando emissão de fatura';
+function commissionStatusLabel(s: SaleRow): string {
+  if (s.status === 'REJECTED') return '—';
+  if (s.commissionPaymentStatus === 'PAID') {
+    if (s.wantsInvoice) {
+      return s.invoiceSentAt ? 'Fatura enviada' : 'Aguardando emissão de fatura';
+    }
+    return 'Comissão paga';
   }
-  if (s.invoiceSentAt) {
-    return 'Fatura enviada';
-  }
-  if (s.cashbackRequestedAt && s.cashbackMbwayNumber) {
-    return `Mbway para ${s.cashbackMbwayNumber}`;
-  }
-  switch (s.status) {
-    case 'PENDING_PARTNER':
-      return 'Aguardando aprovação do parceiro';
-    case 'APPROVED':
-      return 'Compra aprovada';
-    case 'REJECTED':
-      return 'Compra recusada';
-    default:
-      return s.status;
-  }
+  return 'Comissão pendente';
 }
 
-function statusBadgeClass(s: SaleRow): string {
-  if (
-    s.wantsInvoice &&
-    s.commissionPaymentStatus === 'PAID' &&
-    !s.invoiceSentAt
-  ) {
-    return 'bg-amber-50 text-amber-700';
+function commissionStatusBadgeClass(s: SaleRow): string {
+  if (s.status === 'REJECTED') return 'bg-zinc-100 text-zinc-700';
+  if (s.commissionPaymentStatus === 'PAID') {
+    if (s.wantsInvoice && !s.invoiceSentAt) return 'bg-amber-50 text-amber-700';
+    if (s.wantsInvoice && s.invoiceSentAt) return 'bg-violet-50 text-violet-700';
+    return 'bg-emerald-50 text-emerald-700';
   }
-  if (s.invoiceSentAt) {
-    return 'bg-violet-50 text-violet-700';
-  }
-  if (s.cashbackPaidAt) {
-    // Cashback já pago
-    return 'bg-emerald-100 text-emerald-800';
-  }
-  if (s.cashbackRequestedAt && s.cashbackMbwayNumber) {
-    // Cashback solicitado via MB WAY
-    return 'bg-sky-50 text-sky-700';
-  }
-  switch (s.status) {
-    case 'PENDING_PARTNER':
-      return 'bg-amber-50 text-amber-700';
-    case 'APPROVED':
-      return 'bg-emerald-50 text-emerald-700';
-    case 'REJECTED':
-      return 'bg-red-50 text-red-700';
-    default:
-      return 'bg-zinc-100 text-zinc-700';
-  }
+  return 'bg-red-50 text-red-700';
+}
+
+function cashbackStatusLabel(s: SaleRow): string {
+  if (s.cashbackPaidAt) return 'Cashback pago';
+  if (s.cashbackRequestedAt && s.cashbackMbwayNumber) return 'Cashback solicitado';
+  return '—';
+}
+
+function cashbackStatusBadgeClass(s: SaleRow): string {
+  if (s.cashbackPaidAt) return 'bg-emerald-100 text-emerald-800';
+  if (s.cashbackRequestedAt && s.cashbackMbwayNumber) return 'bg-sky-50 text-sky-700';
+  return 'bg-zinc-100 text-zinc-700';
 }
 
 export default function AdminPurchasesPage() {
@@ -112,6 +90,24 @@ export default function AdminPurchasesPage() {
   const [invoiceModalSale, setInvoiceModalSale] = useState<SaleRow | null>(null);
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [sendingInvoiceId, setSendingInvoiceId] = useState<string | null>(null);
+  const [cashbackModalSale, setCashbackModalSale] = useState<SaleRow | null>(null);
+  const [cashbackProofFile, setCashbackProofFile] = useState<File | null>(null);
+  const [payingCashbackId, setPayingCashbackId] = useState<string | null>(null);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const actionClass =
+    'cursor-pointer rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50';
+  const actionLinkClass =
+    'inline-flex items-center cursor-pointer rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50';
+
+  function resolveInvoiceUrl(url?: string | null) {
+    if (!url) return null;
+    return url.startsWith('/uploads/') ? `${API_URL}${url}` : url;
+  }
+
+  function resolveUploadUrl(url?: string | null) {
+    if (!url) return null;
+    return url.startsWith('/uploads/') ? `${API_URL}${url}` : url;
+  }
 
   function saleMatchesFilter(s: SaleRow, term: string) {
     const t = term.trim().toLowerCase();
@@ -123,6 +119,9 @@ export default function AdminPurchasesPage() {
     const serviceTitle = s.service?.title ?? s.serviceTitle ?? '';
     const monthYear = `${s.month.toString().padStart(2, '0')}/${s.year}`;
     const amount = `${s.amount.toFixed(2)} €`;
+    const commissionExpected = `${(s.commissionEuro ?? 0).toFixed(2)} €`;
+    const commissionPaid =
+      s.commissionPaidEuro != null ? `${s.commissionPaidEuro.toFixed(2)} €` : '';
     const commissionStatus =
       s.commissionPaymentStatus === 'PAID' ? 'pago' : 'pendente';
     const cashbackStatus = s.cashbackPaidAt
@@ -132,7 +131,7 @@ export default function AdminPurchasesPage() {
       : '';
     const cashbackName = s.cashbackMbwayName ?? '';
     const cashbackNumber = s.cashbackMbwayNumber ?? '';
-    const statusText = statusLabel(s);
+    const statusText = `${commissionStatusLabel(s)} ${cashbackStatusLabel(s)}`;
     const invoiceText = s.wantsInvoice
       ? [
           s.invoiceName ?? '',
@@ -151,6 +150,8 @@ export default function AdminPurchasesPage() {
       serviceTitle,
       monthYear,
       amount,
+      commissionExpected,
+      commissionPaid,
       commissionStatus,
       cashbackStatus,
       cashbackName,
@@ -226,6 +227,22 @@ export default function AdminPurchasesPage() {
       setError(err instanceof Error ? err.message : 'Erro ao enviar fatura.');
     } finally {
       setSendingInvoiceId(null);
+    }
+  }
+
+  async function handlePayCashback() {
+    if (!cashbackModalSale || !cashbackProofFile) return;
+    setError('');
+    setPayingCashbackId(cashbackModalSale.id);
+    try {
+      await api.sales.adminPayCashback(cashbackModalSale.id, cashbackProofFile);
+      setCashbackModalSale(null);
+      setCashbackProofFile(null);
+      await refetchSales();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao pagar cashback.');
+    } finally {
+      setPayingCashbackId(null);
     }
   }
 
@@ -346,13 +363,11 @@ export default function AdminPurchasesPage() {
                   <th className="px-3 py-2 text-left">Parceiro</th>
                   <th className="px-3 py-2 text-left">Serviço</th>
                   <th className="px-3 py-2 text-left">Mês/ano</th>
-                  <th className="px-3 py-2 text-left">Valor</th>
-                  <th className="px-3 py-2 text-left">Estado</th>
+                  <th className="px-3 py-2 text-left">Valor do serviço</th>
+                  <th className="px-3 py-2 text-left">Estado da comissão</th>
+                  <th className="px-3 py-2 text-left">Comissão sugerida</th>
                   <th className="px-3 py-2 text-left">Comissão paga</th>
-                  <th className="px-3 py-2 text-left">Fatura para</th>
-                  <th className="px-3 py-2 text-left">Cashback</th>
-                  <th className="px-3 py-2 text-left">Nome Cashback</th>
-                  <th className="px-3 py-2 text-left">Número Cashback</th>
+                  <th className="px-3 py-2 text-left">Estado do cashback</th>
                   <th className="px-3 py-2 text-left">Ações</th>
                 </tr>
               </thead>
@@ -378,13 +393,20 @@ export default function AdminPurchasesPage() {
                     </td>
                     <td className="px-3 py-2 text-zinc-700">{s.amount.toFixed(2)} €</td>
                     <td className="px-3 py-2 text-zinc-700">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${statusBadgeClass(
-                          s,
-                        )}`}
-                      >
-                        {statusLabel(s)}
-                      </span>
+                      {commissionStatusLabel(s) === '—' ? (
+                        '—'
+                      ) : (
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${commissionStatusBadgeClass(
+                            s,
+                          )}`}
+                        >
+                          {commissionStatusLabel(s)}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-zinc-700">
+                      {s.status === 'REJECTED' ? '—' : `${s.commissionEuro.toFixed(2)} €`}
                     </td>
                     <td className="px-3 py-2 text-zinc-700">
                       {s.status === 'REJECTED' ? (
@@ -393,63 +415,48 @@ export default function AdminPurchasesPage() {
                         s.commissionPaidEuro != null ? (
                         `${s.commissionPaidEuro.toFixed(2)} €`
                       ) : (
-                        <span className="font-medium text-red-600">Pendente</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-zinc-700">
-                      {s.wantsInvoice ? (
-                        <div className="max-w-[320px] text-[11px] leading-snug text-zinc-700">
-                          <div className="font-medium text-zinc-900">
-                            {s.invoiceName ?? '—'}{' '}
-                            {s.invoiceNif ? `• NIF ${s.invoiceNif}` : ''}
-                          </div>
-                          <div className="text-zinc-600">
-                            {[s.invoiceAddress, s.invoicePostalCode]
-                              .filter(Boolean)
-                              .join(', ')}
-                          </div>
-                          <div className="mt-1 font-semibold text-zinc-800">
-                            Valor fatura:{' '}
-                            {s.commissionPaymentStatus === 'PAID' &&
-                            s.commissionPaidEuro != null
-                              ? `${s.commissionPaidEuro.toFixed(2)} €`
-                              : '—'}
-                          </div>
-                        </div>
-                      ) : (
                         '—'
                       )}
                     </td>
                     <td className="px-3 py-2 text-zinc-700">
-                      {(() => {
-                        if (!s.cashbackPaidAt && !s.cashbackRequestedAt) {
-                          return '—';
-                        }
-                        const cashbackValue =
-                          s.service?.cashbackEuro != null
-                            ? s.service.cashbackEuro
-                            : 20;
-                        if (s.cashbackPaidAt) {
-                          return (
-                            <span className="font-semibold text-emerald-700">
-                              Pago {cashbackValue.toFixed(2)} €
-                            </span>
-                          );
-                        }
-                        return (
-                          <span className="font-semibold text-emerald-700">
-                            Solicitado {cashbackValue.toFixed(2)} €
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-3 py-2 text-zinc-700">
-                      {s.cashbackMbwayName ?? '—'}
-                    </td>
-                    <td className="px-3 py-2 text-zinc-700">
-                      {s.cashbackMbwayNumber ?? '—'}
+                      {cashbackStatusLabel(s) === '—' ? (
+                        '—'
+                      ) : (
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${cashbackStatusBadgeClass(
+                            s,
+                          )}`}
+                        >
+                          {cashbackStatusLabel(s)}
+                        </span>
+                      )}
                     </td>
                     <td className="px-3 py-2 flex flex-wrap gap-2">
+                      {s.invoicePdfUrl && (
+                        <a
+                          href={resolveInvoiceUrl(s.invoicePdfUrl) ?? undefined}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={actionLinkClass}
+                        >
+                          Ver fatura
+                        </a>
+                      )}
+                      {s.wantsInvoice &&
+                        s.commissionPaymentStatus === 'PAID' &&
+                        s.invoicePdfUrl && (
+                          <button
+                            type="button"
+                            disabled={sendingInvoiceId === s.id}
+                            onClick={() => {
+                              setInvoiceModalSale(s);
+                              setInvoiceFile(null);
+                            }}
+                            className={actionClass}
+                          >
+                            Editar fatura
+                          </button>
+                        )}
                       {s.wantsInvoice &&
                         s.commissionPaymentStatus === 'PAID' &&
                         !s.invoiceSentAt && (
@@ -460,7 +467,7 @@ export default function AdminPurchasesPage() {
                               setInvoiceModalSale(s);
                               setInvoiceFile(null);
                             }}
-                            className="cursor-pointer rounded-md bg-violet-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+                            className={actionClass}
                           >
                             {sendingInvoiceId === s.id
                               ? 'A enviar…'
@@ -470,18 +477,21 @@ export default function AdminPurchasesPage() {
                       {s.cashbackRequestedAt && !s.cashbackPaidAt && (
                         <button
                           type="button"
-                          disabled={markingPaidId === s.id}
-                          onClick={() => handleMarkCashbackPaid(s)}
-                          className="cursor-pointer rounded-md bg-emerald-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+                          disabled={payingCashbackId === s.id}
+                          onClick={() => {
+                            setCashbackModalSale(s);
+                            setCashbackProofFile(null);
+                          }}
+                          className={actionClass}
                         >
-                          {markingPaidId === s.id ? 'A marcar…' : 'Pagar MB Way'}
+                          {payingCashbackId === s.id ? 'A abrir…' : 'Pagar cashback'}
                         </button>
                       )}
                       <button
                         type="button"
                         disabled={deletingId === s.id}
                         onClick={() => handleDelete(s)}
-                        className="cursor-pointer rounded-md border border-red-300 bg-white px-2 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className={actionClass}
                       >
                         {deletingId === s.id ? 'A excluir…' : 'Excluir'}
                       </button>
@@ -508,7 +518,7 @@ export default function AdminPurchasesPage() {
           >
             <div className="flex items-center justify-between">
               <h3 className="text-base font-semibold text-zinc-900">
-                Enviar fatura (PDF)
+                {invoiceModalSale.invoicePdfUrl ? 'Editar fatura (PDF)' : 'Enviar fatura (PDF)'}
               </h3>
               <button
                 type="button"
@@ -520,17 +530,40 @@ export default function AdminPurchasesPage() {
               </button>
             </div>
 
-            <div className="mt-3 text-xs text-zinc-700">
+            <div className="mt-3 rounded-lg bg-zinc-50 p-3 text-xs text-zinc-700">
               <p>
                 <span className="font-semibold">Parceiro:</span>{' '}
                 {invoiceModalSale.partner.name}
               </p>
-              <p>
-                <span className="font-semibold">Valor fatura:</span>{' '}
+              <p className="mt-1">
+                <span className="font-semibold">Valor fatura (comissão paga):</span>{' '}
                 {invoiceModalSale.commissionPaidEuro != null
                   ? `${invoiceModalSale.commissionPaidEuro.toFixed(2)} €`
                   : '—'}
               </p>
+              <div className="mt-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-600">
+                  Dados de faturação
+                </p>
+                <div className="mt-1 space-y-0.5">
+                  <p>
+                    <span className="font-semibold">Nome/Empresa:</span>{' '}
+                    {invoiceModalSale.invoiceName ?? '—'}
+                  </p>
+                  <p>
+                    <span className="font-semibold">NIF:</span>{' '}
+                    {invoiceModalSale.invoiceNif ?? '—'}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Morada:</span>{' '}
+                    {invoiceModalSale.invoiceAddress ?? '—'}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Código postal:</span>{' '}
+                    {invoiceModalSale.invoicePostalCode ?? '—'}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="mt-4 space-y-2">
@@ -550,11 +583,21 @@ export default function AdminPurchasesPage() {
             </div>
 
             <div className="mt-5 flex justify-end gap-3">
+              {invoiceModalSale.invoicePdfUrl && (
+                <a
+                  href={resolveInvoiceUrl(invoiceModalSale.invoicePdfUrl) ?? undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`${actionLinkClass} mr-auto`}
+                >
+                  Ver fatura
+                </a>
+              )}
               <button
                 type="button"
                 disabled={sendingInvoiceId === invoiceModalSale.id}
                 onClick={() => setInvoiceModalSale(null)}
-                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -562,11 +605,118 @@ export default function AdminPurchasesPage() {
                 type="button"
                 disabled={!invoiceFile || sendingInvoiceId === invoiceModalSale.id}
                 onClick={handleSendInvoice}
-                className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
               >
                 {sendingInvoiceId === invoiceModalSale.id
                   ? 'A enviar…'
-                  : 'Enviar'}
+                  : invoiceModalSale.invoicePdfUrl
+                    ? 'Enviar nova fatura'
+                    : 'Enviar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cashbackModalSale && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => {
+            if (!payingCashbackId) setCashbackModalSale(null);
+          }}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold text-zinc-900">
+                Pagar cashback
+              </h3>
+              <button
+                type="button"
+                onClick={() => !payingCashbackId && setCashbackModalSale(null)}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50"
+                aria-label="Fechar"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-3 rounded-lg bg-zinc-50 p-3 text-xs text-zinc-700">
+              <p>
+                <span className="font-semibold">Nome MB Way:</span>{' '}
+                {cashbackModalSale.cashbackMbwayName ?? '—'}
+              </p>
+              <p className="mt-1">
+                <span className="font-semibold">Número MB Way:</span>{' '}
+                {cashbackModalSale.cashbackMbwayNumber ?? '—'}
+              </p>
+              <p className="mt-1">
+                <span className="font-semibold">Valor cashback:</span>{' '}
+                {(() => {
+                  const value =
+                    cashbackModalSale.service?.cashbackEuro != null
+                      ? cashbackModalSale.service.cashbackEuro
+                      : 20;
+                  return `${value.toFixed(2)} €`;
+                })()}
+              </p>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              <label className="block text-xs font-medium text-zinc-700">
+                Upload do comprovante de envio
+              </label>
+              <input
+                type="file"
+                accept="image/*,application/pdf,.pdf"
+                disabled={payingCashbackId === cashbackModalSale.id}
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  setCashbackProofFile(f);
+                }}
+                className="block w-full text-xs text-zinc-700 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
+              />
+              <p className="text-[11px] text-zinc-500">
+                Formatos suportados: imagem (JPG/PNG/WebP) ou PDF.
+              </p>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-3">
+              {cashbackModalSale.cashbackPaymentProofUrl && (
+                <a
+                  href={
+                    resolveUploadUrl(cashbackModalSale.cashbackPaymentProofUrl) ??
+                    undefined
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`${actionLinkClass} mr-auto`}
+                >
+                  Ver comprovante
+                </a>
+              )}
+              <button
+                type="button"
+                disabled={payingCashbackId === cashbackModalSale.id}
+                onClick={() => setCashbackModalSale(null)}
+                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={
+                  !cashbackProofFile || payingCashbackId === cashbackModalSale.id
+                }
+                onClick={handlePayCashback}
+                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+              >
+                {payingCashbackId === cashbackModalSale.id
+                  ? 'A enviar…'
+                  : 'Confirmar pagamento'}
               </button>
             </div>
           </div>

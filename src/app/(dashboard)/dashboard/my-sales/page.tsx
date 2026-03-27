@@ -73,6 +73,12 @@ export default function PartnerSalesPage() {
   const [commissionSubmitting, setCommissionSubmitting] = useState(false);
   const [commissionError, setCommissionError] = useState<string | null>(null);
   const [wantsInvoice, setWantsInvoice] = useState(false);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+  function resolveInvoiceUrl(url?: string | null) {
+    if (!url) return null;
+    return url.startsWith('/uploads/') ? `${API_URL}${url}` : url;
+  }
 
   const leadDropdownRef = useRef<HTMLDivElement | null>(null);
 
@@ -549,15 +555,27 @@ export default function PartnerSalesPage() {
                         )}
                       </td>
                       <td className="px-3 py-2 text-right">
-                        {s.commissionPaymentStatus === 'PAID' ? null : (
-                          <button
-                            type="button"
-                            onClick={() => confirmPagarComissao(s)}
-                            className="cursor-pointer rounded bg-amber-50 px-3 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
-                          >
-                            Pagar comissão
-                          </button>
-                        )}
+                        <div className="inline-flex flex-wrap justify-end gap-2">
+                          {s.invoicePdfUrl && (
+                            <a
+                              href={resolveInvoiceUrl(s.invoicePdfUrl) ?? undefined}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="cursor-pointer rounded bg-zinc-100 px-3 py-1 text-[11px] font-medium text-zinc-800 hover:bg-zinc-200"
+                            >
+                              Ver fatura
+                            </a>
+                          )}
+                          {s.commissionPaymentStatus === 'PAID' ? null : (
+                            <button
+                              type="button"
+                              onClick={() => confirmPagarComissao(s)}
+                              className="cursor-pointer rounded bg-amber-50 px-3 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
+                            >
+                              Pagar comissão
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
