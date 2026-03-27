@@ -874,7 +874,14 @@ export const api = {
           mbwayName?: string | null;
           pixKey?: string | null;
           pixName?: string | null;
-          user: { id: string; name: string; email: string; role: 'USER' | 'PARTNER' | 'ADMIN'; tier: 'VISITOR' | 'MEMBER' };
+          user: {
+            id: string;
+            name: string;
+            email: string;
+            role: 'USER' | 'PARTNER' | 'ADMIN';
+            tier: 'VISITOR' | 'MEMBER';
+            instagram: string | null;
+          };
           totals: { pending: number; paid: number };
           referralsByTier: { visitor: number; member: number; partner: number; admin: number };
         }[]

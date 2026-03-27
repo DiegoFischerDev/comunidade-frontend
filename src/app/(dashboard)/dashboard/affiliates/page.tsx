@@ -197,7 +197,13 @@ export default function AdminAffiliatesPage() {
               {rows.map((a) => (
                 <tr key={a.id} className="border-t border-zinc-200">
                   <td className="px-3 py-2">{a.user.name}</td>
-                  <td className="px-3 py-2">{a.instagramHandle}</td>
+                  <td className="px-3 py-2">
+                    {a.user.instagram?.trim()
+                      ? a.user.instagram.startsWith('@')
+                        ? a.user.instagram
+                        : `@${a.user.instagram}`
+                      : '—'}
+                  </td>
                   <td className="px-3 py-2">{a.affiliateCode}</td>
                   <td className="px-3 py-2">{a.payoutMethod}</td>
                   <td className="px-3 py-2">
