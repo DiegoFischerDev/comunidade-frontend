@@ -164,6 +164,17 @@ export const api = {
   },
   admin: {
     users: {
+      stats: () =>
+        request<{
+          totalUsers: number;
+          partners: number;
+          visitors: number;
+          members: number;
+          totalMembershipRevenueEur: number;
+          subscriptionsCount: number;
+          membershipPaymentsCount: number;
+          membershipPriceEurUsed: number;
+        }>('/users/admin/stats', { method: 'GET' }),
       list: () =>
         request<
           {
@@ -877,7 +888,6 @@ export const api = {
           paidAt: string | null;
           createdAt: string;
           paymentProofUrl: string | null;
-          referredUser: { name: string; email: string };
         }[]
       >(`/affiliate/admin/${affiliateId}/paid-commissions`, { method: 'GET' }),
     adminPay: (affiliateId: string, file: File, commissionIds?: string[]) => {

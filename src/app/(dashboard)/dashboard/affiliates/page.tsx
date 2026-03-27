@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -14,6 +14,15 @@ function resolveProofUrl(pathOrUrl: string | null | undefined): string | null {
   const u = pathOrUrl.trim();
   if (u.startsWith('http://') || u.startsWith('https://')) return u;
   return `${API_BASE}${u.startsWith('/') ? u : `/${u}`}`;
+}
+
+function formatEuroTotal(amount: number): string {
+  return new Intl.NumberFormat('pt-PT', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
 function formatCommissionValue(amount: number, currency: 'EUR' | 'BRL'): string {
@@ -90,6 +99,26 @@ export default function AdminAffiliatesPage() {
     })();
   }, [user?.role]);
 
+  const aggregates = useMemo(() => {
+    let visitorReferrals = 0;
+    let memberReferrals = 0;
+    let pendingEur = 0;
+    let paidEur = 0;
+    for (const a of rows) {
+      visitorReferrals += a.referralsByTier.visitor;
+      memberReferrals += a.referralsByTier.member;
+      pendingEur += a.totals?.pending ?? 0;
+      paidEur += a.totals?.paid ?? 0;
+    }
+    return {
+      totalAffiliates: rows.length,
+      visitorReferrals,
+      memberReferrals,
+      pendingEur,
+      paidEur,
+    };
+  }, [rows]);
+
   if (user?.role !== 'ADMIN') return null;
 
   return (
@@ -106,7 +135,51 @@ export default function AdminAffiliatesPage() {
       {loading ? (
         <p className="mt-4 text-sm text-zinc-600">Carregando afiliados…</p>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+        <>
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="rounded-xl border border-blue-200/80 bg-blue-50/90 px-4 py-3 shadow-sm">
+            <p className="text-[11px] font-semibold tracking-wide text-blue-900/70 uppercase">
+              Total de afiliados
+            </p>
+            <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-blue-950">
+              {aggregates.totalAffiliates}
+            </p>
+          </div>
+          <div className="rounded-xl border border-violet-200/80 bg-violet-50/90 px-4 py-3 shadow-sm">
+            <p className="text-[11px] font-semibold tracking-wide text-violet-900/70 uppercase">
+              Indicados visitantes
+            </p>
+            <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-violet-950">
+              {aggregates.visitorReferrals}
+            </p>
+          </div>
+          <div className="rounded-xl border border-teal-200/80 bg-teal-50/90 px-4 py-3 shadow-sm">
+            <p className="text-[11px] font-semibold tracking-wide text-teal-900/70 uppercase">
+              Indicados membros
+            </p>
+            <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-teal-950">
+              {aggregates.memberReferrals}
+            </p>
+          </div>
+          <div className="rounded-xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 shadow-sm">
+            <p className="text-[11px] font-semibold tracking-wide text-amber-900/70 uppercase">
+              Total pendente
+            </p>
+            <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-amber-950">
+              {formatEuroTotal(aggregates.pendingEur)}
+            </p>
+          </div>
+          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3 shadow-sm">
+            <p className="text-[11px] font-semibold tracking-wide text-emerald-900/70 uppercase">
+              Total pago
+            </p>
+            <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-emerald-950">
+              {formatEuroTotal(aggregates.paidEur)}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
           <table className="min-w-full text-sm">
             <thead className="bg-zinc-50 text-zinc-600">
               <tr>
@@ -155,6 +228,7 @@ export default function AdminAffiliatesPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {payModalAffiliate && (
@@ -254,7 +328,6 @@ export default function AdminAffiliatesPage() {
                       <tr>
                         <th className="px-3 py-2 text-left">Data</th>
                         <th className="px-3 py-2 text-left">Valor</th>
-                        <th className="px-3 py-2 text-left">Indicação</th>
                         <th className="px-3 py-2 text-left">Comprovante</th>
                       </tr>
                     </thead>
@@ -275,10 +348,6 @@ export default function AdminAffiliatesPage() {
                             </td>
                             <td className="px-3 py-2 tabular-nums font-medium text-zinc-900">
                               {formatCommissionValue(row.amount, row.currency)}
-                            </td>
-                            <td className="px-3 py-2 text-zinc-700">
-                              <span className="font-medium text-zinc-900">{row.referredUser.name}</span>
-                              <span className="mt-0.5 block text-[11px] text-zinc-500">{row.referredUser.email}</span>
                             </td>
                             <td className="px-3 py-2">
                               {proofHref ? (
