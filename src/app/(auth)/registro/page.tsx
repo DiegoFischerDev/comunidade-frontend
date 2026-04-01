@@ -165,22 +165,30 @@ export default function RegistroPage() {
             <p className="text-sm font-medium text-zinc-700">
               Quero ser contactado via:
             </p>
-            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-3">
-              <input
-                type="checkbox"
-                checked={preferEmail}
-                onChange={(e) => setPreferEmail(e.target.checked)}
-                className="mt-1 h-4 w-4 shrink-0 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-sm leading-snug text-zinc-700">
-                <span className="font-medium text-zinc-900">E-mail</span>
-                <span className="mt-1 block text-zinc-600">
-                  Se não marcar, confirma pelo WhatsApp com a mensagem que
-                  abrimos após criar a conta. O número de WhatsApp pode ser
-                  adicionado depois no perfil.
+            <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-2.5">
+                <input
+                  type="checkbox"
+                  checked={!preferEmail}
+                  onChange={() => setPreferEmail(false)}
+                  className="h-4 w-4 shrink-0 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-zinc-900">
+                  WhatsApp
                 </span>
-              </span>
-            </label>
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-2.5">
+                <input
+                  type="checkbox"
+                  checked={preferEmail}
+                  onChange={() => setPreferEmail(true)}
+                  className="h-4 w-4 shrink-0 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-zinc-900">
+                  E-mail
+                </span>
+              </label>
+            </div>
           </div>
           {!preferEmail && (
             <p className="rounded-lg bg-blue-50 px-3 py-2.5 text-sm leading-snug text-blue-950">
