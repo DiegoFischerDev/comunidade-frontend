@@ -58,7 +58,6 @@ export const api = {
       password: string;
       name: string;
       contactMethod: 'email' | 'whatsapp';
-      whatsapp?: string;
       affiliateCode?: string;
     }) =>
       request<{

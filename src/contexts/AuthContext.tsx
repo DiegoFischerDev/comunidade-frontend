@@ -33,7 +33,6 @@ type AuthContextValue = {
     password: string;
     name: string;
     contactMethod: 'email' | 'whatsapp';
-    whatsapp?: string;
     affiliateCode?: string;
   }) => Promise<{
     requiresEmailVerification: boolean;
@@ -99,7 +98,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: string;
       name: string;
       contactMethod: 'email' | 'whatsapp';
-      whatsapp?: string;
       affiliateCode?: string;
     }) => {
       return api.auth.register(params);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -9,26 +9,14 @@ export default function RegistroPage() {
   const { register, login } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
-  const [contactMethod, setContactMethod] = useState<'whatsapp' | 'email'>(
-    'whatsapp',
-  );
-  const [affiliateCode, setAffiliateCode] = useState('');
+  const [preferEmail, setPreferEmail] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'form' | 'verify'>('form');
   const [verificationCode, setVerificationCode] = useState('');
   const [info, setInfo] = useState('');
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const stored = window.localStorage.getItem('comunidade_ref_affiliate');
-    if (stored && stored !== 'nenhum') {
-      setAffiliateCode(stored);
-    }
-  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,13 +28,21 @@ export default function RegistroPage() {
     }
     setLoading(true);
     try {
+      const refRaw =
+        typeof window !== 'undefined'
+          ? window.localStorage.getItem('comunidade_ref_affiliate')
+          : null;
+      const refTrimmed =
+        refRaw && refRaw !== 'nenhum' && refRaw.trim().length > 0
+          ? refRaw.trim()
+          : undefined;
+
       const res = await register({
         email,
         password,
         name,
-        contactMethod,
-        whatsapp: contactMethod === 'email' ? whatsapp : undefined,
-        affiliateCode: affiliateCode.trim() || undefined,
+        contactMethod: preferEmail ? 'email' : 'whatsapp',
+        affiliateCode: refTrimmed,
       });
       if (res.requiresWhatsappVerification && res.whatsappOpenUrl) {
         window.open(res.whatsappOpenUrl, '_blank', 'noopener,noreferrer');
@@ -106,35 +102,6 @@ export default function RegistroPage() {
       {step === 'form' && (
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <p className="mb-2 text-sm font-medium text-zinc-700">
-              Quero ser contactado via:
-            </p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setContactMethod('whatsapp')}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                  contactMethod === 'whatsapp'
-                    ? 'border-blue-600 bg-blue-50 text-blue-800'
-                    : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'
-                }`}
-              >
-                WhatsApp
-              </button>
-              <button
-                type="button"
-                onClick={() => setContactMethod('email')}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                  contactMethod === 'email'
-                    ? 'border-blue-600 bg-blue-50 text-blue-800'
-                    : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'
-                }`}
-              >
-                E-mail
-              </button>
-            </div>
-          </div>
-          <div>
             <label htmlFor="name" className="block text-sm font-medium text-zinc-700">
               Nome
             </label>
@@ -160,25 +127,6 @@ export default function RegistroPage() {
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
-          {contactMethod === 'email' && (
-            <div>
-              <label
-                htmlFor="whatsapp"
-                className="block text-sm font-medium text-zinc-700"
-              >
-                WhatsApp
-              </label>
-              <input
-                id="whatsapp"
-                type="text"
-                value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
-                required
-                placeholder="Ex: 351256854756"
-                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-          )}
           <div>
             <label
               htmlFor="password"
@@ -213,19 +161,35 @@ export default function RegistroPage() {
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
-          <div>
-            <label htmlFor="affiliateCode" className="block text-sm font-medium text-zinc-700">
-              @ de quem te indicou (opcional)
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-zinc-700">
+              Quero ser contactado via:
+            </p>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-3">
+              <input
+                type="checkbox"
+                checked={preferEmail}
+                onChange={(e) => setPreferEmail(e.target.checked)}
+                className="mt-1 h-4 w-4 shrink-0 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm leading-snug text-zinc-700">
+                <span className="font-medium text-zinc-900">E-mail</span>
+                <span className="mt-1 block text-zinc-600">
+                  Se não marcar, confirma pelo WhatsApp com a mensagem que
+                  abrimos após criar a conta. O número de WhatsApp pode ser
+                  adicionado depois no perfil.
+                </span>
+              </span>
             </label>
-            <input
-              id="affiliateCode"
-              type="text"
-              value={affiliateCode}
-              onChange={(e) => setAffiliateCode(e.target.value)}
-              placeholder="Opcional"
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
           </div>
+          {!preferEmail && (
+            <p className="rounded-lg bg-blue-50 px-3 py-2.5 text-sm leading-snug text-blue-950">
+              Ao clicar em <span className="font-semibold">Ativar conta</span>, será
+              redirecionado para o <span className="font-semibold">WhatsApp</span> com uma
+              mensagem já preparada. Envie-a para concluir a ativação da conta na Comunidade
+              RPM.
+            </p>
+          )}
           <button
             type="submit"
             disabled={loading}
@@ -233,9 +197,9 @@ export default function RegistroPage() {
           >
             {loading
               ? 'A processar…'
-              : contactMethod === 'whatsapp'
-                ? 'Ativar conta'
-                : 'Criar conta'}
+              : preferEmail
+                ? 'Criar conta'
+                : 'Ativar conta'}
           </button>
         </form>
       )}

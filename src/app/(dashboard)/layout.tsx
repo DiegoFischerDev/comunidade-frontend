@@ -35,13 +35,10 @@ export default function DashboardLayout({
   const [loginLoading, setLoginLoading] = useState(false);
   const [registerName, setRegisterName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
-  const [registerWhatsapp, setRegisterWhatsapp] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState('');
-  const [registerContactMethod, setRegisterContactMethod] = useState<
-    'whatsapp' | 'email'
-  >('whatsapp');
-  const [registerAffiliateCode, setRegisterAffiliateCode] = useState('');
+  /** false = confirmação por WhatsApp (default); true = por e-mail */
+  const [registerPreferEmail, setRegisterPreferEmail] = useState(false);
   const [registerError, setRegisterError] = useState('');
   const [registerInfo, setRegisterInfo] = useState('');
   const [registerLoading, setRegisterLoading] = useState(false);
@@ -93,23 +90,6 @@ export default function DashboardLayout({
       }
     })();
   }, [mounted, authLoading, user]);
-
-  function syncRegisterAffiliateFromStorage() {
-    if (typeof window === 'undefined') return;
-    const stored = window.localStorage.getItem('comunidade_ref_affiliate');
-    if (!stored || stored === 'nenhum') {
-      setRegisterAffiliateCode('');
-      return;
-    }
-    setRegisterAffiliateCode(stored);
-  }
-
-  // Lê o localStorage só quando o modal está aberto no separador "Criar conta"
-  // (evita corrida com ReferralFromUrlSync na montagem inicial do site)
-  useEffect(() => {
-    if (!isAuthModalOpen || authMode !== 'register') return;
-    syncRegisterAffiliateFromStorage();
-  }, [isAuthModalOpen, authMode]);
 
   // Sincroniza categoria ativa no menu com rota atual (categoria ou parceiro)
   useEffect(() => {
@@ -652,16 +632,25 @@ export default function DashboardLayout({
                   }
                   setRegisterLoading(true);
                   try {
+                    const refRaw =
+                      typeof window !== 'undefined'
+                        ? window.localStorage.getItem(
+                            'comunidade_ref_affiliate',
+                          )
+                        : null;
+                    const refTrimmed =
+                      refRaw &&
+                      refRaw !== 'nenhum' &&
+                      refRaw.trim().length > 0
+                        ? refRaw.trim()
+                        : undefined;
+
                     const res = await register({
                       email: registerEmail,
                       password: registerPassword,
                       name: registerName,
-                      contactMethod: registerContactMethod,
-                      whatsapp:
-                        registerContactMethod === 'email'
-                          ? registerWhatsapp
-                          : undefined,
-                      affiliateCode: registerAffiliateCode.trim() || undefined,
+                      contactMethod: registerPreferEmail ? 'email' : 'whatsapp',
+                      affiliateCode: refTrimmed,
                     });
                     if (
                       res.requiresWhatsappVerification &&
@@ -706,35 +695,6 @@ export default function DashboardLayout({
                     {registerInfo}
                   </div>
                 )}
-                <div>
-                  <p className="mb-2 text-xs font-medium text-zinc-700">
-                    Quero ser contactado via:
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setRegisterContactMethod('whatsapp')}
-                      className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition ${
-                        registerContactMethod === 'whatsapp'
-                          ? 'border-blue-600 bg-blue-50 text-blue-800'
-                          : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'
-                      }`}
-                    >
-                      WhatsApp
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRegisterContactMethod('email')}
-                      className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition ${
-                        registerContactMethod === 'email'
-                          ? 'border-blue-600 bg-blue-50 text-blue-800'
-                          : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'
-                      }`}
-                    >
-                      E-mail
-                    </button>
-                  </div>
-                </div>
                 <div className="grid gap-3">
                   <div>
                     <label
@@ -768,25 +728,6 @@ export default function DashboardLayout({
                       className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </div>
-                  {registerContactMethod === 'email' && (
-                    <div>
-                      <label
-                        htmlFor="auth-whatsapp"
-                        className="block text-xs font-medium text-zinc-700"
-                      >
-                        WhatsApp
-                      </label>
-                      <input
-                        id="auth-whatsapp"
-                        type="text"
-                        value={registerWhatsapp}
-                        onChange={(e) => setRegisterWhatsapp(e.target.value)}
-                        required
-                        placeholder="Ex: 351256854756"
-                        className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      />
-                    </div>
-                  )}
                   <div>
                     <label
                       htmlFor="auth-password-register"
@@ -823,23 +764,38 @@ export default function DashboardLayout({
                       className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </div>
-                  <div>
-                    <label
-                      htmlFor="auth-affiliate-code"
-                      className="block text-xs font-medium text-zinc-700"
-                    >
-                      @ de quem te indicou (opcional)
-                    </label>
-                    <input
-                      id="auth-affiliate-code"
-                      type="text"
-                      value={registerAffiliateCode}
-                      onChange={(e) => setRegisterAffiliateCode(e.target.value)}
-                      placeholder="Opcional"
-                      className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
                 </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-zinc-700">
+                    Quero ser contactado via:
+                  </p>
+                  <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-2.5">
+                    <input
+                      type="checkbox"
+                      checked={registerPreferEmail}
+                      onChange={(e) => setRegisterPreferEmail(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-xs leading-snug text-zinc-700">
+                      <span className="font-medium text-zinc-900">
+                        E-mail
+                      </span>
+                      <span className="mt-0.5 block text-zinc-600">
+                        Se não marcar, confirma pelo WhatsApp com a mensagem que
+                        abrimos após criar a conta. O número de WhatsApp pode ser
+                        adicionado depois no perfil.
+                      </span>
+                    </span>
+                  </label>
+                </div>
+                {!registerPreferEmail && (
+                  <p className="rounded-lg bg-blue-50 px-3 py-2 text-[11px] leading-snug text-blue-950">
+                    Ao clicar em <span className="font-semibold">Ativar conta</span>, será
+                    redirecionado para o <span className="font-semibold">WhatsApp</span> com
+                    uma mensagem já preparada. Envie-a para concluir a ativação da conta na
+                    Comunidade RPM.
+                  </p>
+                )}
                 <button
                   type="submit"
                   disabled={registerLoading}
@@ -847,9 +803,9 @@ export default function DashboardLayout({
                 >
                   {registerLoading
                     ? 'A processar…'
-                    : registerContactMethod === 'whatsapp'
-                      ? 'Ativar conta'
-                      : 'Criar conta'}
+                    : registerPreferEmail
+                      ? 'Criar conta'
+                      : 'Ativar conta'}
                 </button>
               </form>
             ) : authMode === 'verify' ? (
