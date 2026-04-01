@@ -37,8 +37,13 @@ export default function DashboardLayout({
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerWhatsapp, setRegisterWhatsapp] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
+  const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState('');
+  const [registerContactMethod, setRegisterContactMethod] = useState<
+    'whatsapp' | 'email'
+  >('whatsapp');
   const [registerAffiliateCode, setRegisterAffiliateCode] = useState('');
   const [registerError, setRegisterError] = useState('');
+  const [registerInfo, setRegisterInfo] = useState('');
   const [registerLoading, setRegisterLoading] = useState(false);
   const [verifyEmail, setVerifyEmail] = useState('');
   const [verifyCode, setVerifyCode] = useState('');
@@ -524,6 +529,8 @@ export default function DashboardLayout({
                   setAuthMode('register');
                   setVerifyError('');
                   setVerifyInfo('');
+                  setRegisterError('');
+                  setRegisterInfo('');
                 }}
                 className={`flex-1 cursor-pointer rounded-full px-3 py-1.5 ${
                   authMode === 'register'
@@ -636,17 +643,40 @@ export default function DashboardLayout({
                 onSubmit={async (e) => {
                   e.preventDefault();
                   setRegisterError('');
+                  setRegisterInfo('');
                   setVerifyError('');
                   setVerifyInfo('');
+                  if (registerPassword !== registerPasswordConfirm) {
+                    setRegisterError('As senhas não coincidem.');
+                    return;
+                  }
                   setRegisterLoading(true);
                   try {
-                    await register({
+                    const res = await register({
                       email: registerEmail,
                       password: registerPassword,
                       name: registerName,
-                      whatsapp: registerWhatsapp,
+                      contactMethod: registerContactMethod,
+                      whatsapp:
+                        registerContactMethod === 'email'
+                          ? registerWhatsapp
+                          : undefined,
                       affiliateCode: registerAffiliateCode.trim() || undefined,
                     });
+                    if (
+                      res.requiresWhatsappVerification &&
+                      res.whatsappOpenUrl
+                    ) {
+                      window.open(
+                        res.whatsappOpenUrl,
+                        '_blank',
+                        'noopener,noreferrer',
+                      );
+                      setRegisterInfo(
+                        'Abriu o WhatsApp noutro separador. Envie a mensagem e aguarde a resposta automática. Depois pode entrar com o seu e-mail e senha.',
+                      );
+                      return;
+                    }
                     setAuthMode('verify');
                     setVerifyOrigin('register');
                     setVerifyEmail(registerEmail);
@@ -671,6 +701,40 @@ export default function DashboardLayout({
                     {registerError}
                   </div>
                 )}
+                {registerInfo && !registerError && (
+                  <div className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                    {registerInfo}
+                  </div>
+                )}
+                <div>
+                  <p className="mb-2 text-xs font-medium text-zinc-700">
+                    Quero ser contactado via:
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRegisterContactMethod('whatsapp')}
+                      className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                        registerContactMethod === 'whatsapp'
+                          ? 'border-blue-600 bg-blue-50 text-blue-800'
+                          : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                      }`}
+                    >
+                      WhatsApp
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRegisterContactMethod('email')}
+                      className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                        registerContactMethod === 'email'
+                          ? 'border-blue-600 bg-blue-50 text-blue-800'
+                          : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                      }`}
+                    >
+                      E-mail
+                    </button>
+                  </div>
+                </div>
                 <div className="grid gap-3">
                   <div>
                     <label
@@ -704,23 +768,25 @@ export default function DashboardLayout({
                       className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </div>
-                  <div>
-                    <label
-                      htmlFor="auth-whatsapp"
-                      className="block text-xs font-medium text-zinc-700"
-                    >
-                      WhatsApp
-                    </label>
-                    <input
-                      id="auth-whatsapp"
-                      type="text"
-                      value={registerWhatsapp}
-                      onChange={(e) => setRegisterWhatsapp(e.target.value)}
-                      required
-                      placeholder="Ex: 351256854756"
-                      className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
+                  {registerContactMethod === 'email' && (
+                    <div>
+                      <label
+                        htmlFor="auth-whatsapp"
+                        className="block text-xs font-medium text-zinc-700"
+                      >
+                        WhatsApp
+                      </label>
+                      <input
+                        id="auth-whatsapp"
+                        type="text"
+                        value={registerWhatsapp}
+                        onChange={(e) => setRegisterWhatsapp(e.target.value)}
+                        required
+                        placeholder="Ex: 351256854756"
+                        className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+                  )}
                   <div>
                     <label
                       htmlFor="auth-password-register"
@@ -733,6 +799,25 @@ export default function DashboardLayout({
                       type="password"
                       value={registerPassword}
                       onChange={(e) => setRegisterPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="auth-password-register-2"
+                      className="block text-xs font-medium text-zinc-700"
+                    >
+                      Confirmar senha
+                    </label>
+                    <input
+                      id="auth-password-register-2"
+                      type="password"
+                      value={registerPasswordConfirm}
+                      onChange={(e) =>
+                        setRegisterPasswordConfirm(e.target.value)
+                      }
                       required
                       minLength={6}
                       className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -760,7 +845,11 @@ export default function DashboardLayout({
                   disabled={registerLoading}
                   className="flex w-full cursor-pointer items-center justify-center rounded-full bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {registerLoading ? 'Criando conta…' : 'Criar conta'}
+                  {registerLoading
+                    ? 'A processar…'
+                    : registerContactMethod === 'whatsapp'
+                      ? 'Ativar conta'
+                      : 'Criar conta'}
                 </button>
               </form>
             ) : authMode === 'verify' ? (

@@ -32,9 +32,14 @@ type AuthContextValue = {
     email: string;
     password: string;
     name: string;
-    whatsapp: string;
+    contactMethod: 'email' | 'whatsapp';
+    whatsapp?: string;
     affiliateCode?: string;
-  }) => Promise<void>;
+  }) => Promise<{
+    requiresEmailVerification: boolean;
+    requiresWhatsappVerification?: boolean;
+    whatsappOpenUrl?: string;
+  }>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   impersonateAsUser: (userId: string) => Promise<void>;
@@ -93,10 +98,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: string;
       password: string;
       name: string;
-      whatsapp: string;
+      contactMethod: 'email' | 'whatsapp';
+      whatsapp?: string;
       affiliateCode?: string;
     }) => {
-      await api.auth.register(params);
+      return api.auth.register(params);
     },
     [],
   );

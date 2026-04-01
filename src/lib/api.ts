@@ -57,7 +57,8 @@ export const api = {
       email: string;
       password: string;
       name: string;
-      whatsapp: string;
+      contactMethod: 'email' | 'whatsapp';
+      whatsapp?: string;
       affiliateCode?: string;
     }) =>
       request<{
@@ -70,6 +71,8 @@ export const api = {
           createdAt: string;
         };
         requiresEmailVerification: boolean;
+        requiresWhatsappVerification?: boolean;
+        whatsappOpenUrl?: string;
       }>('/auth/register', {
         method: 'POST',
         body: JSON.stringify(params),

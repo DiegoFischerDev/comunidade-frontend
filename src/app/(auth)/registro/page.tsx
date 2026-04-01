@@ -11,6 +11,10 @@ export default function RegistroPage() {
   const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [contactMethod, setContactMethod] = useState<'whatsapp' | 'email'>(
+    'whatsapp',
+  );
   const [affiliateCode, setAffiliateCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,9 +34,27 @@ export default function RegistroPage() {
     e.preventDefault();
     setError('');
     setInfo('');
+    if (password !== passwordConfirm) {
+      setError('As senhas não coincidem.');
+      return;
+    }
     setLoading(true);
     try {
-      await register({ email, password, name, whatsapp, affiliateCode: affiliateCode.trim() || undefined });
+      const res = await register({
+        email,
+        password,
+        name,
+        contactMethod,
+        whatsapp: contactMethod === 'email' ? whatsapp : undefined,
+        affiliateCode: affiliateCode.trim() || undefined,
+      });
+      if (res.requiresWhatsappVerification && res.whatsappOpenUrl) {
+        window.open(res.whatsappOpenUrl, '_blank', 'noopener,noreferrer');
+        setInfo(
+          'Abriu o WhatsApp noutro separador. Envie a mensagem e aguarde a resposta automática. Depois pode entrar com o seu e-mail e senha.',
+        );
+        return;
+      }
       setStep('verify');
       setInfo(
         'Enviámos um código de confirmação para o seu e-mail. Introduza o código abaixo para concluir o registo.',
@@ -84,6 +106,35 @@ export default function RegistroPage() {
       {step === 'form' && (
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
+            <p className="mb-2 text-sm font-medium text-zinc-700">
+              Quero ser contactado via:
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setContactMethod('whatsapp')}
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                  contactMethod === 'whatsapp'
+                    ? 'border-blue-600 bg-blue-50 text-blue-800'
+                    : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                }`}
+              >
+                WhatsApp
+              </button>
+              <button
+                type="button"
+                onClick={() => setContactMethod('email')}
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                  contactMethod === 'email'
+                    ? 'border-blue-600 bg-blue-50 text-blue-800'
+                    : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                }`}
+              >
+                E-mail
+              </button>
+            </div>
+          </div>
+          <div>
             <label htmlFor="name" className="block text-sm font-medium text-zinc-700">
               Nome
             </label>
@@ -109,23 +160,25 @@ export default function RegistroPage() {
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
-          <div>
-            <label
-              htmlFor="whatsapp"
-              className="block text-sm font-medium text-zinc-700"
-            >
-              WhatsApp
-            </label>
-            <input
-              id="whatsapp"
-              type="text"
-              value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
-              required
-              placeholder="Ex: 351256854756"
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
+          {contactMethod === 'email' && (
+            <div>
+              <label
+                htmlFor="whatsapp"
+                className="block text-sm font-medium text-zinc-700"
+              >
+                WhatsApp
+              </label>
+              <input
+                id="whatsapp"
+                type="text"
+                value={whatsapp}
+                onChange={(e) => setWhatsapp(e.target.value)}
+                required
+                placeholder="Ex: 351256854756"
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          )}
           <div>
             <label
               htmlFor="password"
@@ -138,6 +191,23 @@ export default function RegistroPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="passwordConfirm"
+              className="block text-sm font-medium text-zinc-700"
+            >
+              Confirmar senha
+            </label>
+            <input
+              id="passwordConfirm"
+              type="password"
+              value={passwordConfirm}
+              onChange={(e) => setPasswordConfirm(e.target.value)}
               required
               minLength={6}
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -161,7 +231,11 @@ export default function RegistroPage() {
             disabled={loading}
             className="w-full rounded-lg bg-blue-600 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? 'Criando conta…' : 'Criar conta'}
+            {loading
+              ? 'A processar…'
+              : contactMethod === 'whatsapp'
+                ? 'Ativar conta'
+                : 'Criar conta'}
           </button>
         </form>
       )}
