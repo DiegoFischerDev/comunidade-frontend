@@ -5,6 +5,15 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 
+function formatWhatsappRegistrationDisplay(digits: string) {
+  const d = digits.replace(/\D/g, '');
+  if (d.length >= 12 && d.startsWith('351')) {
+    const rest = d.slice(3);
+    return `+351 ${rest.slice(0, 3)} ${rest.slice(3, 6)} ${rest.slice(6)}`.trim();
+  }
+  return d ? `+${d}` : '';
+}
+
 export default function RegistroPage() {
   const { register, login } = useAuth();
   const [name, setName] = useState('');
@@ -14,9 +23,12 @@ export default function RegistroPage() {
   const [preferEmail, setPreferEmail] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<'form' | 'verify'>('form');
+  const [step, setStep] = useState<'form' | 'verify' | 'whatsappVerify'>('form');
   const [verificationCode, setVerificationCode] = useState('');
   const [info, setInfo] = useState('');
+  const [waCode, setWaCode] = useState('');
+  const [waOpenUrl, setWaOpenUrl] = useState('');
+  const [waRegistrationNumber, setWaRegistrationNumber] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,11 +56,16 @@ export default function RegistroPage() {
         contactMethod: preferEmail ? 'email' : 'whatsapp',
         affiliateCode: refTrimmed,
       });
-      if (res.requiresWhatsappVerification && res.whatsappOpenUrl) {
-        window.open(res.whatsappOpenUrl, '_blank', 'noopener,noreferrer');
-        setInfo(
-          'Abriu o WhatsApp noutro separador. Envie a mensagem e aguarde a resposta automática. Depois pode entrar com o seu e-mail e senha.',
-        );
+      if (
+        res.requiresWhatsappVerification &&
+        res.whatsappOpenUrl &&
+        res.whatsappVerificationCode &&
+        res.whatsappRegistrationNumber
+      ) {
+        setWaCode(res.whatsappVerificationCode);
+        setWaOpenUrl(res.whatsappOpenUrl);
+        setWaRegistrationNumber(res.whatsappRegistrationNumber);
+        setStep('whatsappVerify');
         return;
       }
       setStep('verify');
@@ -190,26 +207,58 @@ export default function RegistroPage() {
               </label>
             </div>
           </div>
-          {!preferEmail && (
-            <p className="rounded-lg bg-blue-50 px-3 py-2.5 text-sm leading-snug text-blue-950">
-              Ao clicar em <span className="font-semibold">Ativar conta</span>, será
-              redirecionado para o <span className="font-semibold">WhatsApp</span> com uma
-              mensagem já preparada. Envie-a para concluir a ativação da conta na Comunidade
-              RPM.
-            </p>
-          )}
           <button
             type="submit"
             disabled={loading}
             className="w-full rounded-lg bg-blue-600 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading
-              ? 'A processar…'
-              : preferEmail
-                ? 'Criar conta'
-                : 'Ativar conta'}
+            {loading ? 'A processar…' : 'Criar conta'}
           </button>
         </form>
+      )}
+
+      {step === 'whatsappVerify' && (
+        <div className="mt-6 space-y-4">
+          <h2 className="text-lg font-semibold text-zinc-900">
+            Ativar conta no WhatsApp
+          </h2>
+          <p className="text-sm leading-relaxed text-zinc-700">
+            Para ativar a sua conta, envie o código de verificação pelo WhatsApp para{' '}
+            <span className="font-semibold text-zinc-900">
+              {formatWhatsappRegistrationDisplay(waRegistrationNumber)}
+            </span>
+            .
+          </p>
+          <div>
+            <p className="text-sm font-medium text-zinc-600">Código de verificação</p>
+            <p className="mt-1 select-all rounded-lg border border-zinc-200 bg-zinc-50 py-3 text-center text-2xl font-bold tracking-[0.2em] text-zinc-900">
+              {waCode}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (waOpenUrl) {
+                window.open(waOpenUrl, '_blank', 'noopener,noreferrer');
+              }
+            }}
+            className="w-full rounded-lg bg-green-600 py-2.5 font-medium text-white hover:bg-green-700"
+          >
+            Enviar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStep('form');
+              setWaCode('');
+              setWaOpenUrl('');
+              setWaRegistrationNumber('');
+            }}
+            className="w-full text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+          >
+            Voltar ao registo
+          </button>
+        </div>
       )}
 
       {step === 'verify' && (

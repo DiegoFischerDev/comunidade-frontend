@@ -71,6 +71,8 @@ export const api = {
         };
         requiresEmailVerification: boolean;
         requiresWhatsappVerification?: boolean;
+        whatsappVerificationCode?: string;
+        whatsappRegistrationNumber?: string;
         whatsappOpenUrl?: string;
       }>('/auth/register', {
         method: 'POST',

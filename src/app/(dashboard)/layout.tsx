@@ -7,6 +7,15 @@ import Image from 'next/image';
 import { getAuthToken, clearAuthToken, api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
+function formatWhatsappRegistrationDisplay(digits: string) {
+  const d = digits.replace(/\D/g, '');
+  if (d.length >= 12 && d.startsWith('351')) {
+    const rest = d.slice(3);
+    return `+351 ${rest.slice(0, 3)} ${rest.slice(3, 6)} ${rest.slice(6)}`.trim();
+  }
+  return d ? `+${d}` : '';
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -27,8 +36,17 @@ export default function DashboardLayout({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<
-    'login' | 'register' | 'verify' | 'forgot' | 'resetPassword'
+    | 'login'
+    | 'register'
+    | 'registerWhatsappVerify'
+    | 'verify'
+    | 'forgot'
+    | 'resetPassword'
   >('login');
+  const [whatsappVerifyCode, setWhatsappVerifyCode] = useState('');
+  const [whatsappVerifyOpenUrl, setWhatsappVerifyOpenUrl] = useState('');
+  const [whatsappRegistrationNumber, setWhatsappRegistrationNumber] =
+    useState('');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -463,21 +481,28 @@ export default function DashboardLayout({
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-base font-semibold text-zinc-900">
-                  Entrar na Comunidade RPM
+                  {authMode === 'registerWhatsappVerify'
+                    ? 'Ativar conta no WhatsApp'
+                    : 'Entrar na Comunidade RPM'}
                 </h2>
                 <p className="mt-1 text-xs text-zinc-500">
                   {authMode === 'verify'
                     ? 'Confirme o seu e-mail para concluir o acesso.'
-                    : authMode === 'forgot'
-                      ? 'Informe o e-mail da sua conta para receber um código de recuperação.'
-                      : authMode === 'resetPassword'
-                        ? 'Introduza o código recebido por e-mail e defina uma nova senha.'
-                        : 'Faça login ou crie a sua conta para continuar.'}
+                    : authMode === 'registerWhatsappVerify'
+                      ? 'Envie o código pelo WhatsApp para concluir o registo.'
+                      : authMode === 'forgot'
+                        ? 'Informe o e-mail da sua conta para receber um código de recuperação.'
+                        : authMode === 'resetPassword'
+                          ? 'Introduza o código recebido por e-mail e defina uma nova senha.'
+                          : 'Faça login ou crie a sua conta para continuar.'}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => {
+                  setWhatsappVerifyCode('');
+                  setWhatsappVerifyOpenUrl('');
+                  setWhatsappRegistrationNumber('');
                   setIsAuthModalOpen(false);
                 }}
                 className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50"
@@ -487,40 +512,45 @@ export default function DashboardLayout({
               </button>
             </div>
 
-            <div className="mt-4 flex rounded-full bg-zinc-100 p-1 text-xs font-medium text-zinc-600">
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode('login');
-                  setVerifyError('');
-                  setVerifyInfo('');
-                }}
-                className={`flex-1 cursor-pointer rounded-full px-3 py-1.5 ${
-                  authMode === 'login'
-                    ? 'bg-white text-zinc-900 shadow-sm'
-                    : 'hover:text-zinc-900'
-                }`}
-              >
-                Já tenho conta
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode('register');
-                  setVerifyError('');
-                  setVerifyInfo('');
-                  setRegisterError('');
-                  setRegisterInfo('');
-                }}
-                className={`flex-1 cursor-pointer rounded-full px-3 py-1.5 ${
-                  authMode === 'register'
-                    ? 'bg-white text-zinc-900 shadow-sm'
-                    : 'hover:text-zinc-900'
-                }`}
-              >
-                Criar conta
-              </button>
-            </div>
+            {authMode !== 'registerWhatsappVerify' && (
+              <div className="mt-4 flex rounded-full bg-zinc-100 p-1 text-xs font-medium text-zinc-600">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('login');
+                    setVerifyError('');
+                    setVerifyInfo('');
+                  }}
+                  className={`flex-1 cursor-pointer rounded-full px-3 py-1.5 ${
+                    authMode === 'login'
+                      ? 'bg-white text-zinc-900 shadow-sm'
+                      : 'hover:text-zinc-900'
+                  }`}
+                >
+                  Já tenho conta
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('register');
+                    setVerifyError('');
+                    setVerifyInfo('');
+                    setRegisterError('');
+                    setRegisterInfo('');
+                    setWhatsappVerifyCode('');
+                    setWhatsappVerifyOpenUrl('');
+                    setWhatsappRegistrationNumber('');
+                  }}
+                  className={`flex-1 cursor-pointer rounded-full px-3 py-1.5 ${
+                    authMode === 'register'
+                      ? 'bg-white text-zinc-900 shadow-sm'
+                      : 'hover:text-zinc-900'
+                  }`}
+                >
+                  Criar conta
+                </button>
+              </div>
+            )}
 
             {authMode === 'login' ? (
               <form
@@ -654,16 +684,14 @@ export default function DashboardLayout({
                     });
                     if (
                       res.requiresWhatsappVerification &&
-                      res.whatsappOpenUrl
+                      res.whatsappOpenUrl &&
+                      res.whatsappVerificationCode &&
+                      res.whatsappRegistrationNumber
                     ) {
-                      window.open(
-                        res.whatsappOpenUrl,
-                        '_blank',
-                        'noopener,noreferrer',
-                      );
-                      setRegisterInfo(
-                        'Abriu o WhatsApp noutro separador. Envie a mensagem e aguarde a resposta automática. Depois pode entrar com o seu e-mail e senha.',
-                      );
+                      setWhatsappVerifyCode(res.whatsappVerificationCode);
+                      setWhatsappVerifyOpenUrl(res.whatsappOpenUrl);
+                      setWhatsappRegistrationNumber(res.whatsappRegistrationNumber);
+                      setAuthMode('registerWhatsappVerify');
                       return;
                     }
                     setAuthMode('verify');
@@ -794,26 +822,62 @@ export default function DashboardLayout({
                     </label>
                   </div>
                 </div>
-                {!registerPreferEmail && (
-                  <p className="rounded-lg bg-blue-50 px-3 py-2 text-[11px] leading-snug text-blue-950">
-                    Ao clicar em <span className="font-semibold">Ativar conta</span>, será
-                    redirecionado para o <span className="font-semibold">WhatsApp</span> com
-                    uma mensagem já preparada. Envie-a para concluir a ativação da conta na
-                    Comunidade RPM.
-                  </p>
-                )}
                 <button
                   type="submit"
                   disabled={registerLoading}
                   className="flex w-full cursor-pointer items-center justify-center rounded-full bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {registerLoading
-                    ? 'A processar…'
-                    : registerPreferEmail
-                      ? 'Criar conta'
-                      : 'Ativar conta'}
+                  {registerLoading ? 'A processar…' : 'Criar conta'}
                 </button>
               </form>
+            ) : authMode === 'registerWhatsappVerify' ? (
+              <div className="mt-5 space-y-4">
+                <p className="text-xs leading-relaxed text-zinc-700">
+                  Para ativar a sua conta, envie o código de verificação pelo WhatsApp para{' '}
+                  <span className="font-semibold text-zinc-900">
+                    {formatWhatsappRegistrationDisplay(whatsappRegistrationNumber)}
+                  </span>
+                  .
+                </p>
+                <div>
+                  <p className="text-xs font-medium text-zinc-600">
+                    Código de verificação
+                  </p>
+                  <p
+                    className="mt-1 select-all rounded-lg border border-zinc-200 bg-zinc-50 py-3 text-center text-2xl font-bold tracking-[0.2em] text-zinc-900"
+                    aria-live="polite"
+                  >
+                    {whatsappVerifyCode}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (whatsappVerifyOpenUrl) {
+                      window.open(
+                        whatsappVerifyOpenUrl,
+                        '_blank',
+                        'noopener,noreferrer',
+                      );
+                    }
+                  }}
+                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700"
+                >
+                  Enviar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('register');
+                    setWhatsappVerifyCode('');
+                    setWhatsappVerifyOpenUrl('');
+                    setWhatsappRegistrationNumber('');
+                  }}
+                  className="w-full cursor-pointer text-center text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
+                >
+                  Voltar ao registo
+                </button>
+              </div>
             ) : authMode === 'verify' ? (
               <form
                 className="mt-5 space-y-4"

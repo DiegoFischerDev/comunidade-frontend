@@ -37,6 +37,8 @@ type AuthContextValue = {
   }) => Promise<{
     requiresEmailVerification: boolean;
     requiresWhatsappVerification?: boolean;
+    whatsappVerificationCode?: string;
+    whatsappRegistrationNumber?: string;
     whatsappOpenUrl?: string;
   }>;
   logout: () => void;
