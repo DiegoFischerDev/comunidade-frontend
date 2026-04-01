@@ -795,7 +795,7 @@ export default function DashboardLayout({
                 </div>
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-zinc-700">
-                    Quero ser contactado via:
+                    Quero ativar conta via:
                   </p>
                   <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                     <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-2">
@@ -865,6 +865,10 @@ export default function DashboardLayout({
                 >
                   Enviar
                 </button>
+                <p className="text-[11px] leading-snug text-zinc-500">
+                  Depois de enviar no WhatsApp, aguarde até cerca de 10 segundos: o
+                  sistema junta as mensagens e só então responde com a confirmação.
+                </p>
                 <button
                   type="button"
                   onClick={() => {
