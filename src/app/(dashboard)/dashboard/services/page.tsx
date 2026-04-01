@@ -11,8 +11,6 @@ type PartnerServiceRow = {
   price: string | null;
   priceOnRequest: boolean;
   createdAt: string;
-  commission: string | null;
-  pendingApproval?: boolean;
 };
 
 export default function PartnerServicesPage() {
@@ -305,8 +303,6 @@ export default function PartnerServicesPage() {
                 <th className="px-4 py-2 text-left">Título</th>
                 <th className="px-4 py-2 text-left">Descrição</th>
                 <th className="px-4 py-2 text-left">Valor (EUR)</th>
-                <th className="px-4 py-2 text-left">Comissão RPM</th>
-                <th className="px-4 py-2 text-left">Status</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
@@ -333,26 +329,6 @@ export default function PartnerServicesPage() {
                       </span>
                     ) : (
                       <span className="text-zinc-400 text-xs">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2 align-top">
-                    {s.commission ? (
-                      <span className="text-xs font-medium text-emerald-700">
-                        {s.commission}
-                      </span>
-                    ) : (
-                      <span className="text-zinc-400 text-xs">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2 align-top">
-                    {s.pendingApproval ? (
-                      <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
-                        Pendente de aprovação
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                        Aprovado
-                      </span>
                     )}
                   </td>
                   <td className="px-4 py-2 align-top">

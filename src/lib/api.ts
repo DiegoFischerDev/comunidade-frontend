@@ -353,57 +353,6 @@ export const api = {
           method: 'DELETE',
         }),
     },
-    services: {
-      list: () =>
-        request<
-          {
-            id: string;
-            title: string;
-            description: string | null;
-            price: string | null;
-            priceOnRequest: boolean;
-            commission: string | null;
-            cashbackEuro: number | null;
-            pendingApproval: boolean;
-            createdAt: string;
-            partner: { id: string; name: string };
-          }[]
-        >('/partners/admin/services', { method: 'GET' }),
-      listPending: () =>
-        request<
-          {
-            id: string;
-            title: string;
-            description: string | null;
-            price: string | null;
-            priceOnRequest: boolean;
-            commission: string | null;
-            cashbackEuro: number | null;
-            pendingApproval: boolean;
-            createdAt: string;
-            partner: { id: string; name: string };
-          }[]
-        >('/partners/admin/services/pending', { method: 'GET' }),
-      updateCommission: (
-        id: string,
-        body: { commission?: string | null; cashbackEuro?: number | null },
-      ) =>
-        request<{
-          id: string;
-          commission: string | null;
-          cashbackEuro: number | null;
-        }>(`/partners/admin/services/${id}`, {
-          method: 'PATCH',
-          body: JSON.stringify(body),
-        }),
-      approve: (id: string) =>
-        request<{
-          id: string;
-          pendingApproval: boolean;
-        }>(`/partners/admin/services/${id}/approve`, {
-          method: 'PATCH',
-        }),
-    },
   },
   partner: {
     me: () =>
@@ -462,7 +411,6 @@ export const api = {
             price: string | null;
             priceOnRequest: boolean;
             createdAt: string;
-            commission: string | null;
           }[]
         >('/partners/me/services', { method: 'GET' }),
       create: (input: {
@@ -478,7 +426,6 @@ export const api = {
           price: string | null;
           priceOnRequest: boolean;
           createdAt: string;
-          commission: string | null;
         }>('/partners/me/services', {
           method: 'POST',
           body: JSON.stringify(input),
@@ -499,7 +446,6 @@ export const api = {
           price: string | null;
           priceOnRequest: boolean;
           createdAt: string;
-          commission: string | null;
         }>(`/partners/me/services/${id}`, {
           method: 'PATCH',
           body: JSON.stringify(input),
@@ -554,232 +500,12 @@ export const api = {
           description: string | null;
           price: string | null;
           priceOnRequest: boolean;
-          commission: string | null;
-          cashbackEuro: number | null;
-          pendingApproval: boolean;
         }[];
       }>(`/partners/${id}/public`, { method: 'GET' }),
     registerLead: (partnerId: string) =>
       request<{ id: string }>(`/partners/${partnerId}/leads`, {
         method: 'POST',
         body: JSON.stringify({}),
-      }),
-  },
-  sales: {
-    partnerLookup: () =>
-      request<{
-        leads: {
-          id: string;
-          createdAt: string;
-          user: { id: string; name: string | null; email: string; whatsapp: string | null };
-        }[];
-        services: {
-          id: string;
-          title: string;
-          price: string | null;
-          priceOnRequest: boolean;
-          commission: string | null;
-        }[];
-      }>('/sales/partner/lookup', { method: 'GET' }),
-    partnerCreate: (input: {
-      leadId: string;
-      serviceId: string;
-      month: number;
-      year: number;
-      amount?: number;
-    }) =>
-      request<{
-        id: string;
-      }>('/sales/partner', {
-        method: 'POST',
-        body: JSON.stringify(input),
-      }),
-    partnerList: () =>
-      request<{
-        pending: any[];
-        approved: any[];
-        rejected: any[];
-      }>('/sales/partner', { method: 'GET' }),
-    partnerUpdateStatus: (id: string, status: 'APPROVED' | 'REJECTED') =>
-      request<unknown>(`/sales/partner/${id}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status }),
-      }),
-    partnerPayCommission: (
-      saleId: string,
-      body: {
-        amountEuro: number;
-        successUrl: string;
-        cancelUrl: string;
-        wantsInvoice?: boolean;
-      },
-    ) =>
-      request<{ url: string }>(`/sales/partner/${saleId}/pay-commission`, {
-        method: 'POST',
-        body: JSON.stringify(body),
-      }),
-    userLookup: () =>
-      request<{
-        partners: {
-          id: string;
-          name: string;
-          category?: { name: string } | null;
-        }[];
-      }>('/sales/user/lookup', { method: 'GET' }),
-    userPartnerServices: (partnerId: string) =>
-      request<
-        {
-          id: string;
-          title: string;
-          price: string | null;
-          priceOnRequest: boolean;
-          commission: string | null;
-          cashbackEuro: number | null;
-        }[]
-      >(`/sales/user/partners/${partnerId}/services`, { method: 'GET' }),
-    userCreate: (input: {
-      partnerId: string;
-      serviceId: string;
-      month: number;
-      year: number;
-      amount?: number;
-    }) =>
-      request<{ id: string }>('/sales/user', {
-        method: 'POST',
-        body: JSON.stringify(input),
-      }),
-    userList: () =>
-      request<
-        {
-          id: string;
-          partner: { id: string; name: string };
-          service: { title: string; cashbackEuro: number | null } | null;
-          month: number;
-          year: number;
-          amount: number;
-          commissionEuro: number;
-          status: string;
-          commissionPaymentStatus: string;
-          cashbackEligible: boolean;
-          cashbackRequestedAt: string | null;
-          cashbackPayoutMethod?: 'MBWAY' | 'PIX' | null;
-          cashbackMbwayNumber: string | null;
-          cashbackMbwayName: string | null;
-          cashbackPixKey?: string | null;
-          cashbackPixName?: string | null;
-          cashbackPaidAt: string | null;
-          createdAt: string;
-        }[]
-      >('/sales/user', { method: 'GET' }),
-    userRequestCashback: (
-      saleId: string,
-      body:
-        | { method: 'MBWAY'; mbwayNumber: string; mbwayName: string }
-        | { method: 'PIX'; pixKey: string; pixName: string },
-    ) =>
-      request<{ id: string }>(`/sales/user/${saleId}/cashback`, {
-        method: 'POST',
-        body: JSON.stringify(body),
-      }),
-    userAddPaymentProof: (saleId: string, body: { paymentProofUrl: string }) =>
-      request<void>(`/sales/user/${saleId}/payment-proof`, {
-        method: 'POST',
-        body: JSON.stringify(body),
-      }),
-    adminList: (params?: { partnerId?: string; status?: string; cashbackOnly?: boolean }) => {
-      const search = new URLSearchParams();
-      if (params?.partnerId) search.set('partnerId', params.partnerId);
-      if (params?.status) search.set('status', params.status);
-      if (params?.cashbackOnly) search.set('cashbackOnly', 'true');
-      const q = search.toString();
-      return request<
-        {
-          id: string;
-          partnerId: string;
-          userId: string | null;
-          month: number;
-          year: number;
-          amount: number;
-          status: string;
-          commissionEuro: number;
-          commissionPaymentStatus: string;
-          commissionPaidEuro: number | null;
-          wantsInvoice?: boolean;
-          invoiceName?: string | null;
-          invoiceNif?: string | null;
-          invoiceAddress?: string | null;
-          invoicePostalCode?: string | null;
-          invoiceRequestedAt?: string | null;
-          invoicePdfUrl?: string | null;
-          invoiceSentAt?: string | null;
-          cashbackRequestedAt: string | null;
-          cashbackPayoutMethod?: 'MBWAY' | 'PIX' | null;
-          cashbackMbwayNumber: string | null;
-          cashbackMbwayName: string | null;
-          cashbackPixKey?: string | null;
-          cashbackPixName?: string | null;
-          cashbackPaymentProofUrl?: string | null;
-          cashbackPaidAt: string | null;
-          user: { id: string; name: string; email: string } | null;
-          partner: { id: string; name: string };
-          service: { title: string; cashbackEuro: number | null } | null;
-          serviceTitle: string | null;
-        }[]
-      >(`/sales/admin${q ? `?${q}` : ''}`, { method: 'GET' });
-    },
-    adminSendInvoice: (saleId: string, file: File) => {
-      const token = getToken();
-      const form = new FormData();
-      form.append('file', file);
-      return fetch(`${API_URL}/sales/admin/${saleId}/invoice`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        body: form,
-      }).then(async (res) => {
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          const msg = Array.isArray(data.message)
-            ? data.message[0]
-            : data.message || data.error || `Erro ${res.status}`;
-          throw new Error(msg);
-        }
-        return data as {
-          id: string;
-          invoicePdfUrl: string | null;
-          invoiceSentAt: string | null;
-        };
-      });
-    },
-    adminMarkCashbackPaid: (saleId: string) =>
-      request<{ id: string }>(`/sales/admin/${saleId}/cashback-paid`, {
-        method: 'PATCH',
-      }),
-    adminPayCashback: (saleId: string, file: File) => {
-      const token = getToken();
-      const form = new FormData();
-      form.append('file', file);
-      return fetch(`${API_URL}/sales/admin/${saleId}/cashback/pay`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        body: form,
-      }).then(async (res) => {
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          const msg = Array.isArray(data.message)
-            ? data.message[0]
-            : data.message || data.error || `Erro ${res.status}`;
-          throw new Error(msg);
-        }
-        return data as {
-          id: string;
-          cashbackPaidAt: string | null;
-          cashbackPaymentProofUrl: string | null;
-        };
-      });
-    },
-    adminDeleteSale: (saleId: string) =>
-      request<{ id: string }>(`/sales/admin/${saleId}`, {
-        method: 'DELETE',
       }),
   },
   affiliate: {

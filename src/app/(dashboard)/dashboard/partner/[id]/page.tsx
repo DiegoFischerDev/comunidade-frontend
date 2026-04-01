@@ -29,8 +29,6 @@ type PartnerDetails = {
     description: string | null;
     price: string | null;
     priceOnRequest: boolean;
-    commission: string | null;
-    cashbackEuro: number | null;
   }[];
 };
 
@@ -264,15 +262,6 @@ export default function PartnerPage() {
                       ? `${service.price} €.`
                       : 'não informado.'}
                   </p>
-                  {(service.cashbackEuro ?? 0) > 0 && (
-                    <p className="mt-1">
-                      Membros da Comunidade RPM podem solicitar um cashback de{' '}
-                      {(service.cashbackEuro ?? 0).toLocaleString('pt-PT', {
-                        maximumFractionDigits: 0,
-                      })}{' '}
-                      € na contratação deste serviço.
-                    </p>
-                  )}
                 </div>
                 <div className="absolute bottom-4 left-4 inline-flex items-center gap-2">
                   <Image
@@ -288,21 +277,6 @@ export default function PartnerPage() {
                       ? `${service.price} €`
                       : '—'}
                   </span>
-                  {(service.cashbackEuro ?? 0) > 0 && (
-                    <>
-                      <Image
-                        src="/cashbackicon2.png"
-                        alt="Cashback"
-                        width={24}
-                        height={24}
-                      />
-                      <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'black' }}>
-                        {`${(service.cashbackEuro ?? 0).toLocaleString('pt-PT', {
-                          maximumFractionDigits: 0,
-                        })} €`}
-                      </span>
-                    </>
-                  )}
                 </div>
                 <div className="absolute bottom-4 right-4">
                   <a

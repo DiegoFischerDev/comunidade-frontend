@@ -8,9 +8,6 @@ type PartnerService = {
   description: string | null;
   price: string | null;
   priceOnRequest: boolean;
-  commission: string | null;
-  cashbackEuro: number | null;
-  pendingApproval?: boolean;
 };
 
 type PartnerPublic = {
@@ -35,7 +32,7 @@ const API_URL =
 
 async function fetchPartner(id: string): Promise<PartnerPublic> {
   const res = await fetch(`${API_URL}/partners/${id}/public`, {
-    // Não cachear: serviços pendentes não devem aparecer após alterações
+    // Não cachear: alterações devem refletir imediatamente
     cache: 'no-store',
   });
 
@@ -103,7 +100,7 @@ export const revalidate = 3600;
 export default async function PartnerPublicPage({ params }: PageProps) {
   const { id } = await params;
   const partner = await fetchPartner(id);
-  const visibleServices = partner.services.filter((s) => !s.pendingApproval);
+  const visibleServices = partner.services;
 
   const heroBgImage =
     partner.backgroundImageUrl &&
@@ -209,15 +206,6 @@ export default async function PartnerPublicPage({ params }: PageProps) {
                       ? `${service.price} €.`
                       : 'não informado.'}
                   </p>
-                  {(service.cashbackEuro ?? 0) > 0 && (
-                    <p className="mt-1">
-                      Membros da Comunidade RPM podem solicitar um cashback de{' '}
-                      {(service.cashbackEuro ?? 0).toLocaleString('pt-PT', {
-                        maximumFractionDigits: 0,
-                      })}{' '}
-                      € na contratação deste serviço.
-                    </p>
-                  )}
                 </div>
                 <div className="absolute bottom-4 right-4 inline-flex items-center gap-2">
                   <Image
@@ -233,21 +221,6 @@ export default async function PartnerPublicPage({ params }: PageProps) {
                       ? `${service.price} €`
                       : '—'}
                   </span>
-                  {(service.cashbackEuro ?? 0) > 0 && (
-                    <>
-                      <Image
-                        src="/cashbackicon2.png"
-                        alt="Cashback"
-                        width={24}
-                        height={24}
-                      />
-                      <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'black' }}>
-                        {`${(service.cashbackEuro ?? 0).toLocaleString('pt-PT', {
-                          maximumFractionDigits: 0,
-                        })} €`}
-                      </span>
-                    </>
-                  )}
                 </div>
               </article>
             ))}

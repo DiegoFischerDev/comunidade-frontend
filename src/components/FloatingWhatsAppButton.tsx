@@ -240,8 +240,7 @@ export function FloatingWhatsAppButton() {
               {!showPaymentOptions ? (
                 <>
                   <p className="text-sm leading-relaxed text-zinc-700 mb-4">
-                    Por menos de um café por mês, tenha acesso a tudo o que a comunidade oferece e
-                    descontos exclusivos em forma de cashback.
+                    Por menos de um café por mês, tenha acesso a tudo o que a comunidade oferece.
                   </p>
                   <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700">
                     O que inclui:
@@ -249,7 +248,7 @@ export function FloatingWhatsAppButton() {
                   <ul className="mt-2 space-y-2 text-sm text-zinc-700">
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span><strong className="text-zinc-800">cashback</strong> em cada serviço que contratar aos parceiros (valor definido pelo admin em cada serviço).</span>
+                      <span><strong className="text-zinc-800">Vantagens e condições exclusivas</strong> em serviços de parceiros.</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
@@ -277,8 +276,7 @@ export function FloatingWhatsAppButton() {
               ) : (
                 <>
                   <p className="text-sm leading-relaxed text-zinc-700 mb-4">
-                    Por menos de um café por mês, tenha acesso a tudo o que a comunidade oferece e
-                    descontos exclusivos em forma de cashback.
+                    Por menos de um café por mês, tenha acesso a tudo o que a comunidade oferece.
                   </p>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
                     Escolha a forma de pagamento

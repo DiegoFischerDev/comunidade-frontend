@@ -346,7 +346,7 @@ export default function ProfilePage() {
                 </p>
                 <p className="text-[11px] text-zinc-600">
                   Desbloqueie o guia completo Portugal Sem Perrengue, grupos exclusivos,
-                  chat direto com a Rafa e cashback em serviços de parceiros.
+                  chat direto com a Rafa e benefícios em serviços de parceiros.
                 </p>
               </div>
             </div>

@@ -359,16 +359,6 @@ export default function DashboardLayout({
               >
                 Meus serviços
               </Link>
-              <Link
-                href="/dashboard/my-sales"
-                className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/my-sales'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
-                }`}
-              >
-                Minhas vendas
-              </Link>
             </>
           )}
           {user?.role === 'ADMIN' && (
@@ -382,16 +372,6 @@ export default function DashboardLayout({
                 }`}
               >
                 Users
-              </Link>
-              <Link
-                href="/dashboard/admin-services"
-                className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/admin-services'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
-                }`}
-              >
-                Serviços (admin)
               </Link>
               <Link
                 href="/dashboard/categories"
@@ -414,16 +394,6 @@ export default function DashboardLayout({
                 Parceiros
               </Link>
               <Link
-                href="/dashboard/admin-purchases"
-                className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/admin-purchases'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
-                }`}
-              >
-                Financeiro
-              </Link>
-              <Link
                 href="/dashboard/affiliates"
                 className={`block rounded-md px-3 py-2 ${
                   pathname === '/dashboard/affiliates'
@@ -437,18 +407,6 @@ export default function DashboardLayout({
           )}
           {user && (
             <>
-              {user.role === 'USER' && (
-                <Link
-                  href="/dashboard/my-purchases"
-                  className={`block rounded-md px-3 py-2 ${
-                    pathname === '/dashboard/my-purchases'
-                      ? 'bg-primary-3 font-medium text-primary-2'
-                      : 'text-primary-1 hover:bg-secondary-3'
-                  }`}
-                >
-                  Cashback
-                </Link>
-              )}
               <Link
                 href="/dashboard/my-referrals"
                 className={`block rounded-md px-3 py-2 ${
@@ -1172,8 +1130,7 @@ export default function DashboardLayout({
                 <span className="font-semibold">parceiros de confiança</span> da
                 Comunidade RPM e, para além do suporte especializado, conseguimos
                 negociar <span className="font-semibold">benefícios exclusivos</span>{' '}
-                para membros, que podem ser aproveitados em formato de{' '}
-                <span className="font-semibold">cashback</span> diretamente pela
+                para membros, que podem ser aproveitados diretamente pela
                 plataforma.
               </p>
               <p>
