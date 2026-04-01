@@ -37,6 +37,7 @@ export default function DashboardLayout({
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerWhatsapp, setRegisterWhatsapp] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
+  const [registerAffiliateCode, setRegisterAffiliateCode] = useState('');
   const [registerError, setRegisterError] = useState('');
   const [registerLoading, setRegisterLoading] = useState(false);
   const [verifyEmail, setVerifyEmail] = useState('');
@@ -87,6 +88,23 @@ export default function DashboardLayout({
       }
     })();
   }, [mounted, authLoading, user]);
+
+  function syncRegisterAffiliateFromStorage() {
+    if (typeof window === 'undefined') return;
+    const stored = window.localStorage.getItem('comunidade_ref_affiliate');
+    if (!stored || stored === 'nenhum') {
+      setRegisterAffiliateCode('');
+      return;
+    }
+    setRegisterAffiliateCode(stored);
+  }
+
+  // Lê o localStorage só quando o modal está aberto no separador "Criar conta"
+  // (evita corrida com ReferralFromUrlSync na montagem inicial do site)
+  useEffect(() => {
+    if (!isAuthModalOpen || authMode !== 'register') return;
+    syncRegisterAffiliateFromStorage();
+  }, [isAuthModalOpen, authMode]);
 
   // Sincroniza categoria ativa no menu com rota atual (categoria ou parceiro)
   useEffect(() => {
@@ -139,11 +157,8 @@ export default function DashboardLayout({
       const custom = event as CustomEvent<{
         mode?: 'login' | 'register' | 'verify';
       }>;
-      if (custom.detail?.mode) {
-        setAuthMode(custom.detail.mode);
-      } else {
-        setAuthMode('login');
-      }
+      const mode = custom.detail?.mode ?? 'login';
+      setAuthMode(mode);
       setIsAuthModalOpen(true);
     };
 
@@ -300,6 +315,18 @@ export default function DashboardLayout({
 
         {/* Links de ações (parceiro/admin) */}
         <nav className="mt-4 space-y-1 text-xs">
+          {user && (
+            <Link
+              href="/dashboard/profile"
+              className={`block rounded-md px-3 py-2 ${
+                pathname === '/dashboard/profile'
+                  ? 'bg-primary-3 font-medium text-primary-2'
+                  : 'text-primary-1 hover:bg-secondary-3'
+              }`}
+            >
+              Meu perfil
+            </Link>
+          )}
           {user?.role === 'PARTNER' && (
             <>
               <Link
@@ -313,14 +340,14 @@ export default function DashboardLayout({
                 Meus leads
               </Link>
               <Link
-                href="/dashboard/profile"
+                href="/dashboard/business"
                 className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/profile'
+                  pathname === '/dashboard/business'
                     ? 'bg-primary-3 font-medium text-primary-2'
                     : 'text-primary-1 hover:bg-secondary-3'
                 }`}
               >
-                Meu perfil
+                Minha empresa
               </Link>
               <Link
                 href="/dashboard/services"
@@ -331,16 +358,6 @@ export default function DashboardLayout({
                 }`}
               >
                 Meus serviços
-              </Link>
-              <Link
-                href="/dashboard/my-sales"
-                className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/my-sales'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
-                }`}
-              >
-                Minhas vendas
               </Link>
             </>
           )}
@@ -355,16 +372,6 @@ export default function DashboardLayout({
                 }`}
               >
                 Users
-              </Link>
-              <Link
-                href="/dashboard/admin-services"
-                className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/admin-services'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
-                }`}
-              >
-                Serviços (admin)
               </Link>
               <Link
                 href="/dashboard/categories"
@@ -387,28 +394,30 @@ export default function DashboardLayout({
                 Parceiros
               </Link>
               <Link
-                href="/dashboard/admin-purchases"
+                href="/dashboard/affiliates"
                 className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/admin-purchases'
+                  pathname === '/dashboard/affiliates'
                     ? 'bg-primary-3 font-medium text-primary-2'
                     : 'text-primary-1 hover:bg-secondary-3'
                 }`}
               >
-                Compras (admin)
+                Afiliados
               </Link>
             </>
           )}
-          {user && user.role === 'USER' && (
-            <Link
-              href="/dashboard/my-purchases"
-              className={`block rounded-md px-3 py-2 ${
-                pathname === '/dashboard/my-purchases'
-                  ? 'bg-primary-3 font-medium text-primary-2'
-                  : 'text-primary-1 hover:bg-secondary-3'
-              }`}
-            >
-              Cashback
-            </Link>
+          {user && (
+            <>
+              <Link
+                href="/dashboard/my-referrals"
+                className={`block rounded-md px-3 py-2 ${
+                  pathname === '/dashboard/my-referrals'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Minhas indicações
+              </Link>
+            </>
           )}
         </nav>
       </div>
@@ -636,6 +645,7 @@ export default function DashboardLayout({
                       password: registerPassword,
                       name: registerName,
                       whatsapp: registerWhatsapp,
+                      affiliateCode: registerAffiliateCode.trim() || undefined,
                     });
                     setAuthMode('verify');
                     setVerifyOrigin('register');
@@ -725,6 +735,22 @@ export default function DashboardLayout({
                       onChange={(e) => setRegisterPassword(e.target.value)}
                       required
                       minLength={6}
+                      className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="auth-affiliate-code"
+                      className="block text-xs font-medium text-zinc-700"
+                    >
+                      @ de quem te indicou (opcional)
+                    </label>
+                    <input
+                      id="auth-affiliate-code"
+                      type="text"
+                      value={registerAffiliateCode}
+                      onChange={(e) => setRegisterAffiliateCode(e.target.value)}
+                      placeholder="Opcional"
                       className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </div>
@@ -1104,8 +1130,7 @@ export default function DashboardLayout({
                 <span className="font-semibold">parceiros de confiança</span> da
                 Comunidade RPM e, para além do suporte especializado, conseguimos
                 negociar <span className="font-semibold">benefícios exclusivos</span>{' '}
-                para membros, que podem ser aproveitados em formato de{' '}
-                <span className="font-semibold">cashback</span> diretamente pela
+                para membros, que podem ser aproveitados diretamente pela
                 plataforma.
               </p>
               <p>

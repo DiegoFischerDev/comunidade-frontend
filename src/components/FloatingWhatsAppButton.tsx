@@ -10,6 +10,9 @@ const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent
 
 export const OPEN_MEMBERSHIP_MODAL_EVENT = 'open-membership-modal';
 
+/** Disparado após guardar o perfil (ex.: para atualizar listagens que usam dados de utilizadores). */
+export const USER_PROFILE_UPDATED_EVENT = 'user-profile-updated';
+
 function formatEur(cents: number): string {
   return new Intl.NumberFormat('pt-PT', {
     style: 'currency',
@@ -47,6 +50,13 @@ export function FloatingWhatsAppButton() {
   type PaymentMethod = 'card' | 'mbway' | 'pix';
   async function handleStartCheckout(method: PaymentMethod) {
     if (checkoutLoading || typeof window === 'undefined') return;
+
+    // Trava de segurança: membros ativos não devem pagar novamente
+    if (isMember) {
+      alert('Você já é membro ativo da Comunidade RPM. Não é necessário pagar novamente a anuidade.');
+      closeAll();
+      return;
+    }
     setCheckoutLoading(true);
     try {
       const { url } =
@@ -102,6 +112,13 @@ export function FloatingWhatsAppButton() {
   }
 
   async function handleQueroSerMembro() {
+    // Se já for membro, não abre opções de pagamento
+    if (isMember) {
+      alert('Você já é membro ativo da Comunidade RPM. Se precisar de ajuda, fale com a Rafa pelo WhatsApp.');
+      closeAll();
+      return;
+    }
+
     setShowPaymentOptions(true);
     if (amounts === null && !amountsLoading) {
       setAmountsLoading(true);
@@ -205,28 +222,25 @@ export function FloatingWhatsAppButton() {
                   <h3 className="text-lg font-bold tracking-tight text-zinc-900">
                     Junte-se à Comunidade RPM
                   </h3>
-                  {!showPaymentOptions && (
-                    <p className="mt-0.5 text-sm font-medium text-zinc-600">
-                      {amountsLoading ? (
-                        'A carregar…'
-                      ) : amounts ? (
-                        <>
-                          {formatEur(amounts.eurCents)}/ano — menos de{' '}
-                          {Math.ceil(amounts.eurCents / 100 / 12)} € por mês
-                        </>
-                      ) : (
-                        'Acesso por 1 ano — escolha a forma de pagamento'
-                      )}
-                    </p>
-                  )}
+                  <p className="mt-0.5 text-sm font-medium text-zinc-600">
+                    {amountsLoading ? (
+                      'A carregar…'
+                    ) : amounts ? (
+                      <>
+                        {formatEur(amounts.eurCents)}/ano — menos de{' '}
+                        {Math.ceil(amounts.eurCents / 100 / 12)} € por mês
+                      </>
+                    ) : (
+                      'Acesso por 1 ano — escolha a forma de pagamento'
+                    )}
+                  </p>
                 </div>
               </div>
 
               {!showPaymentOptions ? (
                 <>
                   <p className="text-sm leading-relaxed text-zinc-700 mb-4">
-                    Por menos de um café por mês, tenha acesso a tudo o que a comunidade oferece e
-                    descontos exclusivos em forma de cashback.
+                    Por menos de um café por mês, tenha acesso a tudo o que a comunidade oferece.
                   </p>
                   <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700">
                     O que inclui:
@@ -234,7 +248,7 @@ export function FloatingWhatsAppButton() {
                   <ul className="mt-2 space-y-2 text-sm text-zinc-700">
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span><strong className="text-zinc-800">até 20 € de cashback</strong> em cada serviço que contratar aos parceiros.</span>
+                      <span><strong className="text-zinc-800">Vantagens e condições exclusivas</strong> em serviços de parceiros.</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
@@ -261,6 +275,12 @@ export function FloatingWhatsAppButton() {
                 </>
               ) : (
                 <>
+                  <p className="text-sm leading-relaxed text-zinc-700 mb-4">
+                    Por menos de um café por mês, tenha acesso a tudo o que a comunidade oferece.
+                  </p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                    Escolha a forma de pagamento
+                  </p>
                   <div className="mt-4 flex flex-col gap-3">
                     <button
                       type="button"

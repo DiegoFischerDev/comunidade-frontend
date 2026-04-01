@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import { CatalogCarousel } from '@/components/CatalogCarousel';
 
 type PartnerService = {
@@ -7,7 +8,6 @@ type PartnerService = {
   description: string | null;
   price: string | null;
   priceOnRequest: boolean;
-  commission: string | null;
 };
 
 type PartnerPublic = {
@@ -32,8 +32,8 @@ const API_URL =
 
 async function fetchPartner(id: string): Promise<PartnerPublic> {
   const res = await fetch(`${API_URL}/partners/${id}/public`, {
-    // Páginas de parceiros podem ser cacheadas e revalidadas periodicamente
-    next: { revalidate: 3600 },
+    // Não cachear: alterações devem refletir imediatamente
+    cache: 'no-store',
   });
 
   if (res.status === 404) {
@@ -100,6 +100,7 @@ export const revalidate = 3600;
 export default async function PartnerPublicPage({ params }: PageProps) {
   const { id } = await params;
   const partner = await fetchPartner(id);
+  const visibleServices = partner.services;
 
   const heroBgImage =
     partner.backgroundImageUrl &&
@@ -177,36 +178,50 @@ export default async function PartnerPublicPage({ params }: PageProps) {
         <h2 className="text-sm font-semibold text-zinc-900">
           Serviços oferecidos
         </h2>
-        {partner.services.length === 0 ? (
+        {visibleServices.length === 0 ? (
           <p className="text-sm text-zinc-500">
             Este parceiro ainda não cadastrou serviços.
           </p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {partner.services.map((service) => (
+            {visibleServices.map((service) => (
               <article
                 key={service.id}
-                className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+                className="relative flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 pb-[50px] shadow-sm"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-sm font-semibold text-zinc-900">
-                    {service.title}
-                  </h3>
-                  {service.priceOnRequest ? (
-                    <span className="shrink-0 rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700">
-                      Sob consulta
-                    </span>
-                  ) : service.price ? (
-                    <span className="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                      {service.price} €
-                    </span>
-                  ) : null}
-                </div>
+                <h3 className="text-sm font-semibold text-zinc-900">
+                  {service.title}
+                </h3>
                 {service.description && (
                   <p className="mt-2 text-sm text-zinc-700">
                     {service.description}
                   </p>
                 )}
+                <div className="mt-2 rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-700">
+                  <p>
+                    Valor do serviço{' '}
+                    {service.priceOnRequest
+                      ? 'sob consulta.'
+                      : service.price
+                      ? `${service.price} €.`
+                      : 'não informado.'}
+                  </p>
+                </div>
+                <div className="absolute bottom-4 right-4 inline-flex items-center gap-2">
+                  <Image
+                    src="/euro2.png"
+                    alt="Valor do serviço"
+                    width={20}
+                    height={20}
+                  />
+                  <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'black' }}>
+                    {service.priceOnRequest
+                      ? 'Sob consulta'
+                      : service.price
+                      ? `${service.price} €`
+                      : '—'}
+                  </span>
+                </div>
               </article>
             ))}
           </div>

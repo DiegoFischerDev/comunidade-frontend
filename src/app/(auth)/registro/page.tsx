@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -11,11 +11,20 @@ export default function RegistroPage() {
   const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [password, setPassword] = useState('');
+  const [affiliateCode, setAffiliateCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'form' | 'verify'>('form');
   const [verificationCode, setVerificationCode] = useState('');
   const [info, setInfo] = useState('');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored = window.localStorage.getItem('comunidade_ref_affiliate');
+    if (stored && stored !== 'nenhum') {
+      setAffiliateCode(stored);
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,7 +32,7 @@ export default function RegistroPage() {
     setInfo('');
     setLoading(true);
     try {
-      await register({ email, password, name, whatsapp });
+      await register({ email, password, name, whatsapp, affiliateCode: affiliateCode.trim() || undefined });
       setStep('verify');
       setInfo(
         'Enviámos um código de confirmação para o seu e-mail. Introduza o código abaixo para concluir o registo.',
@@ -131,6 +140,19 @@ export default function RegistroPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="affiliateCode" className="block text-sm font-medium text-zinc-700">
+              @ de quem te indicou (opcional)
+            </label>
+            <input
+              id="affiliateCode"
+              type="text"
+              value={affiliateCode}
+              onChange={(e) => setAffiliateCode(e.target.value)}
+              placeholder="Opcional"
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>

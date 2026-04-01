@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,7 +29,6 @@ type PartnerDetails = {
     description: string | null;
     price: string | null;
     priceOnRequest: boolean;
-    commission: string | null;
   }[];
 };
 
@@ -243,28 +243,42 @@ export default function PartnerPage() {
             {partner.services.map((service) => (
               <div
                 key={service.id}
-                className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+                className="relative flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 pb-[50px] shadow-sm"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-sm font-semibold text-zinc-900">
-                    {service.title}
-                  </h3>
-                  {service.priceOnRequest ? (
-                    <span className="shrink-0 rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700">
-                      Sob consulta
-                    </span>
-                  ) : service.price ? (
-                    <span className="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                      {service.price} €
-                    </span>
-                  ) : null}
-                </div>
+                <h3 className="text-sm font-semibold text-zinc-900">
+                  {service.title}
+                </h3>
                 {service.description && (
                   <p className="mt-2 text-sm text-zinc-700">
                     {service.description}
                   </p>
                 )}
-                <div className="mt-3">
+                <div className="mt-2 rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-700">
+                  <p>
+                    Valor do serviço{' '}
+                    {service.priceOnRequest
+                      ? 'sob consulta.'
+                      : service.price
+                      ? `${service.price} €.`
+                      : 'não informado.'}
+                  </p>
+                </div>
+                <div className="absolute bottom-4 left-4 inline-flex items-center gap-2">
+                  <Image
+                    src="/euro2.png"
+                    alt="Valor do serviço"
+                    width={20}
+                    height={20}
+                  />
+                  <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'black' }}>
+                    {service.priceOnRequest
+                      ? 'Sob consulta'
+                      : service.price
+                      ? `${service.price} €`
+                      : '—'}
+                  </span>
+                </div>
+                <div className="absolute bottom-4 right-4">
                   <a
                     href={user ? buildServiceWhatsAppUrl(service.title) : '#'}
                     target="_blank"

@@ -21,6 +21,11 @@ export const getAuthToken = getToken;
 
 type RequestOptions = RequestInit & { token?: string | null };
 
+/** Mensagem antiga da API que não queremos mostrar ao utilizador (ex.: stage ainda no deploy anterior). */
+function shouldHideApiMessage(text: string): boolean {
+  return text.includes('Perfil de afiliado não encontrado');
+}
+
 async function request<T>(
   path: string,
   options: RequestOptions = {},
@@ -36,7 +41,11 @@ async function request<T>(
   const res = await fetch(`${API_URL}${path}`, { ...init, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const msg = Array.isArray(data.message) ? data.message[0] : data.message || data.error || `Erro ${res.status}`;
+    let msg = Array.isArray(data.message) ? data.message[0] : data.message || data.error || `Erro ${res.status}`;
+    msg = typeof msg === 'string' ? msg : String(msg);
+    if (shouldHideApiMessage(msg)) {
+      throw new Error('');
+    }
     throw new Error(msg);
   }
   return data as T;
@@ -49,6 +58,7 @@ export const api = {
       password: string;
       name: string;
       whatsapp: string;
+      affiliateCode?: string;
     }) =>
       request<{
         user: {
@@ -93,7 +103,13 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(params),
       }),
-    updateMe: (body: { email?: string }) =>
+    updateMe: (body: {
+      name?: string;
+      email?: string;
+      whatsapp?: string;
+      instagram?: string;
+      profileImageUrl?: string;
+    }) =>
       request<{
         id: string;
         email: string;
@@ -102,6 +118,8 @@ export const api = {
         whatsapp?: string;
         tier?: string;
         membershipExpiresAt?: string | null;
+        instagram?: string | null;
+        profileImageUrl?: string | null;
       }>('/auth/me', {
         method: 'PATCH',
         body: JSON.stringify(body),
@@ -146,6 +164,17 @@ export const api = {
   },
   admin: {
     users: {
+      stats: () =>
+        request<{
+          totalUsers: number;
+          partners: number;
+          visitors: number;
+          members: number;
+          totalMembershipRevenueEur: number;
+          subscriptionsCount: number;
+          membershipPaymentsCount: number;
+          membershipPriceEurUsed: number;
+        }>('/users/admin/stats', { method: 'GET' }),
       list: () =>
         request<
           {
@@ -324,32 +353,6 @@ export const api = {
           method: 'DELETE',
         }),
     },
-    services: {
-      list: () =>
-        request<
-          {
-            id: string;
-            title: string;
-            description: string | null;
-            price: string | null;
-            priceOnRequest: boolean;
-            commission: string | null;
-            createdAt: string;
-            partner: { id: string; name: string };
-          }[]
-        >('/partners/admin/services', { method: 'GET' }),
-      updateCommission: (
-        id: string,
-        body: { commission?: string | null },
-      ) =>
-        request<{
-          id: string;
-          commission: string | null;
-        }>(`/partners/admin/services/${id}`, {
-          method: 'PATCH',
-          body: JSON.stringify(body),
-        }),
-    },
   },
   partner: {
     me: () =>
@@ -363,6 +366,10 @@ export const api = {
         backgroundImageUrl: string | null;
         catalogImageUrls: string[];
         instagram: string | null;
+        billingName?: string | null;
+        billingNif?: string | null;
+        billingAddress?: string | null;
+        billingPostalCode?: string | null;
       }>('/partners/me', { method: 'GET' }),
     updateMe: (input: {
       logoUrl?: string;
@@ -371,6 +378,10 @@ export const api = {
       backgroundImageUrl?: string;
       catalogImageUrls?: string[];
       instagram?: string;
+      billingName?: string | null;
+      billingNif?: string | null;
+      billingAddress?: string | null;
+      billingPostalCode?: string | null;
     }) =>
       request<{
         id: string;
@@ -382,6 +393,10 @@ export const api = {
         backgroundImageUrl: string | null;
         catalogImageUrls: string[];
         instagram: string | null;
+        billingName?: string | null;
+        billingNif?: string | null;
+        billingAddress?: string | null;
+        billingPostalCode?: string | null;
       }>('/partners/me', {
         method: 'PATCH',
         body: JSON.stringify(input),
@@ -396,7 +411,6 @@ export const api = {
             price: string | null;
             priceOnRequest: boolean;
             createdAt: string;
-            commission: string | null;
           }[]
         >('/partners/me/services', { method: 'GET' }),
       create: (input: {
@@ -412,7 +426,6 @@ export const api = {
           price: string | null;
           priceOnRequest: boolean;
           createdAt: string;
-          commission: string | null;
         }>('/partners/me/services', {
           method: 'POST',
           body: JSON.stringify(input),
@@ -433,7 +446,6 @@ export const api = {
           price: string | null;
           priceOnRequest: boolean;
           createdAt: string;
-          commission: string | null;
         }>(`/partners/me/services/${id}`, {
           method: 'PATCH',
           body: JSON.stringify(input),
@@ -488,7 +500,6 @@ export const api = {
           description: string | null;
           price: string | null;
           priceOnRequest: boolean;
-          commission: string | null;
         }[];
       }>(`/partners/${id}/public`, { method: 'GET' }),
     registerLead: (partnerId: string) =>
@@ -497,140 +508,142 @@ export const api = {
         body: JSON.stringify({}),
       }),
   },
-  sales: {
-    partnerLookup: () =>
-      request<{
-        leads: {
-          id: string;
-          createdAt: string;
-          user: { id: string; name: string | null; email: string; whatsapp: string | null };
-        }[];
-        services: {
-          id: string;
-          title: string;
-          price: string | null;
-          priceOnRequest: boolean;
-          commission: string | null;
-        }[];
-      }>('/sales/partner/lookup', { method: 'GET' }),
-    partnerCreate: (input: {
-      leadId: string;
-      serviceId: string;
-      month: number;
-      year: number;
-      amount?: number;
+  affiliate: {
+    enroll: (body: {
+      instagramHandle: string;
+      termsAccepted: boolean;
+      payoutMethod: 'MBWAY' | 'PIX';
+      mbwayNumber?: string;
+      mbwayName?: string;
+      pixKey?: string;
+      pixName?: string;
     }) =>
       request<{
         id: string;
-      }>('/sales/partner', {
-        method: 'POST',
-        body: JSON.stringify(input),
-      }),
-    partnerList: () =>
-      request<{
-        pending: any[];
-        approved: any[];
-        rejected: any[];
-      }>('/sales/partner', { method: 'GET' }),
-    partnerUpdateStatus: (id: string, status: 'APPROVED' | 'REJECTED') =>
-      request<unknown>(`/sales/partner/${id}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status }),
-      }),
-    partnerPayCommission: (saleId: string, body: { amountEuro: number; successUrl: string; cancelUrl: string }) =>
-      request<{ url: string }>(`/sales/partner/${saleId}/pay-commission`, {
+        instagramHandle: string;
+        affiliateCode: string;
+        payoutMethod: 'MBWAY' | 'PIX';
+        mbwayNumber?: string | null;
+        mbwayName?: string | null;
+        pixKey?: string | null;
+        pixName?: string | null;
+        createdAt: string;
+      }>('/affiliate/enroll', {
         method: 'POST',
         body: JSON.stringify(body),
       }),
-    userLookup: () =>
+    me: () =>
       request<{
-        partners: {
+        id: string;
+        affiliateCode: string;
+        instagramHandle: string;
+        payoutMethod: 'MBWAY' | 'PIX';
+        mbwayNumber?: string | null;
+        mbwayName?: string | null;
+        pixKey?: string | null;
+        pixName?: string | null;
+        totals: { pending: number; paid: number };
+      } | null>('/affiliate/me', { method: 'GET' }),
+    updatePayout: (body: {
+      payoutMethod: 'MBWAY' | 'PIX';
+      mbwayNumber?: string;
+      mbwayName?: string;
+      pixKey?: string;
+      pixName?: string;
+    }) =>
+      request<{
+        id: string;
+        payoutMethod: 'MBWAY' | 'PIX';
+        mbwayNumber?: string | null;
+        mbwayName?: string | null;
+        pixKey?: string | null;
+        pixName?: string | null;
+      }>('/affiliate/me/payout', {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }),
+    myReferrals: () =>
+      request<{
+        affiliateCode: string;
+        referrals: {
           id: string;
           name: string;
-          category?: { name: string } | null;
-        }[];
-      }>('/sales/user/lookup', { method: 'GET' }),
-    userPartnerServices: (partnerId: string) =>
-      request<
-        {
-          id: string;
-          title: string;
-          price: string | null;
-          priceOnRequest: boolean;
-          commission: string | null;
-        }[]
-      >(`/sales/user/partners/${partnerId}/services`, { method: 'GET' }),
-    userCreate: (input: {
-      partnerId: string;
-      serviceId: string;
-      month: number;
-      year: number;
-      amount?: number;
-    }) =>
-      request<{ id: string }>('/sales/user', {
-        method: 'POST',
-        body: JSON.stringify(input),
-      }),
-    userList: () =>
-      request<
-        {
-          id: string;
-          partner: { id: string; name: string };
-          service: { title: string };
-          month: number;
-          year: number;
-          amount: number;
-          commissionEuro: number;
-          status: string;
-          commissionPaymentStatus: string;
-          cashbackEligible: boolean;
-          cashbackRequestedAt: string | null;
-          cashbackMbwayNumber: string | null;
-          cashbackMbwayName: string | null;
-          cashbackPaidAt: string | null;
+          instagram: string | null;
+          tier: 'VISITOR' | 'MEMBER';
+          role: 'USER' | 'PARTNER' | 'ADMIN';
           createdAt: string;
-        }[]
-      >('/sales/user', { method: 'GET' }),
-    userRequestCashback: (saleId: string, body: { mbwayNumber: string; mbwayName: string }) =>
-      request<{ id: string }>(`/sales/user/${saleId}/cashback`, {
-        method: 'POST',
-        body: JSON.stringify(body),
-      }),
-    adminList: (params?: { partnerId?: string; status?: string; cashbackOnly?: boolean }) => {
-      const search = new URLSearchParams();
-      if (params?.partnerId) search.set('partnerId', params.partnerId);
-      if (params?.status) search.set('status', params.status);
-      if (params?.cashbackOnly) search.set('cashbackOnly', 'true');
-      const q = search.toString();
-      return request<
+          commission: { amount: number; currency: 'EUR' | 'BRL' } | null;
+        }[];
+      }>('/affiliate/my-referrals', { method: 'GET' }),
+    myCommissions: () =>
+      request<{
+        totals: { pending: number; paid: number };
+        commissions: {
+          id: string;
+          amount: number;
+          currency: 'EUR' | 'BRL';
+          status: 'PENDING' | 'PAID';
+          paymentProofUrl?: string | null;
+          paidAt?: string | null;
+          createdAt: string;
+          referredUser: { id: string; name: string; email: string; tier: 'VISITOR' | 'MEMBER' };
+        }[];
+      }>('/affiliate/my-commissions', { method: 'GET' }),
+    adminList: () =>
+      request<
         {
           id: string;
-          partnerId: string;
-          userId: string | null;
-          month: number;
-          year: number;
-          amount: number;
-          status: string;
-          commissionPaymentStatus: string;
-          commissionPaidEuro: number | null;
-          cashbackRequestedAt: string | null;
-          cashbackMbwayNumber: string | null;
-          cashbackMbwayName: string | null;
-          cashbackPaidAt: string | null;
-          user: { id: string; name: string; email: string } | null;
-          partner: { id: string; name: string };
-          service: { title: string } | null;
-          serviceTitle: string | null;
+          affiliateCode: string;
+          instagramHandle: string;
+          payoutMethod: 'MBWAY' | 'PIX';
+          mbwayNumber?: string | null;
+          mbwayName?: string | null;
+          pixKey?: string | null;
+          pixName?: string | null;
+          user: {
+            id: string;
+            name: string;
+            email: string;
+            role: 'USER' | 'PARTNER' | 'ADMIN';
+            tier: 'VISITOR' | 'MEMBER';
+            instagram: string | null;
+          };
+          totals: { pending: number; paid: number };
+          referralsByTier: { visitor: number; member: number; partner: number; admin: number };
         }[]
-      >(`/sales/admin${q ? `?${q}` : ''}`, { method: 'GET' });
+      >('/affiliate/admin/list', { method: 'GET' }),
+    adminPaidCommissions: (affiliateId: string) =>
+      request<
+        {
+          id: string;
+          amount: number;
+          currency: 'EUR' | 'BRL';
+          paidAt: string | null;
+          createdAt: string;
+          paymentProofUrl: string | null;
+        }[]
+      >(`/affiliate/admin/${affiliateId}/paid-commissions`, { method: 'GET' }),
+    adminPay: (affiliateId: string, file: File, commissionIds?: string[]) => {
+      const token = getToken();
+      const form = new FormData();
+      form.append('file', file);
+      if (commissionIds?.length) {
+        commissionIds.forEach((id) => form.append('commissionIds', id));
+      }
+      return fetch(`${API_URL}/affiliate/admin/${affiliateId}/pay`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: form,
+      }).then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = Array.isArray(data.message)
+            ? data.message[0]
+            : data.message || data.error || `Erro ${res.status}`;
+          throw new Error(msg);
+        }
+        return data as { paidCount: number; paymentProofUrl: string };
+      });
     },
-    adminMarkCashbackPaid: (saleId: string) =>
-      request<{ id: string }>(`/sales/admin/${saleId}/cashback-paid`, {
-        method: 'PATCH',
-      }),
-    adminDeleteSale: (saleId: string) =>
-      request<{ id: string }>(`/sales/admin/${saleId}`, {
-        method: 'DELETE',
-      }),
   },
 };
