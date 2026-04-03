@@ -237,11 +237,13 @@ export const api = {
           {
             id: string;
             name: string;
-            email: string;
+            email: string | null;
             whatsapp: string;
             role: string;
             tier: string;
             membershipExpiresAt: string | null;
+            rafaCallSchedulingUnlocked: boolean;
+            rafaCallSlotEndsAt: string | null;
             createdAt: string;
           }[]
         >(
@@ -255,11 +257,13 @@ export const api = {
         request<{
           id: string;
           name: string;
-          email: string;
+          email: string | null;
           whatsapp: string;
           role: string;
           tier: string;
           membershipExpiresAt: string | null;
+          rafaCallSchedulingUnlocked: boolean;
+          rafaCallSlotEndsAt: string | null;
           createdAt: string;
         }>(`/users/${id}`, {
           method: 'PATCH',
@@ -269,11 +273,13 @@ export const api = {
         request<{
           id: string;
           name: string;
-          email: string;
+          email: string | null;
           whatsapp: string;
           role: string;
           tier: string;
           membershipExpiresAt: string | null;
+          rafaCallSchedulingUnlocked: boolean;
+          rafaCallSlotEndsAt: string | null;
           createdAt: string;
         }>(
           `/users/${id}/role`,
@@ -283,13 +289,37 @@ export const api = {
         request<{
           id: string;
           name: string;
-          email: string;
+          email: string | null;
           whatsapp: string;
           role: string;
           tier: string;
           membershipExpiresAt: string | null;
+          rafaCallSchedulingUnlocked: boolean;
+          rafaCallSlotEndsAt: string | null;
           createdAt: string;
         }>(`/users/${id}/tier`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        }),
+      updateRafacall: (
+        id: string,
+        body: {
+          rafaCallSchedulingUnlocked?: boolean;
+          rafaCallSlotEndsAt?: string | null;
+        },
+      ) =>
+        request<{
+          id: string;
+          name: string;
+          email: string | null;
+          whatsapp: string;
+          role: string;
+          tier: string;
+          membershipExpiresAt: string | null;
+          rafaCallSchedulingUnlocked: boolean;
+          rafaCallSlotEndsAt: string | null;
+          createdAt: string;
+        }>(`/users/${id}/rafacall`, {
           method: 'PATCH',
           body: JSON.stringify(body),
         }),

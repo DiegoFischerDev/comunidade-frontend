@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 
 const WHATSAPP_NUMBER = '351927398547';
-const WHATSAPP_MESSAGE = 'Oi Rafa, preciso de ajuda na comunidade RPM';
+const WHATSAPP_MESSAGE = 'Ola, preciso de ajuda na comunidade RPM';
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
 
 export const OPEN_MEMBERSHIP_MODAL_EVENT = 'open-membership-modal';
@@ -140,7 +140,7 @@ export function FloatingWhatsAppButton() {
         {open && !showMembershipModal && (
           <div className="absolute bottom-full right-0 mb-2 w-72 rounded-xl border border-zinc-200 bg-white p-4 shadow-xl">
             <p className="text-sm font-medium text-zinc-800">
-              Precisa de ajuda? Fale com a Rafa no WhatsApp
+              Precisa de ajuda? Fale com a nossa equipe no whatsapp
             </p>
             <div className="mt-3 flex flex-col gap-2">
               {isMember ? (

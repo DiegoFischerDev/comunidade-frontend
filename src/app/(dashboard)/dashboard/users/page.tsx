@@ -7,13 +7,36 @@ import { useAuth } from '@/contexts/AuthContext';
 type UserRow = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   whatsapp: string;
   role: string;
   tier: string;
   membershipExpiresAt: string | null;
+  rafaCallSchedulingUnlocked: boolean;
+  rafaCallSlotEndsAt: string | null;
   createdAt: string;
 };
+
+function isoToDatetimeLocalValue(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function formatRafaSlotPt(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString('pt-PT', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 const ROLES: UserRow['role'][] = ['USER', 'PARTNER', 'ADMIN'];
 const TIERS = ['VISITOR', 'MEMBER'] as const;
@@ -40,6 +63,8 @@ export default function UsersPage() {
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editWhatsapp, setEditWhatsapp] = useState('');
+  const [editRafaUnlocked, setEditRafaUnlocked] = useState(false);
+  const [editRafaSlotLocal, setEditRafaSlotLocal] = useState('');
   const [saving, setSaving] = useState(false);
   const [filterInput, setFilterInput] = useState('');
 
@@ -50,13 +75,21 @@ export default function UsersPage() {
       const createdAt = u.createdAt
         ? new Date(u.createdAt).toLocaleDateString('pt-PT')
         : '';
+      const emailStr = (u.email || '').toLowerCase();
+      const rafaStr = [
+        u.rafaCallSchedulingUnlocked ? 'liberado cal agendamento' : 'bloqueado',
+        formatRafaSlotPt(u.rafaCallSlotEndsAt),
+      ]
+        .join(' ')
+        .toLowerCase();
       return (
         u.name.toLowerCase().includes(term) ||
-        u.email.toLowerCase().includes(term) ||
+        emailStr.includes(term) ||
         (u.whatsapp || '').toLowerCase().includes(term) ||
         u.role.toLowerCase().includes(term) ||
         (TIER_LABELS[u.tier] || u.tier || '').toLowerCase().includes(term) ||
-        createdAt.toLowerCase().includes(term)
+        createdAt.toLowerCase().includes(term) ||
+        rafaStr.includes(term)
       );
     });
   }, [users, filterInput]);
@@ -103,8 +136,10 @@ export default function UsersPage() {
   function openEdit(u: UserRow) {
     setEditingUser(u);
     setEditName(u.name);
-    setEditEmail(u.email);
+    setEditEmail(u.email ?? '');
     setEditWhatsapp(u.whatsapp);
+    setEditRafaUnlocked(u.rafaCallSchedulingUnlocked);
+    setEditRafaSlotLocal(isoToDatetimeLocalValue(u.rafaCallSlotEndsAt));
     setError('');
   }
 
@@ -113,14 +148,27 @@ export default function UsersPage() {
     setSaving(true);
     setError('');
     try {
-      const updated = await api.admin.users.update(editingUser.id, {
+      await api.admin.users.update(editingUser.id, {
         name: editName,
         email: editEmail,
         whatsapp: editWhatsapp,
       });
-      setUsers((prev) =>
-        prev.map((row) => (row.id === editingUser.id ? { ...row, ...updated } : row)),
-      );
+      const slotTrim = editRafaSlotLocal.trim();
+      let slotIso: string | null = null;
+      if (slotTrim !== '') {
+        const d = new Date(slotTrim);
+        if (Number.isNaN(d.getTime())) {
+          setError('Data/hora do fim do slot é inválida.');
+          setSaving(false);
+          return;
+        }
+        slotIso = d.toISOString();
+      }
+      await api.admin.users.updateRafacall(editingUser.id, {
+        rafaCallSchedulingUnlocked: editRafaUnlocked,
+        rafaCallSlotEndsAt: slotIso,
+      });
+      await refreshUsersAndStats();
       setEditingUser(null);
     } catch (err) {
       setError(
@@ -225,7 +273,7 @@ export default function UsersPage() {
               type="text"
               value={filterInput}
               onChange={(e) => setFilterInput(e.target.value)}
-              placeholder="Pesquisar por nome, email, WhatsApp, role, tier ou data…"
+              placeholder="Pesquisar por nome, email, WhatsApp, role, tier, agendamento Rafa ou data…"
               className="mt-1 w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
@@ -241,6 +289,9 @@ export default function UsersPage() {
                   <th className="px-4 py-2 text-left">Tier</th>
                   <th className="px-4 py-2 text-left">Criado em</th>
                   <th className="px-4 py-2 text-left">Membro até</th>
+                  <th className="px-4 py-2 text-left min-w-[200px]">
+                    Agendamento (chamada Rafa)
+                  </th>
                   <th className="px-4 py-2 text-right">Ações</th>
                 </tr>
               </thead>
@@ -248,7 +299,7 @@ export default function UsersPage() {
                 {filteredUsers.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={9}
                       className="px-4 py-4 text-center text-sm text-zinc-500"
                     >
                       Nenhum usuário corresponde ao filtro.
@@ -258,7 +309,7 @@ export default function UsersPage() {
                   filteredUsers.map((u) => (
                 <tr key={u.id} className="border-t border-zinc-200">
                     <td className="px-4 py-2">{u.name}</td>
-                    <td className="px-4 py-2">{u.email}</td>
+                    <td className="px-4 py-2">{u.email ?? '—'}</td>
                     <td className="px-4 py-2">{u.whatsapp}</td>
                   <td className="px-4 py-2">
                     <select
@@ -322,6 +373,45 @@ export default function UsersPage() {
                     {u.membershipExpiresAt
                       ? new Date(u.membershipExpiresAt).toLocaleDateString('pt-PT')
                       : '—'}
+                  </td>
+                  <td className="px-4 py-2 align-top">
+                    <div className="flex flex-col gap-1.5">
+                      <select
+                        value={u.rafaCallSchedulingUnlocked ? '1' : '0'}
+                        onChange={async (e) => {
+                          const unlocked = e.target.value === '1';
+                          setError('');
+                          try {
+                            const updated = await api.admin.users.updateRafacall(u.id, {
+                              rafaCallSchedulingUnlocked: unlocked,
+                            });
+                            setUsers((prev) =>
+                              prev.map((row) =>
+                                row.id === u.id ? { ...row, ...updated } : row,
+                              ),
+                            );
+                          } catch (err) {
+                            setError(
+                              err instanceof Error
+                                ? err.message
+                                : 'Erro ao atualizar agendamento.',
+                            );
+                          }
+                        }}
+                        className="max-w-[11rem] cursor-pointer rounded border border-zinc-300 px-2 py-1 text-xs"
+                        aria-label="Cal.com desbloqueado"
+                      >
+                        <option value="1">Cal liberado</option>
+                        <option value="0">Cal bloqueado</option>
+                      </select>
+                      <p className="text-[11px] leading-snug text-zinc-600">
+                        <span className="font-medium text-zinc-700">Fim do slot:</span>{' '}
+                        {formatRafaSlotPt(u.rafaCallSlotEndsAt)}
+                      </p>
+                      <p className="text-[10px] text-zinc-500">
+                        Ajuste a data do slot em <span className="font-medium">Editar</span>.
+                      </p>
+                    </div>
                   </td>
                   <td className="px-4 py-2 text-right">
                     <button
@@ -393,7 +483,7 @@ export default function UsersPage() {
               Editar usuário
             </h2>
             <p className="mt-1 text-sm text-zinc-500">
-              Altere nome, e-mail ou WhatsApp.
+              Altere nome, e-mail, WhatsApp e estado do agendamento Cal.com.
             </p>
             <div className="mt-4 space-y-3">
               <div>
@@ -429,6 +519,34 @@ export default function UsersPage() {
                   placeholder="Ex: 351 912 345 678"
                   className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
+              </div>
+              <div className="border-t border-zinc-200 pt-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Agendamento — chamada com a Rafa
+                </p>
+                <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
+                  <input
+                    type="checkbox"
+                    checked={editRafaUnlocked}
+                    onChange={(e) => setEditRafaUnlocked(e.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  Permitir abrir o Cal.com (desbloqueado)
+                </label>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-zinc-700">
+                    Fim do slot agendado
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={editRafaSlotLocal}
+                    onChange={(e) => setEditRafaSlotLocal(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <p className="mt-1 text-[11px] text-zinc-500">
+                    Horário local. Deixe vazio e guarde para limpar a data do slot.
+                  </p>
+                </div>
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">

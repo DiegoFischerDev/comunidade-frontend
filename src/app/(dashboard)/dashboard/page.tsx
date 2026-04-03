@@ -26,7 +26,7 @@ export default function DashboardPage() {
       : user?.role === "PARTNER"
         ? "Parceiro"
         : isMember
-          ? "Membro"
+          ? "Membro VIP"
           : "Visitante";
 
   const [affiliateModalOpen, setAffiliateModalOpen] = useState(false);
