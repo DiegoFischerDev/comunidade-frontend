@@ -261,10 +261,6 @@ export default function RegistroPage() {
           >
             Enviar
           </button>
-          <p className="text-sm leading-snug text-zinc-500">
-            Depois de enviar no WhatsApp, aguarde até cerca de 10 segundos: o sistema
-            junta as mensagens e só então responde com a confirmação.
-          </p>
           <button
             type="button"
             onClick={() => {

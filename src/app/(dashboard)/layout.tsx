@@ -398,18 +398,6 @@ export default function DashboardLayout({
 
         {/* Links de ações (parceiro/admin) */}
         <nav className="mt-4 space-y-1 text-xs">
-          {user && (
-            <Link
-              href="/dashboard/profile"
-              className={`block rounded-md px-3 py-2 ${
-                pathname === '/dashboard/profile'
-                  ? 'bg-primary-3 font-medium text-primary-2'
-                  : 'text-primary-1 hover:bg-secondary-3'
-              }`}
-            >
-              Meu perfil
-            </Link>
-          )}
           {user?.role === 'PARTNER' && (
             <>
               <Link
@@ -886,10 +874,6 @@ export default function DashboardLayout({
                 >
                   Enviar
                 </button>
-                <p className="text-[11px] leading-snug text-zinc-500">
-                  Depois de enviar no WhatsApp, aguarde até cerca de 10 segundos: o
-                  sistema junta as mensagens e só então responde com a confirmação.
-                </p>
                 <button
                   type="button"
                   onClick={() => {
