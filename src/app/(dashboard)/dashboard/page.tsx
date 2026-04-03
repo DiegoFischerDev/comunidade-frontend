@@ -27,7 +27,7 @@ export default function DashboardPage() {
         ? "Parceiro"
         : isMember
           ? "Membro"
-          : "Convidado";
+          : "Visitante";
 
   const [affiliateModalOpen, setAffiliateModalOpen] = useState(false);
   const [affiliateSaving, setAffiliateSaving] = useState(false);
@@ -129,19 +129,14 @@ export default function DashboardPage() {
 
       <div className="flex w-full max-w-sm flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col items-center gap-3 text-center">
-          <div className="relative h-20 w-20 overflow-hidden rounded-full border border-zinc-200 bg-zinc-100">
-            {user.profileImageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={user.profileImageUrl}
-                alt="Imagem de perfil"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="flex h-full w-full items-center justify-center text-base font-semibold text-zinc-500">
-                {user.name?.charAt(0).toUpperCase() ?? "?"}
-              </span>
-            )}
+          <div className="relative h-20 w-20 flex-shrink-0">
+            <Image
+              src="/vip-card.png"
+              alt="Cartão VIP Comunidade RPM"
+              fill
+              className="object-contain"
+              sizes="80px"
+            />
           </div>
           <div className="space-y-1">
             <p className="text-base font-semibold text-zinc-900">
@@ -164,25 +159,14 @@ export default function DashboardPage() {
 
         {!isMember && (
           <div className="mt-3 flex flex-col items-center gap-3">
-            <div className="flex items-center gap-3">
-              <div className="relative h-12 w-12 flex-shrink-0">
-                <Image
-                  src="/vip-card.png"
-                  alt="Cartão VIP Comunidade RPM"
-                  fill
-                  className="rounded-xl object-contain"
-                  sizes="48px"
-                />
-              </div>
-              <div className="max-w-xs text-left text-xs text-zinc-700">
-                <p className="font-semibold text-zinc-900">
-                  Torne-se membro da Comunidade RPM
-                </p>
-                <p className="text-[11px] text-zinc-600">
-                  Desbloqueie o guia completo Portugal Sem Perrengue, grupos exclusivos,
-                  chat direto com a Rafa e benefícios em serviços de parceiros.
-                </p>
-              </div>
+            <div className="max-w-xs text-center text-xs text-zinc-700">
+              <p className="font-semibold text-zinc-900">
+                Torne-se membro da Comunidade RPM
+              </p>
+              <p className="mt-1 text-[11px] text-zinc-600">
+                Desbloqueie o guia completo Portugal Sem Perrengue, grupos exclusivos,
+                chat direto com a Rafa e benefícios em serviços de parceiros.
+              </p>
             </div>
             <button
               type="button"

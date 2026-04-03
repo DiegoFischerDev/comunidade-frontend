@@ -248,7 +248,10 @@ export function FloatingWhatsAppButton() {
                   <ul className="mt-2 space-y-2 text-sm text-zinc-700">
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span><strong className="text-zinc-800">Vantagens e condições exclusivas</strong> em serviços de parceiros.</span>
+                      <span>
+                        <strong className="text-zinc-800">10 € de desconto</strong> em qualquer serviço
+                        contratado com parceiros da comunidade.
+                      </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
@@ -256,11 +259,16 @@ export function FloatingWhatsAppButton() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span><strong className="text-zinc-800">Suporte de imigração</strong> — contacto direto com a Rafa e a equipe.</span>
+                      <span>
+                        <strong className="text-zinc-800">30 minutos de chamada de vídeo</strong> com a Rafa.
+                      </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span><strong className="text-zinc-800">Grupos exclusivos no WhatsApp</strong> — rede e conteúdo só para membros.</span>
+                      <span>
+                        <strong className="text-zinc-800">Acesso aos grupos VIP</strong> dos membros da
+                        comunidade para troca de experiências, network e dicas.
+                      </span>
                     </li>
                   </ul>
                   <div className="mt-6">
