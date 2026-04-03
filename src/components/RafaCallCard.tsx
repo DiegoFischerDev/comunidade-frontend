@@ -172,8 +172,6 @@ export function RafaCallCard() {
   );
   const [amountsLoading, setAmountsLoading] = useState(false);
 
-  const calBase = process.env.NEXT_PUBLIC_CALCOM_EMBED_URL?.trim() || '';
-
   const openLogin = useCallback(() => {
     if (typeof window === 'undefined') return;
     window.dispatchEvent(new Event(OPEN_AUTH_LOGIN_EVENT));
@@ -202,9 +200,13 @@ export function RafaCallCard() {
     try {
       const s = await api.rafacall.status();
       if (s.canOpenCalEmbed) {
+        const calBase = process.env.NEXT_PUBLIC_CALCOM_EMBED_URL?.trim() || '';
         if (!calBase) {
           alert(
-            'O link do Cal.com ainda não está configurado (NEXT_PUBLIC_CALCOM_EMBED_URL).',
+            'O embed do Cal.com não está configurado (NEXT_PUBLIC_CALCOM_EMBED_URL).\n\n' +
+              'Em Docker: defina no .env da VPS e passe no build da imagem do frontend (build-arg no Dockerfile). ' +
+              'Só meter no environment: do compose sem rebuild não atualiza o JavaScript do Next.\n\n' +
+              'Em dev: frontend/.env.local + reiniciar npm run dev.',
           );
           return;
         }
@@ -231,7 +233,7 @@ export function RafaCallCard() {
     } finally {
       setStatusLoading(false);
     }
-  }, [user, token, calBase, amounts, amountsLoading, openLogin, openMembership]);
+  }, [user, token, amounts, amountsLoading, openLogin, openMembership]);
 
   const successUrl =
     typeof window !== 'undefined'
@@ -282,7 +284,7 @@ export function RafaCallCard() {
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="relative h-20 w-20 flex-shrink-0">
             <Image
-              src="/video-call.png"
+              src="/videocall.png"
               alt=""
               fill
               className="object-contain"
@@ -369,7 +371,7 @@ export function RafaCallCard() {
                 <div className="-mx-5 -mt-5 mb-4 overflow-hidden rounded-t-2xl bg-zinc-50">
                   <div className="relative mx-auto flex h-40 w-full max-w-[200px] items-center justify-center pt-4">
                     <Image
-                      src="/video-call.png"
+                      src="/videocall.png"
                       alt=""
                       width={160}
                       height={160}
