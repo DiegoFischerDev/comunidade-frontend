@@ -1,10 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getAuthToken, clearAuthToken, api } from '@/lib/api';
+import {
+  WHATSAPP_REGISTRATION_POLL_MAX_MS,
+  WHATSAPP_REGISTRATION_POLL_TIMEOUT_MESSAGE,
+} from '@/lib/whatsapp-registration-poll';
 import { useAuth } from '@/contexts/AuthContext';
 
 function formatWhatsappRegistrationDisplay(digits: string) {
@@ -28,6 +32,7 @@ export default function DashboardLayout({
     logout,
     loading: authLoading,
     login,
+    loginWithToken,
     register,
     isImpersonating,
     stopImpersonation,
@@ -42,6 +47,10 @@ export default function DashboardLayout({
   const [whatsappVerifyOpenUrl, setWhatsappVerifyOpenUrl] = useState('');
   const [whatsappRegistrationNumber, setWhatsappRegistrationNumber] =
     useState('');
+  const [whatsappBrowserSessionToken, setWhatsappBrowserSessionToken] =
+    useState('');
+  const [whatsappPollError, setWhatsappPollError] = useState('');
+  const whatsappPollStartedAtRef = useRef<number | null>(null);
   const [loginWhatsapp, setLoginWhatsapp] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -172,6 +181,93 @@ export default function DashboardLayout({
       setPendingWelcomeAfterVerify(false);
     }
   }, [pendingWelcomeAfterVerify, user]);
+
+  // Boas-vindas após registo + WhatsApp concluído na página /registro
+  useEffect(() => {
+    if (!user || typeof window === 'undefined') return;
+    try {
+      if (sessionStorage.getItem('comunidade_welcome_after_wa') === '1') {
+        sessionStorage.removeItem('comunidade_welcome_after_wa');
+        const raw = (user.name ?? '').trim();
+        const first =
+          raw.split(' ')[0] ||
+          (user.email ? user.email.split('@')[0] : 'bem-vindo(a)');
+        setWelcomeName(first);
+        setIsWelcomeOpen(true);
+      }
+    } catch {
+      // noop
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (authMode === 'registerWhatsappVerify' && whatsappBrowserSessionToken) {
+      whatsappPollStartedAtRef.current = Date.now();
+    } else {
+      whatsappPollStartedAtRef.current = null;
+    }
+  }, [authMode, whatsappBrowserSessionToken]);
+
+  const pollWhatsappRegistration = useCallback(async () => {
+    if (!whatsappBrowserSessionToken) return;
+    const started = whatsappPollStartedAtRef.current;
+    if (
+      started != null &&
+      Date.now() - started > WHATSAPP_REGISTRATION_POLL_MAX_MS
+    ) {
+      setWhatsappPollError(WHATSAPP_REGISTRATION_POLL_TIMEOUT_MESSAGE);
+      setWhatsappBrowserSessionToken('');
+      return;
+    }
+    try {
+      const r = await api.auth.pollWhatsappRegistration(
+        whatsappBrowserSessionToken,
+      );
+      if (r.status === 'ready') {
+        setPendingWelcomeAfterVerify(true);
+        await loginWithToken(r.token);
+        setWhatsappVerifyCode('');
+        setWhatsappVerifyOpenUrl('');
+        setWhatsappRegistrationNumber('');
+        setWhatsappBrowserSessionToken('');
+        setWhatsappPollError('');
+        setAuthMode('login');
+        setIsAuthModalOpen(false);
+        return;
+      }
+      if (r.status === 'expired') {
+        setWhatsappPollError(
+          'O tempo para ativar a conta neste passo expirou. Crie a conta de novo.',
+        );
+        setWhatsappBrowserSessionToken('');
+        return;
+      }
+      if (r.status === 'consumed') {
+        setWhatsappPollError(
+          'Esta sessão já foi utilizada. Entre com o WhatsApp e a palavra-passe.',
+        );
+        setWhatsappBrowserSessionToken('');
+        return;
+      }
+      if (r.status === 'invalid') {
+        setWhatsappPollError(
+          'Não encontrámos o pedido de registo. Volte atrás e tente criar a conta outra vez.',
+        );
+        setWhatsappBrowserSessionToken('');
+      }
+    } catch {
+      // próximo intervalo
+    }
+  }, [whatsappBrowserSessionToken, loginWithToken]);
+
+  useEffect(() => {
+    if (authMode !== 'registerWhatsappVerify' || !whatsappBrowserSessionToken) {
+      return;
+    }
+    void pollWhatsappRegistration();
+    const id = window.setInterval(() => void pollWhatsappRegistration(), 2500);
+    return () => window.clearInterval(id);
+  }, [authMode, whatsappBrowserSessionToken, pollWhatsappRegistration]);
 
   if (!mounted || authLoading) {
     return (
@@ -485,6 +581,8 @@ export default function DashboardLayout({
                   setWhatsappVerifyCode('');
                   setWhatsappVerifyOpenUrl('');
                   setWhatsappRegistrationNumber('');
+                  setWhatsappBrowserSessionToken('');
+                  setWhatsappPollError('');
                   setIsAuthModalOpen(false);
                 }}
                 className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50"
@@ -518,6 +616,8 @@ export default function DashboardLayout({
                     setWhatsappVerifyCode('');
                     setWhatsappVerifyOpenUrl('');
                     setWhatsappRegistrationNumber('');
+                    setWhatsappBrowserSessionToken('');
+                    setWhatsappPollError('');
                   }}
                   className={`flex-1 cursor-pointer rounded-full px-3 py-1.5 ${
                     authMode === 'register'
@@ -647,11 +747,14 @@ export default function DashboardLayout({
                       res.requiresWhatsappVerification &&
                       res.whatsappOpenUrl &&
                       res.whatsappVerificationCode &&
-                      res.whatsappRegistrationNumber
+                      res.whatsappRegistrationNumber &&
+                      res.whatsappBrowserSessionToken
                     ) {
+                      setWhatsappPollError('');
                       setWhatsappVerifyCode(res.whatsappVerificationCode);
                       setWhatsappVerifyOpenUrl(res.whatsappOpenUrl);
                       setWhatsappRegistrationNumber(res.whatsappRegistrationNumber);
+                      setWhatsappBrowserSessionToken(res.whatsappBrowserSessionToken);
                       setAuthMode('registerWhatsappVerify');
                       return;
                     }
@@ -741,6 +844,15 @@ export default function DashboardLayout({
               </form>
             ) : authMode === 'registerWhatsappVerify' ? (
               <div className="mt-5 space-y-4">
+                {whatsappPollError && (
+                  <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+                    {whatsappPollError}
+                  </div>
+                )}
+                <p className="text-xs text-zinc-500">
+                  Estamos à espera da confirmação no WhatsApp. Assim que a mensagem for
+                  processada, esta janela fecha e fica com sessão iniciada.
+                </p>
                 <p className="text-xs leading-relaxed text-zinc-700">
                   Para ativar a sua conta, envie o código de verificação pelo WhatsApp para{' '}
                   <span className="font-semibold text-zinc-900">
@@ -785,6 +897,8 @@ export default function DashboardLayout({
                     setWhatsappVerifyCode('');
                     setWhatsappVerifyOpenUrl('');
                     setWhatsappRegistrationNumber('');
+                    setWhatsappBrowserSessionToken('');
+                    setWhatsappPollError('');
                   }}
                   className="w-full cursor-pointer text-center text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
                 >

@@ -31,10 +31,13 @@ async function request<T>(
   options: RequestOptions = {},
 ): Promise<T> {
   const { token = getToken(), ...init } = options;
+  const method = (init.method ?? 'GET').toString().toUpperCase();
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
     ...(init.headers as Record<string, string>),
   };
+  if (method !== 'GET' && method !== 'HEAD') {
+    (headers as Record<string, string>)['Content-Type'] = 'application/json';
+  }
   if (token) {
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
   }
@@ -71,6 +74,7 @@ export const api = {
         whatsappVerificationCode?: string;
         whatsappRegistrationNumber?: string;
         whatsappOpenUrl?: string;
+        whatsappBrowserSessionToken?: string;
       }>('/auth/register', {
         method: 'POST',
         body: JSON.stringify(params),
@@ -79,6 +83,27 @@ export const api = {
       request<{ user: { id: string; email: string | null; whatsapp: string | null; role: string }; token: string }>(
         '/auth/login',
         { method: 'POST', body: JSON.stringify({ whatsapp, password }) },
+      ),
+    /** Polling após registo com WhatsApp: JWT quando a conta estiver criada. */
+    pollWhatsappRegistration: (browserSessionToken: string) =>
+      request<
+        | { status: 'pending' }
+        | {
+            status: 'ready';
+            token: string;
+            user: {
+              id: string;
+              email: string | null;
+              role: string;
+              whatsapp: string;
+            };
+          }
+        | { status: 'expired' }
+        | { status: 'consumed' }
+        | { status: 'invalid' }
+      >(
+        `/auth/whatsapp/registration-poll?token=${encodeURIComponent(browserSessionToken)}`,
+        { method: 'GET' },
       ),
     // Endpoints de verificação por e-mail são mantidos apenas para retrocompatibilidade.
     verifyEmail: (email: string, code: string) =>

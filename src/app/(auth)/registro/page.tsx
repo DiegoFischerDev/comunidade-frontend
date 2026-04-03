@@ -1,9 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import {
+  WHATSAPP_REGISTRATION_POLL_MAX_MS,
+  WHATSAPP_REGISTRATION_POLL_TIMEOUT_MESSAGE,
+} from '@/lib/whatsapp-registration-poll';
 
 function formatWhatsappRegistrationDisplay(digits: string) {
   const d = digits.replace(/\D/g, '');
@@ -15,7 +20,8 @@ function formatWhatsappRegistrationDisplay(digits: string) {
 }
 
 export default function RegistroPage() {
-  const { register, login } = useAuth();
+  const router = useRouter();
+  const { register, loginWithToken } = useAuth();
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -26,6 +32,80 @@ export default function RegistroPage() {
   const [waCode, setWaCode] = useState('');
   const [waOpenUrl, setWaOpenUrl] = useState('');
   const [waRegistrationNumber, setWaRegistrationNumber] = useState('');
+  const [waBrowserSessionToken, setWaBrowserSessionToken] = useState('');
+  const waPollStartedAtRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (step === 'whatsappVerify' && waBrowserSessionToken) {
+      waPollStartedAtRef.current = Date.now();
+    } else {
+      waPollStartedAtRef.current = null;
+    }
+  }, [step, waBrowserSessionToken]);
+
+  useEffect(() => {
+    if (step !== 'whatsappVerify' || !waBrowserSessionToken) return;
+    let cancelled = false;
+    const tick = async () => {
+      const started = waPollStartedAtRef.current;
+      if (
+        started != null &&
+        Date.now() - started > WHATSAPP_REGISTRATION_POLL_MAX_MS
+      ) {
+        if (!cancelled) {
+          setError(WHATSAPP_REGISTRATION_POLL_TIMEOUT_MESSAGE);
+          setWaBrowserSessionToken('');
+          setStep('form');
+        }
+        return;
+      }
+      try {
+        const r = await api.auth.pollWhatsappRegistration(waBrowserSessionToken);
+        if (cancelled) return;
+        if (r.status === 'ready') {
+          try {
+            sessionStorage.setItem('comunidade_welcome_after_wa', '1');
+          } catch {
+            // noop
+          }
+          await loginWithToken(r.token);
+          router.push('/dashboard');
+          return;
+        }
+        if (r.status === 'expired') {
+          setError(
+            'O tempo para ativar a conta neste passo expirou. Crie a conta de novo.',
+          );
+          setWaBrowserSessionToken('');
+          setStep('form');
+          return;
+        }
+        if (r.status === 'consumed') {
+          setError(
+            'Esta sessão já foi utilizada. Entre com o WhatsApp e a palavra-passe em Entrar.',
+          );
+          setWaBrowserSessionToken('');
+          setStep('form');
+          return;
+        }
+        if (r.status === 'invalid') {
+          setError(
+            'Não encontrámos o pedido de registo. Volte atrás e tente criar a conta outra vez.',
+          );
+          setWaBrowserSessionToken('');
+          setStep('form');
+        }
+      } catch {
+        // próximo intervalo
+      }
+    };
+    void tick();
+    const id = window.setInterval(() => void tick(), 2500);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [step, waBrowserSessionToken, loginWithToken, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,11 +135,13 @@ export default function RegistroPage() {
         res.requiresWhatsappVerification &&
         res.whatsappOpenUrl &&
         res.whatsappVerificationCode &&
-        res.whatsappRegistrationNumber
+        res.whatsappRegistrationNumber &&
+        res.whatsappBrowserSessionToken
       ) {
         setWaCode(res.whatsappVerificationCode);
         setWaOpenUrl(res.whatsappOpenUrl);
         setWaRegistrationNumber(res.whatsappRegistrationNumber);
+        setWaBrowserSessionToken(res.whatsappBrowserSessionToken);
         setStep('whatsappVerify');
         return;
       }
@@ -151,6 +233,10 @@ export default function RegistroPage() {
           <h2 className="text-lg font-semibold text-zinc-900">
             Ativar conta no WhatsApp
           </h2>
+          <p className="text-sm text-zinc-500">
+            Assim que a mensagem for confirmada, vamos iniciar sessão automaticamente e
+            levá-lo ao painel.
+          </p>
           <p className="text-sm leading-relaxed text-zinc-700">
             Para ativar a sua conta, envie o código de verificação pelo WhatsApp para{' '}
             <span className="font-semibold text-zinc-900">
@@ -186,6 +272,7 @@ export default function RegistroPage() {
               setWaCode('');
               setWaOpenUrl('');
               setWaRegistrationNumber('');
+              setWaBrowserSessionToken('');
             }}
             className="w-full text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
           >

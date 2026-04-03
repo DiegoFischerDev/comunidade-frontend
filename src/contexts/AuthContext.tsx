@@ -28,6 +28,8 @@ type AuthContextValue = {
   loading: boolean;
   isImpersonating: boolean;
   login: (whatsapp: string, password: string) => Promise<void>;
+  /** Após confirmação no WhatsApp, aplica o JWT devolvido pelo polling. */
+  loginWithToken: (token: string) => Promise<void>;
   register: (params: {
     name: string;
     password: string;
@@ -38,6 +40,7 @@ type AuthContextValue = {
     whatsappVerificationCode?: string;
     whatsappRegistrationNumber?: string;
     whatsappOpenUrl?: string;
+    whatsappBrowserSessionToken?: string;
   }>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -88,6 +91,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthToken(t);
       await loadUser(t);
       // não alteramos a rota: o utilizador permanece na página atual
+    },
+    [loadUser],
+  );
+
+  const loginWithToken = useCallback(
+    async (t: string) => {
+      setAuthToken(t);
+      await loadUser(t);
     },
     [loadUser],
   );
@@ -155,6 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     isImpersonating,
     login,
+    loginWithToken,
     register,
     logout,
     refreshUser,
