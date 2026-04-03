@@ -36,47 +36,31 @@ export default function DashboardLayout({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<
-    | 'login'
-    | 'register'
-    | 'registerWhatsappVerify'
-    | 'verify'
-    | 'forgot'
-    | 'resetPassword'
+    'login' | 'register' | 'registerWhatsappVerify' | 'forgot' | 'resetPassword'
   >('login');
   const [whatsappVerifyCode, setWhatsappVerifyCode] = useState('');
   const [whatsappVerifyOpenUrl, setWhatsappVerifyOpenUrl] = useState('');
   const [whatsappRegistrationNumber, setWhatsappRegistrationNumber] =
     useState('');
-  const [loginEmail, setLoginEmail] = useState('');
+  const [loginWhatsapp, setLoginWhatsapp] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [registerName, setRegisterName] = useState('');
-  const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState('');
-  /** false = confirmação por WhatsApp (default); true = por e-mail */
-  const [registerPreferEmail, setRegisterPreferEmail] = useState(false);
   const [registerError, setRegisterError] = useState('');
   const [registerInfo, setRegisterInfo] = useState('');
   const [registerLoading, setRegisterLoading] = useState(false);
-  const [verifyEmail, setVerifyEmail] = useState('');
-  const [verifyCode, setVerifyCode] = useState('');
-  const [verifyError, setVerifyError] = useState('');
-  const [verifyInfo, setVerifyInfo] = useState('');
-  const [verifyLoading, setVerifyLoading] = useState(false);
-  const [verifyOrigin, setVerifyOrigin] = useState<'login' | 'register' | null>(
-    null,
-  );
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
   const [pendingWelcomeAfterVerify, setPendingWelcomeAfterVerify] =
     useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotWhatsapp, setForgotWhatsapp] = useState('');
   const [forgotError, setForgotError] = useState('');
   const [forgotInfo, setForgotInfo] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
+  const [resetWhatsapp, setResetWhatsapp] = useState('');
   const [resetCode, setResetCode] = useState('');
   const [resetPassword, setResetPassword] = useState('');
   const [resetError, setResetError] = useState('');
@@ -158,7 +142,7 @@ export default function DashboardLayout({
 
     const handler = (event: Event) => {
       const custom = event as CustomEvent<{
-        mode?: 'login' | 'register' | 'verify';
+        mode?: 'login' | 'register';
       }>;
       const mode = custom.detail?.mode ?? 'login';
       setAuthMode(mode);
@@ -486,14 +470,12 @@ export default function DashboardLayout({
                     : 'Entrar na Comunidade RPM'}
                 </h2>
                 <p className="mt-1 text-xs text-zinc-500">
-                  {authMode === 'verify'
-                    ? 'Confirme o seu e-mail para concluir o acesso.'
-                    : authMode === 'registerWhatsappVerify'
+                  {authMode === 'registerWhatsappVerify'
                       ? 'Envie o código pelo WhatsApp para concluir o registo.'
                       : authMode === 'forgot'
-                        ? 'Informe o e-mail da sua conta para receber um código de recuperação.'
+                        ? 'Informe o seu WhatsApp para receber um código de recuperação.'
                         : authMode === 'resetPassword'
-                          ? 'Introduza o código recebido por e-mail e defina uma nova senha.'
+                          ? 'Introduza o código recebido por WhatsApp e defina uma nova senha.'
                           : 'Faça login ou crie a sua conta para continuar.'}
                 </p>
               </div>
@@ -518,8 +500,6 @@ export default function DashboardLayout({
                   type="button"
                   onClick={() => {
                     setAuthMode('login');
-                    setVerifyError('');
-                    setVerifyInfo('');
                   }}
                   className={`flex-1 cursor-pointer rounded-full px-3 py-1.5 ${
                     authMode === 'login'
@@ -533,8 +513,6 @@ export default function DashboardLayout({
                   type="button"
                   onClick={() => {
                     setAuthMode('register');
-                    setVerifyError('');
-                    setVerifyInfo('');
                     setRegisterError('');
                     setRegisterInfo('');
                     setWhatsappVerifyCode('');
@@ -558,31 +536,14 @@ export default function DashboardLayout({
                 onSubmit={async (e) => {
                   e.preventDefault();
                   setLoginError('');
-                  setVerifyError('');
-                  setVerifyInfo('');
                   setLoginLoading(true);
                   try {
-                    await login(loginEmail, loginPassword);
+                    await login(loginWhatsapp, loginPassword);
                     setIsAuthModalOpen(false);
                   } catch (err) {
                     const message =
                       err instanceof Error ? err.message : 'Erro ao entrar.';
-
-                    if (
-                      message.includes('confirmar o seu e-mail antes de entrar')
-                    ) {
-                      setAuthMode('verify');
-                      setVerifyOrigin('login');
-                      setVerifyEmail(loginEmail);
-                      setVerifyCode('');
-                      setVerifyError('');
-                      setVerifyInfo(
-                        'É necessário confirmar o seu e-mail antes de entrar. Verifique a sua caixa de entrada, incluindo a pasta de spam/lixo eletrónico. Se não encontrar, peça o reenvio do código abaixo.',
-                      );
-                      setLoginError('');
-                    } else {
-                      setLoginError(message);
-                    }
+                    setLoginError(message);
                   } finally {
                     setLoginLoading(false);
                   }
@@ -595,19 +556,23 @@ export default function DashboardLayout({
                 )}
                 <div>
                   <label
-                    htmlFor="auth-email"
+                    htmlFor="auth-whatsapp"
                     className="block text-xs font-medium text-zinc-700"
                   >
-                    E-mail
+                    WhatsApp
                   </label>
                   <input
-                    id="auth-email"
-                    type="email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
+                    id="auth-whatsapp"
+                    type="tel"
+                    value={loginWhatsapp}
+                    onChange={(e) => setLoginWhatsapp(e.target.value)}
                     required
+                    placeholder="Ex.: 351954785654 ou 55999867458"
                     className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
+                  <p className="mt-1 text-[11px] text-zinc-500">
+                    Inclua sempre o indicativo do país, sem + nem espaços. Ex.: Portugal = 351954785654, Brasil = 55999867458.
+                  </p>
                 </div>
                 <div>
                   <label
@@ -631,7 +596,7 @@ export default function DashboardLayout({
                     onClick={() => {
                       setForgotError('');
                       setForgotInfo('');
-                      setForgotEmail(loginEmail);
+                      setForgotWhatsapp(loginWhatsapp);
                       setAuthMode('forgot');
                     }}
                     className="cursor-pointer text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
@@ -654,8 +619,6 @@ export default function DashboardLayout({
                   e.preventDefault();
                   setRegisterError('');
                   setRegisterInfo('');
-                  setVerifyError('');
-                  setVerifyInfo('');
                   if (registerPassword !== registerPasswordConfirm) {
                     setRegisterError('As senhas não coincidem.');
                     return;
@@ -676,10 +639,8 @@ export default function DashboardLayout({
                         : undefined;
 
                     const res = await register({
-                      email: registerEmail,
-                      password: registerPassword,
                       name: registerName,
-                      contactMethod: registerPreferEmail ? 'email' : 'whatsapp',
+                      password: registerPassword,
                       affiliateCode: refTrimmed,
                     });
                     if (
@@ -694,14 +655,6 @@ export default function DashboardLayout({
                       setAuthMode('registerWhatsappVerify');
                       return;
                     }
-                    setAuthMode('verify');
-                    setVerifyOrigin('register');
-                    setVerifyEmail(registerEmail);
-                    setVerifyCode('');
-                    setVerifyError('');
-                    setVerifyInfo(
-                      'Enviámos um código de confirmação para o seu e-mail. Verifique a sua caixa de entrada, incluindo a pasta de spam/lixo eletrónico, e insira o código abaixo.',
-                    );
                   } catch (err) {
                     setRegisterError(
                       err instanceof Error
@@ -736,22 +689,6 @@ export default function DashboardLayout({
                       type="text"
                       value={registerName}
                       onChange={(e) => setRegisterName(e.target.value)}
-                      required
-                      className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="auth-email-register"
-                      className="block text-xs font-medium text-zinc-700"
-                    >
-                      E-mail
-                    </label>
-                    <input
-                      id="auth-email-register"
-                      type="email"
-                      value={registerEmail}
-                      onChange={(e) => setRegisterEmail(e.target.value)}
                       required
                       className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
@@ -793,35 +730,7 @@ export default function DashboardLayout({
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-zinc-700">
-                    Quero ativar conta via:
-                  </p>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
-                    <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-2">
-                      <input
-                        type="checkbox"
-                        checked={!registerPreferEmail}
-                        onChange={() => setRegisterPreferEmail(false)}
-                        className="h-4 w-4 shrink-0 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-xs font-medium text-zinc-900">
-                        WhatsApp
-                      </span>
-                    </label>
-                    <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-2">
-                      <input
-                        type="checkbox"
-                        checked={registerPreferEmail}
-                        onChange={() => setRegisterPreferEmail(true)}
-                        className="h-4 w-4 shrink-0 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-xs font-medium text-zinc-900">
-                        E-mail
-                      </span>
-                    </label>
-                  </div>
-                </div>
+                {/* Ativação passa a ser sempre via WhatsApp */}
                 <button
                   type="submit"
                   disabled={registerLoading}
@@ -882,141 +791,6 @@ export default function DashboardLayout({
                   Voltar ao registo
                 </button>
               </div>
-            ) : authMode === 'verify' ? (
-              <form
-                className="mt-5 space-y-4"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  setVerifyError('');
-                  setVerifyInfo('');
-                  setVerifyLoading(true);
-                  try {
-                    if (!verifyEmail) {
-                      throw new Error(
-                        'E-mail para verificação não encontrado. Volte a tentar o login ou o registo.',
-                      );
-                    }
-
-                    await api.auth.verifyEmail(verifyEmail, verifyCode);
-
-                    const passwordToUse =
-                      verifyOrigin === 'login'
-                        ? loginPassword
-                        : registerPassword;
-
-                    if (!passwordToUse) {
-                      setVerifyInfo(
-                        'E-mail confirmado com sucesso. Agora pode entrar com a sua senha.',
-                      );
-                      setAuthMode('login');
-                      setLoginEmail(verifyEmail);
-                      return;
-                    }
-
-                    await login(verifyEmail, passwordToUse);
-                    setIsAuthModalOpen(false);
-                    setPendingWelcomeAfterVerify(true);
-                  } catch (err) {
-                    setVerifyError(
-                      err instanceof Error
-                        ? err.message
-                        : 'Erro ao confirmar o e-mail. Verifique o código e tente novamente.',
-                    );
-                  } finally {
-                    setVerifyLoading(false);
-                  }
-                }}
-              >
-                {verifyError && (
-                  <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
-                    {verifyError}
-                  </div>
-                )}
-                {verifyInfo && !verifyError && (
-                  <div className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-                    {verifyInfo}
-                  </div>
-                )}
-                <p className="text-xs text-zinc-600">
-                  Introduza o código de 6 dígitos que enviámos para{' '}
-                  <span className="font-semibold text-zinc-900">
-                    {verifyEmail}
-                  </span>
-                  . Verifique também a pasta de spam/lixo eletrónico.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setVerifyError('');
-                    setVerifyInfo('');
-                    if (verifyOrigin === 'register') {
-                      setAuthMode('register');
-                      setRegisterEmail(verifyEmail);
-                    } else {
-                      setAuthMode('login');
-                      setLoginEmail(verifyEmail);
-                    }
-                  }}
-                  className="mt-1 cursor-pointer text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
-                >
-                  Este e-mail está errado? Atualizar e-mail
-                </button>
-                <div>
-                  <label
-                    htmlFor="auth-verification-code"
-                    className="block text-xs font-medium text-zinc-700"
-                  >
-                    Código de confirmação
-                  </label>
-                  <input
-                    id="auth-verification-code"
-                    type="text"
-                    value={verifyCode}
-                    onChange={(e) => setVerifyCode(e.target.value)}
-                    required
-                    maxLength={10}
-                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <button
-                    type="button"
-                    disabled={verifyLoading}
-                    onClick={async () => {
-                      setVerifyError('');
-                      setVerifyInfo('');
-                      if (!verifyEmail) {
-                        setVerifyError(
-                          'E-mail para verificação não encontrado. Volte a tentar o login ou o registo.',
-                        );
-                        return;
-                      }
-                      try {
-                        await api.auth.resendVerification(verifyEmail);
-                        setVerifyInfo(
-                          'Novo código enviado. Verifique a sua caixa de entrada e a pasta de spam/lixo eletrónico.',
-                        );
-                      } catch (err) {
-                        setVerifyError(
-                          err instanceof Error
-                            ? err.message
-                            : 'Erro ao reenviar o código. Tente novamente.',
-                        );
-                      }
-                    }}
-                    className="cursor-pointer text-xs font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline disabled:opacity-50"
-                  >
-                    Reenviar código
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={verifyLoading}
-                    className="flex cursor-pointer items-center justify-center rounded-full bg-blue-600 px-4 py-2.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {verifyLoading ? 'Confirmando…' : 'Confirmar e entrar'}
-                  </button>
-                </div>
-              </form>
             ) : authMode === 'forgot' ? (
               <form
                 className="mt-5 space-y-4"
@@ -1026,14 +800,14 @@ export default function DashboardLayout({
                   setForgotInfo('');
                   setForgotLoading(true);
                   try {
-                    await api.auth.forgotPassword(forgotEmail);
-                    setResetEmail(forgotEmail);
+                    await api.auth.forgotPassword(forgotWhatsapp);
+                    setResetWhatsapp(forgotWhatsapp);
                     setAuthMode('resetPassword');
                     setResetCode('');
                     setResetPassword('');
                     setResetError('');
                     setResetInfo(
-                      'Enviámos um código de recuperação para o e-mail informado. Verifique a sua caixa de entrada e a pasta de spam/lixo eletrónico.',
+                      'Enviámos um código de recuperação para o WhatsApp informado.',
                     );
                   } catch (err) {
                     setForgotError(
@@ -1058,19 +832,23 @@ export default function DashboardLayout({
                 )}
                 <div>
                   <label
-                    htmlFor="auth-forgot-email"
+                    htmlFor="auth-forgot-whatsapp"
                     className="block text-xs font-medium text-zinc-700"
                   >
-                    E-mail da conta
+                    WhatsApp da conta
                   </label>
                   <input
-                    id="auth-forgot-email"
-                    type="email"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
+                    id="auth-forgot-whatsapp"
+                    type="tel"
+                    value={forgotWhatsapp}
+                    onChange={(e) => setForgotWhatsapp(e.target.value)}
                     required
+                    placeholder="Ex.: 351954785654 ou 55999867458"
                     className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
+                  <p className="mt-1 text-[11px] text-zinc-500">
+                    Inclua sempre o indicativo do país, sem + nem espaços. Ex.: Portugal = 351954785654, Brasil = 55999867458.
+                  </p>
                 </div>
                 <button
                   type="submit"
@@ -1089,19 +867,19 @@ export default function DashboardLayout({
                   setResetInfo('');
                   setResetLoading(true);
                   try {
-                    if (!resetEmail) {
+                    if (!resetWhatsapp) {
                       throw new Error(
-                        'E-mail para recuperação não encontrado. Volte a solicitar a recuperação de senha.',
+                        'WhatsApp para recuperação não encontrado. Volte a solicitar a recuperação de senha.',
                       );
                     }
 
                     await api.auth.resetPassword({
-                      email: resetEmail,
+                      whatsapp: resetWhatsapp,
                       code: resetCode,
                       newPassword: resetPassword,
                     });
 
-                    await login(resetEmail, resetPassword);
+                    await login(resetWhatsapp, resetPassword);
                     setIsAuthModalOpen(false);
                   } catch (err) {
                     setResetError(
@@ -1125,11 +903,7 @@ export default function DashboardLayout({
                   </div>
                 )}
                 <p className="text-xs text-zinc-600">
-                  Introduza o código que enviámos para{' '}
-                  <span className="font-semibold text-zinc-900">
-                    {resetEmail}
-                  </span>{' '}
-                  e defina a sua nova senha de acesso.
+                  Introduza o código que enviámos para o seu WhatsApp e defina a sua nova senha de acesso.
                 </p>
                 <div className="space-y-3">
                   <div>
@@ -1174,16 +948,16 @@ export default function DashboardLayout({
                     onClick={async () => {
                       setResetError('');
                       setResetInfo('');
-                      if (!resetEmail) {
+                      if (!resetWhatsapp) {
                         setResetError(
-                          'E-mail para recuperação não encontrado. Volte a solicitar a recuperação de senha.',
+                          'WhatsApp para recuperação não encontrado. Volte a solicitar a recuperação de senha.',
                         );
                         return;
                       }
                       try {
-                        await api.auth.forgotPassword(resetEmail);
+                        await api.auth.forgotPassword(resetWhatsapp);
                         setResetInfo(
-                          'Novo código enviado. Verifique a sua caixa de entrada e a pasta de spam/lixo eletrónico.',
+                          'Novo código enviado para o seu WhatsApp.',
                         );
                       } catch (err) {
                         setResetError(

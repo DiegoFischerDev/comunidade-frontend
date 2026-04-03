@@ -54,19 +54,16 @@ async function request<T>(
 export const api = {
   auth: {
     register: (params: {
-      email: string;
-      password: string;
       name: string;
-      contactMethod: 'email' | 'whatsapp';
+      password: string;
       affiliateCode?: string;
     }) =>
       request<{
         user: {
           id: string;
-          email: string;
           role: string;
           name: string;
-          whatsapp: string;
+          whatsapp?: string;
           createdAt: string;
         };
         requiresEmailVerification: boolean;
@@ -78,11 +75,12 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(params),
       }),
-    login: (email: string, password: string) =>
-      request<{ user: { id: string; email: string; role: string }; token: string }>(
+    login: (whatsapp: string, password: string) =>
+      request<{ user: { id: string; email: string | null; whatsapp: string | null; role: string }; token: string }>(
         '/auth/login',
-        { method: 'POST', body: JSON.stringify({ email, password }) },
+        { method: 'POST', body: JSON.stringify({ whatsapp, password }) },
       ),
+    // Endpoints de verificação por e-mail são mantidos apenas para retrocompatibilidade.
     verifyEmail: (email: string, code: string) =>
       request<{ success: boolean }>('/auth/verify-email', {
         method: 'POST',
@@ -93,13 +91,13 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ email }),
       }),
-    forgotPassword: (email: string) =>
+    forgotPassword: (whatsapp: string) =>
       request<{ success: boolean }>('/auth/forgot-password', {
         method: 'POST',
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ whatsapp }),
       }),
     resetPassword: (params: {
-      email: string;
+      whatsapp: string;
       code: string;
       newPassword: string;
     }) =>

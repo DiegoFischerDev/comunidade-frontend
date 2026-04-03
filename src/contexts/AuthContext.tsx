@@ -12,7 +12,7 @@ import { api, setAuthToken, clearAuthToken, getAuthToken } from '@/lib/api';
 
 type User = {
   id: string;
-  email: string;
+  email: string | null;
   role: string;
   name?: string;
   whatsapp?: string;
@@ -27,12 +27,10 @@ type AuthContextValue = {
   token: string | null;
   loading: boolean;
   isImpersonating: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (whatsapp: string, password: string) => Promise<void>;
   register: (params: {
-    email: string;
-    password: string;
     name: string;
-    contactMethod: 'email' | 'whatsapp';
+    password: string;
     affiliateCode?: string;
   }) => Promise<{
     requiresEmailVerification: boolean;
@@ -85,8 +83,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadUser]);
 
   const login = useCallback(
-    async (email: string, password: string) => {
-      const { token: t } = await api.auth.login(email, password);
+    async (whatsapp: string, password: string) => {
+      const { token: t } = await api.auth.login(whatsapp, password);
       setAuthToken(t);
       await loadUser(t);
       // não alteramos a rota: o utilizador permanece na página atual
@@ -96,10 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async (params: {
-      email: string;
-      password: string;
       name: string;
-      contactMethod: 'email' | 'whatsapp';
+      password: string;
       affiliateCode?: string;
     }) => {
       return api.auth.register(params);
