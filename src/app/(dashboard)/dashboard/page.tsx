@@ -173,7 +173,7 @@ export default function DashboardPage() {
               onClick={handleOpenMembershipModal}
               className="inline-flex cursor-pointer items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
             >
-              Tornar-se membro
+              Tornar-se membro VIP
             </button>
           </div>
         )}

@@ -5,6 +5,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getAuthToken, clearAuthToken, api } from '@/lib/api';
+import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
+import { RafaCallCard } from '@/components/RafaCallCard';
 import {
   WHATSAPP_REGISTRATION_POLL_MAX_MS,
   WHATSAPP_REGISTRATION_POLL_TIMEOUT_MESSAGE,
@@ -83,6 +85,15 @@ export default function DashboardLayout({
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const openLogin = () => {
+      setAuthMode('login');
+      setIsAuthModalOpen(true);
+    };
+    window.addEventListener(OPEN_AUTH_LOGIN_EVENT, openLogin);
+    return () => window.removeEventListener(OPEN_AUTH_LOGIN_EVENT, openLogin);
   }, []);
 
   useEffect(() => {
@@ -1083,7 +1094,10 @@ export default function DashboardLayout({
         </div>
       )}
 
-      <main className="flex-1 p-4 text-primary-2 md:p-6">{children}</main>
+      <main className="flex-1 p-4 text-primary-2 md:p-6">
+        <RafaCallCard />
+        {children}
+      </main>
 
       {isWelcomeOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">

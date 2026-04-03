@@ -238,14 +238,14 @@ export default function MyReferralsPage() {
               <div className="relative h-12 w-12 flex-shrink-0">
                 <Image
                   src="/vip-card.png"
-                  alt="Tornar-se membro"
+                  alt="Tornar-se membro VIP"
                   fill
                   className="rounded-xl object-contain"
                   sizes="48px"
                 />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-zinc-900">Torne-se membro</h2>
+                <h2 className="text-sm font-semibold text-zinc-900">Torne-se membro VIP</h2>
                 <p className="mt-1 text-xs text-zinc-600">
                   Desbloqueie benefícios exclusivos e participe do programa de afiliados.
                 </p>
@@ -256,7 +256,7 @@ export default function MyReferralsPage() {
               onClick={openMembershipModal}
               className="mt-4 inline-flex cursor-pointer items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
             >
-              Tornar-se membro
+              Tornar-se membro VIP
             </button>
           </section>
 
@@ -273,7 +273,7 @@ export default function MyReferralsPage() {
       {loading ? (
         <p className="mt-4 text-sm text-zinc-600">Carregando dados…</p>
       ) : !hasAffiliateEnrollment ? (
-        // Visitante: o card já está na grelha acima com "Torne-se membro"
+        // Visitante: o card já está na grelha acima com "Torne-se membro VIP"
         !isVisitor ? (
           <div className="mt-4">{affiliatePromoCard}</div>
         ) : null

@@ -188,6 +188,36 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(params),
       }),
+    getRafaCallAmounts: () =>
+      request<{ eurCents: number; pixCentavos: number }>('/stripe/rafa-call-amounts', {
+        method: 'GET',
+      }),
+    createRafaCallUnlockSession: (params: { successUrl: string; cancelUrl: string }) =>
+      request<{ url: string }>('/stripe/create-rafa-call-unlock-session', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }),
+    createRafaCallUnlockMbWaySession: (params: { successUrl: string; cancelUrl: string }) =>
+      request<{ url: string }>('/stripe/create-rafa-call-unlock-mbway-session', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }),
+    createRafaCallUnlockPixSession: (params: { successUrl: string; cancelUrl: string }) =>
+      request<{ url: string }>('/stripe/create-rafa-call-unlock-pix-session', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }),
+  },
+  rafacall: {
+    status: () =>
+      request<{
+        isMember: boolean;
+        schedulingUnlocked: boolean;
+        slotEndsAt: string | null;
+        canOpenCalEmbed: boolean;
+        calGuestEmail: string;
+        calGuestName: string;
+      }>('/rafacall/status', { method: 'GET' }),
   },
   admin: {
     users: {

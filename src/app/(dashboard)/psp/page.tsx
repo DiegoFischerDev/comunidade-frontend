@@ -101,7 +101,7 @@ export default function PSPPage() {
                     onClick={handleOpenMembershipModal}
                     className="mt-4 inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-emerald-700"
                   >
-                    Tornar-se membro e liberar conteúdo completo
+                    Tornar-se membro VIP e liberar conteúdo completo
                   </button>
                 </div>
               </div>
