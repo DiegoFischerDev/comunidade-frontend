@@ -408,9 +408,6 @@ export default function UsersPage() {
                         <span className="font-medium text-zinc-700">Fim do slot:</span>{' '}
                         {formatRafaSlotPt(u.rafaCallSlotEndsAt)}
                       </p>
-                      <p className="text-[10px] text-zinc-500">
-                        Ajuste a data do slot em <span className="font-medium">Editar</span>.
-                      </p>
                     </div>
                   </td>
                   <td className="px-4 py-2 text-right">

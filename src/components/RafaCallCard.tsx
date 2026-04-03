@@ -200,13 +200,21 @@ export function RafaCallCard() {
     try {
       const s = await api.rafacall.status();
       if (s.canOpenCalEmbed) {
-        const calBase = process.env.NEXT_PUBLIC_CALCOM_EMBED_URL?.trim() || '';
+        let calBase = process.env.NEXT_PUBLIC_CALCOM_EMBED_URL?.trim() || '';
+        if (!calBase) {
+          try {
+            const r = await api.rafacall.calEmbedUrl();
+            calBase = (r.url || '').trim();
+          } catch {
+            calBase = '';
+          }
+        }
         if (!calBase) {
           alert(
-            'O embed do Cal.com não está configurado (NEXT_PUBLIC_CALCOM_EMBED_URL).\n\n' +
-              'Em Docker: defina no .env da VPS e passe no build da imagem do frontend (build-arg no Dockerfile). ' +
-              'Só meter no environment: do compose sem rebuild não atualiza o JavaScript do Next.\n\n' +
-              'Em dev: frontend/.env.local + reiniciar npm run dev.',
+            'O embed do Cal.com não está configurado.\n\n' +
+              '1) Em dev: frontend/.env.local com NEXT_PUBLIC_CALCOM_EMBED_URL e reiniciar npm run dev.\n\n' +
+              '2) Em Docker: no .env da VPS defina NEXT_PUBLIC_CALCOM_EMBED_URL=... e no serviço backend do compose injete essa variável (veja deploy/docker-compose). ' +
+              'Depois faça deploy de uma imagem de backend com o endpoint /rafacall/cal-embed-url e recrie o container do backend.',
           );
           return;
         }
@@ -294,10 +302,6 @@ export function RafaCallCard() {
           <div className="space-y-1">
             <p className="text-base font-semibold text-zinc-900">
               Quero agendar minha chamada de vídeo com a Rafa
-            </p>
-            <p className="text-xs text-zinc-600">
-              Membros VIP marcam pelo Cal.com. Depois da chamada, podes voltar a agendar pagando a taxa
-              de novo agendamento.
             </p>
           </div>
         </div>

@@ -11,6 +11,7 @@ import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/components/FloatingWhatsAppButton
 import { AffiliatePromoCard } from "@/components/affiliate/AffiliatePromoCard";
 import { AffiliateEnrollModal } from "@/components/affiliate/AffiliateEnrollModal";
 import { AffiliateMemberDashboardCard } from "@/components/affiliate/AffiliateMemberDashboardCard";
+import { RafaCallCard } from "@/components/RafaCallCard";
 
 type AffiliateMe = NonNullable<Awaited<ReturnType<typeof api.affiliate.me>>>;
 
@@ -177,6 +178,8 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      <RafaCallCard />
 
       <section className="w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm md:w-1/2">
         <div className="flex flex-col gap-6 md:flex-row md:items-center">

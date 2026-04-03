@@ -6,7 +6,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getAuthToken, clearAuthToken, api } from '@/lib/api';
 import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
-import { RafaCallCard } from '@/components/RafaCallCard';
 import {
   WHATSAPP_REGISTRATION_POLL_MAX_MS,
   WHATSAPP_REGISTRATION_POLL_TIMEOUT_MESSAGE,
@@ -1095,7 +1094,6 @@ export default function DashboardLayout({
       )}
 
       <main className="flex-1 p-4 text-primary-2 md:p-6">
-        <RafaCallCard />
         {children}
       </main>
 

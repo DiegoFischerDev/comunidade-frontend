@@ -209,6 +209,11 @@ export const api = {
       }),
   },
   rafacall: {
+    calEmbedUrl: () =>
+      request<{ url: string | null }>('/rafacall/cal-embed-url', {
+        method: 'GET',
+        token: null,
+      }),
     status: () =>
       request<{
         isMember: boolean;
