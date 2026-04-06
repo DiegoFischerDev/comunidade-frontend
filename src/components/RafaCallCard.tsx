@@ -1,22 +1,24 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
 
-function buildCalEmbedUrl(base: string, email: string, name: string): string {
+/** URL do evento sem parâmetros de embed inline; o popup usa initPopupWidget + prefill. */
+function calendlyEventUrlForPopup(base: string): string {
+  const trimmed = base.trim();
   try {
-    const u = new URL(base);
-    u.searchParams.set('embed', 'true');
-    u.searchParams.set('email', email);
-    u.searchParams.set('name', name);
-    return u.toString();
+    const u = new URL(trimmed);
+    u.searchParams.delete('embed');
+    u.searchParams.delete('email');
+    u.searchParams.delete('name');
+    const q = u.searchParams.toString();
+    return q ? `${u.origin}${u.pathname}?${q}` : `${u.origin}${u.pathname}`;
   } catch {
-    const sep = base.includes('?') ? '&' : '?';
-    return `${base}${sep}embed=true&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`;
+    return trimmed.split('?')[0] ?? trimmed;
   }
 }
 
@@ -30,12 +32,46 @@ function formatEur(cents: number): string {
 }
 
 type CalendlyGlobal = {
-  initInlineWidget: (opts: { url: string; parentElement: HTMLElement }) => void;
+  initPopupWidget: (opts: {
+    url: string;
+    prefill?: { email?: string; name?: string };
+  }) => void;
 };
 
 function getCalendly(): CalendlyGlobal | undefined {
   if (typeof window === 'undefined') return undefined;
   return (window as unknown as { Calendly?: CalendlyGlobal }).Calendly;
+}
+
+/** Popup oficial Calendly (overlay + iframe com altura correta); não usa o nosso modal. */
+function openCalendlyPopupWidget(
+  eventUrl: string,
+  email: string,
+  name: string,
+  onScriptTimeout: () => void,
+): void {
+  const run = (): boolean => {
+    const C = getCalendly();
+    if (!C?.initPopupWidget) return false;
+    C.initPopupWidget({
+      url: eventUrl,
+      prefill: { email, name },
+    });
+    return true;
+  };
+  if (run()) return;
+  let done = false;
+  const interval = window.setInterval(() => {
+    if (run()) {
+      done = true;
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+    }
+  }, 50);
+  const timeout = window.setTimeout(() => {
+    window.clearInterval(interval);
+    if (!done) onScriptTimeout();
+  }, 20_000);
 }
 
 function formatBrl(centavos: number): string {
@@ -170,21 +206,17 @@ function PaymentMethodRow({
 
 export function RafaCallCard() {
   const { user, token } = useAuth();
-  const [calOpen, setCalOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const [payOptions, setPayOptions] = useState(false);
-  const [calIframeSrc, setCalIframeSrc] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
   const [amounts, setAmounts] = useState<{ eurCents: number; pixCentavos: number } | null>(
     null,
   );
   const [amountsLoading, setAmountsLoading] = useState(false);
-  const calWidgetHostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    // Calendly embed script
     const existing = document.querySelector<HTMLScriptElement>(
       'script[data-calendly-widget="1"]',
     );
@@ -195,34 +227,6 @@ export function RafaCallCard() {
     s.dataset.calendlyWidget = '1';
     document.body.appendChild(s);
   }, []);
-
-  // O widget.js só faz scan na carga inicial; modais montados depois precisam de initInlineWidget.
-  useEffect(() => {
-    if (!calOpen || !calIframeSrc) return;
-    const host = calWidgetHostRef.current;
-    if (!host) return;
-
-    const tryInit = (): boolean => {
-      const Calendly = getCalendly();
-      if (!Calendly) return false;
-      host.innerHTML = '';
-      Calendly.initInlineWidget({ url: calIframeSrc, parentElement: host });
-      return true;
-    };
-
-    if (tryInit()) return undefined;
-
-    const interval = window.setInterval(() => {
-      if (tryInit()) window.clearInterval(interval);
-    }, 100);
-    const giveUp = window.setTimeout(() => window.clearInterval(interval), 20_000);
-
-    return () => {
-      window.clearInterval(interval);
-      window.clearTimeout(giveUp);
-      host.innerHTML = '';
-    };
-  }, [calOpen, calIframeSrc]);
 
   const openLogin = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -261,9 +265,16 @@ export function RafaCallCard() {
           );
           return;
         }
-        const url = buildCalEmbedUrl(calendlyBase, s.calGuestEmail, s.calGuestName);
-        setCalIframeSrc(url);
-        setCalOpen(true);
+        const eventUrl = calendlyEventUrlForPopup(calendlyBase);
+        openCalendlyPopupWidget(
+          eventUrl,
+          s.calGuestEmail,
+          s.calGuestName,
+          () =>
+            alert(
+              'O script do Calendly não carregou a tempo. Recarrega a página e tenta de novo, ou verifica bloqueadores de anúncios.',
+            ),
+        );
       } else {
         setPayOpen(true);
         setPayOptions(false);
@@ -360,35 +371,6 @@ export function RafaCallCard() {
           </button>
         </div>
       </div>
-
-      {calOpen && calIframeSrc && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
-          <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-2">
-              <span className="text-sm font-semibold text-zinc-900">
-                Agendar com a Rafa (Calendly)
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setCalOpen(false);
-                  setCalIframeSrc(null);
-                }}
-                className="rounded-full px-2 py-1 text-sm text-zinc-500 hover:bg-zinc-100"
-              >
-                Fechar
-              </button>
-            </div>
-            <div className="min-h-[630px] w-full flex-1">
-              <div
-                ref={calWidgetHostRef}
-                className="h-full min-h-[630px] w-full"
-                style={{ minWidth: 320 }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {payOpen && (
         <div
