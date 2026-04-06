@@ -307,7 +307,6 @@ export default function DashboardLayout({
             alt="Comunidade RPM"
             width={140}
             height={32}
-            priority
           />
         </div>
 
@@ -515,7 +514,6 @@ export default function DashboardLayout({
             alt="Comunidade RPM"
             width={96}
             height={22}
-            priority
           />
         </div>
         <button
