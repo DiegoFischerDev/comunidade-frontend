@@ -35,7 +35,7 @@ jobs:
           push: true
           build-args: |
             NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL_STAGE }}
-            NEXT_PUBLIC_CALCOM_EMBED_URL=${{ secrets.NEXT_PUBLIC_CALCOM_EMBED_URL_STAGE }}
+            NEXT_PUBLIC_CALENDLY_EVENT_URL=${{ secrets.NEXT_PUBLIC_CALENDLY_EVENT_URL_STAGE }}
           tags: ghcr.io/${{ env.IMAGE_OWNER }}/comunidade-frontend:stage
 
       - name: Deploy na VPS (stage)

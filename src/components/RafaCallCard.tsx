@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
@@ -172,6 +172,20 @@ export function RafaCallCard() {
   );
   const [amountsLoading, setAmountsLoading] = useState(false);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    // Calendly embed script
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[data-calendly-widget="1"]',
+    );
+    if (existing) return;
+    const s = document.createElement('script');
+    s.src = 'https://assets.calendly.com/assets/external/widget.js';
+    s.async = true;
+    s.dataset.calendlyWidget = '1';
+    document.body.appendChild(s);
+  }, []);
+
   const openLogin = useCallback(() => {
     if (typeof window === 'undefined') return;
     window.dispatchEvent(new Event(OPEN_AUTH_LOGIN_EVENT));
@@ -200,25 +214,17 @@ export function RafaCallCard() {
     try {
       const s = await api.rafacall.status();
       if (s.canOpenCalEmbed) {
-        let calBase = process.env.NEXT_PUBLIC_CALCOM_EMBED_URL?.trim() || '';
-        if (!calBase) {
-          try {
-            const r = await api.rafacall.calEmbedUrl();
-            calBase = (r.url || '').trim();
-          } catch {
-            calBase = '';
-          }
-        }
-        if (!calBase) {
+        const calendlyBase = process.env.NEXT_PUBLIC_CALENDLY_EVENT_URL?.trim() || '';
+        if (!calendlyBase) {
           alert(
-            'O embed do Cal.com não está configurado.\n\n' +
-              '1) Em dev: frontend/.env.local com NEXT_PUBLIC_CALCOM_EMBED_URL e reiniciar npm run dev.\n\n' +
-              '2) Em Docker: no .env da VPS defina NEXT_PUBLIC_CALCOM_EMBED_URL=... e no serviço backend do compose injete essa variável (veja deploy/docker-compose). ' +
-              'Depois faça deploy de uma imagem de backend com o endpoint /rafacall/cal-embed-url e recrie o container do backend.',
+            'O embed do Calendly não está configurado (NEXT_PUBLIC_CALENDLY_EVENT_URL).\n\n' +
+              'Dev: defina em frontend/.env.local e reinicie npm run dev.\n' +
+              'Docker: defina no build da imagem do frontend (build-arg no Dockerfile / GitHub Actions).',
           );
           return;
         }
-        setCalIframeSrc(buildCalEmbedUrl(calBase, s.calGuestEmail, s.calGuestName));
+        const url = buildCalEmbedUrl(calendlyBase, s.calGuestEmail, s.calGuestName);
+        setCalIframeSrc(url);
         setCalOpen(true);
       } else {
         setPayOpen(true);
@@ -322,7 +328,7 @@ export function RafaCallCard() {
           <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-2">
               <span className="text-sm font-semibold text-zinc-900">
-                Agendar com a Rafa (Cal.com)
+                Agendar com a Rafa (Calendly)
               </span>
               <button
                 type="button"
@@ -335,11 +341,13 @@ export function RafaCallCard() {
                 Fechar
               </button>
             </div>
-            <iframe
-              title="Cal.com — agendamento"
-              src={calIframeSrc}
-              className="min-h-[560px] w-full flex-1 border-0"
-            />
+            <div className="min-h-[560px] w-full flex-1">
+              <div
+                className="calendly-inline-widget h-full w-full"
+                data-url={calIframeSrc}
+                style={{ minWidth: '320px', height: '100%' }}
+              />
+            </div>
           </div>
         </div>
       )}
