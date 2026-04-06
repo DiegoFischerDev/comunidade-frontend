@@ -213,6 +213,7 @@ export const api = {
       request<{
         isMember: boolean;
         schedulingUnlocked: boolean;
+        slotStartsAt: string | null;
         slotEndsAt: string | null;
         canOpenCalEmbed: boolean;
         calPrefillEmail: string | null;
@@ -244,6 +245,7 @@ export const api = {
             tier: string;
             membershipExpiresAt: string | null;
             rafaCallSchedulingUnlocked: boolean;
+            rafaCallSlotStartsAt: string | null;
             rafaCallSlotEndsAt: string | null;
             createdAt: string;
           }[]
@@ -264,6 +266,7 @@ export const api = {
           tier: string;
           membershipExpiresAt: string | null;
           rafaCallSchedulingUnlocked: boolean;
+          rafaCallSlotStartsAt: string | null;
           rafaCallSlotEndsAt: string | null;
           createdAt: string;
         }>(`/users/${id}`, {
@@ -280,6 +283,7 @@ export const api = {
           tier: string;
           membershipExpiresAt: string | null;
           rafaCallSchedulingUnlocked: boolean;
+          rafaCallSlotStartsAt: string | null;
           rafaCallSlotEndsAt: string | null;
           createdAt: string;
         }>(
@@ -296,6 +300,7 @@ export const api = {
           tier: string;
           membershipExpiresAt: string | null;
           rafaCallSchedulingUnlocked: boolean;
+          rafaCallSlotStartsAt: string | null;
           rafaCallSlotEndsAt: string | null;
           createdAt: string;
         }>(`/users/${id}/tier`, {
@@ -318,6 +323,7 @@ export const api = {
           tier: string;
           membershipExpiresAt: string | null;
           rafaCallSchedulingUnlocked: boolean;
+          rafaCallSlotStartsAt: string | null;
           rafaCallSlotEndsAt: string | null;
           createdAt: string;
         }>(`/users/${id}/rafacall`, {
@@ -326,6 +332,28 @@ export const api = {
         }),
       delete: (id: string) =>
         request<void>(`/users/${id}`, { method: 'DELETE' }),
+    },
+    calendly: {
+      today: (tz?: string) => {
+        const q = tz ? `?tz=${encodeURIComponent(tz)}` : '';
+        return request<{
+          configured: boolean;
+          timeZone: string;
+          items: {
+            eventUri: string;
+            eventName: string;
+            startTime: string;
+            endTime: string;
+            inviteeName: string;
+            inviteeEmail: string | null;
+            matchedUserId: string | null;
+            matchedUserName: string | null;
+            whatsappDigits: string | null;
+            whatsappSource: 'database' | 'calendly';
+          }[];
+          message: string | null;
+        }>(`/admin/calendly/today${q}`, { method: 'GET' });
+      },
     },
     partners: {
       list: () =>

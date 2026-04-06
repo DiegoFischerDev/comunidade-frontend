@@ -454,6 +454,16 @@ export default function DashboardLayout({
                 Users
               </Link>
               <Link
+                href="/dashboard/admin/calendly-hoje"
+                className={`block rounded-md px-3 py-2 ${
+                  pathname === '/dashboard/admin/calendly-hoje'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Agendamentos hoje
+              </Link>
+              <Link
                 href="/dashboard/categories"
                 className={`block rounded-md px-3 py-2 ${
                   pathname === '/dashboard/categories'

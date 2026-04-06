@@ -13,6 +13,7 @@ type UserRow = {
   tier: string;
   membershipExpiresAt: string | null;
   rafaCallSchedulingUnlocked: boolean;
+  rafaCallSlotStartsAt: string | null;
   rafaCallSlotEndsAt: string | null;
   createdAt: string;
 };

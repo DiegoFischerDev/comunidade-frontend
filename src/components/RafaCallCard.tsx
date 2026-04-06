@@ -7,6 +7,43 @@ import { api } from '@/lib/api';
 import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
 
+type RafacallStatusPayload = Awaited<ReturnType<typeof api.rafacall.status>>;
+
+function formatRafacallScheduledPt(
+  slotStartsAt: string | null,
+  slotEndsAt: string | null,
+): { main: string; sub?: string } {
+  const start = slotStartsAt
+    ? new Date(slotStartsAt)
+    : slotEndsAt
+      ? new Date(new Date(slotEndsAt).getTime() - 30 * 60 * 1000)
+      : null;
+  const end = slotEndsAt ? new Date(slotEndsAt) : null;
+  if (!start || Number.isNaN(start.getTime())) {
+    return { main: '—' };
+  }
+  const main = start.toLocaleString('pt-PT', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  let sub: string | undefined;
+  if (end && !Number.isNaN(end.getTime())) {
+    sub = `Até às ${end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}`;
+  }
+  return { main, sub };
+}
+
+function isActiveRafacallSlot(slotEndsAt: string | null | undefined): boolean {
+  if (!slotEndsAt) return false;
+  const t = new Date(slotEndsAt).getTime();
+  if (Number.isNaN(t)) return false;
+  return t > Date.now();
+}
+
 type CalendlyUrlOpts = {
   /** ex.: pt_BR — ver https://help.calendly.com “Change invitee language” */
   locale?: string;
@@ -228,11 +265,40 @@ export function RafaCallCard() {
   const [payOpen, setPayOpen] = useState(false);
   const [payOptions, setPayOptions] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [rafacallStatus, setRafacallStatus] = useState<
+    RafacallStatusPayload | null | undefined
+  >(undefined);
   const [payLoading, setPayLoading] = useState(false);
   const [amounts, setAmounts] = useState<{ eurCents: number; pixCentavos: number } | null>(
     null,
   );
   const [amountsLoading, setAmountsLoading] = useState(false);
+
+  const refreshRafacallStatus = useCallback(async () => {
+    if (!user || !token || user.tier !== 'MEMBER') {
+      setRafacallStatus(user && user.tier !== 'MEMBER' ? null : undefined);
+      return;
+    }
+    try {
+      const s = await api.rafacall.status();
+      setRafacallStatus(s);
+    } catch {
+      setRafacallStatus(null);
+    }
+  }, [user, token]);
+
+  useEffect(() => {
+    void refreshRafacallStatus();
+  }, [refreshRafacallStatus]);
+
+  useEffect(() => {
+    if (!user || user.tier !== 'MEMBER' || !token) return;
+    const onFocus = () => {
+      void refreshRafacallStatus();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [user, token, refreshRafacallStatus]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -262,6 +328,38 @@ export function RafaCallCard() {
     setPayOptions(false);
   }, []);
 
+  const openCalendlyForMember = useCallback((s: RafacallStatusPayload) => {
+    const calendlyBase = process.env.NEXT_PUBLIC_CALENDLY_EVENT_URL?.trim() || '';
+    if (!calendlyBase) {
+      alert(
+        'O embed do Calendly não está configurado (NEXT_PUBLIC_CALENDLY_EVENT_URL).\n\n' +
+          'Dev: defina em frontend/.env.local e reinicie npm run dev.\n' +
+          'Docker: defina no build da imagem do frontend (build-arg no Dockerfile / GitHub Actions).',
+      );
+      return;
+    }
+    const locale = process.env.NEXT_PUBLIC_CALENDLY_LOCALE?.trim() || 'pt_BR';
+    const phoneParam =
+      process.env.NEXT_PUBLIC_CALENDLY_PHONE_URL_PARAM?.trim() ||
+      'text_reminder_number';
+    const eventUrl = calendlyEventUrlForPopup(calendlyBase, {
+      locale,
+      phoneUrlParam: phoneParam,
+      phone: s.calPrefillPhone || undefined,
+    });
+    openCalendlyPopupWidget(
+      eventUrl,
+      {
+        name: s.calGuestName,
+        ...(s.calPrefillEmail ? { email: s.calPrefillEmail } : {}),
+      },
+      () =>
+        alert(
+          'O script do Calendly não carregou a tempo. Recarrega a página e tenta de novo, ou verifica bloqueadores de anúncios.',
+        ),
+    );
+  }, []);
+
   const handleAgendar = useCallback(async () => {
     if (!user || !token) {
       openLogin();
@@ -274,37 +372,9 @@ export function RafaCallCard() {
     setStatusLoading(true);
     try {
       const s = await api.rafacall.status();
+      setRafacallStatus(s);
       if (s.canOpenCalEmbed) {
-        const calendlyBase = process.env.NEXT_PUBLIC_CALENDLY_EVENT_URL?.trim() || '';
-        if (!calendlyBase) {
-          alert(
-            'O embed do Calendly não está configurado (NEXT_PUBLIC_CALENDLY_EVENT_URL).\n\n' +
-              'Dev: defina em frontend/.env.local e reinicie npm run dev.\n' +
-              'Docker: defina no build da imagem do frontend (build-arg no Dockerfile / GitHub Actions).',
-          );
-          return;
-        }
-        const locale =
-          process.env.NEXT_PUBLIC_CALENDLY_LOCALE?.trim() || 'pt_BR';
-        const phoneParam =
-          process.env.NEXT_PUBLIC_CALENDLY_PHONE_URL_PARAM?.trim() ||
-          'text_reminder_number';
-        const eventUrl = calendlyEventUrlForPopup(calendlyBase, {
-          locale,
-          phoneUrlParam: phoneParam,
-          phone: s.calPrefillPhone || undefined,
-        });
-        openCalendlyPopupWidget(
-          eventUrl,
-          {
-            name: s.calGuestName,
-            ...(s.calPrefillEmail ? { email: s.calPrefillEmail } : {}),
-          },
-          () =>
-            alert(
-              'O script do Calendly não carregou a tempo. Recarrega a página e tenta de novo, ou verifica bloqueadores de anúncios.',
-            ),
-        );
+        openCalendlyForMember(s);
       } else {
         setPayOpen(true);
         setPayOptions(false);
@@ -326,7 +396,19 @@ export function RafaCallCard() {
     } finally {
       setStatusLoading(false);
     }
-  }, [user, token, amounts, amountsLoading, openLogin, openMembership]);
+  }, [
+    user,
+    token,
+    amounts,
+    amountsLoading,
+    openLogin,
+    openMembership,
+    openCalendlyForMember,
+  ]);
+
+  const handleReagendar = useCallback(() => {
+    void handleAgendar();
+  }, [handleAgendar]);
 
   const successUrl =
     typeof window !== 'undefined'
@@ -371,6 +453,21 @@ export function RafaCallCard() {
     })();
   }, [amounts, amountsLoading]);
 
+  const hasBookedSlot = Boolean(
+    rafacallStatus &&
+      rafacallStatus.schedulingUnlocked &&
+      isActiveRafacallSlot(rafacallStatus.slotEndsAt),
+  );
+  const scheduleLines =
+    hasBookedSlot && rafacallStatus
+      ? formatRafacallScheduledPt(
+          rafacallStatus.slotStartsAt,
+          rafacallStatus.slotEndsAt,
+        )
+      : null;
+  const memberStatusLoading =
+    Boolean(user?.tier === 'MEMBER' && token && rafacallStatus === undefined);
+
   return (
     <>
       <div className="mb-6 flex w-full max-w-sm flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -386,19 +483,48 @@ export function RafaCallCard() {
           </div>
           <div className="space-y-1">
             <p className="text-base font-semibold text-zinc-900">
-              Quero agendar minha chamada de vídeo com a Rafa
+              {hasBookedSlot
+                ? 'A tua chamada de vídeo com a Rafa está agendada'
+                : 'Quero agendar minha chamada de vídeo com a Rafa'}
             </p>
+            {hasBookedSlot && scheduleLines ? (
+              <div className="mt-2 rounded-xl border border-emerald-100 bg-emerald-50/80 px-3 py-2.5 text-left">
+                <p className="text-xs font-medium uppercase tracking-wide text-emerald-800/80">
+                  Data e hora
+                </p>
+                <p className="mt-1 text-sm font-semibold capitalize text-emerald-950">
+                  {scheduleLines.main}
+                </p>
+                {scheduleLines.sub ? (
+                  <p className="mt-0.5 text-xs text-emerald-900/80">{scheduleLines.sub}</p>
+                ) : null}
+              </div>
+            ) : null}
+            {memberStatusLoading ? (
+              <p className="text-xs text-zinc-500">A carregar o teu agendamento…</p>
+            ) : null}
           </div>
         </div>
-        <div className="flex flex-col items-center">
-          <button
-            type="button"
-            onClick={() => void handleAgendar()}
-            disabled={statusLoading}
-            className="inline-flex cursor-pointer items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50"
-          >
-            {statusLoading ? 'A verificar…' : 'Agendar'}
-          </button>
+        <div className="flex flex-col items-center gap-2">
+          {hasBookedSlot ? (
+            <button
+              type="button"
+              onClick={handleReagendar}
+              disabled={statusLoading}
+              className="inline-flex w-full max-w-[220px] cursor-pointer items-center justify-center rounded-full border-2 border-emerald-600 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition-colors hover:bg-emerald-50 disabled:opacity-50"
+            >
+              {statusLoading ? 'A abrir…' : 'Reagendar'}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void handleAgendar()}
+              disabled={statusLoading || memberStatusLoading}
+              className="inline-flex cursor-pointer items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {statusLoading ? 'A verificar…' : 'Agendar'}
+            </button>
+          )}
         </div>
       </div>
 
