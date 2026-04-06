@@ -215,7 +215,8 @@ export const api = {
         schedulingUnlocked: boolean;
         slotEndsAt: string | null;
         canOpenCalEmbed: boolean;
-        calGuestEmail: string;
+        calPrefillEmail: string | null;
+        calPrefillPhone: string;
         calGuestName: string;
       }>('/rafacall/status', { method: 'GET' }),
   },

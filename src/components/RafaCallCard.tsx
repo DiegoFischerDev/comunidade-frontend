@@ -7,14 +7,30 @@ import { api } from '@/lib/api';
 import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
 
+type CalendlyUrlOpts = {
+  /** ex.: pt_BR — ver https://help.calendly.com “Change invitee language” */
+  locale?: string;
+  /** Nome do query param para telefone: text_reminder_number, a1, a2… (conforme o tipo de evento) */
+  phoneUrlParam?: string;
+  phone?: string;
+};
+
 /** URL do evento sem parâmetros de embed inline; o popup usa initPopupWidget + prefill. */
-function calendlyEventUrlForPopup(base: string): string {
+function calendlyEventUrlForPopup(base: string, opts?: CalendlyUrlOpts): string {
   const trimmed = base.trim();
   try {
     const u = new URL(trimmed);
     u.searchParams.delete('embed');
     u.searchParams.delete('email');
     u.searchParams.delete('name');
+    if (opts?.locale?.trim()) {
+      u.searchParams.set('locale', opts.locale.trim());
+    }
+    const phone = opts?.phone?.trim();
+    const phoneKey = opts?.phoneUrlParam?.trim();
+    if (phone && phoneKey) {
+      u.searchParams.set(phoneKey, phone);
+    }
     const q = u.searchParams.toString();
     return q ? `${u.origin}${u.pathname}?${q}` : `${u.origin}${u.pathname}`;
   } catch {
@@ -34,7 +50,11 @@ function formatEur(cents: number): string {
 type CalendlyGlobal = {
   initPopupWidget: (opts: {
     url: string;
-    prefill?: { email?: string; name?: string };
+    prefill?: {
+      name?: string;
+      email?: string;
+      customAnswers?: Record<string, string>;
+    };
   }) => void;
 };
 
@@ -46,8 +66,7 @@ function getCalendly(): CalendlyGlobal | undefined {
 /** Popup oficial Calendly (overlay + iframe com altura correta); não usa o nosso modal. */
 function openCalendlyPopupWidget(
   eventUrl: string,
-  email: string,
-  name: string,
+  prefill: { name: string; email?: string; customAnswers?: Record<string, string> },
   onScriptTimeout: () => void,
 ): void {
   const run = (): boolean => {
@@ -55,7 +74,7 @@ function openCalendlyPopupWidget(
     if (!C?.initPopupWidget) return false;
     C.initPopupWidget({
       url: eventUrl,
-      prefill: { email, name },
+      prefill,
     });
     return true;
   };
@@ -265,11 +284,22 @@ export function RafaCallCard() {
           );
           return;
         }
-        const eventUrl = calendlyEventUrlForPopup(calendlyBase);
+        const locale =
+          process.env.NEXT_PUBLIC_CALENDLY_LOCALE?.trim() || 'pt_BR';
+        const phoneParam =
+          process.env.NEXT_PUBLIC_CALENDLY_PHONE_URL_PARAM?.trim() ||
+          'text_reminder_number';
+        const eventUrl = calendlyEventUrlForPopup(calendlyBase, {
+          locale,
+          phoneUrlParam: phoneParam,
+          phone: s.calPrefillPhone || undefined,
+        });
         openCalendlyPopupWidget(
           eventUrl,
-          s.calGuestEmail,
-          s.calGuestName,
+          {
+            name: s.calGuestName,
+            ...(s.calPrefillEmail ? { email: s.calPrefillEmail } : {}),
+          },
           () =>
             alert(
               'O script do Calendly não carregou a tempo. Recarrega a página e tenta de novo, ou verifica bloqueadores de anúncios.',
