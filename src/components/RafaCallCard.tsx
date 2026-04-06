@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
@@ -27,6 +27,15 @@ function formatEur(cents: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(cents / 100);
+}
+
+type CalendlyGlobal = {
+  initInlineWidget: (opts: { url: string; parentElement: HTMLElement }) => void;
+};
+
+function getCalendly(): CalendlyGlobal | undefined {
+  if (typeof window === 'undefined') return undefined;
+  return (window as unknown as { Calendly?: CalendlyGlobal }).Calendly;
 }
 
 function formatBrl(centavos: number): string {
@@ -171,6 +180,7 @@ export function RafaCallCard() {
     null,
   );
   const [amountsLoading, setAmountsLoading] = useState(false);
+  const calWidgetHostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -185,6 +195,34 @@ export function RafaCallCard() {
     s.dataset.calendlyWidget = '1';
     document.body.appendChild(s);
   }, []);
+
+  // O widget.js só faz scan na carga inicial; modais montados depois precisam de initInlineWidget.
+  useEffect(() => {
+    if (!calOpen || !calIframeSrc) return;
+    const host = calWidgetHostRef.current;
+    if (!host) return;
+
+    const tryInit = (): boolean => {
+      const Calendly = getCalendly();
+      if (!Calendly) return false;
+      host.innerHTML = '';
+      Calendly.initInlineWidget({ url: calIframeSrc, parentElement: host });
+      return true;
+    };
+
+    if (tryInit()) return undefined;
+
+    const interval = window.setInterval(() => {
+      if (tryInit()) window.clearInterval(interval);
+    }, 100);
+    const giveUp = window.setTimeout(() => window.clearInterval(interval), 20_000);
+
+    return () => {
+      window.clearInterval(interval);
+      window.clearTimeout(giveUp);
+      host.innerHTML = '';
+    };
+  }, [calOpen, calIframeSrc]);
 
   const openLogin = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -341,11 +379,11 @@ export function RafaCallCard() {
                 Fechar
               </button>
             </div>
-            <div className="min-h-[560px] w-full flex-1">
+            <div className="min-h-[630px] w-full flex-1">
               <div
-                className="calendly-inline-widget h-full w-full"
-                data-url={calIframeSrc}
-                style={{ minWidth: '320px', height: '100%' }}
+                ref={calWidgetHostRef}
+                className="h-full min-h-[630px] w-full"
+                style={{ minWidth: 320 }}
               />
             </div>
           </div>
