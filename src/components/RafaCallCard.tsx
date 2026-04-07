@@ -362,6 +362,10 @@ export function RafaCallCard() {
   }, [user, token, openLogin, openMembership]);
 
   const handleAgendar = useCallback(async () => {
+    if (!user || !token) {
+      openLogin();
+      return;
+    }
     setStatusLoading(true);
     try {
       const s = await api.rafacall.status();
@@ -390,6 +394,9 @@ export function RafaCallCard() {
       setStatusLoading(false);
     }
   }, [
+    user,
+    token,
+    openLogin,
     amounts,
     amountsLoading,
     openScheduler,

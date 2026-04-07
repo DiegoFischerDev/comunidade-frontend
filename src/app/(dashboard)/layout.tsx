@@ -11,6 +11,7 @@ import {
   WHATSAPP_REGISTRATION_POLL_TIMEOUT_MESSAGE,
 } from '@/lib/whatsapp-registration-poll';
 import { useAuth } from '@/contexts/AuthContext';
+import { CardButton } from '@/components/ui/CardButton';
 
 function formatWhatsappRegistrationDisplay(digits: string) {
   const d = digits.replace(/\D/g, '');
@@ -322,6 +323,16 @@ export default function DashboardLayout({
           >
             Início
           </Link>
+          <Link
+            href="/psp"
+            className={`block rounded-md px-3 py-2 text-sm ${
+              pathname === '/psp' || pathname.startsWith('/psp/')
+                ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                : 'text-zinc-800 hover:bg-zinc-100'
+            }`}
+          >
+            Ebook PSP
+          </Link>
           {categoriesLoaded &&
             categories.map((c) => {
               const isActive =
@@ -401,6 +412,16 @@ export default function DashboardLayout({
                 Agendamentos
               </Link>
               <Link
+                href="/dashboard/admin/reclame-aqui"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/admin/reclame-aqui'
+                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Reclame aqui
+              </Link>
+              <Link
                 href="/dashboard/categories"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/categories'
@@ -432,7 +453,7 @@ export default function DashboardLayout({
               </Link>
             </>
           )}
-          {user && (
+          {user?.tier === 'MEMBER' && (
             <Link
               href="/dashboard/my-referrals"
               className={`block rounded-md px-3 py-2 text-sm ${
@@ -1151,13 +1172,13 @@ export default function DashboardLayout({
               </p>
             </div>
             <div className="mt-5 flex justify-end">
-              <button
+              <CardButton
                 type="button"
                 onClick={() => setIsWelcomeOpen(false)}
-                className="inline-flex cursor-pointer items-center rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                variant="primary"
               >
                 Começar a explorar
-              </button>
+              </CardButton>
             </div>
           </div>
         </div>

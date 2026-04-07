@@ -542,6 +542,19 @@ export const api = {
           method: 'DELETE',
         }),
     },
+    support: {
+      tickets: (take?: number) => {
+        const q = take ? `?take=${encodeURIComponent(String(take))}` : '';
+        return request<{
+          items: {
+            id: string;
+            createdAt: string;
+            message: string;
+            user: { id: string; name: string; whatsapp: string };
+          }[];
+        }>(`/admin/support/tickets${q}`, { method: 'GET' });
+      },
+    },
   },
   partner: {
     me: () =>
@@ -834,5 +847,13 @@ export const api = {
         return data as { paidCount: number; paymentProofUrl: string };
       });
     },
+  },
+
+  support: {
+    createTicket: (message: string) =>
+      request<{ id: string; message: string; createdAt: string }>(`/support/tickets`, {
+        method: 'POST',
+        body: JSON.stringify({ message }),
+      }),
   },
 };

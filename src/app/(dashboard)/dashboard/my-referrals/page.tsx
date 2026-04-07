@@ -288,7 +288,7 @@ export default function MyReferralsPage() {
             />
 
             <section className="min-w-0 w-full rounded-lg border border-zinc-200 bg-white p-4">
-              <h2 className="text-sm font-semibold text-zinc-900">Dados para recebimento</h2>
+              <h2 className="text-base font-semibold text-zinc-900">Dados para recebimento</h2>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <select
                   value={payoutMethod}
@@ -365,8 +365,8 @@ export default function MyReferralsPage() {
             </section>
 
             <section className="min-w-0 w-full rounded-lg border border-zinc-200 bg-white p-4">
-              <h2 className="text-sm font-semibold text-zinc-900">Pagamentos recebidos</h2>
-              <p className="mt-1 text-xs text-zinc-500">
+              <h2 className="text-base font-semibold text-zinc-900">Pagamentos recebidos</h2>
+              <p className="mt-1 text-sm text-zinc-500">
                 As comissões são geralmente pagas no final de cada mês.
               </p>
               {!paidCommissionPayments.length ? (
@@ -420,7 +420,7 @@ export default function MyReferralsPage() {
           </div>
 
           <section className="rounded-lg border border-zinc-200 bg-white p-4">
-            <h2 className="text-sm font-semibold text-zinc-900">Contas indicadas</h2>
+            <h2 className="text-base font-semibold text-zinc-900">Contas indicadas</h2>
             {!referrals?.referrals?.length ? (
               <p className="mt-2 text-sm text-zinc-500">Nenhum usuário indicado ainda.</p>
             ) : (
