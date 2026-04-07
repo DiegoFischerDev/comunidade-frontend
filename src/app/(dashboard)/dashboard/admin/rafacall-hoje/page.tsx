@@ -67,6 +67,7 @@ export default function AdminRafaCallHojePage() {
   const [data, setData] = useState<SchedulePayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [cancelingBookingId, setCancelingBookingId] = useState<string | null>(null);
 
   const tz = useMemo(() => 'Europe/Lisbon', []);
 
@@ -78,6 +79,7 @@ export default function AdminRafaCallHojePage() {
     Awaited<ReturnType<typeof api.rafacall.availability>> | null
   >(null);
   const [schedLoading, setSchedLoading] = useState(false);
+  const [slotMutatingKey, setSlotMutatingKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -111,9 +113,13 @@ export default function AdminRafaCallHojePage() {
 
       setBlocks(b.blocks);
       setAvailability(avail);
-      const firstDayWithSlots = avail.days.find((d) => d.slots.length > 0)?.date ?? '';
-      const firstAnyDay = avail.days[0]?.date ?? '';
-      setSelectedDate(firstDayWithSlots || firstAnyDay);
+      setSelectedDate((prev) => {
+        // Mantém seleção atual se ainda existir na janela.
+        if (prev && avail.days.some((d) => d.date === prev)) return prev;
+        const firstDayWithSlots = avail.days.find((d) => d.slots.length > 0)?.date ?? '';
+        const firstAnyDay = avail.days[0]?.date ?? '';
+        return firstDayWithSlots || firstAnyDay;
+      });
     } catch (e) {
       setBlocks([]);
       setAvailability(null);
@@ -234,9 +240,7 @@ export default function AdminRafaCallHojePage() {
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">Horários</p>
-            {schedLoading ? (
-              <p className="mt-3 text-sm text-zinc-600">A carregar…</p>
-            ) : !availability ? (
+            {!availability ? (
               <p className="mt-3 text-sm text-zinc-600">Não foi possível carregar horários.</p>
             ) : (
               (() => {
@@ -277,13 +281,16 @@ export default function AdminRafaCallHojePage() {
                     {items.map((s) => {
                       const isBlocked =
                         s.kind === 'blocked' ? true : blockedByStart.has(s.startsAt);
+                      const mutKey =
+                        s.kind === 'blocked' ? `blocked:${s.blockId}` : `slot:${s.startsAt}`;
+                      const isMutating = slotMutatingKey === mutKey;
                       return (
                         <button
                           key={s.startsAt}
                           type="button"
-                          disabled={schedLoading}
+                          disabled={isMutating}
                           onClick={async () => {
-                            setSchedLoading(true);
+                            setSlotMutatingKey(mutKey);
                             setBlocksError('');
                             try {
                               if (isBlocked) {
@@ -300,13 +307,14 @@ export default function AdminRafaCallHojePage() {
                                   reason: 'admin_block',
                                 });
                               }
-                              await loadBlocksAndAvailability();
+                              // Atualiza em background sem "travar" o painel inteiro.
+                              void loadBlocksAndAvailability();
                             } catch (e) {
                               setBlocksError(
                                 e instanceof Error ? e.message : 'Erro ao atualizar bloqueio.',
                               );
                             } finally {
-                              setSchedLoading(false);
+                              setSlotMutatingKey(null);
                             }
                           }}
                           className={`rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${
@@ -318,7 +326,7 @@ export default function AdminRafaCallHojePage() {
                         >
                           {formatSlotTimeInTz(s.startsAt, tz)}
                           <span className="mt-0.5 block text-[11px] font-medium">
-                            {isBlocked ? 'Ocupado' : 'Livre'}
+                            {isMutating ? 'Alterando…' : isBlocked ? 'Ocupado' : 'Livre'}
                           </span>
                         </button>
                       );
@@ -402,14 +410,40 @@ export default function AdminRafaCallHojePage() {
                               </td>
                               <td className="px-4 py-3">{row.item.userName}</td>
                               <td className="px-4 py-3">
-                                <a
-                                  href={waUrl(row.item.whatsappDigits, row.item.userName, row.item.startsAt, tz)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center justify-center rounded-full bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#20BD5A]"
-                                >
-                                  Abrir chat
-                                </a>
+                                <div className="flex items-center justify-end gap-2">
+                                  <a
+                                    href={waUrl(row.item.whatsappDigits, row.item.userName, row.item.startsAt, tz)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center justify-center rounded-full bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#20BD5A]"
+                                  >
+                                    Abrir chat
+                                  </a>
+                                  <button
+                                    type="button"
+                                    disabled={cancelingBookingId === row.item.id}
+                                    onClick={async () => {
+                                      const ok = window.confirm(
+                                        `Cancelar este agendamento?\n\nLead: ${row.item.userName}\nHorário: ${slot}`,
+                                      );
+                                      if (!ok) return;
+                                      setCancelingBookingId(row.item.id);
+                                      try {
+                                        await api.admin.rafacall.cancelBooking(row.item.id, 'admin_cancel');
+                                        await load();
+                                      } catch (e) {
+                                        setError(
+                                          e instanceof Error ? e.message : 'Não foi possível cancelar.',
+                                        );
+                                      } finally {
+                                        setCancelingBookingId(null);
+                                      }
+                                    }}
+                                    className="inline-flex items-center justify-center rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-800 hover:bg-red-100 disabled:opacity-50"
+                                  >
+                                    {cancelingBookingId === row.item.id ? 'Cancelando…' : 'Cancelar'}
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           );

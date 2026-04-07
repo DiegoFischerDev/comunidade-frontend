@@ -416,6 +416,11 @@ export const api = {
         ),
       deleteBlock: (id: string) =>
         request<{ ok: true }>(`/admin/rafacall/blocks/${id}`, { method: 'DELETE' }),
+      cancelBooking: (bookingId: string, reason?: string | null) =>
+        request<{ id: string; status: 'CANCELLED' }>(
+          `/admin/rafacall/bookings/${bookingId}/cancel`,
+          { method: 'POST', body: JSON.stringify({ reason }) },
+        ),
     },
     partners: {
       list: () =>
