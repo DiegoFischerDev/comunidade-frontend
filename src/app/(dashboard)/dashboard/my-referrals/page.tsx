@@ -11,6 +11,7 @@ import {
 import { AffiliatePromoCard } from '@/components/affiliate/AffiliatePromoCard';
 import { AffiliateEnrollModal } from '@/components/affiliate/AffiliateEnrollModal';
 import { AffiliateMemberDashboardCard } from '@/components/affiliate/AffiliateMemberDashboardCard';
+import { CardButton } from '@/components/ui/CardButton';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -246,18 +247,16 @@ export default function MyReferralsPage() {
               </div>
               <div>
                 <h2 className="text-sm font-semibold text-zinc-900">Torne-se membro VIP</h2>
-                <p className="mt-1 text-xs text-zinc-600">
+                <p className="mt-1 text-sm text-zinc-600">
                   Desbloqueie benefícios exclusivos e participe do programa de afiliados.
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={openMembershipModal}
-              className="mt-4 inline-flex cursor-pointer items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-            >
-              Tornar-se membro VIP
-            </button>
+            <div className="mt-4">
+              <CardButton type="button" onClick={openMembershipModal} variant="primary">
+                Tornar-se membro VIP
+              </CardButton>
+            </div>
           </section>
 
           {!loading && !affiliate && affiliatePromoCard}

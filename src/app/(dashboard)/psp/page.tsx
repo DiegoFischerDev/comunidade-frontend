@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/components/FloatingWhatsAppButton";
+import { CardButton } from "@/components/ui/CardButton";
 
 const PAGES = [1, 2, 3, 4, 5, 6, 7];
 
@@ -96,13 +97,15 @@ export default function PSPPage() {
                     Desbloqueie todas as páginas do ebook, suporte direto e
                     benefícios exclusivos tornando-se membro.
                   </p>
-                  <button
-                    type="button"
-                    onClick={handleOpenMembershipModal}
-                    className="mt-4 inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-emerald-700"
-                  >
+                  <div className="mt-4">
+                    <CardButton
+                      type="button"
+                      onClick={handleOpenMembershipModal}
+                      variant="primary"
+                    >
                     Tornar-se membro VIP e liberar conteúdo completo
-                  </button>
+                    </CardButton>
+                  </div>
                 </div>
               </div>
             </div>

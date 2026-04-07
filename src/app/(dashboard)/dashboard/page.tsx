@@ -130,102 +130,117 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="flex w-full max-w-sm flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="relative h-20 w-20 flex-shrink-0">
-            <Image
-              src="/vip-card.png"
-              alt="Cartão VIP Comunidade RPM"
-              fill
-              className="object-contain"
-              sizes="80px"
-            />
-          </div>
-          <div className="space-y-1">
-            <p className="text-base font-semibold text-zinc-900">
-              {user.name || "Visitante"}
-            </p>
-            <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-              Plano atual:{" "}
-              <span className="font-semibold text-zinc-800">{tierLabel}</span>
-            </p>
-            {isMember && user.membershipExpiresAt && (
-              <p className="mt-0.5 text-xs text-zinc-500">
-                Válido até{" "}
-                <span className="font-medium text-zinc-800">
-                  {new Date(user.membershipExpiresAt).toLocaleDateString("pt-PT")}
-                </span>
-              </p>
+      <div className="mx-auto w-full max-w-[800px]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-6">
+          <div className="flex w-full flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:text-left">
+              <div className="relative h-20 w-20 flex-shrink-0">
+                <Image
+                  src="/vip-card.png"
+                  alt="Cartão VIP Comunidade RPM"
+                  fill
+                  className="object-contain"
+                  sizes="80px"
+                />
+              </div>
+              <div className="space-y-1">
+                <p className="text-base font-semibold text-zinc-900">
+                  {user.name || "Visitante"}
+                </p>
+                <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
+                  Plano atual:{" "}
+                  <span className="font-semibold text-zinc-800">{tierLabel}</span>
+                </p>
+                {isMember && user.membershipExpiresAt && (
+                  <p className="mt-0.5 text-xs text-zinc-500">
+                    Válido até{" "}
+                    <span className="font-medium text-zinc-800">
+                      {new Date(user.membershipExpiresAt).toLocaleDateString("pt-PT")}
+                    </span>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {!isMember && (
+              <div className="mt-3 flex flex-col items-center gap-3 text-center sm:items-start sm:text-left">
+                <div className="max-w-xl text-sm text-zinc-700">
+                  <p className="font-semibold text-zinc-900">
+                    Torne-se membro da Comunidade RPM
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-600">
+                    Desbloqueie o guia completo Portugal Sem Perrengue, grupos exclusivos,
+                    chat direto com a Rafa e benefícios em serviços de parceiros.
+                  </p>
+                </div>
+                <CardButton
+                  type="button"
+                  onClick={handleOpenMembershipModal}
+                  variant="primary"
+                >
+                  Tornar-se membro VIP
+                </CardButton>
+              </div>
             )}
           </div>
         </div>
 
-        {!isMember && (
-          <div className="mt-3 flex flex-col items-center gap-3">
-            <div className="max-w-xs text-center text-xs text-zinc-700">
-              <p className="font-semibold text-zinc-900">
-                Torne-se membro da Comunidade RPM
-              </p>
-              <p className="mt-1 text-[11px] text-zinc-600">
-                Desbloqueie o guia completo Portugal Sem Perrengue, grupos exclusivos,
-                chat direto com a Rafa e benefícios em serviços de parceiros.
-              </p>
+        <div className="lg:col-span-6">
+          <RafaCallCard />
+        </div>
+
+        <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center">
+            <div className="relative aspect-[2/1] w-full overflow-hidden rounded-xl bg-zinc-100 md:w-80">
+              <Image
+                src="/capa_psp-1000x500.png"
+                alt="Capa do guia PSP - Portugal Sem Perrengue"
+                fill
+                className="object-contain"
+                sizes="(min-width: 768px) 320px, 100vw"
+                priority
+              />
             </div>
-            <CardButton type="button" onClick={handleOpenMembershipModal} variant="primary">
-              Tornar-se membro VIP
-            </CardButton>
+
+            <div className="flex-1 space-y-3">
+              <h2 className="text-xl font-semibold text-zinc-900">
+                PSP - Portugal Sem Perrengue
+              </h2>
+              <p className="text-sm text-zinc-600">
+                O guia real pra sair do Brasil e morar legalmente em Portugal.
+                Aqui você encontra o passo a passo, documentos, prazos e
+                estratégias para fazer essa mudança com segurança.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <CardLinkButton href={pdfHref} variant="primary">
+                  Acessar PDF
+                </CardLinkButton>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {canSeeAffiliateCard && affiliate !== undefined && (
+          <div className="lg:col-span-12 w-full">
+            {hasAffiliateEnrollment && affiliate ? (
+              <AffiliateMemberDashboardCard
+                affiliateCode={affiliate.affiliateCode}
+                inviteLink={`${typeof window !== "undefined" ? window.location.origin : ""}/?aff=${affiliate.affiliateCode}`}
+                pendingTotal={affiliate.totals?.pending ?? 0}
+                paidTotal={affiliate.totals?.paid ?? 0}
+              />
+            ) : (
+              <AffiliatePromoCard
+                onAction={() => setAffiliateModalOpen(true)}
+                className="w-full"
+              />
+            )}
           </div>
         )}
       </div>
-
-      <RafaCallCard />
-
-      <section className="w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm md:w-1/2">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center">
-          <div className="relative aspect-[2/1] w-full overflow-hidden rounded-xl bg-zinc-100 md:w-80">
-            <Image
-              src="/capa_psp-1000x500.png"
-              alt="Capa do guia PSP - Portugal Sem Perrengue"
-              fill
-              className="object-contain"
-              sizes="(min-width: 768px) 320px, 100vw"
-              priority
-            />
-          </div>
-
-          <div className="flex-1 space-y-3">
-            <h2 className="text-xl font-semibold text-zinc-900">
-              PSP - Portugal Sem Perrengue
-            </h2>
-            <p className="text-sm text-zinc-600">
-              O guia real pra sair do Brasil e morar legalmente em Portugal.
-              Aqui você encontra o passo a passo, documentos, prazos e
-              estratégias para fazer essa mudança com segurança.
-            </p>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <CardLinkButton href={pdfHref} variant="primary">
-                Acessar PDF
-              </CardLinkButton>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {canSeeAffiliateCard && affiliate !== undefined && (
-        <div className="w-full max-w-2xl">
-          {hasAffiliateEnrollment && affiliate ? (
-            <AffiliateMemberDashboardCard
-              affiliateCode={affiliate.affiliateCode}
-              inviteLink={`${typeof window !== "undefined" ? window.location.origin : ""}/?aff=${affiliate.affiliateCode}`}
-              pendingTotal={affiliate.totals?.pending ?? 0}
-              paidTotal={affiliate.totals?.paid ?? 0}
-            />
-          ) : (
-            <AffiliatePromoCard onAction={() => setAffiliateModalOpen(true)} className="w-full" />
-          )}
-        </div>
-      )}
+      </div>
 
       <AffiliateEnrollModal
         open={affiliateModalOpen}

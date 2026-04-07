@@ -358,7 +358,10 @@ export default function AdminRafaCallHojePage() {
             });
 
             return (
-              <div key={day.date} className="rounded-xl border border-zinc-200 bg-white shadow-sm">
+              <div
+                key={day.date}
+                className="w-full max-w-[700px] rounded-xl border border-zinc-200 bg-white shadow-sm"
+              >
                 <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 px-4 py-3">
                   <p className="text-sm font-semibold text-zinc-900">
                     {new Date(`${day.date}T12:00:00.000Z`).toLocaleDateString('pt-PT', {
@@ -386,7 +389,7 @@ export default function AdminRafaCallHojePage() {
                       <tr>
                         <th className="px-4 py-3">Horário (Lisboa)</th>
                         <th className="px-4 py-3 w-28">Estado</th>
-                        <th className="px-4 py-3">Lead / Motivo</th>
+                        <th className="px-4 py-3">Lead</th>
                         <th className="px-4 py-3 w-40">WhatsApp</th>
                       </tr>
                     </thead>
@@ -430,7 +433,7 @@ export default function AdminRafaCallHojePage() {
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center justify-center rounded-full bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#20BD5A]"
                                   >
-                                    Abrir chat
+                                    WhatsApp
                                   </a>
                                   {row.item.status === 'SCHEDULED' ? (
                                     <>

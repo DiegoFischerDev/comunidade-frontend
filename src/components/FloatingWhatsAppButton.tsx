@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import { CardButton } from '@/components/ui/CardButton';
 
 const WHATSAPP_NUMBER = '351927398547';
 const WHATSAPP_MESSAGE = 'Ola, preciso de ajuda na comunidade RPM';
@@ -272,13 +273,14 @@ export function FloatingWhatsAppButton() {
                     </li>
                   </ul>
                   <div className="mt-6">
-                    <button
+                    <CardButton
                       type="button"
                       onClick={handleQueroSerMembro}
-                      className="w-full rounded-full bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white shadow-md transition-colors hover:bg-emerald-700"
+                      variant="primary"
+                      fullWidth
                     >
                       Ativar acesso
-                    </button>
+                    </CardButton>
                   </div>
                 </>
               ) : (

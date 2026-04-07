@@ -789,38 +789,43 @@ export function RafaCallCard() {
                     <p className="mt-1 text-sm font-medium text-zinc-600">
                       30 minutos de chamada de vídeo com a Rafa
                     </p>
-                    <p className="mt-3 text-3xl font-bold text-emerald-700">
-                      {amountsLoading ? (
-                        <span className="text-base font-medium text-zinc-500">A carregar…</span>
-                      ) : amounts ? (
-                        formatEur(amounts.eurCents)
-                      ) : (
-                        <span className="text-base font-medium text-zinc-500">—</span>
-                      )}
+                    <p className="mt-4 whitespace-pre-line text-left text-sm leading-relaxed text-zinc-700">
+                      {`Que tal conversar diretamente com quem já passou por todo o processo de imigração?
+
+Nessa videochamada, vamos bater um papo leve e direto ao ponto. Vou te contar como foi a minha experiência saindo do Brasil e construindo uma vida em Portugal, compartilhar aprendizados reais (inclusive os erros que você pode evitar!) e esclarecer as dúvidas gerais que você tiver sobre o processo.
+
+Também vou te apresentar nossos parceiros de confiança e te orientar sobre quais caminhos fazem mais sentido para o seu perfil, para que você possa imigrar com mais segurança, planejamento e tranquilidade — sem perder tempo ou dinheiro com decisões erradas.
+
+Se você quer dar esse passo com mais clareza e confiança, essa conversa é pra você 💛`}
                     </p>
                   </div>
                 </div>
-                <p className="mb-4 text-sm leading-relaxed text-zinc-700">
-                  Já utilizaste a chamada incluída no teu acesso. Para marcar outra vez, paga a taxa de
-                  novo agendamento.
-                </p>
-                <button
+                <CardButton
                   type="button"
                   onClick={() => {
+                    if (user?.tier !== 'MEMBER') {
+                      closePayModal();
+                      openMembership();
+                      return;
+                    }
                     ensureAmountsForPaymentStep();
                     setPayOptions(true);
                   }}
-                  className="w-full rounded-full bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white shadow-md transition-colors hover:bg-emerald-700"
+                  variant="primary"
+                  fullWidth
                 >
                   Continuar para pagamento
-                </button>
-                <button
-                  type="button"
-                  onClick={closePayModal}
-                  className="mt-3 w-full text-center text-sm text-zinc-500 hover:text-zinc-700"
-                >
+                </CardButton>
+                <div className="mt-3">
+                  <CardButton
+                    type="button"
+                    onClick={closePayModal}
+                    variant="secondary"
+                    fullWidth
+                  >
                   Cancelar
-                </button>
+                  </CardButton>
+                </div>
               </>
             ) : (
               <>
@@ -848,13 +853,16 @@ export function RafaCallCard() {
                     />
                   </>
                 )}
-                <button
-                  type="button"
-                  onClick={() => setPayOptions(false)}
-                  className="mt-4 w-full text-center text-sm text-zinc-500 hover:text-zinc-700"
-                >
-                  Voltar
-                </button>
+                <div className="mt-4">
+                  <CardButton
+                    type="button"
+                    onClick={() => setPayOptions(false)}
+                    variant="secondary"
+                    fullWidth
+                  >
+                    Voltar
+                  </CardButton>
+                </div>
               </>
             )}
           </div>

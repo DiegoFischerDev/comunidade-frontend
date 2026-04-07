@@ -34,3 +34,8 @@ body {
   font-family: Helvetica, Arial, sans-serif;
   overflow-x: hidden;
 }
+
+/* Alguns overlays de modal usam role="presentation"; garante que não herdem margens inesperadas */
+div[role='presentation'].fixed {
+  margin-bottom: 0 !important;
+}
