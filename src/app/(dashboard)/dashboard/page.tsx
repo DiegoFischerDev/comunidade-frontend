@@ -2,7 +2,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
@@ -12,6 +11,7 @@ import { AffiliatePromoCard } from "@/components/affiliate/AffiliatePromoCard";
 import { AffiliateEnrollModal } from "@/components/affiliate/AffiliateEnrollModal";
 import { AffiliateMemberDashboardCard } from "@/components/affiliate/AffiliateMemberDashboardCard";
 import { RafaCallCard } from "@/components/RafaCallCard";
+import { CardButton, CardLinkButton } from "@/components/ui/CardButton";
 
 type AffiliateMe = NonNullable<Awaited<ReturnType<typeof api.affiliate.me>>>;
 
@@ -171,13 +171,9 @@ export default function DashboardPage() {
                 chat direto com a Rafa e benefícios em serviços de parceiros.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={handleOpenMembershipModal}
-              className="inline-flex cursor-pointer items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
-            >
+            <CardButton type="button" onClick={handleOpenMembershipModal} variant="primary">
               Tornar-se membro VIP
-            </button>
+            </CardButton>
           </div>
         )}
       </div>
@@ -208,12 +204,9 @@ export default function DashboardPage() {
             </p>
 
             <div className="flex flex-wrap items-center gap-3">
-              <Link
-                href={pdfHref}
-                className="inline-flex items-center rounded-lg bg-[#edbfbf] px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-[#e3afaf]"
-              >
+              <CardLinkButton href={pdfHref} variant="primary">
                 Acessar PDF
-              </Link>
+              </CardLinkButton>
             </div>
           </div>
         </div>

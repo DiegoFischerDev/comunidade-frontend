@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
+import { CardButton } from '@/components/ui/CardButton';
 
 type RafacallStatusPayload = Awaited<ReturnType<typeof api.rafacall.status>>;
 type RafacallBookingPayload = Awaited<ReturnType<typeof api.rafacall.booking>>['booking'];
@@ -101,6 +102,13 @@ function formatSlotTimeInTz(utcIso: string, timeZone: string): string {
   const d = new Date(utcIso);
   if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleTimeString('pt-PT', { timeZone, hour: '2-digit', minute: '2-digit' });
+}
+
+function prettyTimezoneCityLabel(tz: string): string {
+  const t = (tz || '').trim();
+  if (!t) return 'Lisboa';
+  const last = t.split('/').pop() || t;
+  return last.replace(/_/g, ' ');
 }
 
 /** Botões de método de pagamento — mesmo padrão visual do modal da anuidade (FloatingWhatsAppButton). */
@@ -549,34 +557,34 @@ export function RafaCallCard() {
         <div className="flex flex-col items-center gap-2">
           {hasBookedSlot ? (
             <>
-              <button
+              <CardButton
                 type="button"
                 onClick={() => void openScheduler()}
-                disabled={statusLoading}
-                className="inline-flex w-full max-w-[220px] cursor-pointer items-center justify-center rounded-full border-2 border-emerald-600 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition-colors hover:bg-emerald-50 disabled:opacity-50"
+                loading={statusLoading}
+                variant="primary"
+                className="w-full max-w-[220px]"
               >
                 {statusLoading ? 'A abrir…' : 'Reagendar'}
-              </button>
-              <button
+              </CardButton>
+              <CardButton
                 type="button"
-                onClick={() => {
-                  void openCancelModal();
-                }}
-                disabled={statusLoading}
-                className="inline-flex w-full max-w-[220px] cursor-pointer items-center justify-center rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 disabled:opacity-50"
+                onClick={() => void openCancelModal()}
+                loading={statusLoading}
+                variant="secondary"
+                className="w-full max-w-[220px]"
               >
                 Cancelar
-              </button>
+              </CardButton>
             </>
           ) : (
-            <button
+            <CardButton
               type="button"
               onClick={() => void handleAgendar()}
-              disabled={statusLoading || memberStatusLoading}
-              className="inline-flex cursor-pointer items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50"
+              loading={statusLoading || memberStatusLoading}
+              variant="primary"
             >
               {statusLoading ? 'A verificar…' : 'Agendar'}
-            </button>
+            </CardButton>
           )}
         </div>
       </div>
@@ -699,7 +707,7 @@ export function RafaCallCard() {
 
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                    Horários
+                    Horários de {prettyTimezoneCityLabel(tz)}
                   </p>
                   {schedLoading ? (
                     <p className="mt-3 text-sm text-zinc-600">A carregar…</p>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { api, getAuthToken } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { CardButton } from '@/components/ui/CardButton';
 
 type PartnerRow = {
   id: string;
@@ -246,13 +247,9 @@ export default function PartnersPage() {
           )}
         </div>
         <div className="md:col-span-2">
-          <button
-            type="submit"
-            disabled={creating}
-            className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
+          <CardButton type="submit" variant="primary" loading={creating}>
             {creating ? 'Criando parceiro…' : 'Criar parceiro'}
-          </button>
+          </CardButton>
         </div>
       </form>
 
@@ -333,7 +330,7 @@ export default function PartnersPage() {
                     {new Date(p.createdAt).toLocaleString('pt-PT')}
                   </td>
                   <td className="px-4 py-2 text-right">
-                    <button
+                    <CardButton
                       type="button"
                       onClick={async () => {
                         setError('');
@@ -347,11 +344,13 @@ export default function PartnersPage() {
                           );
                         }
                       }}
-                      className="mr-2 cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                      variant="secondary"
+                      size="sm"
+                      className="mr-2"
                     >
                       Logar
-                    </button>
-                    <button
+                    </CardButton>
+                    <CardButton
                       type="button"
                       onClick={async () => {
                         if (
@@ -374,10 +373,11 @@ export default function PartnersPage() {
                           );
                         }
                       }}
-                      className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                      variant="danger"
+                      size="sm"
                     >
                       Remover
-                    </button>
+                    </CardButton>
                   </td>
                 </tr>
               ))}

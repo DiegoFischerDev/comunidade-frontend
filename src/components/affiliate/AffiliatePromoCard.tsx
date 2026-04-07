@@ -1,6 +1,7 @@
 "use client";
 
 import { AffiliateProgramCardTop } from "@/components/affiliate/AffiliateProgramCardTop";
+import { CardButton } from "@/components/ui/CardButton";
 
 type AffiliatePromoCardProps = {
   onAction: () => void;
@@ -23,13 +24,11 @@ export function AffiliatePromoCard({
         Convide pessoas com o seu link exclusivo. Quando alguém se tornar membro ativo da
         Comunidade RPM, você recebe comissão por indicação.
       </p>
-      <button
-        type="button"
-        onClick={onAction}
-        className="mt-4 inline-flex cursor-pointer items-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-      >
-        {actionLabel}
-      </button>
+      <div className="mt-4">
+        <CardButton type="button" onClick={onAction} variant="primary">
+          {actionLabel}
+        </CardButton>
+      </div>
     </section>
   );
 }

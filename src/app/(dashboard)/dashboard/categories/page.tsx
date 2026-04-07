@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { api, getAuthToken } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { CardButton } from '@/components/ui/CardButton';
 
 type CategoryRow = {
   id: string;
@@ -338,13 +339,9 @@ export default function CategoriesPage() {
           />
         </div>
         <div className="md:col-span-3">
-          <button
-            type="submit"
-            disabled={creating}
-            className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
+          <CardButton type="submit" variant="primary" loading={creating}>
             {creating ? 'Criando categoria…' : 'Criar categoria'}
-          </button>
+          </CardButton>
         </div>
       </form>
 
@@ -466,15 +463,16 @@ export default function CategoriesPage() {
                   <td className="px-4 py-2 text-right align-top space-x-2">
                     {editingId === c.id ? (
                       <>
-                        <button
+                        <CardButton
                           type="button"
                           onClick={handleSaveEdit}
-                          disabled={savingEdit}
-                          className="cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                          loading={savingEdit}
+                          variant="primary"
+                          size="sm"
                         >
                           {savingEdit ? 'Salvando…' : 'Salvar'}
-                        </button>
-                        <button
+                        </CardButton>
+                        <CardButton
                           type="button"
                           onClick={() => {
                             setEditingId(null);
@@ -482,27 +480,30 @@ export default function CategoriesPage() {
                             setEditingName('');
                             setEditingSortOrder('');
                           }}
-                          className="cursor-pointer rounded bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                          variant="secondary"
+                          size="sm"
                         >
                           Cancelar
-                        </button>
+                        </CardButton>
                       </>
                     ) : (
                       <>
-                        <button
+                        <CardButton
                           type="button"
                           onClick={() => startEdit(c)}
-                          className="cursor-pointer rounded bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                          variant="secondary"
+                          size="sm"
                         >
                           Editar
-                        </button>
-                        <button
+                        </CardButton>
+                        <CardButton
                           type="button"
                           onClick={() => handleDeleteCategory(c)}
-                          className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                          variant="danger"
+                          size="sm"
                         >
                           Remover
-                        </button>
+                        </CardButton>
                       </>
                     )}
                   </td>
