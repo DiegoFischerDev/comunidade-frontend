@@ -68,6 +68,7 @@ export default function AdminRafaCallHojePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cancelingBookingId, setCancelingBookingId] = useState<string | null>(null);
+  const [completingBookingId, setCompletingBookingId] = useState<string | null>(null);
 
   const tz = useMemo(() => 'Europe/Lisbon', []);
 
@@ -395,6 +396,18 @@ export default function AdminRafaCallHojePage() {
                           const start = new Date(row.item.startsAt);
                           const end = new Date(row.item.endsAt);
                           const slot = `${start.toLocaleTimeString('pt-PT', { timeZone: tz, hour: '2-digit', minute: '2-digit' })}–${end.toLocaleTimeString('pt-PT', { timeZone: tz, hour: '2-digit', minute: '2-digit' })}`;
+                          const statusLabel =
+                            row.item.status === 'COMPLETED'
+                              ? 'Realizado'
+                              : row.item.status === 'CANCELLED'
+                                ? 'Cancelado'
+                                : 'Agendado';
+                          const statusClass =
+                            row.item.status === 'COMPLETED'
+                              ? 'bg-zinc-100 text-zinc-800'
+                              : row.item.status === 'CANCELLED'
+                                ? 'bg-amber-50 text-amber-800'
+                                : 'bg-emerald-50 text-emerald-800';
                           return (
                             <tr key={`b:${row.item.id}`} className="text-zinc-800">
                               <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-900">
@@ -404,8 +417,8 @@ export default function AdminRafaCallHojePage() {
                                 </span>
                               </td>
                               <td className="px-4 py-3">
-                                <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">
-                                  Agendado
+                                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass}`}>
+                                  {statusLabel}
                                 </span>
                               </td>
                               <td className="px-4 py-3">{row.item.userName}</td>
@@ -419,30 +432,58 @@ export default function AdminRafaCallHojePage() {
                                   >
                                     Abrir chat
                                   </a>
-                                  <button
-                                    type="button"
-                                    disabled={cancelingBookingId === row.item.id}
-                                    onClick={async () => {
-                                      const ok = window.confirm(
-                                        `Cancelar este agendamento?\n\nLead: ${row.item.userName}\nHorário: ${slot}`,
-                                      );
-                                      if (!ok) return;
-                                      setCancelingBookingId(row.item.id);
-                                      try {
-                                        await api.admin.rafacall.cancelBooking(row.item.id, 'admin_cancel');
-                                        await load();
-                                      } catch (e) {
-                                        setError(
-                                          e instanceof Error ? e.message : 'Não foi possível cancelar.',
-                                        );
-                                      } finally {
-                                        setCancelingBookingId(null);
-                                      }
-                                    }}
-                                    className="inline-flex items-center justify-center rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-800 hover:bg-red-100 disabled:opacity-50"
-                                  >
-                                    {cancelingBookingId === row.item.id ? 'Cancelando…' : 'Cancelar'}
-                                  </button>
+                                  {row.item.status === 'SCHEDULED' ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        disabled={completingBookingId === row.item.id}
+                                        onClick={async () => {
+                                          const ok = window.confirm(
+                                            `Marcar como realizado?\n\nLead: ${row.item.userName}\nHorário: ${slot}`,
+                                          );
+                                          if (!ok) return;
+                                          setCompletingBookingId(row.item.id);
+                                          try {
+                                            await api.admin.rafacall.completeBooking(row.item.id);
+                                            await load();
+                                          } catch (e) {
+                                            setError(
+                                              e instanceof Error ? e.message : 'Não foi possível marcar como realizado.',
+                                            );
+                                          } finally {
+                                            setCompletingBookingId(null);
+                                          }
+                                        }}
+                                        className="inline-flex items-center justify-center rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                                      >
+                                        {completingBookingId === row.item.id ? 'Alterando…' : 'Realizado'}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={cancelingBookingId === row.item.id}
+                                        onClick={async () => {
+                                          const ok = window.confirm(
+                                            `Cancelar este agendamento?\n\nLead: ${row.item.userName}\nHorário: ${slot}`,
+                                          );
+                                          if (!ok) return;
+                                          setCancelingBookingId(row.item.id);
+                                          try {
+                                            await api.admin.rafacall.cancelBooking(row.item.id, 'admin_cancel');
+                                            await load();
+                                          } catch (e) {
+                                            setError(
+                                              e instanceof Error ? e.message : 'Não foi possível cancelar.',
+                                            );
+                                          } finally {
+                                            setCancelingBookingId(null);
+                                          }
+                                        }}
+                                        className="inline-flex items-center justify-center rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-800 hover:bg-red-100 disabled:opacity-50"
+                                      >
+                                        {cancelingBookingId === row.item.id ? 'Cancelando…' : 'Cancelar'}
+                                      </button>
+                                    </>
+                                  ) : null}
                                 </div>
                               </td>
                             </tr>

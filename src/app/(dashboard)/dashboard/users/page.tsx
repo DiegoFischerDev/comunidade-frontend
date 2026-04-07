@@ -39,6 +39,24 @@ function formatRafaSlotPt(iso: string | null | undefined): string {
   });
 }
 
+function formatRafaSlotRangePt(
+  startsAtIso: string | null | undefined,
+  endsAtIso: string | null | undefined,
+): string {
+  if (!startsAtIso && !endsAtIso) return '—';
+  const s = startsAtIso ? new Date(startsAtIso) : null;
+  const e = endsAtIso ? new Date(endsAtIso) : null;
+  if (s && Number.isNaN(s.getTime())) return '—';
+  if (e && Number.isNaN(e.getTime())) return '—';
+  if (s && e) {
+    const day = s.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' });
+    const startTime = s.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+    const endTime = e.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+    return `${day} ${startTime}–${endTime}`;
+  }
+  return formatRafaSlotPt(endsAtIso || startsAtIso || null);
+}
+
 const ROLES: UserRow['role'][] = ['USER', 'PARTNER', 'ADMIN'];
 const TIERS = ['VISITOR', 'MEMBER'] as const;
 const TIER_LABELS: Record<string, string> = { VISITOR: 'Visitante', MEMBER: 'Membro' };
@@ -78,8 +96,8 @@ export default function UsersPage() {
         : '';
       const emailStr = (u.email || '').toLowerCase();
       const rafaStr = [
-        u.rafaCallSchedulingUnlocked ? 'liberado cal agendamento' : 'bloqueado',
-        formatRafaSlotPt(u.rafaCallSlotEndsAt),
+        u.rafaCallSchedulingUnlocked ? 'agendamento liberado' : 'agendamento bloqueado',
+        formatRafaSlotRangePt(u.rafaCallSlotStartsAt, u.rafaCallSlotEndsAt),
       ]
         .join(' ')
         .toLowerCase();
@@ -284,7 +302,6 @@ export default function UsersPage() {
               <thead className="bg-zinc-50 text-zinc-600">
                 <tr>
                   <th className="px-4 py-2 text-left">Nome</th>
-                  <th className="px-4 py-2 text-left">E-mail</th>
                   <th className="px-4 py-2 text-left">WhatsApp</th>
                   <th className="px-4 py-2 text-left">Role</th>
                   <th className="px-4 py-2 text-left">Tier</th>
@@ -300,7 +317,7 @@ export default function UsersPage() {
                 {filteredUsers.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={8}
                       className="px-4 py-4 text-center text-sm text-zinc-500"
                     >
                       Nenhum usuário corresponde ao filtro.
@@ -310,7 +327,6 @@ export default function UsersPage() {
                   filteredUsers.map((u) => (
                 <tr key={u.id} className="border-t border-zinc-200">
                     <td className="px-4 py-2">{u.name}</td>
-                    <td className="px-4 py-2">{u.email ?? '—'}</td>
                     <td className="px-4 py-2">{u.whatsapp}</td>
                   <td className="px-4 py-2">
                     <select
@@ -375,40 +391,45 @@ export default function UsersPage() {
                       ? new Date(u.membershipExpiresAt).toLocaleDateString('pt-PT')
                       : '—'}
                   </td>
-                  <td className="px-4 py-2 align-top">
+                  <td className="px-4 py-2">
                     <div className="flex flex-col gap-1.5">
-                      <select
-                        value={u.rafaCallSchedulingUnlocked ? '1' : '0'}
-                        onChange={async (e) => {
-                          const unlocked = e.target.value === '1';
-                          setError('');
-                          try {
-                            const updated = await api.admin.users.updateRafacall(u.id, {
-                              rafaCallSchedulingUnlocked: unlocked,
-                            });
-                            setUsers((prev) =>
-                              prev.map((row) =>
-                                row.id === u.id ? { ...row, ...updated } : row,
-                              ),
-                            );
-                          } catch (err) {
-                            setError(
-                              err instanceof Error
-                                ? err.message
-                                : 'Erro ao atualizar agendamento.',
-                            );
-                          }
-                        }}
-                        className="max-w-[11rem] cursor-pointer rounded border border-zinc-300 px-2 py-1 text-xs"
-                        aria-label="Cal.com desbloqueado"
-                      >
-                        <option value="1">Cal liberado</option>
-                        <option value="0">Cal bloqueado</option>
-                      </select>
-                      <p className="text-[11px] leading-snug text-zinc-600">
-                        <span className="font-medium text-zinc-700">Fim do slot:</span>{' '}
-                        {formatRafaSlotPt(u.rafaCallSlotEndsAt)}
-                      </p>
+                      {u.rafaCallSlotEndsAt &&
+                      !Number.isNaN(new Date(u.rafaCallSlotEndsAt).getTime()) &&
+                      new Date(u.rafaCallSlotEndsAt).getTime() > Date.now() ? (
+                        <p className="text-sm font-medium leading-snug text-emerald-700">
+                          Agendado:{' '}
+                          {formatRafaSlotRangePt(u.rafaCallSlotStartsAt, u.rafaCallSlotEndsAt)}
+                        </p>
+                      ) : (
+                        <select
+                          value={u.rafaCallSchedulingUnlocked ? '1' : '0'}
+                          onChange={async (e) => {
+                            const unlocked = e.target.value === '1';
+                            setError('');
+                            try {
+                              const updated = await api.admin.users.updateRafacall(u.id, {
+                                rafaCallSchedulingUnlocked: unlocked,
+                              });
+                              setUsers((prev) =>
+                                prev.map((row) =>
+                                  row.id === u.id ? { ...row, ...updated } : row,
+                                ),
+                              );
+                            } catch (err) {
+                              setError(
+                                err instanceof Error
+                                  ? err.message
+                                  : 'Erro ao atualizar agendamento.',
+                              );
+                            }
+                          }}
+                          className="max-w-[11rem] cursor-pointer rounded border border-zinc-300 px-2 py-1 text-xs"
+                          aria-label="Agendamento (chamada Rafa)"
+                        >
+                          <option value="1">Agendamento liberado</option>
+                          <option value="0">Agendamento bloqueado</option>
+                        </select>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-2 text-right">
@@ -481,7 +502,7 @@ export default function UsersPage() {
               Editar usuário
             </h2>
             <p className="mt-1 text-sm text-zinc-500">
-              Altere nome, e-mail, WhatsApp e estado do agendamento Cal.com.
+              Altere nome, e-mail, WhatsApp e estado do agendamento (chamada Rafa).
             </p>
             <div className="mt-4 space-y-3">
               <div>
@@ -529,7 +550,7 @@ export default function UsersPage() {
                     onChange={(e) => setEditRafaUnlocked(e.target.checked)}
                     className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
                   />
-                  Permitir abrir o Cal.com (desbloqueado)
+                  Agendamento liberado (pode agendar)
                 </label>
                 <div className="mt-3">
                   <label className="block text-sm font-medium text-zinc-700">

@@ -383,6 +383,7 @@ export const api = {
             date: string; // YYYY-MM-DD no tz do admin
             items: {
               id: string;
+              status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
               startsAt: string;
               endsAt: string;
               userId: string;
@@ -420,6 +421,11 @@ export const api = {
         request<{ id: string; status: 'CANCELLED' }>(
           `/admin/rafacall/bookings/${bookingId}/cancel`,
           { method: 'POST', body: JSON.stringify({ reason }) },
+        ),
+      completeBooking: (bookingId: string) =>
+        request<{ id: string; status: 'COMPLETED' }>(
+          `/admin/rafacall/bookings/${bookingId}/complete`,
+          { method: 'POST', body: JSON.stringify({}) },
         ),
     },
     partners: {
