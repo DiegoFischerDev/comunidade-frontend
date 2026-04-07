@@ -310,7 +310,7 @@ export default function DashboardLayout({
           />
         </div>
 
-        {/* Grupo 1 - comum a todos (topo) */}
+        {/* Menu principal */}
         <nav className="mt-4 max-h-full space-y-1 overflow-y-auto rounded-lg bg-secondary-3/40 p-1 pr-1">
           <Link
             href="/dashboard"
@@ -342,10 +342,112 @@ export default function DashboardLayout({
                 </Link>
               );
             })}
+
+          {/* Links “extras” (antes ficavam no grupo de baixo) */}
+          {user?.role === 'PARTNER' && (
+            <>
+              <Link
+                href="/dashboard/leads"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/leads'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Meus leads
+              </Link>
+              <Link
+                href="/dashboard/business"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/business'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Minha empresa
+              </Link>
+              <Link
+                href="/dashboard/services"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/services'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Meus serviços
+              </Link>
+            </>
+          )}
+          {user?.role === 'ADMIN' && (
+            <>
+              <Link
+                href="/dashboard/users"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/users'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Users
+              </Link>
+              <Link
+                href="/dashboard/admin/rafacall-hoje"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/admin/rafacall-hoje'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Agendamentos hoje
+              </Link>
+              <Link
+                href="/dashboard/categories"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/categories'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Categorias
+              </Link>
+              <Link
+                href="/dashboard/partners"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/partners'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Parceiros
+              </Link>
+              <Link
+                href="/dashboard/affiliates"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/affiliates'
+                    ? 'bg-primary-3 font-medium text-primary-2'
+                    : 'text-primary-1 hover:bg-secondary-3'
+                }`}
+              >
+                Afiliados
+              </Link>
+            </>
+          )}
+          {user && (
+            <Link
+              href="/dashboard/my-referrals"
+              className={`block rounded-md px-3 py-2 text-sm ${
+                pathname === '/dashboard/my-referrals'
+                  ? 'bg-primary-3 font-medium text-primary-2'
+                  : 'text-primary-1 hover:bg-secondary-3'
+              }`}
+            >
+              Minhas indicações
+            </Link>
+          )}
         </nav>
       </div>
 
-      {/* Grupo 2 - parceiro/admin (base do menu) */}
+      {/* Rodapé (somente usuário/ação) */}
       <div className="mt-auto border-t border-secondary-2 pt-4 text-sm text-primary-1">
         {/* Bloco do usuário */}
         <div className="flex items-center justify-between gap-3">
@@ -404,112 +506,6 @@ export default function DashboardLayout({
             Voltar ao modo admin
           </button>
         )}
-
-        {/* Links de ações (parceiro/admin) */}
-        <nav className="mt-4 space-y-1 text-xs">
-          {user?.role === 'PARTNER' && (
-            <>
-              <Link
-                href="/dashboard/leads"
-                className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/leads'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
-                }`}
-              >
-                Meus leads
-              </Link>
-              <Link
-                href="/dashboard/business"
-                className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/business'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
-                }`}
-              >
-                Minha empresa
-              </Link>
-              <Link
-                href="/dashboard/services"
-                className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/services'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
-                }`}
-              >
-                Meus serviços
-              </Link>
-            </>
-          )}
-          {user?.role === 'ADMIN' && (
-            <>
-              <Link
-                href="/dashboard/users"
-                className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/users'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
-                }`}
-              >
-                Users
-              </Link>
-              <Link
-                href="/dashboard/admin/rafacall-hoje"
-                className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/admin/rafacall-hoje'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
-                }`}
-              >
-                Agendamentos hoje
-              </Link>
-              <Link
-                href="/dashboard/categories"
-                className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/categories'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
-                }`}
-              >
-                Categorias
-              </Link>
-              <Link
-                href="/dashboard/partners"
-                className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/partners'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
-                }`}
-              >
-                Parceiros
-              </Link>
-              <Link
-                href="/dashboard/affiliates"
-                className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/affiliates'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
-                }`}
-              >
-                Afiliados
-              </Link>
-            </>
-          )}
-          {user && (
-            <>
-              <Link
-                href="/dashboard/my-referrals"
-                className={`block rounded-md px-3 py-2 ${
-                  pathname === '/dashboard/my-referrals'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
-                }`}
-              >
-                Minhas indicações
-              </Link>
-            </>
-          )}
-        </nav>
       </div>
     </div>
   );

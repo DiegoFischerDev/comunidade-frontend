@@ -519,7 +519,7 @@ export function RafaCallCard() {
             <>
               <button
                 type="button"
-                onClick={handleReagendar}
+                onClick={() => void openScheduler()}
                 disabled={statusLoading}
                 className="inline-flex w-full max-w-[220px] cursor-pointer items-center justify-center rounded-full border-2 border-emerald-600 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition-colors hover:bg-emerald-50 disabled:opacity-50"
               >
@@ -528,7 +528,13 @@ export function RafaCallCard() {
               <button
                 type="button"
                 onClick={() => {
-                  setSchedOpen(true);
+                  if (!booking) {
+                    void openScheduler();
+                    return;
+                  }
+                  const ok = window.confirm('Queres mesmo cancelar a tua chamada com a Rafa?');
+                  if (!ok) return;
+                  void doCancelBooking();
                 }}
                 disabled={statusLoading}
                 className="inline-flex w-full max-w-[220px] cursor-pointer items-center justify-center rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 disabled:opacity-50"

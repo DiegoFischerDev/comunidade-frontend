@@ -375,22 +375,23 @@ export const api = {
         request<void>(`/users/${id}`, { method: 'DELETE' }),
     },
     rafacall: {
-      today: (tz?: string) => {
+      schedule: (tz?: string) => {
         const q = tz ? `?tz=${encodeURIComponent(tz)}` : '';
         return request<{
           tz: string;
-          startUtc: string;
-          endUtc: string;
-          items: {
-            id: string;
-            startsAt: string;
-            endsAt: string;
-            userId: string;
-            userName: string;
-            whatsappDigits: string;
-            bookingTimezone: string;
+          days: {
+            date: string; // YYYY-MM-DD no tz do admin
+            items: {
+              id: string;
+              startsAt: string;
+              endsAt: string;
+              userId: string;
+              userName: string;
+              whatsappDigits: string;
+              bookingTimezone: string;
+            }[];
           }[];
-        }>(`/admin/rafacall/today${q}`, { method: 'GET' });
+        }>(`/admin/rafacall/schedule${q}`, { method: 'GET' });
       },
     },
     partners: {

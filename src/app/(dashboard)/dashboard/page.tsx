@@ -121,9 +121,12 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Dashboard</h1>
+        <h1 className="text-2xl font-semibold text-zinc-900">
+          Comunidade Rafa pelo mundo
+        </h1>
         <p className="mt-2 text-zinc-600">
-          Bem-vindo à Comunidade Rafa Pelo Mundo.
+          Aqui encontras tudo o que precisa para imigrar do brasil para portugal
+          do jeito certo.
         </p>
       </div>
 
