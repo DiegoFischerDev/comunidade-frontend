@@ -38,6 +38,12 @@ function formatSlotTimeInTz(utcIso: string, timeZone: string): string {
   return d.toLocaleTimeString('pt-PT', { timeZone, hour: '2-digit', minute: '2-digit' });
 }
 
+function blocksForYmd(blocks: BlocksPayload['blocks'], ymd: string, timeZone: string) {
+  return blocks
+    .filter((b) => ymdInTz(new Date(b.startsAt), timeZone) === ymd)
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+}
+
 function waUrl(digits: string, leadName: string, startsAtIso: string, tz: string): string {
   const d = new Date(startsAtIso);
   const day = d.toLocaleDateString('pt-PT', {
@@ -196,7 +202,14 @@ export default function AdminRafaCallHojePage() {
               <p className="mt-3 text-sm text-zinc-600">Sem dias disponíveis.</p>
             ) : (
               <div className="mt-3 max-h-[360px] space-y-2 overflow-auto pr-1">
-                {availability.days.map((d) => {
+                {availability.days
+                  .filter((d) => {
+                    if (d.slots.length > 0) return true;
+                    // Se não há slots disponíveis, só mostramos o dia se existir bloqueio
+                    // para permitir desbloquear via UI.
+                    return blocks.some((b) => ymdInTz(new Date(b.startsAt), tz) === d.date);
+                  })
+                  .map((d) => {
                   const isActive = d.date === selectedDate;
                   const hasSlots = d.slots.length > 0;
                   return (
@@ -229,10 +242,11 @@ export default function AdminRafaCallHojePage() {
               (() => {
                 const day = availability.days.find((d) => d.date === selectedDate);
                 const slots = day?.slots ?? [];
+                const blockedToday = selectedDate ? blocksForYmd(blocks, selectedDate, tz) : [];
                 if (!day) {
                   return <p className="mt-3 text-sm text-zinc-600">Escolhe um dia.</p>;
                 }
-                if (slots.length === 0) {
+                if (slots.length === 0 && blockedToday.length === 0) {
                   return (
                     <p className="mt-3 text-sm text-zinc-600">
                       Este dia não tem horários disponíveis (talvez já estejam todos ocupados).
@@ -242,10 +256,27 @@ export default function AdminRafaCallHojePage() {
 
                 const blockedByStart = new Map(blocks.map((b) => [b.startsAt, b]));
 
+                // Mostrar slots livres + bloqueados do dia (mesmo que os bloqueados não apareçam na availability).
+                const blockedItems = blockedToday.map((b) => ({
+                  startsAt: b.startsAt,
+                  endsAt: b.endsAt,
+                  kind: 'blocked' as const,
+                  blockId: b.id,
+                }));
+                const freeItems = slots.map((s) => ({
+                  startsAt: s.startsAt,
+                  endsAt: s.endsAt,
+                  kind: 'free' as const,
+                }));
+                const items = [...freeItems, ...blockedItems].sort((a, b) =>
+                  a.startsAt.localeCompare(b.startsAt),
+                );
+
                 return (
                   <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {slots.map((s) => {
-                      const isBlocked = blockedByStart.has(s.startsAt);
+                    {items.map((s) => {
+                      const isBlocked =
+                        s.kind === 'blocked' ? true : blockedByStart.has(s.startsAt);
                       return (
                         <button
                           key={s.startsAt}
@@ -256,8 +287,12 @@ export default function AdminRafaCallHojePage() {
                             setBlocksError('');
                             try {
                               if (isBlocked) {
-                                const b = blockedByStart.get(s.startsAt);
-                                if (b) await api.admin.rafacall.deleteBlock(b.id);
+                                if (s.kind === 'blocked') {
+                                  await api.admin.rafacall.deleteBlock(s.blockId);
+                                } else {
+                                  const b = blockedByStart.get(s.startsAt);
+                                  if (b) await api.admin.rafacall.deleteBlock(b.id);
+                                }
                               } else {
                                 await api.admin.rafacall.createBlock({
                                   startsAtUtcIso: s.startsAt,

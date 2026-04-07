@@ -672,9 +672,8 @@ export function RafaCallCard() {
                     <p className="mt-3 text-sm text-zinc-600">Sem dias disponíveis.</p>
                   ) : (
                     <div className="mt-3 max-h-[420px] space-y-2 overflow-auto pr-1">
-                      {availability.days.map((d) => {
+                      {availability.days.filter((d) => d.slots.length > 0).map((d) => {
                         const isActive = d.date === selectedDate;
-                        const hasSlots = d.slots.length > 0;
                         return (
                           <button
                             key={d.date}
@@ -685,7 +684,7 @@ export function RafaCallCard() {
                               isActive
                                 ? 'border-emerald-400 bg-emerald-50'
                                 : 'border-zinc-200 bg-white hover:bg-zinc-50'
-                            } ${!hasSlots ? 'opacity-60' : ''}`}
+                            }`}
                           >
                             <span className="font-medium text-zinc-900">
                               {prettyYmdPt(d.date, tz)}
