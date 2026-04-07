@@ -337,61 +337,110 @@ export default function AdminRafaCallHojePage() {
 
       {data && data.days.length > 0 ? (
         <div className="mt-6 space-y-6">
-          {data.days.map((day) => (
-            <div key={day.date} className="rounded-xl border border-zinc-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 px-4 py-3">
-                <p className="text-sm font-semibold text-zinc-900">
-                  {new Date(`${day.date}T12:00:00.000Z`).toLocaleDateString('pt-PT', {
-                    timeZone: tz,
-                    weekday: 'long',
-                    day: '2-digit',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </p>
-                <p className="text-xs text-zinc-600">{day.items.length} agendamentos</p>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
-                  <thead className="border-b border-zinc-200 text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                    <tr>
-                      <th className="px-4 py-3">Horário (Lisboa)</th>
-                      <th className="px-4 py-3">Lead</th>
-                      <th className="px-4 py-3 w-40">WhatsApp</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-100">
-                    {day.items.map((row) => {
-                      const start = new Date(row.startsAt);
-                      const end = new Date(row.endsAt);
-                      const slot = `${start.toLocaleTimeString('pt-PT', { timeZone: tz, hour: '2-digit', minute: '2-digit' })}–${end.toLocaleTimeString('pt-PT', { timeZone: tz, hour: '2-digit', minute: '2-digit' })}`;
-                      return (
-                        <tr key={row.id} className="text-zinc-800">
-                          <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-900">
-                            {slot}
-                            <span className="mt-0.5 block text-xs font-normal text-zinc-500">
-                              tz do lead: {row.bookingTimezone}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">{row.userName}</td>
-                          <td className="px-4 py-3">
-                            <a
-                              href={waUrl(row.whatsappDigits, row.userName, row.startsAt, tz)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center rounded-full bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#20BD5A]"
-                            >
-                              Abrir chat
-                            </a>
-                          </td>
-                        </tr>
-                      );
+          {data.days.map((day) => {
+            const blocked = blocksForYmd(blocks, day.date, tz);
+            const combined = [
+              ...day.items.map((x) => ({ kind: 'booked' as const, item: x })),
+              ...blocked.map((x) => ({ kind: 'blocked' as const, item: x })),
+            ].sort((a, b) => {
+              const as = a.kind === 'booked' ? a.item.startsAt : a.item.startsAt;
+              const bs = b.kind === 'booked' ? b.item.startsAt : b.item.startsAt;
+              return as.localeCompare(bs);
+            });
+
+            return (
+              <div key={day.date} className="rounded-xl border border-zinc-200 bg-white shadow-sm">
+                <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 px-4 py-3">
+                  <p className="text-sm font-semibold text-zinc-900">
+                    {new Date(`${day.date}T12:00:00.000Z`).toLocaleDateString('pt-PT', {
+                      timeZone: tz,
+                      weekday: 'long',
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
                     })}
-                  </tbody>
-                </table>
+                  </p>
+                  <p className="text-xs text-zinc-600">
+                    {combined.length} itens
+                    {blocked.length ? (
+                      <span className="ml-2">
+                        · {day.items.length} agendados · {blocked.length} ocupados
+                      </span>
+                    ) : (
+                      <span className="ml-2">· {day.items.length} agendados</span>
+                    )}
+                  </p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="border-b border-zinc-200 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                      <tr>
+                        <th className="px-4 py-3">Horário (Lisboa)</th>
+                        <th className="px-4 py-3 w-28">Estado</th>
+                        <th className="px-4 py-3">Lead / Motivo</th>
+                        <th className="px-4 py-3 w-40">WhatsApp</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100">
+                      {combined.map((row) => {
+                        if (row.kind === 'booked') {
+                          const start = new Date(row.item.startsAt);
+                          const end = new Date(row.item.endsAt);
+                          const slot = `${start.toLocaleTimeString('pt-PT', { timeZone: tz, hour: '2-digit', minute: '2-digit' })}–${end.toLocaleTimeString('pt-PT', { timeZone: tz, hour: '2-digit', minute: '2-digit' })}`;
+                          return (
+                            <tr key={`b:${row.item.id}`} className="text-zinc-800">
+                              <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-900">
+                                {slot}
+                                <span className="mt-0.5 block text-xs font-normal text-zinc-500">
+                                  tz do lead: {row.item.bookingTimezone}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                                  Agendado
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">{row.item.userName}</td>
+                              <td className="px-4 py-3">
+                                <a
+                                  href={waUrl(row.item.whatsappDigits, row.item.userName, row.item.startsAt, tz)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center justify-center rounded-full bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#20BD5A]"
+                                >
+                                  Abrir chat
+                                </a>
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        const start = new Date(row.item.startsAt);
+                        const end = new Date(row.item.endsAt);
+                        const slot = `${start.toLocaleTimeString('pt-PT', { timeZone: tz, hour: '2-digit', minute: '2-digit' })}–${end.toLocaleTimeString('pt-PT', { timeZone: tz, hour: '2-digit', minute: '2-digit' })}`;
+                        return (
+                          <tr key={`x:${row.item.id}`} className="text-zinc-800">
+                            <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-900">
+                              {slot}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-800">
+                                Ocupado
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-zinc-800">{row.item.reason || 'Bloqueado pelo admin'}</span>
+                            </td>
+                            <td className="px-4 py-3 text-zinc-400">—</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : null}
     </div>
