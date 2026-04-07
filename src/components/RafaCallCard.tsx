@@ -239,7 +239,9 @@ export function RafaCallCard() {
   );
   const [amountsLoading, setAmountsLoading] = useState(false);
 
+  type SchedMode = 'schedule' | 'cancel';
   const [schedOpen, setSchedOpen] = useState(false);
+  const [schedMode, setSchedMode] = useState<SchedMode>('schedule');
   const [schedLoading, setSchedLoading] = useState(false);
   const [schedError, setSchedError] = useState('');
   const [availability, setAvailability] = useState<AvailabilityPayload | null>(null);
@@ -300,7 +302,10 @@ export function RafaCallCard() {
       return;
     }
     setSchedOpen(true);
+    setSchedMode('schedule');
     setSchedError('');
+    setAvailability(null);
+    setSelectedDate('');
     setSchedLoading(true);
     try {
       const tz = resolvedUserTz();
@@ -314,11 +319,35 @@ export function RafaCallCard() {
       setBooking(b.booking);
       setAvailability(avail);
       setRafacallStatus(s);
-      const firstDay = avail.days.find((d) => d.slots.length > 0)?.date ?? avail.days[0]?.date ?? '';
-      setSelectedDate((prev) => prev || firstDay);
+      const firstDayWithSlots = avail.days.find((d) => d.slots.length > 0)?.date ?? '';
+      const firstAnyDay = avail.days[0]?.date ?? '';
+      setSelectedDate(firstDayWithSlots || firstAnyDay);
     } catch (e) {
       setAvailability(null);
       setSchedError(e instanceof Error ? e.message : 'Erro ao carregar horários.');
+    } finally {
+      setSchedLoading(false);
+    }
+  }, [user, token, openLogin, openMembership]);
+
+  const openCancelModal = useCallback(async () => {
+    if (!user || !token) {
+      openLogin();
+      return;
+    }
+    if (user.tier !== 'MEMBER') {
+      openMembership();
+      return;
+    }
+    setSchedOpen(true);
+    setSchedMode('cancel');
+    setSchedError('');
+    setSchedLoading(true);
+    try {
+      const b = await api.rafacall.booking();
+      setBooking(b.booking);
+    } catch (e) {
+      setSchedError(e instanceof Error ? e.message : 'Não foi possível carregar o agendamento.');
     } finally {
       setSchedLoading(false);
     }
@@ -367,7 +396,10 @@ export function RafaCallCard() {
     setSchedError('');
   }, []);
 
-  const tz = useMemo(() => availability?.tz || resolvedUserTz(), [availability?.tz]);
+  const tz = useMemo(
+    () => availability?.tz || booking?.timezone || resolvedUserTz(),
+    [availability?.tz, booking?.timezone],
+  );
 
   const daySlots = useMemo(() => {
     if (!availability || !selectedDate) return [];
@@ -528,13 +560,7 @@ export function RafaCallCard() {
               <button
                 type="button"
                 onClick={() => {
-                  if (!booking) {
-                    void openScheduler();
-                    return;
-                  }
-                  const ok = window.confirm('Queres mesmo cancelar a tua chamada com a Rafa?');
-                  if (!ok) return;
-                  void doCancelBooking();
+                  void openCancelModal();
                 }}
                 disabled={statusLoading}
                 className="inline-flex w-full max-w-[220px] cursor-pointer items-center justify-center rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 disabled:opacity-50"
@@ -568,7 +594,11 @@ export function RafaCallCard() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-zinc-900">
-                  {booking ? 'Reagendar chamada' : 'Agendar chamada'}
+                  {schedMode === 'cancel'
+                    ? 'Cancelar chamada'
+                    : booking
+                      ? 'Reagendar chamada'
+                      : 'Agendar chamada'}
                 </h2>
                 <p className="mt-1 text-sm text-zinc-600">
                   Timezone: <span className="font-medium">{tz}</span>
@@ -604,76 +634,105 @@ export function RafaCallCard() {
                     minute: '2-digit',
                   })}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => void doCancelBooking()}
-                  disabled={schedLoading}
-                  className="mt-3 inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
-                >
-                  {schedLoading ? 'A cancelar…' : 'Cancelar agendamento'}
-                </button>
+                {schedMode === 'cancel' ? (
+                  <>
+                    <p className="mt-2 text-sm text-zinc-700">
+                      Queres mesmo cancelar esta chamada? Vais poder reagendar depois.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void doCancelBooking()}
+                      disabled={schedLoading}
+                      className="mt-3 inline-flex items-center justify-center rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {schedLoading ? 'A cancelar…' : 'Confirmar cancelamento'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void openScheduler()}
+                      disabled={schedLoading}
+                      className="mt-2 inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+                    >
+                      Voltar para reagendar
+                    </button>
+                  </>
+                ) : null}
               </div>
             ) : null}
 
-            <div className="mt-6 grid gap-6 md:grid-cols-[260px_1fr]">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                  Dias
-                </p>
-                <div className="mt-3 max-h-[420px] space-y-2 overflow-auto pr-1">
-                  {(availability?.days ?? []).map((d) => {
-                    const isActive = d.date === selectedDate;
-                    const hasSlots = d.slots.length > 0;
-                    return (
-                      <button
-                        key={d.date}
-                        type="button"
-                        disabled={!hasSlots || schedLoading}
-                        onClick={() => setSelectedDate(d.date)}
-                        className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
-                          isActive
-                            ? 'border-emerald-400 bg-emerald-50'
-                            : 'border-zinc-200 bg-white hover:bg-zinc-50'
-                        } ${!hasSlots ? 'opacity-50' : ''}`}
-                      >
-                        <span className="font-medium text-zinc-900">
-                          {prettyYmdPt(d.date, tz)}
-                        </span>
-                        <span className="text-xs text-zinc-600">{d.slots.length} horários</span>
-                      </button>
-                    );
-                  })}
+            {schedMode === 'schedule' ? (
+              <div className="mt-6 grid gap-6 md:grid-cols-[260px_1fr]">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                    Dias
+                  </p>
+                  {!availability ? (
+                    <p className="mt-3 text-sm text-zinc-600">A carregar…</p>
+                  ) : availability.days.length === 0 ? (
+                    <p className="mt-3 text-sm text-zinc-600">Sem dias disponíveis.</p>
+                  ) : (
+                    <div className="mt-3 max-h-[420px] space-y-2 overflow-auto pr-1">
+                      {availability.days.map((d) => {
+                        const isActive = d.date === selectedDate;
+                        const hasSlots = d.slots.length > 0;
+                        return (
+                          <button
+                            key={d.date}
+                            type="button"
+                            disabled={schedLoading}
+                            onClick={() => setSelectedDate(d.date)}
+                            className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
+                              isActive
+                                ? 'border-emerald-400 bg-emerald-50'
+                                : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                            } ${!hasSlots ? 'opacity-60' : ''}`}
+                          >
+                            <span className="font-medium text-zinc-900">
+                              {prettyYmdPt(d.date, tz)}
+                            </span>
+                            <span className="text-xs text-zinc-600">{d.slots.length} horários</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                    Horários
+                  </p>
+                  {schedLoading ? (
+                    <p className="mt-3 text-sm text-zinc-600">A carregar…</p>
+                  ) : !availability ? (
+                    <p className="mt-3 text-sm text-zinc-600">Não foi possível carregar os horários.</p>
+                  ) : availability.days.every((d) => d.slots.length === 0) ? (
+                    <p className="mt-3 text-sm text-zinc-600">
+                      Sem horários disponíveis nos próximos dias. Tenta novamente mais tarde.
+                    </p>
+                  ) : daySlots.length === 0 ? (
+                    <p className="mt-3 text-sm text-zinc-600">
+                      Escolhe um dia com horários disponíveis.
+                    </p>
+                  ) : (
+                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {daySlots.map((s) => (
+                        <button
+                          key={s.startsAt}
+                          type="button"
+                          disabled={schedLoading}
+                          onClick={() => void doBook(s.startsAt)}
+                          className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-emerald-50"
+                          title={s.startsAt}
+                        >
+                          {formatSlotTimeInTz(s.startsAt, tz)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                  Horários
-                </p>
-                {schedLoading ? (
-                  <p className="mt-3 text-sm text-zinc-600">A carregar…</p>
-                ) : daySlots.length === 0 ? (
-                  <p className="mt-3 text-sm text-zinc-600">
-                    Escolhe um dia com horários disponíveis.
-                  </p>
-                ) : (
-                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {daySlots.map((s) => (
-                      <button
-                        key={s.startsAt}
-                        type="button"
-                        disabled={schedLoading}
-                        onClick={() => void doBook(s.startsAt)}
-                        className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-emerald-50"
-                        title={s.startsAt}
-                      >
-                        {formatSlotTimeInTz(s.startsAt, tz)}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            ) : null}
           </div>
         </div>
       )}

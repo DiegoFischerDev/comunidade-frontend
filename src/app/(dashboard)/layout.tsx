@@ -281,8 +281,8 @@ export default function DashboardLayout({
 
   if (!mounted || authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-primary-1">
-        <p className="text-primary-2">Carregando…</p>
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
+        <p className="text-zinc-700">Carregando…</p>
       </div>
     );
   }
@@ -303,7 +303,7 @@ export default function DashboardLayout({
       <div className="flex-1 min-h-0">
         <div className="flex items-center justify-center">
           <Image
-            src="/logo_bg_clara.png"
+            src="/logo_bg_escura.png"
             alt="Comunidade RPM"
             width={140}
             height={32}
@@ -311,13 +311,13 @@ export default function DashboardLayout({
         </div>
 
         {/* Menu principal */}
-        <nav className="mt-4 max-h-full space-y-1 overflow-y-auto rounded-lg bg-secondary-3/40 p-1 pr-1">
+        <nav className="mt-4 max-h-full space-y-1 overflow-y-auto rounded-lg bg-zinc-50 p-1 pr-1">
           <Link
             href="/dashboard"
             className={`block rounded-md px-3 py-2 text-sm ${
               pathname === '/dashboard'
-                ? 'bg-primary-3 font-medium text-primary-2'
-                : 'text-primary-1 hover:bg-secondary-3'
+                ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                : 'text-zinc-800 hover:bg-zinc-100'
             }`}
           >
             Início
@@ -334,8 +334,8 @@ export default function DashboardLayout({
                   href={`/dashboard/category/${c.slug}`}
                   className={`block rounded-md px-3 py-2 text-sm ${
                     isActive
-                      ? 'bg-primary-3 font-medium text-primary-2'
-                      : 'text-primary-1 hover:bg-secondary-3'
+                      ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                      : 'text-zinc-800 hover:bg-zinc-100'
                   }`}
                 >
                   {c.name}
@@ -350,8 +350,8 @@ export default function DashboardLayout({
                 href="/dashboard/leads"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/leads'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
+                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
                 Meus leads
@@ -360,8 +360,8 @@ export default function DashboardLayout({
                 href="/dashboard/business"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/business'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
+                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
                 Minha empresa
@@ -370,8 +370,8 @@ export default function DashboardLayout({
                 href="/dashboard/services"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/services'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
+                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
                 Meus serviços
@@ -384,8 +384,8 @@ export default function DashboardLayout({
                 href="/dashboard/users"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/users'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
+                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
                 Users
@@ -394,18 +394,18 @@ export default function DashboardLayout({
                 href="/dashboard/admin/rafacall-hoje"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/rafacall-hoje'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
+                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
-                Agendamentos hoje
+                Agendamentos
               </Link>
               <Link
                 href="/dashboard/categories"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/categories'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
+                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
                 Categorias
@@ -414,8 +414,8 @@ export default function DashboardLayout({
                 href="/dashboard/partners"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/partners'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
+                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
                 Parceiros
@@ -424,8 +424,8 @@ export default function DashboardLayout({
                 href="/dashboard/affiliates"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/affiliates'
-                    ? 'bg-primary-3 font-medium text-primary-2'
-                    : 'text-primary-1 hover:bg-secondary-3'
+                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
                 Afiliados
@@ -437,8 +437,8 @@ export default function DashboardLayout({
               href="/dashboard/my-referrals"
               className={`block rounded-md px-3 py-2 text-sm ${
                 pathname === '/dashboard/my-referrals'
-                  ? 'bg-primary-3 font-medium text-primary-2'
-                  : 'text-primary-1 hover:bg-secondary-3'
+                  ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                  : 'text-zinc-800 hover:bg-zinc-100'
               }`}
             >
               Minhas indicações
@@ -448,23 +448,23 @@ export default function DashboardLayout({
       </div>
 
       {/* Rodapé (somente usuário/ação) */}
-      <div className="mt-auto border-t border-secondary-2 pt-4 text-sm text-primary-1">
+      <div className="mt-auto border-t border-secondary-2 pt-4 text-sm text-zinc-700">
         {/* Bloco do usuário */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-3 text-[16px] font-semibold text-primary-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#efc2c1] text-[16px] font-semibold text-zinc-900">
               {firstName.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
               <p
                 className={`truncate text-xs font-semibold ${
-                  user ? 'text-primary-1' : 'text-white'
+                  user ? 'text-zinc-900' : 'text-zinc-900'
                 }`}
               >
                 {user ? firstName : 'Visitante'}
               </p>
               {user && (
-                <p className="text-[10px] uppercase tracking-wide text-primary-3">
+                <p className="text-[10px] uppercase tracking-wide text-zinc-500">
                   {roleLabel}
                   {isImpersonating && ' (modo admin)'}
                 </p>
@@ -476,7 +476,7 @@ export default function DashboardLayout({
               <button
                 type="button"
                 onClick={logout}
-                className="cursor-pointer text-xs font-medium text-primary-3 underline-offset-2 hover:text-primary-1 hover:underline"
+                className="cursor-pointer text-xs font-medium text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
               >
                 Sair
               </button>
@@ -487,7 +487,7 @@ export default function DashboardLayout({
                   setAuthMode('login');
                   setIsAuthModalOpen(true);
                 }}
-                className="cursor-pointer text-xs font-medium text-primary-3 underline-offset-2 hover:text-primary-1 hover:underline"
+                className="cursor-pointer text-xs font-medium text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
               >
                 Login
               </button>
@@ -501,7 +501,7 @@ export default function DashboardLayout({
             onClick={async () => {
               await stopImpersonation();
             }}
-            className="mt-3 w-full cursor-pointer rounded-full border border-primary-3 px-3 py-1.5 text-[11px] font-medium text-primary-3 hover:bg-primary-3 hover:text-primary-2"
+            className="mt-3 w-full cursor-pointer rounded-full border border-zinc-300 px-3 py-1.5 text-[11px] font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
           >
             Voltar ao modo admin
           </button>
@@ -511,12 +511,12 @@ export default function DashboardLayout({
   );
 
   return (
-    <div className="flex min-h-screen flex-col bg-primary-1 md:pl-56">
+    <div className="flex min-h-screen flex-col bg-zinc-50 md:pl-56">
       {/* Header mobile com menu hamburguer */}
-      <header className="flex items-center justify-between border-b border-secondary-2 bg-primary-2 px-4 py-2 md:hidden">
+      <header className="flex items-center justify-between border-b border-secondary-2 bg-white px-4 py-2 md:hidden">
         <div className="flex items-center">
           <Image
-            src="/logo_bg_clara.png"
+            src="/logo_bg_escura.png"
             alt="Comunidade RPM"
             width={96}
             height={22}
@@ -525,26 +525,26 @@ export default function DashboardLayout({
         <button
           type="button"
           onClick={() => setIsMenuOpen((open) => !open)}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-secondary-2 text-primary-1 hover:bg-secondary-3"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-secondary-2 text-zinc-900 hover:bg-zinc-100"
           aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
         >
           <span className="flex h-3 w-3 flex-col justify-between">
-            <span className="h-[1px] w-full bg-primary-1" />
-            <span className="h-[1px] w-full bg-primary-1" />
-            <span className="h-[1px] w-full bg-primary-1" />
+            <span className="h-[1px] w-full bg-zinc-900" />
+            <span className="h-[1px] w-full bg-zinc-900" />
+            <span className="h-[1px] w-full bg-zinc-900" />
           </span>
         </button>
       </header>
 
       {/* Sidebar desktop */}
-      <aside className="hidden border-r border-secondary-2 bg-primary-2 p-4 md:fixed md:inset-y-0 md:left-0 md:flex md:w-56 md:flex-col md:overflow-hidden">
+      <aside className="hidden border-r border-secondary-2 bg-white p-4 md:fixed md:inset-y-0 md:left-0 md:flex md:w-56 md:flex-col md:overflow-hidden">
         {sidebarContent}
       </aside>
 
       {/* Sidebar mobile (overlay) */}
       {isMenuOpen && (
         <div className="fixed inset-0 z-40 flex md:hidden">
-          <div className="flex w-64 shrink-0 flex-col border-r border-secondary-2 bg-primary-2 p-4">
+          <div className="flex w-64 shrink-0 flex-col border-r border-secondary-2 bg-white p-4">
             {sidebarContent}
           </div>
           <button
@@ -1097,7 +1097,7 @@ export default function DashboardLayout({
         </div>
       )}
 
-      <main className="flex-1 p-4 text-primary-2 md:p-6">
+      <main className="flex-1 p-4 text-zinc-900 md:p-6">
         {children}
       </main>
 

@@ -393,6 +393,29 @@ export const api = {
           }[];
         }>(`/admin/rafacall/schedule${q}`, { method: 'GET' });
       },
+      blocks: (params: { fromUtcIso: string; toUtcIso: string }) => {
+        const q = new URLSearchParams({
+          from: params.fromUtcIso,
+          to: params.toUtcIso,
+        });
+        return request<{
+          blocks: {
+            id: string;
+            startsAt: string;
+            endsAt: string;
+            reason: string | null;
+            createdAt: string;
+            createdByUserId: string;
+          }[];
+        }>(`/admin/rafacall/blocks?${q.toString()}`, { method: 'GET' });
+      },
+      createBlock: (body: { startsAtUtcIso: string; endsAtUtcIso: string; reason?: string }) =>
+        request<{ id: string; startsAt: string; endsAt: string; reason: string | null }>(
+          '/admin/rafacall/blocks',
+          { method: 'POST', body: JSON.stringify(body) },
+        ),
+      deleteBlock: (id: string) =>
+        request<{ ok: true }>(`/admin/rafacall/blocks/${id}`, { method: 'DELETE' }),
     },
     partners: {
       list: () =>
