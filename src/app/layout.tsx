@@ -25,11 +25,6 @@ export default function RootLayout({
   return (
     <html lang="pt">
       <head>
-        {/* Calendly: sem widget.css o popup não posiciona o overlay (pedidos na rede ok, UI invisível). */}
-        <link
-          href="https://assets.calendly.com/assets/external/widget.css"
-          rel="stylesheet"
-        />
       </head>
       <body className="antialiased">
         <Providers>

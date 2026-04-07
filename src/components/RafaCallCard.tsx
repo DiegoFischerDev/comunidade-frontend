@@ -1,13 +1,15 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
 
 type RafacallStatusPayload = Awaited<ReturnType<typeof api.rafacall.status>>;
+type RafacallBookingPayload = Awaited<ReturnType<typeof api.rafacall.booking>>['booking'];
+type AvailabilityPayload = Awaited<ReturnType<typeof api.rafacall.availability>>;
 
 function formatRafacallScheduledPt(
   slotStartsAt: string | null,
@@ -44,37 +46,6 @@ function isActiveRafacallSlot(slotEndsAt: string | null | undefined): boolean {
   return t > Date.now();
 }
 
-type CalendlyUrlOpts = {
-  /** ex.: pt_BR — ver https://help.calendly.com “Change invitee language” */
-  locale?: string;
-  /** Nome do query param para telefone: text_reminder_number, a1, a2… (conforme o tipo de evento) */
-  phoneUrlParam?: string;
-  phone?: string;
-};
-
-/** URL do evento sem parâmetros de embed inline; o popup usa initPopupWidget + prefill. */
-function calendlyEventUrlForPopup(base: string, opts?: CalendlyUrlOpts): string {
-  const trimmed = base.trim();
-  try {
-    const u = new URL(trimmed);
-    u.searchParams.delete('embed');
-    u.searchParams.delete('email');
-    u.searchParams.delete('name');
-    if (opts?.locale?.trim()) {
-      u.searchParams.set('locale', opts.locale.trim());
-    }
-    const phone = opts?.phone?.trim();
-    const phoneKey = opts?.phoneUrlParam?.trim();
-    if (phone && phoneKey) {
-      u.searchParams.set(phoneKey, phone);
-    }
-    const q = u.searchParams.toString();
-    return q ? `${u.origin}${u.pathname}?${q}` : `${u.origin}${u.pathname}`;
-  } catch {
-    return trimmed.split('?')[0] ?? trimmed;
-  }
-}
-
 function formatEur(cents: number): string {
   return new Intl.NumberFormat('pt-PT', {
     style: 'currency',
@@ -84,52 +55,6 @@ function formatEur(cents: number): string {
   }).format(cents / 100);
 }
 
-type CalendlyGlobal = {
-  initPopupWidget: (opts: {
-    url: string;
-    prefill?: {
-      name?: string;
-      email?: string;
-      customAnswers?: Record<string, string>;
-    };
-  }) => void;
-};
-
-function getCalendly(): CalendlyGlobal | undefined {
-  if (typeof window === 'undefined') return undefined;
-  return (window as unknown as { Calendly?: CalendlyGlobal }).Calendly;
-}
-
-/** Popup oficial Calendly (overlay + iframe com altura correta); não usa o nosso modal. */
-function openCalendlyPopupWidget(
-  eventUrl: string,
-  prefill: { name: string; email?: string; customAnswers?: Record<string, string> },
-  onScriptTimeout: () => void,
-): void {
-  const run = (): boolean => {
-    const C = getCalendly();
-    if (!C?.initPopupWidget) return false;
-    C.initPopupWidget({
-      url: eventUrl,
-      prefill,
-    });
-    return true;
-  };
-  if (run()) return;
-  let done = false;
-  const interval = window.setInterval(() => {
-    if (run()) {
-      done = true;
-      window.clearInterval(interval);
-      window.clearTimeout(timeout);
-    }
-  }, 50);
-  const timeout = window.setTimeout(() => {
-    window.clearInterval(interval);
-    if (!done) onScriptTimeout();
-  }, 20_000);
-}
-
 function formatBrl(centavos: number): string {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -137,6 +62,45 @@ function formatBrl(centavos: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(centavos / 100);
+}
+
+function resolvedUserTz(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Lisbon';
+  } catch {
+    return 'Europe/Lisbon';
+  }
+}
+
+function ymdInTz(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone }).format(date);
+}
+
+function prettyYmdPt(ymd: string, timeZone: string): string {
+  const m = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return ymd;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  const utcMidday = new Date(Date.UTC(y, mo - 1, d, 12, 0, 0));
+  return utcMidday.toLocaleDateString('pt-PT', {
+    timeZone,
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+  });
+}
+
+function addDays(d: Date, days: number): Date {
+  const x = new Date(d);
+  x.setDate(x.getDate() + days);
+  return x;
+}
+
+function formatSlotTimeInTz(utcIso: string, timeZone: string): string {
+  const d = new Date(utcIso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleTimeString('pt-PT', { timeZone, hour: '2-digit', minute: '2-digit' });
 }
 
 /** Botões de método de pagamento — mesmo padrão visual do modal da anuidade (FloatingWhatsAppButton). */
@@ -268,22 +232,33 @@ export function RafaCallCard() {
   const [rafacallStatus, setRafacallStatus] = useState<
     RafacallStatusPayload | null | undefined
   >(undefined);
+  const [booking, setBooking] = useState<RafacallBookingPayload | null | undefined>(undefined);
   const [payLoading, setPayLoading] = useState(false);
   const [amounts, setAmounts] = useState<{ eurCents: number; pixCentavos: number } | null>(
     null,
   );
   const [amountsLoading, setAmountsLoading] = useState(false);
 
+  const [schedOpen, setSchedOpen] = useState(false);
+  const [schedLoading, setSchedLoading] = useState(false);
+  const [schedError, setSchedError] = useState('');
+  const [availability, setAvailability] = useState<AvailabilityPayload | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>('');
+
   const refreshRafacallStatus = useCallback(async () => {
     if (!user || !token || user.tier !== 'MEMBER') {
       setRafacallStatus(user && user.tier !== 'MEMBER' ? null : undefined);
+      setBooking(undefined);
       return;
     }
     try {
       const s = await api.rafacall.status();
       setRafacallStatus(s);
+      const b = await api.rafacall.booking();
+      setBooking(b.booking);
     } catch {
       setRafacallStatus(null);
+      setBooking(null);
     }
   }, [user, token]);
 
@@ -300,19 +275,6 @@ export function RafaCallCard() {
     return () => window.removeEventListener('focus', onFocus);
   }, [user, token, refreshRafacallStatus]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const existing = document.querySelector<HTMLScriptElement>(
-      'script[data-calendly-widget="1"]',
-    );
-    if (existing) return;
-    const s = document.createElement('script');
-    s.src = 'https://assets.calendly.com/assets/external/widget.js';
-    s.async = true;
-    s.dataset.calendlyWidget = '1';
-    document.body.appendChild(s);
-  }, []);
-
   const openLogin = useCallback(() => {
     if (typeof window === 'undefined') return;
     window.dispatchEvent(new Event(OPEN_AUTH_LOGIN_EVENT));
@@ -328,39 +290,7 @@ export function RafaCallCard() {
     setPayOptions(false);
   }, []);
 
-  const openCalendlyForMember = useCallback((s: RafacallStatusPayload) => {
-    const calendlyBase = process.env.NEXT_PUBLIC_CALENDLY_EVENT_URL?.trim() || '';
-    if (!calendlyBase) {
-      alert(
-        'O embed do Calendly não está configurado (NEXT_PUBLIC_CALENDLY_EVENT_URL).\n\n' +
-          'Dev: defina em frontend/.env.local e reinicie npm run dev.\n' +
-          'Docker: defina no build da imagem do frontend (build-arg no Dockerfile / GitHub Actions).',
-      );
-      return;
-    }
-    const locale = process.env.NEXT_PUBLIC_CALENDLY_LOCALE?.trim() || 'pt_BR';
-    const phoneParam =
-      process.env.NEXT_PUBLIC_CALENDLY_PHONE_URL_PARAM?.trim() ||
-      'text_reminder_number';
-    const eventUrl = calendlyEventUrlForPopup(calendlyBase, {
-      locale,
-      phoneUrlParam: phoneParam,
-      phone: s.calPrefillPhone || undefined,
-    });
-    openCalendlyPopupWidget(
-      eventUrl,
-      {
-        name: s.calGuestName,
-        ...(s.calPrefillEmail ? { email: s.calPrefillEmail } : {}),
-      },
-      () =>
-        alert(
-          'O script do Calendly não carregou a tempo. Recarrega a página e tenta de novo, ou verifica bloqueadores de anúncios.',
-        ),
-    );
-  }, []);
-
-  const handleAgendar = useCallback(async () => {
+  const openScheduler = useCallback(async () => {
     if (!user || !token) {
       openLogin();
       return;
@@ -369,25 +299,51 @@ export function RafaCallCard() {
       openMembership();
       return;
     }
+    setSchedOpen(true);
+    setSchedError('');
+    setSchedLoading(true);
+    try {
+      const tz = resolvedUserTz();
+      const from = ymdInTz(new Date(), tz);
+      const to = ymdInTz(addDays(new Date(), 14), tz);
+      const [b, avail, s] = await Promise.all([
+        api.rafacall.booking(),
+        api.rafacall.availability({ from, to, tz }),
+        api.rafacall.status(),
+      ]);
+      setBooking(b.booking);
+      setAvailability(avail);
+      setRafacallStatus(s);
+      const firstDay = avail.days.find((d) => d.slots.length > 0)?.date ?? avail.days[0]?.date ?? '';
+      setSelectedDate((prev) => prev || firstDay);
+    } catch (e) {
+      setAvailability(null);
+      setSchedError(e instanceof Error ? e.message : 'Erro ao carregar horários.');
+    } finally {
+      setSchedLoading(false);
+    }
+  }, [user, token, openLogin, openMembership]);
+
+  const handleAgendar = useCallback(async () => {
     setStatusLoading(true);
     try {
       const s = await api.rafacall.status();
       setRafacallStatus(s);
       if (s.canOpenCalEmbed) {
-        openCalendlyForMember(s);
-      } else {
-        setPayOpen(true);
-        setPayOptions(false);
-        if (!amounts && !amountsLoading) {
-          setAmountsLoading(true);
-          try {
-            const a = await api.stripe.getRafaCallAmounts();
-            setAmounts(a);
-          } catch {
-            setAmounts(null);
-          } finally {
-            setAmountsLoading(false);
-          }
+        await openScheduler();
+        return;
+      }
+      setPayOpen(true);
+      setPayOptions(false);
+      if (!amounts && !amountsLoading) {
+        setAmountsLoading(true);
+        try {
+          const a = await api.stripe.getRafaCallAmounts();
+          setAmounts(a);
+        } catch {
+          setAmounts(null);
+        } finally {
+          setAmountsLoading(false);
         }
       }
     } catch (e) {
@@ -397,18 +353,71 @@ export function RafaCallCard() {
       setStatusLoading(false);
     }
   }, [
-    user,
-    token,
     amounts,
     amountsLoading,
-    openLogin,
-    openMembership,
-    openCalendlyForMember,
+    openScheduler,
   ]);
 
   const handleReagendar = useCallback(() => {
     void handleAgendar();
   }, [handleAgendar]);
+
+  const closeSched = useCallback(() => {
+    setSchedOpen(false);
+    setSchedError('');
+  }, []);
+
+  const tz = useMemo(() => availability?.tz || resolvedUserTz(), [availability?.tz]);
+
+  const daySlots = useMemo(() => {
+    if (!availability || !selectedDate) return [];
+    return availability.days.find((d) => d.date === selectedDate)?.slots ?? [];
+  }, [availability, selectedDate]);
+
+  const doBook = useCallback(
+    async (startsAtUtcIso: string) => {
+      if (!availability) return;
+      setSchedLoading(true);
+      setSchedError('');
+      try {
+        const b = await api.rafacall.booking();
+        if (b.booking) {
+          const next = await api.rafacall.reschedule({
+            bookingId: b.booking.id,
+            newStartsAtUtcIso: startsAtUtcIso,
+            tz,
+          });
+          setBooking(next);
+        } else {
+          const created = await api.rafacall.book({ startsAtUtcIso: startsAtUtcIso, tz });
+          setBooking(created);
+        }
+        await refreshRafacallStatus();
+        setSchedOpen(false);
+      } catch (e) {
+        setSchedError(e instanceof Error ? e.message : 'Não foi possível agendar.');
+      } finally {
+        setSchedLoading(false);
+      }
+    },
+    [availability, tz, refreshRafacallStatus],
+  );
+
+  const doCancelBooking = useCallback(async () => {
+    if (!booking) return;
+    setSchedLoading(true);
+    setSchedError('');
+    try {
+      await api.rafacall.cancel({ bookingId: booking.id, reason: 'user_cancel' });
+      setBooking(null);
+      await refreshRafacallStatus();
+      setSchedOpen(false);
+    } catch (e) {
+      setSchedError(e instanceof Error ? e.message : 'Não foi possível cancelar.');
+    } finally {
+      setSchedLoading(false);
+    }
+  }, [booking, refreshRafacallStatus]);
 
   const successUrl =
     typeof window !== 'undefined'
@@ -507,14 +516,26 @@ export function RafaCallCard() {
         </div>
         <div className="flex flex-col items-center gap-2">
           {hasBookedSlot ? (
-            <button
-              type="button"
-              onClick={handleReagendar}
-              disabled={statusLoading}
-              className="inline-flex w-full max-w-[220px] cursor-pointer items-center justify-center rounded-full border-2 border-emerald-600 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition-colors hover:bg-emerald-50 disabled:opacity-50"
-            >
-              {statusLoading ? 'A abrir…' : 'Reagendar'}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleReagendar}
+                disabled={statusLoading}
+                className="inline-flex w-full max-w-[220px] cursor-pointer items-center justify-center rounded-full border-2 border-emerald-600 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition-colors hover:bg-emerald-50 disabled:opacity-50"
+              >
+                {statusLoading ? 'A abrir…' : 'Reagendar'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSchedOpen(true);
+                }}
+                disabled={statusLoading}
+                className="inline-flex w-full max-w-[220px] cursor-pointer items-center justify-center rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+            </>
           ) : (
             <button
               type="button"
@@ -527,6 +548,129 @@ export function RafaCallCard() {
           )}
         </div>
       </div>
+
+      {schedOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+          onClick={closeSched}
+          role="presentation"
+        >
+          <div
+            className="relative w-full max-w-3xl rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-zinc-900">
+                  {booking ? 'Reagendar chamada' : 'Agendar chamada'}
+                </h2>
+                <p className="mt-1 text-sm text-zinc-600">
+                  Timezone: <span className="font-medium">{tz}</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeSched}
+                className="rounded-full px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100"
+              >
+                Fechar
+              </button>
+            </div>
+
+            {schedError ? (
+              <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                {schedError}
+              </p>
+            ) : null}
+
+            {booking ? (
+              <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-600">
+                  Agendamento atual
+                </p>
+                <p className="mt-1 text-sm font-semibold text-zinc-900">
+                  {new Date(booking.startsAt).toLocaleString('pt-PT', {
+                    timeZone: booking.timezone,
+                    weekday: 'long',
+                    day: '2-digit',
+                    month: 'long',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void doCancelBooking()}
+                  disabled={schedLoading}
+                  className="mt-3 inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+                >
+                  {schedLoading ? 'A cancelar…' : 'Cancelar agendamento'}
+                </button>
+              </div>
+            ) : null}
+
+            <div className="mt-6 grid gap-6 md:grid-cols-[260px_1fr]">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Dias
+                </p>
+                <div className="mt-3 max-h-[420px] space-y-2 overflow-auto pr-1">
+                  {(availability?.days ?? []).map((d) => {
+                    const isActive = d.date === selectedDate;
+                    const hasSlots = d.slots.length > 0;
+                    return (
+                      <button
+                        key={d.date}
+                        type="button"
+                        disabled={!hasSlots || schedLoading}
+                        onClick={() => setSelectedDate(d.date)}
+                        className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
+                          isActive
+                            ? 'border-emerald-400 bg-emerald-50'
+                            : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                        } ${!hasSlots ? 'opacity-50' : ''}`}
+                      >
+                        <span className="font-medium text-zinc-900">
+                          {prettyYmdPt(d.date, tz)}
+                        </span>
+                        <span className="text-xs text-zinc-600">{d.slots.length} horários</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Horários
+                </p>
+                {schedLoading ? (
+                  <p className="mt-3 text-sm text-zinc-600">A carregar…</p>
+                ) : daySlots.length === 0 ? (
+                  <p className="mt-3 text-sm text-zinc-600">
+                    Escolhe um dia com horários disponíveis.
+                  </p>
+                ) : (
+                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {daySlots.map((s) => (
+                      <button
+                        key={s.startsAt}
+                        type="button"
+                        disabled={schedLoading}
+                        onClick={() => void doBook(s.startsAt)}
+                        className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-emerald-50"
+                        title={s.startsAt}
+                      >
+                        {formatSlotTimeInTz(s.startsAt, tz)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {payOpen && (
         <div

@@ -216,10 +216,51 @@ export const api = {
         slotStartsAt: string | null;
         slotEndsAt: string | null;
         canOpenCalEmbed: boolean;
-        calPrefillEmail: string | null;
-        calPrefillPhone: string;
-        calGuestName: string;
       }>('/rafacall/status', { method: 'GET' }),
+    booking: () =>
+      request<{
+        booking:
+          | {
+              id: string;
+              status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+              startsAt: string;
+              endsAt: string;
+              timezone: string;
+            }
+          | null;
+      }>('/rafacall/booking', { method: 'GET' }),
+    availability: (params: { from: string; to: string; tz: string }) => {
+      const q = new URLSearchParams({
+        from: params.from,
+        to: params.to,
+        tz: params.tz,
+      });
+      return request<{
+        tz: string;
+        days: { date: string; slots: { startsAt: string; endsAt: string }[] }[];
+      }>(`/rafacall/availability?${q.toString()}`, { method: 'GET' });
+    },
+    book: (body: { startsAtUtcIso: string; tz: string }) =>
+      request<{
+        id: string;
+        status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+        startsAt: string;
+        endsAt: string;
+        timezone: string;
+      }>('/rafacall/book', { method: 'POST', body: JSON.stringify(body) }),
+    reschedule: (body: { bookingId: string; newStartsAtUtcIso: string; tz: string }) =>
+      request<{
+        id: string;
+        status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+        startsAt: string;
+        endsAt: string;
+        timezone: string;
+      }>('/rafacall/reschedule', { method: 'POST', body: JSON.stringify(body) }),
+    cancel: (body: { bookingId: string; reason?: string | null }) =>
+      request<{
+        id: string;
+        status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+      }>('/rafacall/cancel', { method: 'POST', body: JSON.stringify(body) }),
   },
   admin: {
     users: {
@@ -333,26 +374,23 @@ export const api = {
       delete: (id: string) =>
         request<void>(`/users/${id}`, { method: 'DELETE' }),
     },
-    calendly: {
+    rafacall: {
       today: (tz?: string) => {
         const q = tz ? `?tz=${encodeURIComponent(tz)}` : '';
         return request<{
-          configured: boolean;
-          timeZone: string;
+          tz: string;
+          startUtc: string;
+          endUtc: string;
           items: {
-            eventUri: string;
-            eventName: string;
-            startTime: string;
-            endTime: string;
-            inviteeName: string;
-            inviteeEmail: string | null;
-            matchedUserId: string | null;
-            matchedUserName: string | null;
-            whatsappDigits: string | null;
-            whatsappSource: 'database' | 'calendly';
+            id: string;
+            startsAt: string;
+            endsAt: string;
+            userId: string;
+            userName: string;
+            whatsappDigits: string;
+            bookingTimezone: string;
           }[];
-          message: string | null;
-        }>(`/admin/calendly/today${q}`, { method: 'GET' });
+        }>(`/admin/rafacall/today${q}`, { method: 'GET' });
       },
     },
     partners: {
