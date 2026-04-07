@@ -112,10 +112,6 @@ export default function DashboardPage() {
     }
   }
 
-  if (!user) {
-    return null;
-  }
-
   const hasAffiliateEnrollment = Boolean(affiliate?.affiliateCode?.trim());
 
   return (
@@ -146,13 +142,13 @@ export default function DashboardPage() {
               </div>
               <div className="space-y-1">
                 <p className="text-base font-semibold text-zinc-900">
-                  {user.name || "Visitante"}
+                  {user?.name || "Visitante"}
                 </p>
                 <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
                   Plano atual:{" "}
                   <span className="font-semibold text-zinc-800">{tierLabel}</span>
                 </p>
-                {isMember && user.membershipExpiresAt && (
+                {isMember && user?.membershipExpiresAt && (
                   <p className="mt-0.5 text-xs text-zinc-500">
                     Válido até{" "}
                     <span className="font-medium text-zinc-800">
