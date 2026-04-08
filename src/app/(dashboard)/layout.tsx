@@ -693,9 +693,6 @@ export default function DashboardLayout({
                     placeholder="Ex.: 351954785654 ou 55999867458"
                     className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
-                  <p className="mt-1 text-[11px] text-zinc-500">
-                    Inclua sempre o indicativo do país, sem + nem espaços. Ex.: Portugal = 351954785654, Brasil = 55999867458.
-                  </p>
                 </div>
                 <div>
                   <label
@@ -979,9 +976,6 @@ export default function DashboardLayout({
                     placeholder="Ex.: 351954785654 ou 55999867458"
                     className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
-                  <p className="mt-1 text-[11px] text-zinc-500">
-                    Inclua sempre o indicativo do país, sem + nem espaços. Ex.: Portugal = 351954785654, Brasil = 55999867458.
-                  </p>
                 </div>
                 <button
                   type="submit"

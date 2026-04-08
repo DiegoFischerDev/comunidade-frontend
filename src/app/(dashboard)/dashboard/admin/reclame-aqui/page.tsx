@@ -12,11 +12,23 @@ function prettyDtPt(iso: string): string {
   return d.toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+function waDigits(value: string): string {
+  return (value || '').replace(/\D/g, '');
+}
+
+function preview100(text: string): string {
+  const t = (text || '').replace(/\s+/g, ' ').trim();
+  if (t.length <= 100) return t;
+  return `${t.slice(0, 100)}…`;
+}
+
 export default function AdminReclameAquiPage() {
   const { user } = useAuth();
   const [data, setData] = useState<Payload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [viewing, setViewing] = useState<Payload['items'][number] | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const canSee = user?.role === 'ADMIN';
 
@@ -84,8 +96,8 @@ export default function AdminReclameAquiPage() {
               <tr>
                 <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3">Quem abriu</th>
-                <th className="px-4 py-3">WhatsApp</th>
                 <th className="px-4 py-3">Mensagem</th>
+                <th className="px-4 py-3 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -95,14 +107,105 @@ export default function AdminReclameAquiPage() {
                     {prettyDtPt(t.createdAt)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">{t.user.name}</td>
-                  <td className="whitespace-nowrap px-4 py-3">{t.user.whatsapp}</td>
                   <td className="px-4 py-3">
-                    <div className="whitespace-pre-wrap text-zinc-800">{t.message}</div>
+                    <div className="text-zinc-800">{preview100(t.message)}</div>
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right">
+                    <div className="inline-flex flex-wrap justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setViewing(t)}
+                        className="cursor-pointer rounded bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
+                      >
+                        Ver mensagem
+                      </button>
+                      <a
+                        className="inline-flex cursor-pointer items-center justify-center rounded bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800 hover:bg-emerald-100"
+                        href={`https://wa.me/${waDigits(t.user.whatsapp)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        WhatsApp
+                      </a>
+                      <button
+                        type="button"
+                        disabled={deletingId === t.id}
+                        onClick={async () => {
+                          const ok = window.confirm('Excluir este ticket? Esta ação não pode ser desfeita.');
+                          if (!ok) return;
+                          setDeletingId(t.id);
+                          setError('');
+                          try {
+                            await api.admin.support.deleteTicket(t.id);
+                            await load();
+                          } catch (e) {
+                            setError(e instanceof Error ? e.message : 'Não foi possível excluir.');
+                          } finally {
+                            setDeletingId(null);
+                          }
+                        }}
+                        className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+                      >
+                        {deletingId === t.id ? 'Excluindo…' : 'Excluir'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {viewing && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="presentation"
+          onClick={() => setViewing(null)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-base font-semibold text-zinc-900">Mensagem do ticket</h3>
+                <p className="mt-1 text-sm text-zinc-600">
+                  {viewing.user.name} · {prettyDtPt(viewing.createdAt)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewing(null)}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50"
+                aria-label="Fechar"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+              <div className="whitespace-pre-wrap text-sm text-zinc-800">{viewing.message}</div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setViewing(null)}
+                className="cursor-pointer rounded bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-200"
+              >
+                Fechar
+              </button>
+              <a
+                className="inline-flex cursor-pointer items-center justify-center rounded bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100"
+                href={`https://wa.me/${waDigits(viewing.user.whatsapp)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                WhatsApp
+              </a>
+            </div>
+          </div>
         </div>
       )}
     </div>

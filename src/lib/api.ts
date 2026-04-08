@@ -554,6 +554,8 @@ export const api = {
           }[];
         }>(`/admin/support/tickets${q}`, { method: 'GET' });
       },
+      deleteTicket: (id: string) =>
+        request<{ ok: true }>(`/admin/support/tickets/${id}`, { method: 'DELETE' }),
     },
   },
   partner: {
