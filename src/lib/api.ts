@@ -493,7 +493,8 @@ export const api = {
             id: string;
             slug: string;
             name: string;
-            description?: string;
+            shortDescription?: string;
+            fullDescription?: string;
             backgroundImageUrl?: string;
             sortOrder: number;
           }[]
@@ -501,7 +502,8 @@ export const api = {
       create: (input: {
         slug: string;
         name: string;
-        description?: string;
+        shortDescription?: string;
+        fullDescription?: string;
         backgroundImageUrl?: string;
         sortOrder?: number;
       }) =>
@@ -509,7 +511,8 @@ export const api = {
           id: string;
           slug: string;
           name: string;
-          description?: string;
+          shortDescription?: string;
+          fullDescription?: string;
           backgroundImageUrl?: string;
           sortOrder: number;
         }>('/partners/admin/categories', {
@@ -521,7 +524,8 @@ export const api = {
         input: {
           slug?: string;
           name?: string;
-          description?: string;
+          shortDescription?: string;
+          fullDescription?: string;
           backgroundImageUrl?: string;
           sortOrder?: number;
         },
@@ -530,7 +534,8 @@ export const api = {
           id: string;
           slug: string;
           name: string;
-          description?: string;
+          shortDescription?: string;
+          fullDescription?: string;
           backgroundImageUrl?: string;
           sortOrder: number;
         }>(`/partners/admin/categories/${id}`, {
@@ -693,7 +698,8 @@ export const api = {
           id: string;
           slug: string;
           name: string;
-          description?: string;
+          shortDescription?: string;
+          fullDescription?: string;
           backgroundImageUrl?: string;
           partners: {
             id: string;

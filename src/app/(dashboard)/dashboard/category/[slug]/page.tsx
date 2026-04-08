@@ -9,7 +9,8 @@ type CategoryWithPartners = {
   id: string;
   slug: string;
   name: string;
-  description?: string;
+  shortDescription?: string;
+  fullDescription?: string;
   backgroundImageUrl?: string;
   partners: {
     id: string;
@@ -95,9 +96,9 @@ export default function CategoryPage() {
           <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
             {category.name}
           </h1>
-          {category.description && (
+          {(category.fullDescription || category.shortDescription) && (
             <p className="mt-3 max-w-2xl text-sm text-blue-50 sm:text-base">
-              {category.description}
+              {category.fullDescription || category.shortDescription}
             </p>
           )}
         </div>

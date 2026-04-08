@@ -47,9 +47,6 @@ export default function PSPFullPage() {
           PSP - Portugal Sem Perrengue (PDF completo)
         </h1>
         <p className="mt-1 text-sm text-zinc-500">Última atualização: abril/2026</p>
-        <p className="mt-4 text-sm text-zinc-600">
-          Visualize o PDF completo do guia diretamente dentro da Comunidade RPM.
-        </p>
         <p className="mt-3 text-sm text-zinc-600">
           Esse Ebook foi criado com muito carinho para te ajudar nesse processo de imigração. Apesar do nosso esforço, as
           regras mudam constantemente, então contamos com a ajuda da comunidade para atualizar esse material todos os meses.
