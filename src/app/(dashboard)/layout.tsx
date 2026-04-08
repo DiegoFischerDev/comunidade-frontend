@@ -12,6 +12,7 @@ import {
 } from '@/lib/whatsapp-registration-poll';
 import { useAuth } from '@/contexts/AuthContext';
 import { CardButton } from '@/components/ui/CardButton';
+import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
 
 function formatWhatsappRegistrationDisplay(digits: string) {
   const d = digits.replace(/\D/g, '');
@@ -1218,6 +1219,8 @@ export default function DashboardLayout({
       <main className="flex-1 p-4 text-zinc-900 md:p-6">
         {children}
       </main>
+
+      <FloatingWhatsAppButton hideFloatingButton />
 
       {isWelcomeOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">

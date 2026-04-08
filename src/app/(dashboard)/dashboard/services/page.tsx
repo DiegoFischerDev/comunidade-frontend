@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { api } from '@/lib/api';
-import { CardLinkButton } from '@/components/ui/CardButton';
 
 type CategoryRow = {
   id: string;
@@ -46,18 +45,13 @@ export default function ServicesDashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-[900px] space-y-6">
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50">
-            <Image src="/services.png" alt="" fill className="object-contain" sizes="56px" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-2xl font-semibold text-zinc-900">Serviços</h1>
-            <p className="mt-1 text-sm text-zinc-600">
-              Escolhe uma categoria para ver parceiros e serviços disponíveis.
-            </p>
-          </div>
-        </div>
+      <div>
+        <h1 className="text-2xl font-semibold text-zinc-900">Serviços</h1>
+        <p className="mt-2 text-sm text-zinc-600">
+          Aqui encontras os serviços que a Comunidade RPM confia e recomenda. Estamos
+          sempre à procura de novos parceiros para oferecer à nossa comunidade as
+          melhores soluções, e os menores preços. Aqueles que sao membros VIP tem direito a desconto de 10€ em todos os serviços.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -101,21 +95,12 @@ export default function ServicesDashboardPage() {
                 ) : (
                   <p className="mt-1 text-sm text-zinc-600">Ver parceiros e serviços</p>
                 )}
-                <div className="mt-3 flex items-center justify-between text-sm">
-                  <span className="font-medium text-zinc-600">Ver parceiros</span>
-                  <span className="font-medium text-zinc-500">→</span>
-                </div>
               </div>
             </Link>
           ))
         )}
       </div>
 
-      <div className="flex">
-        <CardLinkButton href="/dashboard" variant="secondary">
-          Voltar ao início
-        </CardLinkButton>
-      </div>
     </div>
   );
 }

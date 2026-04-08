@@ -157,6 +157,7 @@ export const api = {
         {
           method: 'GET',
           token,
+          cache: 'no-store',
         },
       ),
     impersonate: (userId: string) =>

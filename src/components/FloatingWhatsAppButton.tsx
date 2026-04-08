@@ -32,7 +32,14 @@ function formatBrl(centavos: number): string {
   }).format(centavos / 100);
 }
 
-export function FloatingWhatsAppButton() {
+type FloatingWhatsAppButtonProps = {
+  /** Esconde o botão e o popup (display: none); o modal VIP continua a abrir via evento. */
+  hideFloatingButton?: boolean;
+};
+
+export function FloatingWhatsAppButton({
+  hideFloatingButton = false,
+}: FloatingWhatsAppButtonProps) {
   const [open, setOpen] = useState(false);
   const [showMembershipModal, setShowMembershipModal] = useState(false);
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
@@ -136,7 +143,11 @@ export function FloatingWhatsAppButton() {
 
   return (
     <>
-      <div ref={containerRef} className="fixed bottom-6 right-6 z-30 flex flex-col items-end">
+      <div
+        ref={containerRef}
+        className={`fixed bottom-6 right-6 z-30 flex flex-col items-end${hideFloatingButton ? ' hidden' : ''}`}
+        aria-hidden={hideFloatingButton}
+      >
         {/* Popup pequeno acima do ícone — só quando não está no modal de membros */}
         {open && !showMembershipModal && (
           <div className="absolute bottom-full right-0 mb-2 w-72 rounded-xl border border-zinc-200 bg-white p-4 shadow-xl">

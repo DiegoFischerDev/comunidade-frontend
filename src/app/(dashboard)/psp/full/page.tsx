@@ -1,19 +1,35 @@
 "use client";
 
-import { useState } from 'react';
+import Image from 'next/image';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { CardButton } from '@/components/ui/CardButton';
 
-export default function PSPFullPage() {
-  const { user } = useAuth();
-  const isMember = user?.tier === 'MEMBER';
+const PSP_COVER_SRC = '/psp/PSP%20pag%201.png';
 
+export default function PSPFullPage() {
+  const { user, refreshUser } = useAuth();
+
+  useEffect(() => {
+    void refreshUser();
+  }, [refreshUser]);
+
+  const isMember = useMemo(() => {
+    const t = String(user?.tier ?? '').trim().toUpperCase();
+    return t === 'MEMBER';
+  }, [user?.tier]);
+
+  const [ebookOpen, setEbookOpen] = useState(false);
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [suggestMsg, setSuggestMsg] = useState('');
   const [suggestSending, setSuggestSending] = useState(false);
   const [suggestSent, setSuggestSent] = useState(false);
   const [suggestError, setSuggestError] = useState('');
+
+  useEffect(() => {
+    if (!isMember) setSuggestOpen(false);
+  }, [isMember]);
 
   function handleOpenSuggest() {
     if (!isMember) return;
@@ -51,23 +67,86 @@ export default function PSPFullPage() {
           Esse Ebook foi criado com muito carinho para te ajudar nesse processo de imigração. Apesar do nosso esforço, as
           regras mudam constantemente, então contamos com a ajuda da comunidade para atualizar esse material todos os meses.
         </p>
-        <p className="mt-4 text-base font-semibold text-zinc-900">
-          Tem algo desatualizado no PSP? conta pra gente
-        </p>
-        <div className="mt-3 flex justify-center">
-          <CardButton type="button" onClick={handleOpenSuggest} variant="primary">
-            Enviar sugestão
-          </CardButton>
+        {isMember ? (
+          <>
+            <p className="mt-4 text-base font-semibold text-zinc-900">
+              Tem algo desatualizado no PSP? conta pra gente
+            </p>
+            <div className="mt-3 flex justify-center">
+              <CardButton type="button" onClick={handleOpenSuggest} variant="primary">
+                Enviar sugestão
+              </CardButton>
+            </div>
+          </>
+        ) : null}
+      </div>
+
+      <div className="relative mx-auto flex min-h-[min(56vh,580px)] w-full max-w-[820px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 shadow-sm">
+        <div className="absolute inset-0 flex items-start justify-center pt-6 sm:pt-8">
+          <div className="relative w-[min(82vw,280px)] sm:w-[min(82vw,320px)] aspect-[1000/1414]">
+            <Image
+              src={PSP_COVER_SRC}
+              alt="Capa do ebook PSP - Portugal Sem Perrengue"
+              fill
+              className="object-contain object-top"
+              sizes="(max-width: 640px) 82vw, 320px"
+              priority
+            />
+          </div>
+        </div>
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/55 via-black/20 to-transparent"
+          aria-hidden
+        />
+        <div className="relative z-10 mt-auto flex w-full flex-col items-center justify-center gap-4 px-4 pb-8 pt-4 text-center">
+          <div className="flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
+            <CardButton
+              type="button"
+              variant="primary"
+              onClick={() => setEbookOpen(true)}
+              className="w-full sm:w-auto"
+            >
+              Abrir Ebook
+            </CardButton>
+            <a
+              href="/psp/psp-completo.pdf"
+              download
+              className="w-full sm:w-auto"
+            >
+              <CardButton type="button" variant="secondary" className="w-full sm:w-auto">
+                Download PDF
+              </CardButton>
+            </a>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
-        <iframe
-          src="/psp/psp-completo.pdf"
-          className="h-full w-full"
-          title="PSP - Portugal Sem Perrengue"
-        />
-      </div>
+      {ebookOpen && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-3 sm:p-6"
+          role="presentation"
+          onClick={() => setEbookOpen(false)}
+        >
+          <div
+            className="relative h-[92vh] w-full max-w-6xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setEbookOpen(false)}
+              className="absolute right-3 top-3 z-[80] inline-flex items-center justify-center rounded-xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-zinc-800"
+              aria-label="Fechar ebook"
+            >
+              Fechar
+            </button>
+            <iframe
+              src="/psp/psp-completo.pdf"
+              className="h-full w-full"
+              title="PSP - Portugal Sem Perrengue"
+            />
+          </div>
+        </div>
+      )}
 
       {suggestOpen && (
         <div
