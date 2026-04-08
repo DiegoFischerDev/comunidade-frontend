@@ -98,6 +98,15 @@ export default function DashboardPage() {
   }
 
   function handleOpenComplaint() {
+    if (typeof window === "undefined") return;
+    if (!user) {
+      window.dispatchEvent(new Event(OPEN_AUTH_LOGIN_EVENT));
+      return;
+    }
+    if (user.tier !== "MEMBER") {
+      window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
+      return;
+    }
     setComplaintError("");
     setComplaintSent(false);
     setComplaintMsg("");
@@ -271,36 +280,34 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {isMember ? (
-          <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4">
-                <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50">
-                  <Image
-                    src="/reclame.png"
-                    alt=""
-                    fill
-                    className="object-contain"
-                    sizes="56px"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <h2 className="text-xl font-semibold text-zinc-900">Reclame aqui</h2>
-                  <p className="text-sm text-zinc-600">
-                    Tem algum elogio ou reclamação de algum parceiro da comunidade ou bug do sistema?
-                    Compartilhe com nosso time de suporte.
-                  </p>
-                </div>
+        <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50">
+                <Image
+                  src="/reclame.png"
+                  alt=""
+                  fill
+                  className="object-contain"
+                  sizes="56px"
+                />
               </div>
-
-              <div className="shrink-0">
-                <CardButton type="button" onClick={handleOpenComplaint} variant="primary">
-                  Reclame aqui
-                </CardButton>
+              <div className="space-y-1">
+                <h2 className="text-xl font-semibold text-zinc-900">Reclame aqui</h2>
+                <p className="text-sm text-zinc-600">
+                  Tem algum elogio ou reclamação de algum parceiro da comunidade ou bug do sistema?
+                  Compartilhe com nosso time de suporte.
+                </p>
               </div>
             </div>
-          </section>
-        ) : null}
+
+            <div className="shrink-0">
+              <CardButton type="button" onClick={handleOpenComplaint} variant="primary">
+                Reclame aqui
+              </CardButton>
+            </div>
+          </div>
+        </section>
       </div>
       </div>
 

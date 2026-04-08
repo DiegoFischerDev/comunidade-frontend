@@ -1,0 +1,269 @@
+'use client';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
+import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
+import { CardButton } from '@/components/ui/CardButton';
+
+type Payload = Awaited<ReturnType<typeof api.support.myTickets>>;
+
+function prettyDtPt(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString('pt-PT', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function statusLabel(s: Payload['items'][number]['status']): string {
+  if (s === 'IN_REVIEW') return 'Em análise';
+  if (s === 'DONE') return 'Concluído';
+  return 'Registrado';
+}
+
+function statusClass(s: Payload['items'][number]['status']): string {
+  if (s === 'IN_REVIEW') return 'bg-amber-50 text-amber-800';
+  if (s === 'DONE') return 'bg-emerald-50 text-emerald-800';
+  return 'bg-zinc-100 text-zinc-800';
+}
+
+export default function ReclameAquiUserPage() {
+  const { user } = useAuth();
+  const isMember = user?.tier === 'MEMBER';
+
+  const [data, setData] = useState<Payload | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const [editing, setEditing] = useState<Payload['items'][number] | null>(null);
+  const [editMsg, setEditMsg] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!isMember) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.support.myTickets();
+      setData(res);
+    } catch (e) {
+      setData(null);
+      setError(e instanceof Error ? e.message : 'Erro ao carregar.');
+    } finally {
+      setLoading(false);
+    }
+  }, [isMember]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const items = useMemo(() => data?.items ?? [], [data?.items]);
+
+  if (!user) return null;
+  if (!isMember) {
+    return (
+      <div>
+        <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
+        <p className="mt-2 text-sm text-zinc-600">
+          Para abrir um ticket (elogio/reclamação/bug), torna-te membro da Comunidade RPM.
+        </p>
+        <div className="mt-4">
+          <CardButton
+            type="button"
+            onClick={() => window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT))}
+            variant="primary"
+          >
+            Tornar-se membro VIP
+          </CardButton>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
+          <p className="mt-2 text-sm text-zinc-600">
+            Veja os teus tickets e acompanhe o status e a resposta do nosso time.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void load()}
+          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+        >
+          Atualizar
+        </button>
+      </div>
+
+      {error ? (
+        <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+      ) : null}
+
+      {loading ? (
+        <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
+      ) : items.length === 0 ? (
+        <p className="mt-4 text-sm text-zinc-600">
+          Ainda não há tickets. Usa o card “Reclame aqui” no dashboard para abrir um.
+        </p>
+      ) : (
+        <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+              <tr>
+                <th className="px-4 py-3">Data</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Mensagem</th>
+                <th className="px-4 py-3">Resposta do admin</th>
+                <th className="px-4 py-3 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100">
+              {items.map((t) => (
+                <tr key={t.id} className="text-zinc-800">
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-900">
+                    {prettyDtPt(t.createdAt)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(t.status)}`}>
+                      {statusLabel(t.status)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="whitespace-pre-wrap text-zinc-800">{t.message}</div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="whitespace-pre-wrap text-zinc-700">{t.adminReply || '—'}</div>
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right">
+                    {t.status !== 'DONE' ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditing(t);
+                            setEditMsg(t.message);
+                            setError('');
+                          }}
+                          className="mr-2 cursor-pointer rounded bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          disabled={deletingId === t.id}
+                          onClick={async () => {
+                            const ok = window.confirm('Excluir este ticket? Esta ação não pode ser desfeita.');
+                            if (!ok) return;
+                            setDeletingId(t.id);
+                            setError('');
+                            try {
+                              await api.support.deleteMyTicket(t.id);
+                              await load();
+                            } catch (e) {
+                              setError(e instanceof Error ? e.message : 'Não foi possível excluir.');
+                            } finally {
+                              setDeletingId(null);
+                            }
+                          }}
+                          className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+                        >
+                          {deletingId === t.id ? 'Excluindo…' : 'Excluir'}
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-xs text-zinc-500">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {editing && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="presentation"
+          onClick={() => !saving && setEditing(null)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-base font-semibold text-zinc-900">Editar ticket</h3>
+                <p className="mt-1 text-sm text-zinc-600">
+                  {statusLabel(editing.status)} · {prettyDtPt(editing.createdAt)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditing(null)}
+                disabled={saving}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50 disabled:opacity-50"
+                aria-label="Fechar"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-zinc-700">Mensagem</label>
+              <textarea
+                value={editMsg}
+                onChange={(e) => setEditMsg(e.target.value)}
+                rows={8}
+                disabled={saving}
+                className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+              />
+            </div>
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setEditing(null)}
+                disabled={saving}
+                className="cursor-pointer rounded bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-200 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={async () => {
+                  setSaving(true);
+                  setError('');
+                  try {
+                    await api.support.updateMyTicket(editing.id, editMsg);
+                    setEditing(null);
+                    await load();
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : 'Não foi possível salvar.');
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+                className="cursor-pointer rounded bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+              >
+                {saving ? 'Salvando…' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+

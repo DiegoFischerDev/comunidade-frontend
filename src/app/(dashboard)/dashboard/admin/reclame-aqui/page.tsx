@@ -22,6 +22,18 @@ function preview100(text: string): string {
   return `${t.slice(0, 100)}…`;
 }
 
+function statusLabel(s: Payload['items'][number]['status']): string {
+  if (s === 'IN_REVIEW') return 'Em análise';
+  if (s === 'DONE') return 'Concluído';
+  return 'Registrado';
+}
+
+function statusClass(s: Payload['items'][number]['status']): string {
+  if (s === 'IN_REVIEW') return 'bg-amber-50 text-amber-800';
+  if (s === 'DONE') return 'bg-emerald-50 text-emerald-800';
+  return 'bg-zinc-100 text-zinc-800';
+}
+
 export default function AdminReclameAquiPage() {
   const { user } = useAuth();
   const [data, setData] = useState<Payload | null>(null);
@@ -29,6 +41,10 @@ export default function AdminReclameAquiPage() {
   const [error, setError] = useState('');
   const [viewing, setViewing] = useState<Payload['items'][number] | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Payload['items'][number] | null>(null);
+  const [editStatus, setEditStatus] = useState<'REGISTERED' | 'IN_REVIEW' | 'DONE'>('REGISTERED');
+  const [editReply, setEditReply] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const canSee = user?.role === 'ADMIN';
 
@@ -96,6 +112,7 @@ export default function AdminReclameAquiPage() {
               <tr>
                 <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3">Quem abriu</th>
+                <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Mensagem</th>
                 <th className="px-4 py-3 text-right">Ações</th>
               </tr>
@@ -108,7 +125,18 @@ export default function AdminReclameAquiPage() {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">{t.user.name}</td>
                   <td className="px-4 py-3">
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(t.status)}`}>
+                      {statusLabel(t.status)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
                     <div className="text-zinc-800">{preview100(t.message)}</div>
+                    {t.adminReply ? (
+                      <div className="mt-1 text-xs text-zinc-500">
+                        <span className="font-medium text-zinc-600">Resposta:</span>{' '}
+                        {preview100(t.adminReply)}
+                      </div>
+                    ) : null}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right">
                     <div className="inline-flex flex-wrap justify-end gap-2">
@@ -118,6 +146,18 @@ export default function AdminReclameAquiPage() {
                         className="cursor-pointer rounded bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
                       >
                         Ver mensagem
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditing(t);
+                          setEditStatus(t.status);
+                          setEditReply(t.adminReply ?? '');
+                          setError('');
+                        }}
+                        className="cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                      >
+                        Responder
                       </button>
                       <a
                         className="inline-flex cursor-pointer items-center justify-center rounded bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800 hover:bg-emerald-100"
@@ -204,6 +244,102 @@ export default function AdminReclameAquiPage() {
               >
                 WhatsApp
               </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editing && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="presentation"
+          onClick={() => !saving && setEditing(null)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-base font-semibold text-zinc-900">Responder ticket</h3>
+                <p className="mt-1 text-sm text-zinc-600">
+                  {editing.user.name} · {prettyDtPt(editing.createdAt)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditing(null)}
+                disabled={saving}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50 disabled:opacity-50"
+                aria-label="Fechar"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+              <div className="whitespace-pre-wrap text-sm text-zinc-800">{editing.message}</div>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-zinc-700">Status</label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value as typeof editStatus)}
+                  className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+                  disabled={saving}
+                >
+                  <option value="REGISTERED">Registrado</option>
+                  <option value="IN_REVIEW">Em análise</option>
+                  <option value="DONE">Concluído</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-zinc-700">Resposta do admin</label>
+                <textarea
+                  value={editReply}
+                  onChange={(e) => setEditReply(e.target.value)}
+                  rows={6}
+                  disabled={saving}
+                  className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+                  placeholder="Escreve aqui…"
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setEditing(null)}
+                disabled={saving}
+                className="cursor-pointer rounded bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-200 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={async () => {
+                  setSaving(true);
+                  setError('');
+                  try {
+                    await api.admin.support.updateTicket(editing.id, {
+                      status: editStatus,
+                      adminReply: editReply.trim() ? editReply : null,
+                    });
+                    setEditing(null);
+                    await load();
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : 'Não foi possível salvar.');
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+                className="cursor-pointer rounded bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+              >
+                {saving ? 'Salvando…' : 'Salvar'}
+              </button>
             </div>
           </div>
         </div>

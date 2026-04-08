@@ -549,13 +549,31 @@ export const api = {
           items: {
             id: string;
             createdAt: string;
+            updatedAt: string;
+            status: 'REGISTERED' | 'IN_REVIEW' | 'DONE';
             message: string;
+            adminReply?: string | null;
             user: { id: string; name: string; whatsapp: string };
           }[];
         }>(`/admin/support/tickets${q}`, { method: 'GET' });
       },
       deleteTicket: (id: string) =>
         request<{ ok: true }>(`/admin/support/tickets/${id}`, { method: 'DELETE' }),
+      updateTicket: (
+        id: string,
+        body: { status?: 'REGISTERED' | 'IN_REVIEW' | 'DONE'; adminReply?: string | null },
+      ) =>
+        request<{
+          id: string;
+          createdAt: string;
+          updatedAt: string;
+          status: 'REGISTERED' | 'IN_REVIEW' | 'DONE';
+          message: string;
+          adminReply?: string | null;
+        }>(`/admin/support/tickets/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        }),
     },
   },
   partner: {
@@ -857,5 +875,30 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ message }),
       }),
+    myTickets: () =>
+      request<{
+        items: {
+          id: string;
+          createdAt: string;
+          updatedAt: string;
+          status: 'REGISTERED' | 'IN_REVIEW' | 'DONE';
+          message: string;
+          adminReply?: string | null;
+        }[];
+      }>(`/support/tickets/me`, { method: 'GET' }),
+    updateMyTicket: (id: string, message: string) =>
+      request<{
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        status: 'REGISTERED' | 'IN_REVIEW' | 'DONE';
+        message: string;
+        adminReply?: string | null;
+      }>(`/support/tickets/me/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ message }),
+      }),
+    deleteMyTicket: (id: string) =>
+      request<{ ok: true }>(`/support/tickets/me/${id}`, { method: 'DELETE' }),
   },
 };
