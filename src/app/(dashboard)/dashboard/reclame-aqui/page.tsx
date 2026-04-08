@@ -40,6 +40,10 @@ export default function ReclameAquiUserPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [creating, setCreating] = useState(false);
+  const [createMsg, setCreateMsg] = useState('');
+  const [createSending, setCreateSending] = useState(false);
+
   const [editing, setEditing] = useState<Payload['items'][number] | null>(null);
   const [editMsg, setEditMsg] = useState('');
   const [saving, setSaving] = useState(false);
@@ -96,13 +100,6 @@ export default function ReclameAquiUserPage() {
             Veja os teus tickets e acompanhe o status e a resposta do nosso time.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void load()}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
-          Atualizar
-        </button>
       </div>
 
       {error ? (
@@ -112,9 +109,24 @@ export default function ReclameAquiUserPage() {
       {loading ? (
         <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
       ) : items.length === 0 ? (
-        <p className="mt-4 text-sm text-zinc-600">
-          Ainda não há tickets. Usa o card “Reclame aqui” no dashboard para abrir um.
-        </p>
+        <div className="mt-4">
+          <p className="text-sm text-zinc-600">
+            Ainda não há tickets. Usa o card “Reclame aqui” no dashboard para abrir um.
+          </p>
+          <div className="mt-3 flex justify-start">
+            <CardButton
+              type="button"
+              onClick={() => {
+                setError('');
+                setCreateMsg('');
+                setCreating(true);
+              }}
+              variant="primary"
+            >
+              Novo ticket
+            </CardButton>
+          </div>
+        </div>
       ) : (
         <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
           <table className="min-w-full text-left text-sm">
@@ -258,6 +270,88 @@ export default function ReclameAquiUserPage() {
                 className="cursor-pointer rounded bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
               >
                 {saving ? 'Salvando…' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {creating && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="presentation"
+          onClick={() => !createSending && setCreating(false)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-base font-semibold text-zinc-900">Novo ticket</h3>
+                <p className="mt-1 text-sm text-zinc-600">
+                  Escreve a tua mensagem (elogio, reclamação de parceiro ou bug do sistema).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCreating(false)}
+                disabled={createSending}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50 disabled:opacity-50"
+                aria-label="Fechar"
+              >
+                ✕
+              </button>
+            </div>
+
+            {error ? (
+              <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+            ) : null}
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-zinc-700">Mensagem</label>
+              <textarea
+                value={createMsg}
+                onChange={(e) => setCreateMsg(e.target.value)}
+                rows={8}
+                disabled={createSending}
+                className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+                placeholder="Escreve aqui…"
+              />
+            </div>
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setCreating(false)}
+                disabled={createSending}
+                className="cursor-pointer rounded bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-200 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={createSending}
+                onClick={async () => {
+                  if (!createMsg.trim()) {
+                    setError('Escreve a tua mensagem antes de enviar.');
+                    return;
+                  }
+                  setCreateSending(true);
+                  setError('');
+                  try {
+                    await api.support.createTicket(createMsg);
+                    setCreating(false);
+                    await load();
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : 'Não foi possível enviar.');
+                  } finally {
+                    setCreateSending(false);
+                  }
+                }}
+                className="cursor-pointer rounded bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+              >
+                {createSending ? 'Enviando…' : 'Enviar'}
               </button>
             </div>
           </div>
