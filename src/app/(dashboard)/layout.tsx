@@ -82,6 +82,7 @@ export default function DashboardLayout({
   >([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [activeCategorySlug, setActiveCategorySlug] = useState<string | null>(null);
+  const [partnerId, setPartnerId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -112,6 +113,26 @@ export default function DashboardLayout({
       }
     })();
   }, [mounted, authLoading, user]);
+
+  useEffect(() => {
+    if (!mounted || authLoading) return;
+    if (!user || user.role !== 'PARTNER') {
+      setPartnerId(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const me = await api.partner.me();
+        if (!cancelled) setPartnerId(me.id);
+      } catch {
+        if (!cancelled) setPartnerId(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mounted, authLoading, user?.role]);
 
   // Sincroniza categoria ativa no menu com rota atual (categoria ou parceiro)
   useEffect(() => {
@@ -369,6 +390,18 @@ export default function DashboardLayout({
               >
                 Meus leads
               </Link>
+              {partnerId ? (
+                <Link
+                  href={`/dashboard/partner/${partnerId}`}
+                  className={`block rounded-md px-3 py-2 text-sm ${
+                    pathname === `/dashboard/partner/${partnerId}`
+                      ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                      : 'text-zinc-800 hover:bg-zinc-100'
+                  }`}
+                >
+                  Minha página
+                </Link>
+              ) : null}
               <Link
                 href="/dashboard/my-sales"
                 className={`block rounded-md px-3 py-2 text-sm ${
@@ -390,14 +423,15 @@ export default function DashboardLayout({
                 Minha empresa
               </Link>
               <Link
-                href="/dashboard/commissions"
+                href="/dashboard/my-services"
                 className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/my-services' ||
                   pathname === '/dashboard/commissions'
                     ? 'bg-[#efc2c1] font-medium text-zinc-900'
                     : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
-                Comissões
+                Meus serviços
               </Link>
             </>
           )}
