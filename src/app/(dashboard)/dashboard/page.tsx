@@ -203,15 +203,51 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                Vantagens VIP
+              </p>
+              <ul className="mt-2 space-y-1.5 text-sm text-zinc-700">
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    ✓
+                  </span>
+                  <span>
+                    <span className="font-medium text-zinc-900">E-book PSP completo</span> com atualizações
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    ✓
+                  </span>
+                  <span>
+                    <span className="font-medium text-zinc-900">Acesso às lives da Rafa</span> exclusivas para VIPs
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    ✓
+                  </span>
+                  <span>
+                    <span className="font-medium text-zinc-900">Acesso a todos os grupos</span> no WhatsApp
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    ✓
+                  </span>
+                  <span>
+                    <span className="font-medium text-zinc-900">10€ de desconto</span> em cada serviço contratado com parceiros
+                  </span>
+                </li>
+              </ul>
+            </div>
+
             {!isMember && (
               <div className="mt-3 flex flex-col items-center gap-3 text-center sm:items-start sm:text-left">
                 <div className="max-w-xl text-sm text-zinc-700">
                   <p className="font-semibold text-zinc-900">
                     Torne-se membro da Comunidade RPM
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-600">
-                    Desbloqueie o guia completo Portugal Sem Perrengue, grupos exclusivos,
-                    chat direto com a Rafa e benefícios em serviços de parceiros.
                   </p>
                 </div>
                 <CardButton
@@ -219,7 +255,7 @@ export default function DashboardPage() {
                   onClick={handleOpenMembershipModal}
                   variant="primary"
                 >
-                  Tornar-se membro VIP
+                  Quero ser membro VIP
                 </CardButton>
               </div>
             )}

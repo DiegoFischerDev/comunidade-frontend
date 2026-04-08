@@ -15,8 +15,8 @@ export default function RafaCallPaymentSuccessPage() {
     <div className="mx-auto max-w-md space-y-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
       <h1 className="text-xl font-semibold text-zinc-900">Pagamento confirmado</h1>
       <p className="text-sm text-zinc-600">
-        O teu acesso ao Cal.com para agendar a chamada de vídeo com a Rafa foi libertado. Clica em
-        &quot;Agendar&quot; no dashboard para escolher data e hora.
+        O teu pagamento do agendamento foi confirmado. Clica em &quot;Agendar&quot; no dashboard para
+        escolher data e hora.
       </p>
       <Link
         href="/dashboard"

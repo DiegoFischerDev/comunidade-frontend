@@ -250,25 +250,25 @@ export function FloatingWhatsAppButton() {
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
                       <span>
+                        <strong className="text-zinc-800">Acesso às lives da Rafa</strong> exclusivas para membros VIP.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
+                      <span>
                         <strong className="text-zinc-800">10 € de desconto</strong> em qualquer serviço
                         contratado com parceiros da comunidade.
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span><strong className="text-zinc-800">Ebook Portugal Sem Perrenge</strong> — acesso completo ao guia.</span>
+                      <span><strong className="text-zinc-800">Ebook Portugal Sem Perrenge</strong> completo e com atualizações.</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
                       <span>
-                        <strong className="text-zinc-800">30 minutos de chamada de vídeo</strong> com a Rafa.
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span>
-                        <strong className="text-zinc-800">Acesso aos grupos VIP</strong> dos membros da
-                        comunidade para troca de experiências, network e dicas.
+                        <strong className="text-zinc-800">Acesso aos grupos VIP no Whatsapp</strong> incluindo grupos de imóveis disponíveis
+                        para aluguel e compra.
                       </span>
                     </li>
                   </ul>

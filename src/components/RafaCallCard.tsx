@@ -256,8 +256,8 @@ export function RafaCallCard() {
   const [selectedDate, setSelectedDate] = useState<string>('');
 
   const refreshRafacallStatus = useCallback(async () => {
-    if (!user || !token || user.tier !== 'MEMBER') {
-      setRafacallStatus(user && user.tier !== 'MEMBER' ? null : undefined);
+    if (!user || !token) {
+      setRafacallStatus(undefined);
       setBooking(undefined);
       return;
     }
@@ -277,7 +277,7 @@ export function RafaCallCard() {
   }, [refreshRafacallStatus]);
 
   useEffect(() => {
-    if (!user || user.tier !== 'MEMBER' || !token) return;
+    if (!user || !token) return;
     const onFocus = () => {
       void refreshRafacallStatus();
     };
@@ -303,10 +303,6 @@ export function RafaCallCard() {
   const openScheduler = useCallback(async () => {
     if (!user || !token) {
       openLogin();
-      return;
-    }
-    if (user.tier !== 'MEMBER') {
-      openMembership();
       return;
     }
     setSchedOpen(true);
@@ -341,10 +337,6 @@ export function RafaCallCard() {
   const openCancelModal = useCallback(async () => {
     if (!user || !token) {
       openLogin();
-      return;
-    }
-    if (user.tier !== 'MEMBER') {
-      openMembership();
       return;
     }
     setSchedOpen(true);
@@ -522,7 +514,7 @@ export function RafaCallCard() {
         )
       : null;
   const memberStatusLoading =
-    Boolean(user?.tier === 'MEMBER' && token && rafacallStatus === undefined);
+    Boolean(user && token && rafacallStatus === undefined);
 
   return (
     <>
@@ -541,7 +533,7 @@ export function RafaCallCard() {
             <p className="text-base font-semibold text-zinc-900">
               {hasBookedSlot
                 ? 'A tua chamada de vídeo com a Rafa está agendada'
-                : 'Quero agendar minha chamada de vídeo com a Rafa'}
+                : 'Quero agendar uma chamada de video com a Rafa'}
             </p>
             {hasBookedSlot && scheduleLines ? (
               <div className="mt-2 rounded-xl border border-emerald-100 bg-emerald-50/80 px-3 py-2.5 text-left">
@@ -794,7 +786,12 @@ export function RafaCallCard() {
                       Novo agendamento
                     </h3>
                     <p className="mt-1 text-sm font-medium text-zinc-600">
-                      30 minutos de chamada de vídeo com a Rafa
+                      Chamada de vídeo com a Rafa (30 min)
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-zinc-900">
+                      {amountsLoading || !amounts
+                        ? 'Preço: a carregar…'
+                        : `Preço: ${formatEur(amounts.eurCents)} ou ${formatBrl(amounts.pixCentavos)}`}
                     </p>
                     <p className="mt-4 whitespace-pre-line text-left text-sm leading-relaxed text-zinc-700">
                       {`Que tal conversar diretamente com quem já passou por todo o processo de imigração?
@@ -810,9 +807,9 @@ Se você quer dar esse passo com mais clareza e confiança, essa conversa é pra
                 <CardButton
                   type="button"
                   onClick={() => {
-                    if (user?.tier !== 'MEMBER') {
+                    if (!user || !token) {
                       closePayModal();
-                      openMembership();
+                      openLogin();
                       return;
                     }
                     ensureAmountsForPaymentStep();
@@ -840,7 +837,7 @@ Se você quer dar esse passo com mais clareza e confiança, essa conversa é pra
                   Novo agendamento
                 </h3>
                 <p className="mt-1 text-sm text-zinc-600">
-                  30 minutos de chamada de vídeo com a Rafa
+                  Chamada de vídeo com a Rafa (30 min)
                 </p>
                 {amountsLoading || !amounts ? (
                   <p className="mt-4 text-sm text-zinc-500">A carregar valores…</p>
