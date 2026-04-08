@@ -404,6 +404,11 @@ export default function MySalesPage() {
                         <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
                           Pago
                         </span>
+                        {s.paidAt ? (
+                          <span className="text-xs text-zinc-500">
+                            {new Date(s.paidAt).toLocaleString('pt-PT')}
+                          </span>
+                        ) : null}
                       </div>
                     ) : (
                       <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
@@ -495,7 +500,7 @@ export default function MySalesPage() {
                     <span className="text-xs text-zinc-500">
                       Comissão sugerida:{' '}
                       <span className="font-medium text-zinc-700">
-                        {suggestedCommissionLabel} €
+                        {suggestedCommissionLabel}
                       </span>
                     </span>
                   )}

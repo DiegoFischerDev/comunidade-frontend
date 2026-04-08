@@ -745,6 +745,7 @@ export const api = {
           {
             id: string;
             createdAt: string;
+            paidAt?: string | null;
             amountEur: string;
             commissionPaymentStatus: 'PENDING' | 'PAID';
             commissionSuggestedEur: string | null;
@@ -758,6 +759,7 @@ export const api = {
         request<{
           id: string;
           createdAt: string;
+          paidAt?: string | null;
           amountEur: string;
           commissionPaymentStatus: 'PENDING' | 'PAID';
           commissionSuggestedEur: string | null;
