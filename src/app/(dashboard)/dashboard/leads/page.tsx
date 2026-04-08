@@ -7,17 +7,22 @@ import { useAuth } from '@/contexts/AuthContext';
 type LeadRow = {
   id: string;
   createdAt: string;
-  user: { name: string | null; email: string; whatsapp: string | null };
+  user: {
+    name: string | null;
+    email: string;
+    whatsapp: string | null;
+    tier: 'VISITOR' | 'MEMBER';
+  };
 };
 
 function leadMatchesFilter(lead: LeadRow, filter: string): boolean {
   if (!filter.trim()) return true;
   const q = filter.trim().toLowerCase();
   const name = (lead.user.name ?? '').toLowerCase();
-  const email = lead.user.email.toLowerCase();
   const whatsapp = (lead.user.whatsapp ?? '').toLowerCase();
+  const tier = (lead.user.tier === 'MEMBER' ? 'membro vip' : 'visitante').toLowerCase();
   const data = new Date(lead.createdAt).toLocaleString('pt-PT').toLowerCase();
-  return name.includes(q) || email.includes(q) || whatsapp.includes(q) || data.includes(q);
+  return name.includes(q) || whatsapp.includes(q) || tier.includes(q) || data.includes(q);
 }
 
 export default function PartnerLeadsPage() {
@@ -71,7 +76,7 @@ export default function PartnerLeadsPage() {
     <div>
       <h1 className="text-2xl font-semibold text-zinc-900">Leads</h1>
       <p className="mt-2 text-sm text-zinc-600">
-        Veja aqui os utilizadores que demonstraram interesse em falar consigo.
+        Veja aqui os utilizadores que demonstraram interesse em falar consigo. Aqueles que sao membros VIP tem direito a desconto de 10€ que pode ser compensado na hora do pagamento da comissão.
       </p>
 
       {error && (
@@ -88,7 +93,7 @@ export default function PartnerLeadsPage() {
         </p>
       ) : (
         <>
-          <div className="mt-6">
+          <div className="mt-6 mx-auto w-full max-w-[800px]">
             <label className="block text-xs font-medium text-zinc-700">
               Filtrar lista
             </label>
@@ -96,7 +101,7 @@ export default function PartnerLeadsPage() {
               type="text"
               value={filterInput}
               onChange={(e) => setFilterInput(e.target.value)}
-              placeholder="Pesquisar por nome, email, WhatsApp ou data…"
+              placeholder="Pesquisar por nome, plano, WhatsApp ou data…"
               className="mt-1 w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
@@ -105,12 +110,12 @@ export default function PartnerLeadsPage() {
               Nenhum lead corresponde ao filtro.
             </p>
           ) : (
-            <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+            <div className="mt-4 mx-auto w-full max-w-[800px] overflow-x-auto rounded-lg border border-zinc-200 bg-white">
               <table className="min-w-full text-sm">
                 <thead className="bg-zinc-50 text-zinc-600">
                   <tr>
                     <th className="px-4 py-2 text-left">Nome</th>
-                    <th className="px-4 py-2 text-left">Email</th>
+                    <th className="px-4 py-2 text-left">Plano atual</th>
                     <th className="px-4 py-2 text-left">WhatsApp</th>
                     <th className="px-4 py-2 text-left">Data</th>
                   </tr>
@@ -129,7 +134,11 @@ export default function PartnerLeadsPage() {
                     <td className="px-4 py-2 align-top">
                       {lead.user.name || '—'}
                     </td>
-                    <td className="px-4 py-2 align-top">{lead.user.email}</td>
+                    <td className="px-4 py-2 align-top">
+                      <span className="text-xs font-medium text-zinc-700">
+                        {lead.user.tier === 'MEMBER' ? 'Membro VIP' : 'Visitante'}
+                      </span>
+                    </td>
                     <td className="px-4 py-2 align-top">
                       {whatsappUrl ? (
                         <a

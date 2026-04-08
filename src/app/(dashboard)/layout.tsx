@@ -370,6 +370,16 @@ export default function DashboardLayout({
                 Meus leads
               </Link>
               <Link
+                href="/dashboard/my-sales"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/my-sales'
+                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Minhas vendas
+              </Link>
+              <Link
                 href="/dashboard/business"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/business'
@@ -380,14 +390,14 @@ export default function DashboardLayout({
                 Minha empresa
               </Link>
               <Link
-                href="/dashboard/services"
+                href="/dashboard/commissions"
                 className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/services'
+                  pathname === '/dashboard/commissions'
                     ? 'bg-[#efc2c1] font-medium text-zinc-900'
                     : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
-                Meus serviços
+                Comissões
               </Link>
             </>
           )}
@@ -422,6 +432,27 @@ export default function DashboardLayout({
                 }`}
               >
                 Reclame aqui
+              </Link>
+              <Link
+                href="/dashboard/admin/sales"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/admin/sales'
+                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Todas as vendas
+              </Link>
+              <Link
+                href="/dashboard/admin/commissions"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/admin/commissions' ||
+                  pathname === '/dashboard/admin/services'
+                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Comissões
               </Link>
               <Link
                 href="/dashboard/categories"
@@ -469,9 +500,9 @@ export default function DashboardLayout({
           )}
 
           <Link
-            href="/dashboard/servicos"
+            href="/dashboard/services"
             className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/dashboard/servicos' ||
+              pathname === '/dashboard/services' ||
               pathname.startsWith('/dashboard/category/') ||
               pathname.startsWith('/dashboard/partner/')
                 ? 'bg-[#efc2c1] font-medium text-zinc-900'

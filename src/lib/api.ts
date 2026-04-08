@@ -486,6 +486,46 @@ export const api = {
           }[]
         >('/partners/admin/categories', { method: 'GET' }),
     },
+    services: {
+      listGrouped: () =>
+        request<
+          {
+            id: string;
+            name: string;
+            services: {
+              id: string;
+              title: string;
+              price: string | null;
+              priceOnRequest: boolean;
+              rpmCommissionEur: string | null;
+            }[];
+          }[]
+        >('/partners/admin/services', { method: 'GET' }),
+      updateCommission: (serviceId: string, rpmCommissionEur: string | null) =>
+        request<{ id: string; rpmCommissionEur: string | null }>(
+          `/partners/admin/services/${serviceId}/commission`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify({ rpmCommissionEur }),
+          },
+        ),
+    },
+    sales: {
+      list: () =>
+        request<
+          {
+            id: string;
+            createdAt: string;
+            amountEur: string;
+            commissionPaymentStatus: 'PENDING' | 'PAID';
+            commissionPaidEur: string | null;
+            wantsInvoice: boolean;
+            partner: { id: string; name: string };
+            user: { id: string; name: string | null; whatsapp: string | null; tier: 'VISITOR' | 'MEMBER' };
+            service: { id: string; title: string };
+          }[]
+        >('/partners/admin/sales', { method: 'GET' }),
+    },
     categories: {
       list: () =>
         request<
@@ -637,6 +677,7 @@ export const api = {
             description: string | null;
             price: string | null;
             priceOnRequest: boolean;
+            rpmCommissionEur: string | null;
             createdAt: string;
           }[]
         >('/partners/me/services', { method: 'GET' }),
@@ -652,6 +693,7 @@ export const api = {
           description: string | null;
           price: string | null;
           priceOnRequest: boolean;
+          rpmCommissionEur: string | null;
           createdAt: string;
         }>('/partners/me/services', {
           method: 'POST',
@@ -672,6 +714,7 @@ export const api = {
           description: string | null;
           price: string | null;
           priceOnRequest: boolean;
+          rpmCommissionEur: string | null;
           createdAt: string;
         }>(`/partners/me/services/${id}`, {
           method: 'PATCH',
@@ -686,9 +729,58 @@ export const api = {
           {
             id: string;
             createdAt: string;
-            user: { name: string | null; email: string; whatsapp: string | null };
+            user: {
+              id: string;
+              name: string | null;
+              email: string;
+              whatsapp: string | null;
+              tier: 'VISITOR' | 'MEMBER';
+            };
           }[]
         >('/partners/me/leads', { method: 'GET' }),
+    },
+    sales: {
+      list: () =>
+        request<
+          {
+            id: string;
+            createdAt: string;
+            amountEur: string;
+            commissionPaymentStatus: 'PENDING' | 'PAID';
+            commissionSuggestedEur: string | null;
+            commissionPaidEur: string | null;
+            wantsInvoice: boolean;
+            user: { id: string; name: string | null; whatsapp: string | null; tier: 'VISITOR' | 'MEMBER' };
+            service: { id: string; title: string; rpmCommissionEur: string | null };
+          }[]
+        >('/partners/me/sales', { method: 'GET' }),
+      create: (body: { leadUserId: string; serviceId: string; amountEur: string }) =>
+        request<{
+          id: string;
+          createdAt: string;
+          amountEur: string;
+          commissionPaymentStatus: 'PENDING' | 'PAID';
+          commissionSuggestedEur: string | null;
+          commissionPaidEur: string | null;
+          wantsInvoice: boolean;
+          user: { id: string; name: string | null; whatsapp: string | null; tier: 'VISITOR' | 'MEMBER' };
+          service: { id: string; title: string; rpmCommissionEur: string | null };
+        }>('/partners/me/sales', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
+      delete: (id: string) =>
+        request<{ ok: true }>(`/partners/me/sales/${id}`, { method: 'DELETE' }),
+      payCommission: (saleId: string, body: { commissionEur: string; wantsInvoice: boolean }) =>
+        request<{ url: string }>(`/partners/me/sales/${saleId}/pay-commission`, {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
+      payCommissionMbWay: (saleId: string, body: { commissionEur: string; wantsInvoice: boolean }) =>
+        request<{ url: string }>(`/partners/me/sales/${saleId}/pay-commission-mbway`, {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
     },
   },
   marketplace: {

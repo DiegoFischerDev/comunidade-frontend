@@ -241,7 +241,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="shrink-0">
-              <CardLinkButton href="/dashboard/servicos" variant="primary">
+              <CardLinkButton href="/dashboard/services" variant="primary">
                 Acessar serviços
               </CardLinkButton>
             </div>

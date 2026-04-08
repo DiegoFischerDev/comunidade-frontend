@@ -188,17 +188,6 @@ export default function PartnerPage() {
               >
                 Entrar em contacto
               </button>
-              <button
-                type="button"
-                onClick={() =>
-                  registerLeadThenOpen(() =>
-                    window.open(whatsappUrl, '_blank', 'noopener,noreferrer'),
-                  )
-                }
-                className="inline-flex cursor-pointer items-center rounded-full border border-emerald-100 bg-emerald-500/40 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500/60"
-              >
-                Falar no WhatsApp
-              </button>
             </div>
           </div>
           </div>

@@ -136,24 +136,22 @@ export default function CategoryPage() {
                       style={{ backgroundImage: `url(${partnerBg})` }}
                     />
                   )}
-                  <div className="relative z-10 flex h-full items-end bg-gradient-to-t from-black/50 via-black/10 to-transparent px-4 pb-3">
-                    <h2 className="text-sm font-semibold text-white drop-shadow">
-                      {partner.name}
-                    </h2>
-                  </div>
-                  {partnerLogo ? (
-                    <div className="absolute left-3 top-3 z-30">
-                      <div className="relative h-12 w-12 overflow-hidden rounded-xl border border-white/70 bg-white shadow-md">
+                  <div className="relative z-10 flex h-full flex-col justify-end gap-2 bg-gradient-to-t from-black/50 via-black/10 to-transparent px-4 pb-3">
+                    {partnerLogo ? (
+                      <div className="relative h-11 w-11 overflow-hidden rounded-xl border border-white/70 bg-white shadow-md">
                         <Image
                           src={partnerLogo}
                           alt=""
                           fill
                           className="object-contain p-2"
-                          sizes="48px"
+                          sizes="44px"
                         />
                       </div>
-                    </div>
-                  ) : null}
+                    ) : null}
+                    <h2 className="text-sm font-semibold text-white drop-shadow">
+                      {partner.name}
+                    </h2>
+                  </div>
                 </div>
                 {partner.shortDescription && (
                   <p className="whitespace-pre-line px-4 pb-4 pt-3 text-sm leading-relaxed text-zinc-600">
