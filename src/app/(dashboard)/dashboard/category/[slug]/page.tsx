@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 
@@ -15,6 +16,7 @@ type CategoryWithPartners = {
   partners: {
     id: string;
     name: string;
+    logoUrl: string | null;
     backgroundImageUrl: string | null;
     shortDescription: string | null;
   }[];
@@ -109,23 +111,28 @@ export default function CategoryPage() {
           Ainda não há parceiros nesta categoria.
         </p>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {category.partners.map((partner) => {
             const partnerBg =
               partner.backgroundImageUrl &&
               (partner.backgroundImageUrl.startsWith('/uploads/')
                 ? `${API_URL}${partner.backgroundImageUrl}`
                 : partner.backgroundImageUrl);
+            const partnerLogo =
+              partner.logoUrl &&
+              (partner.logoUrl.startsWith('/uploads/')
+                ? `${API_URL}${partner.logoUrl}`
+                : partner.logoUrl);
             return (
               <Link
                 key={partner.id}
                 href={`/dashboard/partner/${partner.id}`}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
+                className="group mx-auto flex w-full max-w-[320px] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
               >
-                <div className="relative h-28 w-full overflow-hidden bg-gradient-to-r from-zinc-100 to-zinc-200">
+                <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-r from-zinc-100 to-zinc-200">
                   {partnerBg && (
                     <div
-                      className="absolute inset-0 bg-cover bg-center transition group-hover:scale-105"
+                      className="absolute inset-0 bg-cover bg-center"
                       style={{ backgroundImage: `url(${partnerBg})` }}
                     />
                   )}
@@ -134,9 +141,22 @@ export default function CategoryPage() {
                       {partner.name}
                     </h2>
                   </div>
+                  {partnerLogo ? (
+                    <div className="absolute left-3 top-3 z-30">
+                      <div className="relative h-12 w-12 overflow-hidden rounded-xl border border-white/70 bg-white shadow-md">
+                        <Image
+                          src={partnerLogo}
+                          alt=""
+                          fill
+                          className="object-contain p-2"
+                          sizes="48px"
+                        />
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
                 {partner.shortDescription && (
-                  <p className="line-clamp-3 px-4 pb-4 pt-3 text-xs text-zinc-600">
+                  <p className="whitespace-pre-line px-4 pb-4 pt-3 text-sm leading-relaxed text-zinc-600">
                     {partner.shortDescription}
                   </p>
                 )}

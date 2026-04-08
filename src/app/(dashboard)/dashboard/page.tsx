@@ -2,6 +2,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
@@ -15,6 +16,8 @@ import { RafaCallCard } from "@/components/RafaCallCard";
 import { CardButton, CardLinkButton } from "@/components/ui/CardButton";
 
 type AffiliateMe = NonNullable<Awaited<ReturnType<typeof api.affiliate.me>>>;
+type MarketplaceCategory =
+  NonNullable<Awaited<ReturnType<typeof api.marketplace.categoriesWithPartners>>>[number];
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -57,6 +60,26 @@ export default function DashboardPage() {
   const [complaintSending, setComplaintSending] = useState(false);
   const [complaintSent, setComplaintSent] = useState(false);
   const [complaintError, setComplaintError] = useState("");
+
+  const [serviceCategories, setServiceCategories] = useState<
+    MarketplaceCategory[] | null
+  >(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setServiceCategories(null);
+    (async () => {
+      try {
+        const data = await api.marketplace.categoriesWithPartners();
+        if (!cancelled) setServiceCategories(data);
+      } catch {
+        if (!cancelled) setServiceCategories([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     setAffiliateInstagram(
@@ -222,6 +245,49 @@ export default function DashboardPage() {
                 Acessar serviços
               </CardLinkButton>
             </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {serviceCategories === null ? (
+              <>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-10 w-full animate-pulse rounded-xl border border-zinc-200 bg-zinc-50"
+                  />
+                ))}
+              </>
+            ) : serviceCategories.length === 0 ? (
+              <p className="text-sm text-zinc-500">
+                Ainda não há categorias disponíveis.
+              </p>
+            ) : (
+              serviceCategories.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/dashboard/category/${c.slug}`}
+                  className="group flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors hover:bg-zinc-100"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Image
+                      src="/services.png"
+                      alt=""
+                      width={18}
+                      height={18}
+                      className="h-[18px] w-[18px] object-contain"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-zinc-900">
+                        {c.name}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="shrink-0 text-xs font-medium text-zinc-500 group-hover:text-zinc-700">
+                    Ver
+                  </span>
+                </Link>
+              ))
+            )}
           </div>
         </section>
 

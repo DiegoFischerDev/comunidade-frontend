@@ -704,6 +704,7 @@ export const api = {
           partners: {
             id: string;
             name: string;
+            logoUrl: string | null;
             backgroundImageUrl: string | null;
             shortDescription: string | null;
           }[];
