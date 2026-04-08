@@ -73,12 +73,12 @@ export default function ReclameAquiUserPage() {
   if (!user) return null;
   if (!isMember) {
     return (
-      <div>
+      <div className="mx-auto w-full max-w-[820px] text-center">
         <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
         <p className="mt-2 text-sm text-zinc-600">
           Para abrir um ticket (elogio/reclamação/bug), torna-te membro da Comunidade RPM.
         </p>
-        <div className="mt-4">
+        <div className="mt-4 flex justify-center">
           <CardButton
             type="button"
             onClick={() => window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT))}
@@ -92,14 +92,12 @@ export default function ReclameAquiUserPage() {
   }
 
   return (
-    <div>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
-          <p className="mt-2 text-sm text-zinc-600">
-            Veja os teus tickets e acompanhe o status e a resposta do nosso time.
-          </p>
-        </div>
+    <div className="mx-auto w-full max-w-[1000px]">
+      <div className="text-center">
+        <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
+        <p className="mt-2 text-sm text-zinc-600">
+          Veja os teus tickets e acompanhe o status e a resposta do nosso time.
+        </p>
       </div>
 
       {error ? (
@@ -110,10 +108,10 @@ export default function ReclameAquiUserPage() {
         <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
       ) : items.length === 0 ? (
         <div className="mt-4">
-          <p className="text-sm text-zinc-600">
+          <p className="text-sm text-zinc-600 text-center">
             Ainda não há tickets. Usa o card “Reclame aqui” no dashboard para abrir um.
           </p>
-          <div className="mt-3 flex justify-start">
+          <div className="mt-3 flex justify-center">
             <CardButton
               type="button"
               onClick={() => {

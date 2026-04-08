@@ -362,7 +362,7 @@ export function RafaCallCard() {
     try {
       const s = await api.rafacall.status();
       setRafacallStatus(s);
-      if (s.canOpenCalEmbed) {
+      if (s.schedulingUnlocked) {
         await openScheduler();
         return;
       }

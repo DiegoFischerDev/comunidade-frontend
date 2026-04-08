@@ -76,27 +76,23 @@ export default function PSPPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">
-            PSP - Portugal Sem Perrengue
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500">Última atualização: abril/2026</p>
-          <p className="mt-2 text-sm text-zinc-600">
-            Esse Ebook foi criado com muito carinho para te ajudar nesse processo de imigração. Apesar do nosso esforço,
-            as regras mudam constantemente, então contamos com a ajuda da comunidade para atualizar esse material todos os meses.
-          </p>
-          <p className="mt-4 text-base font-semibold text-zinc-900">
-            Tem algo desatualizado no PSP? conta pra gente
-          </p>
-          <div className="mt-3">
-            <CardButton type="button" onClick={handleOpenSuggest} variant="primary">
-              Enviar sugestão
-            </CardButton>
-          </div>
+      <div className="mx-auto w-full max-w-[820px] text-center">
+        <h1 className="text-2xl font-semibold text-zinc-900">
+          PSP - Portugal Sem Perrengue
+        </h1>
+        <p className="mt-1 text-sm text-zinc-500">Última atualização: abril/2026</p>
+        <p className="mt-4 text-sm text-zinc-600">
+          Esse Ebook foi criado com muito carinho para te ajudar nesse processo de imigração. Apesar do nosso esforço,
+          as regras mudam constantemente, então contamos com a ajuda da comunidade para atualizar esse material todos os meses.
+        </p>
+        <p className="mt-4 text-base font-semibold text-zinc-900">
+          Tem algo desatualizado no PSP? conta pra gente
+        </p>
+        <div className="mt-3 flex justify-center">
+          <CardButton type="button" onClick={handleOpenSuggest} variant="primary">
+            Enviar sugestão
+          </CardButton>
         </div>
-
-        {/* Para membros, redirecionamos automaticamente para /psp/full */}
       </div>
 
       {!isMember && (

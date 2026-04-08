@@ -160,7 +160,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div>
+      <div className="mx-auto w-full max-w-[800px] text-center">
         <h1 className="text-2xl font-semibold text-zinc-900">
           Comunidade Rafa pelo mundo
         </h1>
@@ -172,6 +172,123 @@ export default function DashboardPage() {
 
       <div className="mx-auto w-full max-w-[800px]">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center">
+            <div className="relative aspect-[2/1] w-full overflow-hidden rounded-xl bg-zinc-100 md:w-80">
+              <Image
+                src="/capa_psp-1000x500.png"
+                alt="Capa do guia PSP - Portugal Sem Perrengue"
+                fill
+                className="object-contain"
+                sizes="(min-width: 768px) 320px, 100vw"
+                priority
+              />
+            </div>
+
+            <div className="flex-1 space-y-3">
+              <h2 className="text-xl font-semibold text-zinc-900">
+                PSP - Portugal Sem Perrengue
+              </h2>
+              <p className="text-sm text-zinc-600">
+                O guia real pra sair do Brasil e morar legalmente em Portugal. Aqui você encontra o
+                passo a passo, documentos, prazos e estratégias para fazer essa mudança com
+                segurança.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <CardLinkButton href={pdfHref} variant="primary">
+                  Acessar PDF
+                </CardLinkButton>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50">
+                <Image src="/services.png" alt="" fill className="object-contain" sizes="56px" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-xl font-semibold text-zinc-900">Serviços</h2>
+                <p className="text-sm text-zinc-600">
+                  Encontra parceiros e serviços por categoria.
+                </p>
+              </div>
+            </div>
+            <div className="shrink-0">
+              <CardLinkButton href="/dashboard/servicos" variant="primary">
+                Acessar serviços
+              </CardLinkButton>
+            </div>
+          </div>
+        </section>
+
+        <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50">
+                <Image
+                  src="/whatsapp.png"
+                  alt=""
+                  fill
+                  className="object-contain"
+                  sizes="56px"
+                />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-xl font-semibold text-zinc-900">Grupos VIP</h2>
+                <p className="text-sm text-zinc-600">
+                  Entra nos grupos do WhatsApp da comunidade de acordo com o teu momento.
+                </p>
+              </div>
+            </div>
+
+            <div className="shrink-0">
+              <CardLinkButton href="/grupos-vip" variant="primary">
+                Acessar grupos
+              </CardLinkButton>
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {[
+              { title: 'Geral', vip: false },
+              { title: 'Brasil', vip: true },
+              { title: 'Portugal', vip: true },
+              { title: 'Aluguel de imóveis', vip: true },
+              { title: 'Compra de imóveis', vip: true },
+              { title: 'Compra de automóvel', vip: true },
+            ].map((g) => (
+              <div
+                key={g.title}
+                className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2"
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <Image
+                    src="/whatsapp.png"
+                    alt=""
+                    width={18}
+                    height={18}
+                    className="h-[18px] w-[18px] object-contain"
+                  />
+                  <p className="truncate text-sm font-medium text-zinc-900">{g.title}</p>
+                </div>
+                {g.vip ? (
+                  <Image
+                    src="/vip-card.png"
+                    alt="VIP"
+                    width={24}
+                    height={24}
+                    className="h-6 w-6 shrink-0 object-contain"
+                  />
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </section>
+
         <div className="lg:col-span-6">
           <div className="flex w-full flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:text-left">
@@ -202,6 +319,14 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
+
+            {!isMember && (
+              <div className="max-w-xl text-sm text-zinc-700">
+                  <p className="font-semibold text-zinc-900">
+                    Torne-se membro da Comunidade Rafa Pelo Mundo
+                  </p>
+              </div>
+            )}
 
             <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
@@ -245,11 +370,6 @@ export default function DashboardPage() {
 
             {!isMember && (
               <div className="mt-3 flex flex-col items-center gap-3 text-center sm:items-start sm:text-left">
-                <div className="max-w-xl text-sm text-zinc-700">
-                  <p className="font-semibold text-zinc-900">
-                    Torne-se membro da Comunidade RPM
-                  </p>
-                </div>
                 <CardButton
                   type="button"
                   onClick={handleOpenMembershipModal}
@@ -265,38 +385,6 @@ export default function DashboardPage() {
         <div className="lg:col-span-6">
           <RafaCallCard />
         </div>
-
-        <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center">
-            <div className="relative aspect-[2/1] w-full overflow-hidden rounded-xl bg-zinc-100 md:w-80">
-              <Image
-                src="/capa_psp-1000x500.png"
-                alt="Capa do guia PSP - Portugal Sem Perrengue"
-                fill
-                className="object-contain"
-                sizes="(min-width: 768px) 320px, 100vw"
-                priority
-              />
-            </div>
-
-            <div className="flex-1 space-y-3">
-              <h2 className="text-xl font-semibold text-zinc-900">
-                E-book PSP - Portugal Sem Perrengue
-              </h2>
-              <p className="text-sm text-zinc-600">
-                O guia real pra sair do Brasil e morar legalmente em Portugal.
-                Aqui você encontra o passo a passo, documentos, prazos e
-                estratégias para fazer essa mudança com segurança.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <CardLinkButton href={pdfHref} variant="primary">
-                  Acessar PDF
-                </CardLinkButton>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {canSeeAffiliateCard && affiliate !== undefined && (
           <div className="lg:col-span-12 w-full">
@@ -331,8 +419,7 @@ export default function DashboardPage() {
               <div className="space-y-1">
                 <h2 className="text-xl font-semibold text-zinc-900">Reclame aqui</h2>
                 <p className="text-sm text-zinc-600">
-                  Tem algum elogio ou reclamação de algum parceiro da comunidade ou bug do sistema?
-                  Compartilhe com nosso time de suporte.
+                  Para abrir um ticket (elogio/reclamação/bug), torna-te membro da Comunidade RPM.
                 </p>
               </div>
             </div>

@@ -333,6 +333,16 @@ export default function DashboardLayout({
           >
             Ebook PSP
           </Link>
+          <Link
+            href="/grupos-vip"
+            className={`block rounded-md px-3 py-2 text-sm ${
+              pathname === '/grupos-vip'
+                ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                : 'text-zinc-800 hover:bg-zinc-100'
+            }`}
+          >
+            Grupos VIP
+          </Link>
           {user && user.role !== 'ADMIN' ? (
             <Link
               href="/dashboard/reclame-aqui"
@@ -345,26 +355,6 @@ export default function DashboardLayout({
               Reclame aqui
             </Link>
           ) : null}
-          {categoriesLoaded &&
-            categories.map((c) => {
-              const isActive =
-                pathname === `/dashboard/category/${c.slug}` ||
-                (pathname.startsWith('/dashboard/partner/') &&
-                  activeCategorySlug === c.slug);
-              return (
-                <Link
-                  key={c.id}
-                  href={`/dashboard/category/${c.slug}`}
-                  className={`block rounded-md px-3 py-2 text-sm ${
-                    isActive
-                      ? 'bg-[#efc2c1] font-medium text-zinc-900'
-                      : 'text-zinc-800 hover:bg-zinc-100'
-                  }`}
-                >
-                  {c.name}
-                </Link>
-              );
-            })}
 
           {/* Links “extras” (antes ficavam no grupo de baixo) */}
           {user?.role === 'PARTNER' && (
@@ -477,6 +467,42 @@ export default function DashboardLayout({
               Minhas indicações
             </Link>
           )}
+
+          <Link
+            href="/dashboard/servicos"
+            className={`block rounded-md px-3 py-2 text-sm ${
+              pathname === '/dashboard/servicos' ||
+              pathname.startsWith('/dashboard/category/') ||
+              pathname.startsWith('/dashboard/partner/')
+                ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                : 'text-zinc-800 hover:bg-zinc-100'
+            }`}
+          >
+            Serviços
+          </Link>
+          {categoriesLoaded && categories.length ? (
+            <div className="mt-1 space-y-1 pl-2">
+              {categories.map((c) => {
+                const isActive =
+                  pathname === `/dashboard/category/${c.slug}` ||
+                  (pathname.startsWith('/dashboard/partner/') &&
+                    activeCategorySlug === c.slug);
+                return (
+                  <Link
+                    key={c.id}
+                    href={`/dashboard/category/${c.slug}`}
+                    className={`block rounded-md px-3 py-1.5 text-xs ${
+                      isActive
+                        ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                        : 'text-zinc-700 hover:bg-zinc-100'
+                    }`}
+                  >
+                    {c.name}
+                  </Link>
+                );
+              })}
+            </div>
+          ) : null}
         </nav>
       </div>
 

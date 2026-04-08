@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Providers } from "@/components/Providers";
-import { FloatingWhatsAppButton } from "@/components/FloatingWhatsAppButton";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -29,7 +28,6 @@ export default function RootLayout({
       <body className="antialiased">
         <Providers>
           {children}
-          <FloatingWhatsAppButton />
         </Providers>
       </body>
     </html>
