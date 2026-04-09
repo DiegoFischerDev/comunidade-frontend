@@ -58,12 +58,12 @@ export function AffiliateEnrollModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
       onClick={() => !saving && onClose()}
       role="presentation"
     >
       <div
-        className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl"
+        className="my-8 w-full max-w-3xl rounded-2xl bg-white p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative mb-4 h-52 w-full overflow-hidden rounded-xl">

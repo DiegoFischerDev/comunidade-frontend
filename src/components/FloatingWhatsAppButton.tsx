@@ -23,6 +23,15 @@ function formatEur(cents: number): string {
   }).format(cents / 100);
 }
 
+function formatEurNoDecimals(cents: number): string {
+  return new Intl.NumberFormat('pt-PT', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
+}
+
 function formatBrl(centavos: number): string {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -203,12 +212,12 @@ export function FloatingWhatsAppButton({
       {/* Modal fullscreen só para "Junte-se à Comunidade" */}
       {open && showMembershipModal && (
         <div
-          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
           onClick={closeAll}
           role="presentation"
         >
           <div
-            className="relative w-full max-w-md rounded-2xl bg-white p-5 pt-10 shadow-xl"
+            className="relative my-8 w-full max-w-lg rounded-2xl bg-white p-5 pt-10 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -234,26 +243,26 @@ export function FloatingWhatsAppButton({
                   <h3 className="text-lg font-bold tracking-tight text-zinc-900">
                     Junte-se à Comunidade RPM
                   </h3>
-                  <p className="mt-0.5 text-sm font-medium text-zinc-600">
+                  <div className="mt-2 flex justify-center">
                     {amountsLoading ? (
-                      'A carregar…'
+                      <span className="inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-sm font-semibold text-zinc-600">
+                        A carregar…
+                      </span>
                     ) : amounts ? (
-                      <>
-                        {formatEur(amounts.eurCents)}/ano — menos de{' '}
-                        {Math.ceil(amounts.eurCents / 100 / 12)} € por mês
-                      </>
+                      <span className="inline-flex items-center gap-2 rounded-xl border border-emerald-200/70 bg-gradient-to-r from-emerald-50 to-emerald-100 px-4 py-2 text-base font-extrabold text-emerald-900 shadow-sm">
+                        {formatEurNoDecimals(amounts.eurCents)}/ano
+                      </span>
                     ) : (
-                      'Acesso por 1 ano — escolha a forma de pagamento'
+                      <span className="text-sm font-medium text-zinc-600">
+                        Acesso por 1 ano — escolha a forma de pagamento
+                      </span>
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
 
               {!showPaymentOptions ? (
                 <>
-                  <p className="text-sm leading-relaxed text-zinc-700 mb-4">
-                    Por menos de um café por mês, tenha acesso a tudo o que a comunidade oferece.
-                  </p>
                   <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700">
                     O que inclui:
                   </p>
@@ -278,8 +287,7 @@ export function FloatingWhatsAppButton({
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
                       <span>
-                        <strong className="text-zinc-800">Acesso aos grupos VIP no Whatsapp</strong> incluindo grupos de imóveis disponíveis
-                        para aluguel e compra.
+                        <strong className="text-zinc-800">Acesso aos grupos VIP no Whatsapp</strong> incluindo grupos de imóveis disponíveis.
                       </span>
                     </li>
                   </ul>
@@ -296,9 +304,6 @@ export function FloatingWhatsAppButton({
                 </>
               ) : (
                 <>
-                  <p className="text-sm leading-relaxed text-zinc-700 mb-4">
-                    Por menos de um café por mês, tenha acesso a tudo o que a comunidade oferece.
-                  </p>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
                     Escolha a forma de pagamento
                   </p>

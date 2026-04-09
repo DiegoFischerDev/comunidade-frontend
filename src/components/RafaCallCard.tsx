@@ -590,12 +590,12 @@ export function RafaCallCard() {
 
       {schedOpen && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/40 p-4"
           onClick={closeSched}
           role="presentation"
         >
           <div
-            className="relative w-full max-w-3xl rounded-2xl bg-white p-5 shadow-xl"
+            className="relative my-8 w-full max-w-6xl rounded-2xl bg-white p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4">
@@ -745,12 +745,12 @@ export function RafaCallCard() {
 
       {payOpen && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/40 p-4"
           onClick={closePayModal}
           role="presentation"
         >
           <div
-            className="relative w-full max-w-md rounded-2xl bg-white p-5 pt-10 shadow-xl"
+            className={`relative my-8 w-full ${payOptions ? 'max-w-lg' : 'max-w-3xl'} rounded-2xl bg-white p-5 pt-10 shadow-xl`}
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -797,6 +797,8 @@ export function RafaCallCard() {
                       {`Que tal conversar diretamente com quem já passou por todo o processo de imigração?
 
 Nessa videochamada, vamos bater um papo leve e direto ao ponto. Vou te contar como foi a minha experiência saindo do Brasil e construindo uma vida em Portugal, compartilhar aprendizados reais (inclusive os erros que você pode evitar!) e esclarecer as dúvidas gerais que você tiver sobre o processo.
+
+Importante: esta conversa não é uma consulta jurídica. A Rafa não tem formação/conhecimento jurídico para orientar casos específicos, interpretar documentos ou indicar qual decisão legal tomar. O objetivo é falar de processos e caminhos em termos gerais, com base em experiência prática.
 
 Também vou te apresentar nossos parceiros de confiança e te orientar sobre quais caminhos fazem mais sentido para o seu perfil, para que você possa imigrar com mais segurança, planejamento e tranquilidade — sem perder tempo ou dinheiro com decisões erradas.
 

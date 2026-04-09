@@ -6,6 +6,13 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 
+type PartnerService = {
+  id: string;
+  title: string;
+  price: string | null;
+  priceOnRequest: boolean;
+};
+
 type CategoryWithPartners = {
   id: string;
   slug: string;
@@ -27,6 +34,9 @@ export default function CategoryPage() {
   const [categories, setCategories] = useState<CategoryWithPartners[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [partnerServicesById, setPartnerServicesById] = useState<
+    Record<string, PartnerService[] | undefined>
+  >({});
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -49,6 +59,49 @@ export default function CategoryPage() {
   }, []);
 
   const category = categories.find((c) => c.slug === params.slug);
+
+  useEffect(() => {
+    if (!category) return;
+    let cancelled = false;
+
+    (async () => {
+      const ids = category.partners.map((p) => p.id);
+      const missingIds = ids.filter((id) => partnerServicesById[id] === undefined);
+      if (missingIds.length === 0) return;
+
+      try {
+        const results = await Promise.allSettled(
+          missingIds.map(async (id) => {
+            const details = await api.marketplace.partnerDetails(id);
+            return { id, services: details.services as PartnerService[] };
+          }),
+        );
+
+        if (cancelled) return;
+        setPartnerServicesById((prev) => {
+          const next = { ...prev };
+          for (const r of results) {
+            if (r.status === 'fulfilled') {
+              next[r.value.id] = r.value.services;
+            }
+          }
+          return next;
+        });
+      } catch {
+        // silencioso: não bloqueia a lista de parceiros
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [category, partnerServicesById]);
+
+  const formatServicePrice = (s: PartnerService) => {
+    if (s.priceOnRequest) return 'Sob consulta';
+    if (s.price) return `${s.price} €`;
+    return '—';
+  };
 
   if (loading) {
     return <p className="text-sm text-zinc-600">Carregando categoria…</p>;
@@ -84,7 +137,7 @@ export default function CategoryPage() {
   return (
     <div className="space-y-8">
       {/* Hero da categoria */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#d46a76] to-[#a93a4d] text-white">
         {heroBg && (
           <div
             className="absolute inset-0 bg-cover bg-center opacity-40"
@@ -127,7 +180,7 @@ export default function CategoryPage() {
               <Link
                 key={partner.id}
                 href={`/dashboard/partner/${partner.id}`}
-                className="group mx-auto flex w-full max-w-[320px] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
+                className="group flex w-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
               >
                 <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-r from-zinc-100 to-zinc-200">
                   {partnerBg && (
@@ -153,11 +206,31 @@ export default function CategoryPage() {
                     </h2>
                   </div>
                 </div>
-                {partner.shortDescription && (
-                  <p className="whitespace-pre-line px-4 pb-4 pt-3 text-sm leading-relaxed text-zinc-600">
-                    {partner.shortDescription}
-                  </p>
-                )}
+                <div className="px-4 pb-4 pt-3">
+                  {partner.shortDescription ? (
+                    <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-600">
+                      {partner.shortDescription}
+                    </p>
+                  ) : null}
+
+                  {partnerServicesById[partner.id]?.length ? (
+                    <div className="mt-3 space-y-1.5">
+                      {partnerServicesById[partner.id]!.map((s) => (
+                        <div
+                          key={s.id}
+                          className="flex items-start justify-between gap-3 text-xs text-zinc-700"
+                        >
+                          <span className="min-w-0 flex-1 truncate">
+                            {s.title}
+                          </span>
+                          <span className="shrink-0 font-semibold text-zinc-900">
+                            {formatServicePrice(s)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
               </Link>
             );
           })}

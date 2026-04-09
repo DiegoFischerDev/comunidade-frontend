@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { CardButton } from '@/components/ui/CardButton';
 
-type VipGroup = {
+export type VipGroup = {
   id: string;
   title: string;
   description: string;
@@ -11,44 +11,44 @@ type VipGroup = {
   comingSoon?: boolean;
 };
 
-const GROUPS: VipGroup[] = [
+export const GROUPS: VipGroup[] = [
   {
     id: 'geral',
-    title: 'Geral',
+    title: 'Geral Comunidade RPM',
     description: 'Grupo geral, aberto para visitantes, para tratar de assuntos em geral.',
     isPublic: true,
   },
   {
     id: 'rpm-brasil',
-    title: 'Brasil',
+    title: 'Ainda estou no Brasil',
     description:
       'Para membros que pretendem imigrar para portugal mas ainda estao no brasil. Indicado para quem ainda esta decidindo para qual cidade imigrar, qual tipo de visto aplicar, e buscando a primeira moradia em Portugal.',
     isPublic: false,
   },
   {
     id: 'rpm-portugal',
-    title: 'Portugal',
+    title: 'Já estou em Portugal',
     description:
       'Para membros que ja estao em Portugal, buscam trocar informaçoes sobre oportunidades de emprego, processos da AIMA, autorização de residencia, nacionalidade, escolas, etc.',
     isPublic: false,
   },
   {
     id: 'rpm-alugueis',
-    title: 'Aluguel de imóveis',
+    title: 'Aluguel de imóveis (Relocation)',
     description:
       'Grupo onde sao postados semalmente os imoveis disponiveis para Arrendamento (aluguel) onde a maioria ainda nao foi publicado nos sites de busca.',
     isPublic: false,
   },
   {
     id: 'rpm-compra-imoveis',
-    title: 'Compra de imóveis',
+    title: 'Compra de imóveis (Financiamento)',
     description:
       'Grupo onde sao postados semanalmente os imoveis disponiveis para venda onde a maioria ainda nao foi publicados nos sites de busca.',
     isPublic: false,
   },
   {
     id: 'compra-automovel',
-    title: 'Compra de automóvel',
+    title: 'Compra de automóveis',
     description:
       'Grupo para trocar dicas e oportunidades de compra de automóvel em Portugal, com recomendações e alertas do que evitar.',
     isPublic: false,
@@ -88,7 +88,7 @@ export function GruposVipContent() {
   return (
     <div className="mx-auto w-full max-w-[820px] space-y-5">
       <div className="text-center">
-        <h1 className="text-2xl font-semibold text-zinc-900">Grupos VIP</h1>
+        <h1 className="text-2xl font-semibold text-zinc-900">Grupos whatsapp</h1>
         <p className="mt-2 text-sm text-zinc-600">
           Entra nos grupos certos para o teu momento. Alguns grupos são públicos e outros são
           exclusivos para membros VIP.

@@ -363,7 +363,7 @@ export default function DashboardLayout({
                 : 'text-zinc-800 hover:bg-zinc-100'
             }`}
           >
-            Grupos VIP
+            Grupos whatsapp
           </Link>
           {user && user.role !== 'ADMIN' ? (
             <Link
@@ -683,8 +683,8 @@ export default function DashboardLayout({
 
       {/* Modal de autenticação (login / criar conta) */}
       {isAuthModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="my-8 w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-base font-semibold text-zinc-900">
@@ -973,10 +973,6 @@ export default function DashboardLayout({
                     {whatsappPollError}
                   </div>
                 )}
-                <p className="text-xs text-zinc-500">
-                  Estamos à espera da confirmação no WhatsApp. Assim que a mensagem for
-                  processada, esta janela fecha e fica com sessão iniciada.
-                </p>
                 <p className="text-xs leading-relaxed text-zinc-700">
                   Para ativar a sua conta, envie o código de verificação pelo WhatsApp para{' '}
                   <span className="font-semibold text-zinc-900">
@@ -1223,8 +1219,8 @@ export default function DashboardLayout({
       <FloatingWhatsAppButton hideFloatingButton />
 
       {isWelcomeOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="my-8 w-full max-w-3xl rounded-2xl bg-white p-6 shadow-xl">
             <h2 className="text-lg font-semibold text-zinc-900">
               Bem-vindo(a)
               {welcomeName ? `, ${welcomeName}` : ''}!

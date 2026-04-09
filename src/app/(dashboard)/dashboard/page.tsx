@@ -14,6 +14,7 @@ import { AffiliateEnrollModal } from "@/components/affiliate/AffiliateEnrollModa
 import { AffiliateMemberDashboardCard } from "@/components/affiliate/AffiliateMemberDashboardCard";
 import { RafaCallCard } from "@/components/RafaCallCard";
 import { CardButton, CardLinkButton } from "@/components/ui/CardButton";
+import { GROUPS as VIP_GROUPS } from "@/components/GruposVipContent";
 
 type AffiliateMe = NonNullable<Awaited<ReturnType<typeof api.affiliate.me>>>;
 type MarketplaceCategory =
@@ -304,7 +305,7 @@ export default function DashboardPage() {
                 />
               </div>
               <div className="space-y-1">
-                <h2 className="text-xl font-semibold text-zinc-900">Grupos VIP</h2>
+                <h2 className="text-xl font-semibold text-zinc-900">Grupos whatsapp</h2>
                 <p className="text-sm text-zinc-600">
                   Entra nos grupos do WhatsApp da comunidade de acordo com o teu momento.
                 </p>
@@ -319,14 +320,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {[
-              { title: 'Geral', vip: false },
-              { title: 'Brasil', vip: true },
-              { title: 'Portugal', vip: true },
-              { title: 'Aluguel de imóveis', vip: true },
-              { title: 'Compra de imóveis', vip: true },
-              { title: 'Compra de automóvel', vip: true },
-            ].map((g) => (
+            {VIP_GROUPS.map((g) => (
               <div
                 key={g.title}
                 className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2"
@@ -341,7 +335,7 @@ export default function DashboardPage() {
                   />
                   <p className="truncate text-sm font-medium text-zinc-900">{g.title}</p>
                 </div>
-                {g.vip ? (
+                {!g.isPublic ? (
                   <Image
                     src="/vip-card.png"
                     alt="VIP"
@@ -524,12 +518,12 @@ export default function DashboardPage() {
 
       {complaintOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
           role="presentation"
           onClick={() => !complaintSending && setComplaintOpen(false)}
         >
           <div
-            className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl"
+            className="my-8 w-full max-w-3xl rounded-2xl bg-white p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4">
