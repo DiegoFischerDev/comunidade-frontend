@@ -832,6 +832,20 @@ export const api = {
         body: JSON.stringify({}),
       }),
   },
+  checklist: {
+    me: () =>
+      request<{ data: Record<string, unknown>; version: number; updatedAt: string | null }>('/checklist/me', {
+        method: 'GET',
+      }),
+    updateMe: (body: { data: Record<string, unknown>; version?: number }) =>
+      request<{ data: Record<string, unknown>; version: number; updatedAt: string }>(
+        '/checklist/me',
+        {
+          method: 'PUT',
+          body: JSON.stringify(body),
+        },
+      ),
+  },
   affiliate: {
     enroll: (body: {
       instagramHandle: string;
