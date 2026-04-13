@@ -374,7 +374,7 @@ export default function DashboardLayout({
                   : 'text-zinc-800 hover:bg-zinc-100'
               }`}
             >
-              Checklist de imigração
+              Plano de imigração
             </Link>
           ) : null}
           {user && user.role !== 'ADMIN' ? (
