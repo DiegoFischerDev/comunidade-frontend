@@ -196,7 +196,7 @@ export default function DashboardPage() {
           />
         </div>
 
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center -translate-y-6 sm:translate-y-0">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center -translate-y-20 sm:translate-y-0">
           <div className="relative h-32 w-[88vw] max-w-[880px] sm:h-40 md:h-44 lg:h-48">
             <Image
               src="/logo_comunidade.png"
