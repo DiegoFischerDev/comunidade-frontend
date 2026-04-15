@@ -125,79 +125,162 @@ export default function ReclameAquiUserPage() {
           </div>
         </div>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-          <table className="min-w-full text-left text-sm">
-            <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-600">
-              <tr>
-                <th className="px-4 py-3">Data</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Mensagem</th>
-                <th className="px-4 py-3">Resposta do admin</th>
-                <th className="px-4 py-3 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {items.map((t) => (
-                <tr key={t.id} className="text-zinc-800">
-                  <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-900">
-                    {prettyDtPt(t.createdAt)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(t.status)}`}>
-                      {statusLabel(t.status)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="whitespace-pre-wrap text-zinc-800">{t.message}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="whitespace-pre-wrap text-zinc-700">{t.adminReply || '—'}</div>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
-                    {t.status !== 'DONE' ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditing(t);
-                            setEditMsg(t.message);
-                            setError('');
-                          }}
-                          className="mr-2 cursor-pointer rounded bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          disabled={deletingId === t.id}
-                          onClick={async () => {
-                            const ok = window.confirm('Excluir este ticket? Esta ação não pode ser desfeita.');
-                            if (!ok) return;
-                            setDeletingId(t.id);
-                            setError('');
-                            try {
-                              await api.support.deleteMyTicket(t.id);
-                              await load();
-                            } catch (e) {
-                              setError(e instanceof Error ? e.message : 'Não foi possível excluir.');
-                            } finally {
-                              setDeletingId(null);
-                            }
-                          }}
-                          className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
-                        >
-                          {deletingId === t.id ? 'Excluindo…' : 'Excluir'}
-                        </button>
-                      </>
-                    ) : (
-                      <span className="text-xs text-zinc-500">—</span>
-                    )}
-                  </td>
+        <>
+          {/* Mobile: cards */}
+          <div className="mt-4 space-y-3 md:hidden">
+            {items.map((t) => (
+              <div key={t.id} className="rounded-2xl border border-zinc-200 bg-white p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-zinc-500">{prettyDtPt(t.createdAt)}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(t.status)}`}
+                      >
+                        {statusLabel(t.status)}
+                      </span>
+                      {t.status === 'DONE' ? (
+                        <span className="text-xs text-zinc-500">Finalizado</span>
+                      ) : null}
+                    </div>
+                  </div>
+                  {t.status !== 'DONE' ? (
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditing(t);
+                          setEditMsg(t.message);
+                          setError('');
+                        }}
+                        className="cursor-pointer rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-200"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        disabled={deletingId === t.id}
+                        onClick={async () => {
+                          const ok = window.confirm('Excluir este ticket? Esta ação não pode ser desfeita.');
+                          if (!ok) return;
+                          setDeletingId(t.id);
+                          setError('');
+                          try {
+                            await api.support.deleteMyTicket(t.id);
+                            await load();
+                          } catch (e) {
+                            setError(e instanceof Error ? e.message : 'Não foi possível excluir.');
+                          } finally {
+                            setDeletingId(null);
+                          }
+                        }}
+                        className="cursor-pointer rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
+                      >
+                        {deletingId === t.id ? 'Excluindo…' : 'Excluir'}
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="mt-3 grid gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                      Mensagem
+                    </p>
+                    <div className="mt-1 whitespace-pre-wrap text-sm text-zinc-800">{t.message}</div>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                      Resposta do admin
+                    </p>
+                    <div className="mt-1 whitespace-pre-wrap text-sm text-zinc-700">
+                      {t.adminReply || '—'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="mt-4 hidden overflow-x-auto rounded-lg border border-zinc-200 bg-white md:block">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                <tr>
+                  <th className="px-4 py-3">Data</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Mensagem</th>
+                  <th className="px-4 py-3">Resposta do admin</th>
+                  <th className="px-4 py-3 text-right">Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {items.map((t) => (
+                  <tr key={t.id} className="text-zinc-800">
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-900">
+                      {prettyDtPt(t.createdAt)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(t.status)}`}
+                      >
+                        {statusLabel(t.status)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="whitespace-pre-wrap text-zinc-800">{t.message}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="whitespace-pre-wrap text-zinc-700">{t.adminReply || '—'}</div>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right">
+                      {t.status !== 'DONE' ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditing(t);
+                              setEditMsg(t.message);
+                              setError('');
+                            }}
+                            className="mr-2 cursor-pointer rounded bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            disabled={deletingId === t.id}
+                            onClick={async () => {
+                              const ok = window.confirm(
+                                'Excluir este ticket? Esta ação não pode ser desfeita.',
+                              );
+                              if (!ok) return;
+                              setDeletingId(t.id);
+                              setError('');
+                              try {
+                                await api.support.deleteMyTicket(t.id);
+                                await load();
+                              } catch (e) {
+                                setError(e instanceof Error ? e.message : 'Não foi possível excluir.');
+                              } finally {
+                                setDeletingId(null);
+                              }
+                            }}
+                            className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+                          >
+                            {deletingId === t.id ? 'Excluindo…' : 'Excluir'}
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-xs text-zinc-500">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {editing && (

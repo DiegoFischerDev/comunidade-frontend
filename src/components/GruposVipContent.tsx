@@ -123,7 +123,7 @@ export function GruposVipContent() {
                     type="button"
                     variant="secondary"
                     fullWidth
-                    className="border-transparent !bg-gradient-to-r !from-[#25D366] !to-[#128C7E] !text-white font-semibold hover:!from-[#1ebe5d] hover:!to-[#0b6d63] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366]/40 focus-visible:ring-offset-2"
+                    className="border-transparent !bg-gradient-to-r !from-[#d58901] !to-[#f0b23a] !text-white font-semibold hover:!from-[#c07c01] hover:!to-[#e7a01f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d58901]/35 focus-visible:ring-offset-2"
                     disabled={Boolean(g.comingSoon)}
                     onClick={() => {
                       if (g.comingSoon) return;

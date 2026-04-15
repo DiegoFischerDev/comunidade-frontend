@@ -257,7 +257,7 @@ export default function RegistroPage() {
                 window.open(waOpenUrl, '_blank', 'noopener,noreferrer');
               }
             }}
-            className="w-full rounded-lg bg-green-600 py-2.5 font-medium text-white hover:bg-green-700"
+            className="w-full rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] py-2.5 font-medium text-white hover:from-[#c07c01] hover:to-[#e7a01f]"
           >
             Enviar
           </button>

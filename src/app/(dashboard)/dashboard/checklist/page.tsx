@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { CardButton } from "@/components/ui/CardButton";
@@ -881,6 +882,7 @@ function phaseProgress(
 
 export default function ChecklistPage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const isMember = user?.tier === "MEMBER";
   const isVisitor = Boolean(user && !isMember);
 
@@ -960,6 +962,29 @@ export default function ChecklistPage() {
     };
   }, [user?.id]);
 
+  // Mobile browsers (especialmente iOS) podem falhar/ignorar `window.print()` quando chamado direto no onClick.
+  // Estratégia: navegar para `?print=1` e disparar o print no efeito.
+  useEffect(() => {
+    if (!user) return;
+    if (typeof window === "undefined") return;
+    if (searchParams.get("print") !== "1") return;
+    const t = window.setTimeout(() => {
+      try {
+        window.print();
+      } finally {
+        // remove o parâmetro para não re-imprimir ao voltar/atualizar
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("print");
+          window.history.replaceState({}, "", url.toString());
+        } catch {
+          // noop
+        }
+      }
+    }, 250);
+    return () => window.clearTimeout(t);
+  }, [searchParams, user]);
+
   function openLoginModal() {
     if (typeof window === "undefined") return;
     window.dispatchEvent(new CustomEvent("open-auth-modal", { detail: { mode: "login" } }));
@@ -974,6 +999,18 @@ export default function ChecklistPage() {
     if (user) return true;
     openLoginModal();
     return false;
+  }
+
+  function guardGuestInteraction(
+    e:
+      | React.MouseEvent<HTMLElement>
+      | React.FocusEvent<HTMLElement>
+      | React.KeyboardEvent<HTMLElement>,
+  ) {
+    if (user) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openLoginModal();
   }
 
   function queueSave(next: ChecklistData) {
@@ -1073,6 +1110,14 @@ export default function ChecklistPage() {
 
   function printPlan() {
     if (!requireLogin()) return;
+    if (typeof window === "undefined") return;
+    const isMobile = window.matchMedia ? window.matchMedia("(max-width: 1023px)").matches : window.innerWidth < 1024;
+    if (isMobile) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("print", "1");
+      window.location.assign(url.toString());
+      return;
+    }
     window.print();
   }
 
@@ -1244,9 +1289,10 @@ export default function ChecklistPage() {
               <div>
                 <label className="block text-xs font-medium text-zinc-600">Tipo de visto</label>
                 <select
-                  disabled={!user}
                   value={data.meta?.visaType ?? ""}
                   onChange={(e) => setMeta("visaType", e.target.value as VisaType)}
+                  onMouseDown={guardGuestInteraction}
+                  onFocus={guardGuestInteraction}
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                 >
                   <option value="">Selecionar…</option>
@@ -1262,9 +1308,10 @@ export default function ChecklistPage() {
               <div>
                 <label className="block text-xs font-medium text-zinc-600">Cidade alvo</label>
                 <select
-                  disabled={!user}
                   value={data.meta?.cidade ?? ""}
                   onChange={(e) => setMeta("cidade", e.target.value as CityKey)}
+                  onMouseDown={guardGuestInteraction}
+                  onFocus={guardGuestInteraction}
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                 >
                   {CITY_OPTIONS.map((c) => (
@@ -1278,9 +1325,10 @@ export default function ChecklistPage() {
               <div>
                 <label className="block text-xs font-medium text-zinc-600">Cidade plano B</label>
                 <select
-                  disabled={!user}
                   value={data.meta?.cidadePlanoB ?? ""}
                   onChange={(e) => setMeta("cidadePlanoB", e.target.value as CityKey)}
+                  onMouseDown={guardGuestInteraction}
+                  onFocus={guardGuestInteraction}
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                 >
                   {CITY_OPTIONS.map((c) => (
@@ -1294,9 +1342,10 @@ export default function ChecklistPage() {
               <div>
                 <label className="block text-xs font-medium text-zinc-600">Tamanho do agregado familiar</label>
                 <select
-                  disabled={!user}
                   value={data.meta?.agregadoFamiliar ?? ""}
                   onChange={(e) => setMeta("agregadoFamiliar", e.target.value)}
+                  onMouseDown={guardGuestInteraction}
+                  onFocus={guardGuestInteraction}
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                 >
                   <option value="">Selecionar…</option>
@@ -1311,9 +1360,10 @@ export default function ChecklistPage() {
               <div>
                 <label className="block text-xs font-medium text-zinc-600">Número de quartos</label>
                 <select
-                  disabled={!user}
                   value={data.meta?.numQuartos ?? ""}
                   onChange={(e) => setMeta("numQuartos", e.target.value)}
+                  onMouseDown={guardGuestInteraction}
+                  onFocus={guardGuestInteraction}
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                 >
                   <option value="">Selecionar…</option>
@@ -1349,9 +1399,10 @@ export default function ChecklistPage() {
                       >
                         <input
                           type="checkbox"
-                          disabled={!user}
                           checked={checked}
                           onChange={() => toggleMetaArray("profissoesPossiveis", p)}
+                          onMouseDown={guardGuestInteraction}
+                          onFocus={guardGuestInteraction}
                           className="mt-0.5 h-5 w-5 shrink-0 accent-emerald-600"
                         />
                         <span className="text-zinc-800">{p}</span>
@@ -1374,13 +1425,12 @@ export default function ChecklistPage() {
                       <button
                         key={opt.id}
                         type="button"
-                        disabled={!user}
                         onClick={() => setMeta("precisaCarro", opt.value)}
                         className={`cursor-pointer rounded-xl border px-3 py-2 text-sm font-medium transition ${
                           selected
                             ? "border-emerald-200 bg-emerald-50 text-emerald-900"
                             : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
-                        } ${!user ? "cursor-not-allowed opacity-70" : ""}`}
+                        } ${!user ? "opacity-70" : ""}`}
                       >
                         {opt.label}
                       </button>
@@ -1394,9 +1444,10 @@ export default function ChecklistPage() {
                   <label className="block text-xs font-medium text-zinc-600">Data da viagem</label>
                   <input
                     type="date"
-                    disabled={!user}
                     value={data.meta?.dataViagem ?? ""}
                     onChange={(e) => setMeta("dataViagem", e.target.value)}
+                    onMouseDown={guardGuestInteraction}
+                    onFocus={guardGuestInteraction}
                     className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                   />
                 </div>
@@ -1404,9 +1455,10 @@ export default function ChecklistPage() {
                   <label className="block text-xs font-medium text-zinc-600">Agendamento AIMA</label>
                   <input
                     type="date"
-                    disabled={!user}
                     value={data.meta?.dataAima ?? ""}
                     onChange={(e) => setMeta("dataAima", e.target.value)}
+                    onMouseDown={guardGuestInteraction}
+                    onFocus={guardGuestInteraction}
                     className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                   />
                 </div>
@@ -1416,9 +1468,10 @@ export default function ChecklistPage() {
                 <label className="block text-xs font-medium text-zinc-600">Notas</label>
                 <textarea
                   rows={4}
-                  disabled={!user}
                   value={data.meta?.notas ?? ""}
                   onChange={(e) => setMeta("notas", e.target.value)}
+                  onMouseDown={guardGuestInteraction}
+                  onFocus={guardGuestInteraction}
                   placeholder="Links, contatos, lembretes…"
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                 />
@@ -1430,7 +1483,7 @@ export default function ChecklistPage() {
                   variant="primary"
                   fullWidth
                   onClick={printPlan}
-                  className="!from-[#086601] !to-[#0b8a02] hover:!from-[#064d01] hover:!to-[#076e01]"
+                  className="hover:!from-[#c07c01] hover:!to-[#e7a01f]"
                 >
                   Imprimir plano
                 </CardButton>

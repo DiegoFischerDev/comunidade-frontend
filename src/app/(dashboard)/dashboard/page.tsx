@@ -184,13 +184,46 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="mx-auto w-full max-w-[800px]">
-        <h1 className="text-2xl font-semibold text-zinc-900">
-          Comunidade Rafa pelo mundo
-        </h1>
+      <section className="relative w-full overflow-hidden rounded-2xl bg-zinc-100">
+        <div className="relative h-72 w-full sm:h-96 lg:h-[420px]">
+          <Image
+            src="/capa_rpm.png"
+            alt="Comunidade RPM"
+            fill
+            className="object-cover opacity-50"
+            sizes="100vw"
+            priority
+          />
+        </div>
+
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center -translate-y-6 sm:translate-y-0">
+          <div className="relative h-32 w-[88vw] max-w-[880px] sm:h-40 md:h-44 lg:h-48">
+            <Image
+              src="/logo_comunidade.png"
+              alt="Comunidade RPM"
+              fill
+              className="object-contain drop-shadow-sm"
+              sizes="(min-width: 1024px) 880px, 88vw"
+            />
+          </div>
+        </div>
+
+        <div className="absolute inset-0 hidden items-start sm:flex">
+          <div className="w-full px-5 pt-5 sm:px-7 sm:pt-7">
+            <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
+              Bem vindo!
+            </h1>
+            <p className="mt-2 max-w-[60ch] text-sm text-zinc-900 sm:text-base">
+              Aqui encontras tudo o que precisa para imigrar do brasil para portugal do jeito certo.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="mx-auto w-full max-w-[800px] sm:hidden">
+        <h1 className="text-2xl font-semibold text-zinc-900">Bem vindo!</h1>
         <p className="mt-2 text-zinc-600">
-          Aqui encontras tudo o que precisa para imigrar do brasil para portugal
-          do jeito certo.
+          Aqui encontras tudo o que precisa para imigrar do brasil para portugal do jeito certo.
         </p>
       </div>
 

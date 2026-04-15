@@ -431,7 +431,7 @@ export default function AdminRafaCallHojePage() {
                                     href={waUrl(row.item.whatsappDigits, row.item.userName, row.item.startsAt, tz)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center justify-center rounded-full bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#20BD5A]"
+                                    className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-1.5 text-xs font-semibold text-white hover:from-[#c07c01] hover:to-[#e7a01f]"
                                   >
                                     WhatsApp
                                   </a>

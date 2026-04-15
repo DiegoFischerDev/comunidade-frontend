@@ -699,34 +699,48 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50 md:pl-56">
-      {/* Header mobile com menu hamburguer */}
-      <header className="flex items-center justify-between border-b border-secondary-2 bg-white px-4 py-2 md:hidden">
-        <button
-          type="button"
-          onClick={() => router.push('/dashboard')}
-          className="flex cursor-pointer items-center"
-          aria-label="Ir para o início"
-        >
-          <Image
-            src="/logo_comunidade.png"
-            alt="Comunidade RPM"
-            width={96}
-            height={22}
-          />
-        </button>
-        <button
-          type="button"
-          onClick={() => setIsMenuOpen((open) => !open)}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-secondary-2 text-zinc-900 hover:bg-zinc-100"
-          aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
-        >
-          <span className="flex h-3 w-3 flex-col justify-between">
-            <span className="h-[1px] w-full bg-zinc-900" />
-            <span className="h-[1px] w-full bg-zinc-900" />
-            <span className="h-[1px] w-full bg-zinc-900" />
+      {/* Mobile: atalho flutuante para início */}
+      <button
+        type="button"
+        onClick={() => {
+          if (typeof window === 'undefined') return;
+          if (pathname === '/dashboard') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+          }
+          router.push('/dashboard');
+        }}
+        className="fixed left-4 top-4 z-50 md:hidden"
+        aria-label="Ir para o início"
+      >
+        <Image
+          src="/favicon-32x32.png"
+          alt="Ir para o início"
+          width={32}
+          height={32}
+          priority
+        />
+      </button>
+
+      {/* Mobile: apenas menu hambúrguer flutuante */}
+      <button
+        type="button"
+        onClick={() => setIsMenuOpen((open) => !open)}
+        className="fixed right-4 top-4 z-50 inline-flex h-8 w-8 items-center justify-center text-zinc-900 md:hidden"
+        aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+      >
+        {isMenuOpen ? (
+          <span className="text-xl leading-none" aria-hidden>
+            ✕
           </span>
-        </button>
-      </header>
+        ) : (
+          <span className="flex h-3.5 w-4 flex-col justify-between" aria-hidden>
+            <span className="h-[2px] w-full rounded bg-zinc-900" />
+            <span className="h-[2px] w-full rounded bg-zinc-900" />
+            <span className="h-[2px] w-full rounded bg-zinc-900" />
+          </span>
+        )}
+      </button>
 
       {/* Sidebar desktop */}
       <aside className="hidden border-r border-secondary-2 bg-white p-4 md:fixed md:inset-y-0 md:left-0 md:flex md:w-56 md:flex-col md:overflow-hidden">
@@ -734,19 +748,29 @@ export default function DashboardLayout({
       </aside>
 
       {/* Sidebar mobile (overlay) */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 z-40 flex md:hidden">
-          <div className="flex w-64 shrink-0 flex-col border-r border-secondary-2 bg-white p-4">
-            {sidebarContent}
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsMenuOpen(false)}
-            className="flex-1 bg-black/40"
-            aria-label="Fechar menu"
-          />
+      <div
+        className={`fixed inset-0 z-40 flex md:hidden ${
+          isMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'
+        }`}
+        aria-hidden={!isMenuOpen}
+      >
+        <div
+          className={`flex w-64 shrink-0 flex-col border-r border-secondary-2 bg-white p-4 transition-transform duration-200 ${
+            isMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          {sidebarContent}
         </div>
-      )}
+        <button
+          type="button"
+          onClick={() => setIsMenuOpen(false)}
+          className={`flex-1 bg-black/40 transition-opacity duration-200 ${
+            isMenuOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+          aria-label="Fechar menu"
+          tabIndex={isMenuOpen ? 0 : -1}
+        />
+      </div>
 
       {/* Modal de autenticação (login / criar conta) */}
       {isAuthModalOpen && (
@@ -1069,7 +1093,7 @@ export default function DashboardLayout({
                       );
                     }
                   }}
-                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700"
+                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-medium text-white hover:from-[#c07c01] hover:to-[#e7a01f]"
                 >
                   Enviar
                 </button>
@@ -1279,7 +1303,7 @@ export default function DashboardLayout({
         </div>
       )}
 
-      <main className="flex-1 p-4 text-zinc-900 md:p-6">
+      <main className="flex-1 p-4 pt-16 text-zinc-900 md:p-6 md:pt-6">
         {children}
       </main>
 
