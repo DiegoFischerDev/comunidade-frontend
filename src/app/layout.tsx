@@ -4,8 +4,10 @@ import { Providers } from "@/components/Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Comunidade RPM",
-  description: "Plataforma de marketplace de serviços",
+  metadataBase: new URL("https://comunidaderpm.com"),
+  title: "Comunidade Rafa pelo mundo",
+  description:
+    "A tua comunidade para imigrar para Portugal com planejamento, parceiros e apoio em cada etapa.",
   manifest: "/site.webmanifest",
   icons: {
     icon: [
@@ -14,6 +16,29 @@ export const metadata: Metadata = {
       { url: "/favicon.ico", sizes: "any", type: "image/x-icon" },
     ],
     apple: { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+  },
+  openGraph: {
+    type: "website",
+    locale: "pt_PT",
+    siteName: "Comunidade RPM",
+    title: "Comunidade Rafa pelo mundo",
+    description:
+      "A tua comunidade para imigrar para Portugal com planejamento, parceiros e apoio em cada etapa.",
+    images: [
+      {
+        url: "/logo_comunidade.png",
+        width: 1200,
+        height: 630,
+        alt: "Comunidade RPM",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Comunidade Rafa pelo mundo",
+    description:
+      "A tua comunidade para imigrar para Portugal com planejamento, parceiros e apoio em cada etapa.",
+    images: ["/logo_comunidade.png"],
   },
 };
 
