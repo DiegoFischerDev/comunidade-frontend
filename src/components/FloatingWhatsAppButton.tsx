@@ -287,6 +287,12 @@ export function FloatingWhatsAppButton({
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
                       <span>
+                        <strong className="text-zinc-800">Acesso completo ao plano de imigração</strong>.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
+                      <span>
                         <strong className="text-zinc-800">Acesso aos grupos VIP no Whatsapp</strong> incluindo grupos de imóveis disponíveis.
                       </span>
                     </li>

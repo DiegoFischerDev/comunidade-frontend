@@ -1120,48 +1120,64 @@ export default function ChecklistPage() {
                   </div>
                 </div>
 
-                <div className="mt-3 rounded-xl bg-white px-3 py-3 text-xs text-zinc-700 ring-1 ring-zinc-200">
+                <div className="relative mt-3 rounded-xl bg-white px-3 py-3 text-xs text-zinc-700 ring-1 ring-zinc-200">
                   <p className="font-semibold text-zinc-900">Detalhe dos custos estimados</p>
-                  <ul className="mt-2 space-y-1">
-                    <li className="flex items-center justify-between gap-3">
-                      <span className="text-zinc-600">Moradia (arrendamento)</span>
-                      <span className="font-semibold tabular-nums">{formatEur(reserva.renda)}</span>
-                    </li>
-                    <li className="flex items-center justify-between gap-3">
-                      <span className="text-zinc-600">Água/luz/internet</span>
-                      <span className="font-semibold tabular-nums">{formatEur(reserva.contasMensal)}</span>
-                    </li>
-                    <li className="flex items-center justify-between gap-3">
-                      <span className="text-zinc-600">Mobilidade (carro/transporte)</span>
-                      <span className="font-semibold tabular-nums">{formatEur(reserva.mobilidadeMensal)}</span>
-                    </li>
-                    {reserva.financiamentoCarroMensal > 0 ? (
+
+                  <div
+                    className={!isMember ? "mt-2 blur-sm select-none pointer-events-none" : "mt-2"}
+                    aria-hidden={!isMember}
+                  >
+                    <ul className="space-y-1">
                       <li className="flex items-center justify-between gap-3">
-                        <span className="text-zinc-600">Financiamento do carro (mensal)</span>
-                        <span className="font-semibold tabular-nums">{formatEur(reserva.financiamentoCarroMensal)}</span>
+                        <span className="text-zinc-600">Moradia (arrendamento)</span>
+                        <span className="font-semibold tabular-nums">{formatEur(reserva.renda)}</span>
                       </li>
-                    ) : null}
-                    <li className="flex items-center justify-between gap-3">
-                      <span className="text-zinc-600">Alimentação</span>
-                      <span className="font-semibold tabular-nums">{formatEur(reserva.alimentacaoMensal)}</span>
-                    </li>
-                    <li className="flex items-center justify-between gap-3">
-                      <span className="text-zinc-600">Documentação</span>
-                      <span className="font-semibold tabular-nums">{formatEur(800)}</span>
-                    </li>
-                    <li className="flex items-center justify-between gap-3">
-                      <span className="text-zinc-600">Relocation</span>
-                      <span className="font-semibold tabular-nums">{formatEur(700)}</span>
-                    </li>
-                    <li className="flex items-center justify-between gap-3">
-                      <span className="text-zinc-600">3 cauções</span>
-                      <span className="font-semibold tabular-nums">{formatEur(reserva.renda * 3)}</span>
-                    </li>
-                  </ul>
-                  <p className="mt-2 text-[11px] text-zinc-500">
-                    Estes valores são referências de 2026 e variam por bairro, época e perfil. Ajuste a cidade, nº de
-                    quartos e agregado familiar para refinar.
-                  </p>
+                      <li className="flex items-center justify-between gap-3">
+                        <span className="text-zinc-600">Água/luz/internet</span>
+                        <span className="font-semibold tabular-nums">{formatEur(reserva.contasMensal)}</span>
+                      </li>
+                      <li className="flex items-center justify-between gap-3">
+                        <span className="text-zinc-600">Mobilidade (carro/transporte)</span>
+                        <span className="font-semibold tabular-nums">{formatEur(reserva.mobilidadeMensal)}</span>
+                      </li>
+                      {reserva.financiamentoCarroMensal > 0 ? (
+                        <li className="flex items-center justify-between gap-3">
+                          <span className="text-zinc-600">Financiamento do carro (mensal)</span>
+                          <span className="font-semibold tabular-nums">
+                            {formatEur(reserva.financiamentoCarroMensal)}
+                          </span>
+                        </li>
+                      ) : null}
+                      <li className="flex items-center justify-between gap-3">
+                        <span className="text-zinc-600">Alimentação</span>
+                        <span className="font-semibold tabular-nums">{formatEur(reserva.alimentacaoMensal)}</span>
+                      </li>
+                      <li className="flex items-center justify-between gap-3">
+                        <span className="text-zinc-600">Documentação</span>
+                        <span className="font-semibold tabular-nums">{formatEur(800)}</span>
+                      </li>
+                      <li className="flex items-center justify-between gap-3">
+                        <span className="text-zinc-600">Relocation</span>
+                        <span className="font-semibold tabular-nums">{formatEur(700)}</span>
+                      </li>
+                      <li className="flex items-center justify-between gap-3">
+                        <span className="text-zinc-600">3 cauções</span>
+                        <span className="font-semibold tabular-nums">{formatEur(reserva.renda * 3)}</span>
+                      </li>
+                    </ul>
+                    <p className="mt-2 text-[11px] text-zinc-500">
+                      Estes valores são referências de 2026 e variam por bairro, época e perfil. Ajuste a cidade, nº de
+                      quartos e agregado familiar para refinar.
+                    </p>
+                  </div>
+
+                  {!isMember ? (
+                    <div className="pointer-events-none absolute inset-x-3 bottom-3 top-9 flex items-center justify-center">
+                      <div className="rounded-full bg-zinc-900/80 px-3 py-1 text-[11px] font-semibold text-white shadow-sm">
+                        Exclusivo para membros VIP
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 

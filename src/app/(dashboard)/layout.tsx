@@ -365,18 +365,16 @@ export default function DashboardLayout({
           >
             Grupos whatsapp
           </Link>
-          {user?.tier === 'MEMBER' ? (
-            <Link
-              href="/dashboard/checklist"
-              className={`block rounded-md px-3 py-2 text-sm ${
-                pathname === '/dashboard/checklist'
-                  ? 'bg-[#efc2c1] font-medium text-zinc-900'
-                  : 'text-zinc-800 hover:bg-zinc-100'
-              }`}
-            >
-              Plano de imigração
-            </Link>
-          ) : null}
+          <Link
+            href="/plano-de-imigracao"
+            className={`block rounded-md px-3 py-2 text-sm ${
+              pathname === '/plano-de-imigracao'
+                ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                : 'text-zinc-800 hover:bg-zinc-100'
+            }`}
+          >
+            Plano de imigração
+          </Link>
           {user && user.role !== 'ADMIN' ? (
             <Link
               href="/dashboard/reclame-aqui"
