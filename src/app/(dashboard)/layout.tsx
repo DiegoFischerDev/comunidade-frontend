@@ -749,7 +749,7 @@ export default function DashboardLayout({
 
       {/* Sidebar mobile (overlay) */}
       <div
-        className={`fixed inset-0 z-40 flex md:hidden ${
+        className={`fixed inset-0 z-[60] flex md:hidden ${
           isMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'
         }`}
         aria-hidden={!isMenuOpen}

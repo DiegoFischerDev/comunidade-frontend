@@ -75,10 +75,6 @@ export function FloatingWhatsAppButton({
       return;
     }
     setCheckoutLoading(true);
-
-    // Em mobile, `window.open()` após um `await` costuma ser bloqueado.
-    // Pré-abre a aba imediatamente no clique e redireciona quando o URL estiver pronto.
-    const preOpened = window.open('about:blank', '_blank', 'noopener,noreferrer');
     try {
       const { url } =
         method === 'pix'
@@ -86,19 +82,10 @@ export function FloatingWhatsAppButton({
           : method === 'mbway'
             ? await api.stripe.createMbWayCheckoutSession({ successUrl, cancelUrl })
             : await api.stripe.createCheckoutSession({ successUrl, cancelUrl });
-      if (preOpened && !preOpened.closed) {
-        preOpened.location.href = url;
-      } else {
-        window.location.assign(url);
-      }
+      window.location.assign(url);
       setCheckoutLoading(false);
       closeAll();
     } catch (e) {
-      try {
-        preOpened?.close();
-      } catch {
-        // noop
-      }
       setCheckoutLoading(false);
       const msg = e instanceof Error ? e.message : 'Erro ao iniciar o pagamento.';
       alert(msg);

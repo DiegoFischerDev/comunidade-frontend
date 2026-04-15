@@ -469,11 +469,6 @@ export function RafaCallCard() {
   const startPay = async (method: PayMethod) => {
     if (payLoading || !successUrl) return;
     setPayLoading(true);
-
-    // Em mobile, `window.open()` após um `await` costuma ser bloqueado.
-    const preOpened = typeof window !== 'undefined'
-      ? window.open('about:blank', '_blank', 'noopener,noreferrer')
-      : null;
     try {
       const { url } =
         method === 'pix'
@@ -481,18 +476,9 @@ export function RafaCallCard() {
           : method === 'mbway'
             ? await api.stripe.createRafaCallUnlockMbWaySession({ successUrl, cancelUrl })
             : await api.stripe.createRafaCallUnlockSession({ successUrl, cancelUrl });
-      if (preOpened && !preOpened.closed) {
-        preOpened.location.href = url;
-      } else if (typeof window !== 'undefined') {
-        window.location.assign(url);
-      }
+      if (typeof window !== 'undefined') window.location.assign(url);
       closePayModal();
     } catch (e) {
-      try {
-        preOpened?.close();
-      } catch {
-        // noop
-      }
       const msg = e instanceof Error ? e.message : 'Erro ao iniciar o pagamento.';
       alert(msg);
     } finally {
