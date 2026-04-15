@@ -323,7 +323,7 @@ export default function DashboardLayout({
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
-      <div className="flex-1 min-h-0">
+      <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-center">
           <Image
             src="/logo_comunidade.png"
@@ -333,8 +333,44 @@ export default function DashboardLayout({
           />
         </div>
 
+        <div className="mt-3 flex items-center justify-center gap-3">
+          <a
+            href="https://www.instagram.com/rafaapelomundo/"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Instagram"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#910001]/30 bg-white text-[#910001] shadow-sm transition hover:border-[#910001]/55 hover:bg-[#910001]/10 hover:text-[#910001] hover:shadow"
+          >
+            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="currentColor" aria-hidden>
+              <path d="M7.5 2h9A5.5 5.5 0 0 1 22 7.5v9A5.5 5.5 0 0 1 16.5 22h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2Zm0 2A3.5 3.5 0 0 0 4 7.5v9A3.5 3.5 0 0 0 7.5 20h9a3.5 3.5 0 0 0 3.5-3.5v-9A3.5 3.5 0 0 0 16.5 4h-9Zm10.25 1.75a1 1 0 1 1 0 2 1 1 0 0 1 0-2ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />
+            </svg>
+          </a>
+          <a
+            href="https://www.youtube.com/@rafaapelomundo"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="YouTube"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d58901]/35 bg-white text-[#d58901] shadow-sm transition hover:border-[#d58901]/60 hover:bg-[#d58901]/10 hover:text-[#d58901] hover:shadow"
+          >
+            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="currentColor" aria-hidden>
+              <path d="M21.6 7.2a3 3 0 0 0-2.1-2.1C17.7 4.5 12 4.5 12 4.5s-5.7 0-7.5.6A3 3 0 0 0 2.4 7.2 31.3 31.3 0 0 0 2 12a31.3 31.3 0 0 0 .4 4.8 3 3 0 0 0 2.1 2.1c1.8.6 7.5.6 7.5.6s5.7 0 7.5-.6a3 3 0 0 0 2.1-2.1A31.3 31.3 0 0 0 22 12a31.3 31.3 0 0 0-.4-4.8ZM10 15.5v-7l6 3.5-6 3.5Z" />
+            </svg>
+          </a>
+          <a
+            href="https://www.tiktok.com/@rafaapelomundo"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="TikTok"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#086601]/30 bg-white text-[#086601] shadow-sm transition hover:border-[#086601]/55 hover:bg-[#086601]/10 hover:text-[#086601] hover:shadow"
+          >
+            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="currentColor" aria-hidden>
+              <path d="M14.5 3c.3 2.5 1.8 4.7 4.3 5.5v3.1c-1.8 0-3.4-.6-4.7-1.6v6.3c0 3.4-2.8 6.2-6.2 6.2S1.7 19 1.7 15.6s2.8-6.2 6.2-6.2c.4 0 .8 0 1.2.1v3.4c-.4-.2-.8-.3-1.2-.3-1.6 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3V3h3.4Z" />
+            </svg>
+          </a>
+        </div>
+
         {/* Menu principal */}
-        <nav className="mt-4 max-h-full space-y-1 overflow-y-auto rounded-lg bg-zinc-50 p-1 pr-1">
+        <nav className="mt-4 min-h-0 flex-1 space-y-1 overflow-y-auto rounded-lg bg-zinc-50 p-1 pr-1 pb-3">
           <Link
             href="/dashboard"
             className={`block rounded-md px-3 py-2 text-sm ${
@@ -557,7 +593,7 @@ export default function DashboardLayout({
             Serviços
           </Link>
           {categoriesLoaded && categories.length ? (
-            <div className="mt-2 space-y-1 pl-3 border-l border-zinc-200">
+            <div className="mt-2 space-y-1 border-l border-zinc-200 pl-3">
               {categories.map((c) => {
                 const isActive =
                   pathname === `/dashboard/category/${c.slug}` ||
@@ -665,14 +701,19 @@ export default function DashboardLayout({
     <div className="flex min-h-screen flex-col bg-zinc-50 md:pl-56">
       {/* Header mobile com menu hamburguer */}
       <header className="flex items-center justify-between border-b border-secondary-2 bg-white px-4 py-2 md:hidden">
-        <div className="flex items-center">
+        <button
+          type="button"
+          onClick={() => router.push('/dashboard')}
+          className="flex cursor-pointer items-center"
+          aria-label="Ir para o início"
+        >
           <Image
             src="/logo_comunidade.png"
             alt="Comunidade RPM"
             width={96}
             height={22}
           />
-        </div>
+        </button>
         <button
           type="button"
           onClick={() => setIsMenuOpen((open) => !open)}
@@ -1241,6 +1282,15 @@ export default function DashboardLayout({
       <main className="flex-1 p-4 text-zinc-900 md:p-6">
         {children}
       </main>
+
+      <footer className="border-t border-secondary-2 bg-white px-4 py-4 text-xs text-zinc-600 md:px-6">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col items-center gap-1 text-center">
+          <p>
+            © {new Date().getFullYear()} Comunidade RPM. Todos os direitos reservados. ·{' '}
+            rafaapelomundo@gmail.com
+          </p>
+        </div>
+      </footer>
 
       <FloatingWhatsAppButton hideFloatingButton />
 
