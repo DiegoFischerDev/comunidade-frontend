@@ -185,7 +185,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <section className="relative w-full overflow-hidden rounded-2xl bg-zinc-100">
-        <div className="relative h-72 w-full sm:h-96 lg:h-[420px]">
+        <div className="relative h-80 w-full sm:h-[320px] lg:h-[530px]">
           <Image
             src="/capa_rpm.png"
             alt="Comunidade RPM"

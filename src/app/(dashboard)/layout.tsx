@@ -325,12 +325,27 @@ export default function DashboardLayout({
     <div className="flex h-full flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-center">
-          <Image
-            src="/logo_comunidade.png"
-            alt="Comunidade RPM"
-            width={140}
-            height={32}
-          />
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window === 'undefined') return;
+              if (pathname === '/dashboard') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+              }
+              router.push('/dashboard');
+            }}
+            className="cursor-pointer"
+            aria-label="Ir para o início"
+          >
+            <Image
+              src="/logo_comunidade.png"
+              alt="Comunidade RPM"
+              width={140}
+              height={32}
+              priority
+            />
+          </button>
         </div>
 
         <div className="mt-3 flex items-center justify-center gap-3">
