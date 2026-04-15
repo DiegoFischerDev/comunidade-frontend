@@ -8,6 +8,7 @@ export type VipGroup = {
   title: string;
   description: string;
   isPublic: boolean;
+  joinUrl?: string;
   comingSoon?: boolean;
 };
 
@@ -17,6 +18,7 @@ export const GROUPS: VipGroup[] = [
     title: 'Geral Comunidade RPM',
     description: 'Grupo geral, aberto para visitantes, para tratar de assuntos em geral.',
     isPublic: true,
+    joinUrl: 'https://chat.whatsapp.com/FOsUUXtA3z57qaLX7oBkdb?mode=gi_t',
   },
   {
     id: 'rpm-brasil',
@@ -24,6 +26,7 @@ export const GROUPS: VipGroup[] = [
     description:
       'Para membros que pretendem imigrar para portugal mas ainda estao no brasil. Indicado para quem ainda esta decidindo para qual cidade imigrar, qual tipo de visto aplicar, e buscando a primeira moradia em Portugal.',
     isPublic: false,
+    comingSoon: true,
   },
   {
     id: 'rpm-portugal',
@@ -31,6 +34,7 @@ export const GROUPS: VipGroup[] = [
     description:
       'Para membros que ja estao em Portugal, buscam trocar informaçoes sobre oportunidades de emprego, processos da AIMA, autorização de residencia, nacionalidade, escolas, etc.',
     isPublic: false,
+    comingSoon: true,
   },
   {
     id: 'rpm-alugueis',
@@ -38,6 +42,7 @@ export const GROUPS: VipGroup[] = [
     description:
       'Grupo onde sao postados semalmente os imoveis disponiveis para Arrendamento (aluguel) onde a maioria ainda nao foi publicado nos sites de busca.',
     isPublic: false,
+    comingSoon: true,
   },
   {
     id: 'rpm-compra-imoveis',
@@ -45,6 +50,7 @@ export const GROUPS: VipGroup[] = [
     description:
       'Grupo onde sao postados semanalmente os imoveis disponiveis para venda onde a maioria ainda nao foi publicados nos sites de busca.',
     isPublic: false,
+    comingSoon: true,
   },
   {
     id: 'compra-automovel',
@@ -87,7 +93,7 @@ function VipCornerBadge() {
 export function GruposVipContent() {
   return (
     <div className="mx-auto w-full max-w-[820px] space-y-5">
-      <div className="text-center">
+      <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Grupos whatsapp</h1>
         <p className="mt-2 text-sm text-zinc-600">
           Entra nos grupos certos para o teu momento. Alguns grupos são públicos e outros são
@@ -120,7 +126,10 @@ export function GruposVipContent() {
                     className="border-transparent !bg-gradient-to-r !from-[#25D366] !to-[#128C7E] !text-white font-semibold hover:!from-[#1ebe5d] hover:!to-[#0b6d63] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366]/40 focus-visible:ring-offset-2"
                     disabled={Boolean(g.comingSoon)}
                     onClick={() => {
-                      // ainda não faz nada (link será adicionado depois)
+                      if (g.comingSoon) return;
+                      if (!g.joinUrl) return;
+                      if (typeof window === 'undefined') return;
+                      window.open(g.joinUrl, '_blank', 'noopener,noreferrer');
                     }}
                   >
                     {g.comingSoon ? 'Em breve' : 'Quero entrar'}

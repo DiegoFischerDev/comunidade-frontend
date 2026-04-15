@@ -326,7 +326,7 @@ export default function DashboardLayout({
       <div className="flex-1 min-h-0">
         <div className="flex items-center justify-center">
           <Image
-            src="/logo_bg_escura.png"
+            src="/logo_comunidade.png"
             alt="Comunidade RPM"
             width={140}
             height={32}
@@ -339,17 +339,27 @@ export default function DashboardLayout({
             href="/dashboard"
             className={`block rounded-md px-3 py-2 text-sm ${
               pathname === '/dashboard'
-                ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                 : 'text-zinc-800 hover:bg-zinc-100'
             }`}
           >
             Início
           </Link>
           <Link
+            href="/plano-de-imigracao"
+            className={`block rounded-md px-3 py-2 text-sm ${
+              pathname === '/plano-de-imigracao'
+                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                : 'text-zinc-800 hover:bg-zinc-100'
+            }`}
+          >
+            Plano de imigração
+          </Link>
+          <Link
             href="/psp"
             className={`block rounded-md px-3 py-2 text-sm ${
               pathname === '/psp' || pathname.startsWith('/psp/')
-                ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                 : 'text-zinc-800 hover:bg-zinc-100'
             }`}
           >
@@ -359,28 +369,18 @@ export default function DashboardLayout({
             href="/grupos-vip"
             className={`block rounded-md px-3 py-2 text-sm ${
               pathname === '/grupos-vip'
-                ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                 : 'text-zinc-800 hover:bg-zinc-100'
             }`}
           >
             Grupos whatsapp
-          </Link>
-          <Link
-            href="/plano-de-imigracao"
-            className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/plano-de-imigracao'
-                ? 'bg-[#efc2c1] font-medium text-zinc-900'
-                : 'text-zinc-800 hover:bg-zinc-100'
-            }`}
-          >
-            Plano de imigração
           </Link>
           {user && user.role !== 'ADMIN' ? (
             <Link
               href="/dashboard/reclame-aqui"
               className={`block rounded-md px-3 py-2 text-sm ${
                 pathname === '/dashboard/reclame-aqui'
-                  ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                  ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                   : 'text-zinc-800 hover:bg-zinc-100'
               }`}
             >
@@ -395,7 +395,7 @@ export default function DashboardLayout({
                 href="/dashboard/leads"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/leads'
-                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                     : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
@@ -406,7 +406,7 @@ export default function DashboardLayout({
                   href={`/dashboard/partner/${partnerId}`}
                   className={`block rounded-md px-3 py-2 text-sm ${
                     pathname === `/dashboard/partner/${partnerId}`
-                      ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                       : 'text-zinc-800 hover:bg-zinc-100'
                   }`}
                 >
@@ -417,7 +417,7 @@ export default function DashboardLayout({
                 href="/dashboard/my-sales"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/my-sales'
-                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                     : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
@@ -427,7 +427,7 @@ export default function DashboardLayout({
                 href="/dashboard/business"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/business'
-                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                     : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
@@ -438,7 +438,7 @@ export default function DashboardLayout({
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/my-services' ||
                   pathname === '/dashboard/commissions'
-                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                     : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
@@ -452,7 +452,7 @@ export default function DashboardLayout({
                 href="/dashboard/users"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/users'
-                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                     : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
@@ -462,7 +462,7 @@ export default function DashboardLayout({
                 href="/dashboard/admin/rafacall-hoje"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/rafacall-hoje'
-                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                     : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
@@ -472,7 +472,7 @@ export default function DashboardLayout({
                 href="/dashboard/admin/reclame-aqui"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/reclame-aqui'
-                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                     : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
@@ -482,7 +482,7 @@ export default function DashboardLayout({
                 href="/dashboard/admin/sales"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/sales'
-                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                     : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
@@ -493,7 +493,7 @@ export default function DashboardLayout({
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/commissions' ||
                   pathname === '/dashboard/admin/services'
-                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                     : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
@@ -503,7 +503,7 @@ export default function DashboardLayout({
                 href="/dashboard/categories"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/categories'
-                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                     : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
@@ -513,7 +513,7 @@ export default function DashboardLayout({
                 href="/dashboard/partners"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/partners'
-                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                     : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
@@ -523,7 +523,7 @@ export default function DashboardLayout({
                 href="/dashboard/affiliates"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/affiliates'
-                    ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                     : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
@@ -536,7 +536,7 @@ export default function DashboardLayout({
               href="/dashboard/my-referrals"
               className={`block rounded-md px-3 py-2 text-sm ${
                 pathname === '/dashboard/my-referrals'
-                  ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                  ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                   : 'text-zinc-800 hover:bg-zinc-100'
               }`}
             >
@@ -550,14 +550,14 @@ export default function DashboardLayout({
               pathname === '/dashboard/services' ||
               pathname.startsWith('/dashboard/category/') ||
               pathname.startsWith('/dashboard/partner/')
-                ? 'bg-[#efc2c1] font-medium text-zinc-900'
+                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                 : 'text-zinc-800 hover:bg-zinc-100'
             }`}
           >
             Serviços
           </Link>
           {categoriesLoaded && categories.length ? (
-            <div className="mt-1 space-y-1 pl-2">
+            <div className="mt-2 space-y-1 pl-3 border-l border-zinc-200">
               {categories.map((c) => {
                 const isActive =
                   pathname === `/dashboard/category/${c.slug}` ||
@@ -567,12 +567,18 @@ export default function DashboardLayout({
                   <Link
                     key={c.id}
                     href={`/dashboard/category/${c.slug}`}
-                    className={`block rounded-md px-3 py-1.5 text-xs ${
+                    className={`relative block rounded-lg px-3 py-2 text-xs font-medium transition ${
                       isActive
-                        ? 'bg-[#efc2c1] font-medium text-zinc-900'
-                        : 'text-zinc-700 hover:bg-zinc-100'
+                        ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white shadow-sm'
+                        : 'text-zinc-700 hover:bg-white hover:shadow-sm'
                     }`}
                   >
+                    <span
+                      className={`pointer-events-none absolute -left-[7px] top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full ring-2 ring-white ${
+                        isActive ? 'bg-[#d58901]' : 'bg-zinc-300'
+                      }`}
+                      aria-hidden
+                    />
                     {c.name}
                   </Link>
                 );
@@ -587,9 +593,19 @@ export default function DashboardLayout({
         {/* Bloco do usuário */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#efc2c1] text-[16px] font-semibold text-zinc-900">
-              {firstName.charAt(0).toUpperCase()}
-            </div>
+            {user?.tier === 'MEMBER' ? (
+              <Image
+                src="/vip-card.png"
+                alt="VIP"
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain"
+              />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#d58901] text-[16px] font-semibold text-white">
+                {firstName.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div className="min-w-0">
               <p
                 className={`truncate text-xs font-semibold ${
@@ -651,7 +667,7 @@ export default function DashboardLayout({
       <header className="flex items-center justify-between border-b border-secondary-2 bg-white px-4 py-2 md:hidden">
         <div className="flex items-center">
           <Image
-            src="/logo_bg_escura.png"
+            src="/logo_comunidade.png"
             alt="Comunidade RPM"
             width={96}
             height={22}

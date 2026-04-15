@@ -184,7 +184,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="mx-auto w-full max-w-[800px] text-center">
+      <div className="mx-auto w-full max-w-[800px]">
         <h1 className="text-2xl font-semibold text-zinc-900">
           Comunidade Rafa pelo mundo
         </h1>
@@ -200,6 +200,34 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-6 md:flex-row md:items-center">
             <div className="relative aspect-[2/1] w-full overflow-hidden rounded-xl bg-zinc-100 md:w-80">
               <Image
+                src="/plan.png"
+                alt="Plano de imigração"
+                fill
+                className="object-contain"
+                sizes="(min-width: 768px) 320px, 100vw"
+                priority
+              />
+            </div>
+
+            <div className="flex-1 space-y-3">
+              <h2 className="text-xl font-semibold text-zinc-900">Plano de imigração</h2>
+              <p className="text-sm text-zinc-600">
+                Organize o teu plano, acompanhe as etapas e veja uma estimativa de custos para se
+                preparar com mais segurança.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <CardLinkButton href="/plano-de-imigracao" variant="primary">
+                  Acessar plano
+                </CardLinkButton>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center">
+            <div className="relative aspect-[2/1] w-full overflow-hidden rounded-xl bg-zinc-100 md:w-80">
+              <Image
                 src="/capa_psp-1000x500.png"
                 alt="Capa do guia PSP - Portugal Sem Perrengue"
                 fill
@@ -211,7 +239,7 @@ export default function DashboardPage() {
 
             <div className="flex-1 space-y-3">
               <h2 className="text-xl font-semibold text-zinc-900">
-                PSP - Portugal Sem Perrengue
+                E-book - Portugal Sem Perrengue
               </h2>
               <p className="text-sm text-zinc-600">
                 O guia real pra sair do Brasil e morar legalmente em Portugal. Aqui você encontra o
@@ -398,6 +426,14 @@ export default function DashboardPage() {
                     ✓
                   </span>
                   <span>
+                    <span className="font-medium text-zinc-900">Acesso completo ao plano de imigração</span>
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    ✓
+                  </span>
+                  <span>
                     <span className="font-medium text-zinc-900">E-book PSP completo</span> com atualizações
                   </span>
                 </li>
@@ -479,7 +515,7 @@ export default function DashboardPage() {
               <div className="space-y-1">
                 <h2 className="text-xl font-semibold text-zinc-900">Reclame aqui</h2>
                 <p className="text-sm text-zinc-600">
-                  Para abrir um ticket (elogio/reclamação/bug), torna-te membro da Comunidade RPM.
+                  Para abrir um ticket (elogio/reclamação/bug). Essa funcionalidade é exclusiva para membros da Comunidade RPM.
                 </p>
               </div>
             </div>

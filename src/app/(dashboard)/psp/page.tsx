@@ -41,9 +41,9 @@ export default function PSPPage() {
 
   return (
     <div className="space-y-8">
-      <div className="mx-auto w-full max-w-[820px] text-center">
+      <div className="mx-auto w-full max-w-[820px]">
         <h1 className="text-2xl font-semibold text-zinc-900">
-          PSP - Portugal Sem Perrengue
+          E-book - Portugal Sem Perrengue
         </h1>
         <p className="mt-1 text-sm text-zinc-500">Última atualização: abril/2026</p>
         <p className="mt-4 text-sm text-zinc-600">

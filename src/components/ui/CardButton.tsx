@@ -12,7 +12,8 @@ const base =
   'inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 
 const variantClass: Record<Variant, string> = {
-  primary: 'bg-[#efc2c1] text-zinc-900 hover:bg-[#e3afaf]',
+  primary:
+    'bg-gradient-to-r from-[#25D366] to-[#20BD5A] text-white hover:from-[#20BD5A] hover:to-[#1aa84f]',
   secondary: 'border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50',
   danger: 'bg-red-600 text-white hover:bg-red-700',
 };

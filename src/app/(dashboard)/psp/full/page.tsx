@@ -58,9 +58,9 @@ export default function PSPFullPage() {
 
   return (
     <div className="flex h-[calc(100vh-6rem)] flex-col gap-4">
-      <div className="mx-auto w-full max-w-[820px] text-center">
+      <div className="mx-auto w-full max-w-[820px]">
         <h1 className="text-2xl font-semibold text-zinc-900">
-          PSP - Portugal Sem Perrengue (PDF completo)
+          E-book - Portugal Sem Perrengue (PDF completo)
         </h1>
         <p className="mt-1 text-sm text-zinc-500">Última atualização: abril/2026</p>
         <p className="mt-3 text-sm text-zinc-600">
@@ -86,7 +86,7 @@ export default function PSPFullPage() {
           <div className="relative w-[min(82vw,280px)] sm:w-[min(82vw,320px)] aspect-[1000/1414]">
             <Image
               src={PSP_COVER_SRC}
-              alt="Capa do ebook PSP - Portugal Sem Perrengue"
+              alt="Capa do E-book - Portugal Sem Perrengue"
               fill
               className="object-contain object-top"
               sizes="(max-width: 640px) 82vw, 320px"
@@ -142,7 +142,7 @@ export default function PSPFullPage() {
             <iframe
               src="/psp/psp-completo.pdf"
               className="h-full w-full"
-              title="PSP - Portugal Sem Perrengue"
+              title="E-book - Portugal Sem Perrengue"
             />
           </div>
         </div>

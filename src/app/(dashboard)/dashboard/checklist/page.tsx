@@ -1053,7 +1053,7 @@ export default function ChecklistPage() {
 
   return (
     <div className="mx-auto w-full max-w-[980px] space-y-6 overflow-x-hidden">
-      <div className="rounded-2xl border border-zinc-200 bg-gradient-to-r from-white to-zinc-50 p-5 shadow-sm">
+      <div className="p-1">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-zinc-900">Meu Plano de Imigração</h1>
@@ -1489,7 +1489,7 @@ export default function ChecklistPage() {
                       onClick={() => setActivePhase("BRASIL")}
                       className={`min-w-0 flex-1 cursor-pointer rounded-xl px-3 py-2 text-left transition ${
                         activePhase === "BRASIL"
-                          ? "bg-emerald-100/70 text-emerald-900"
+                          ? "bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white"
                           : "text-zinc-700 hover:bg-zinc-50"
                       }`}
                       aria-pressed={activePhase === "BRASIL"}
@@ -1497,7 +1497,11 @@ export default function ChecklistPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="break-words text-sm font-semibold">🇧🇷 Fase 1 — ainda no Brasil</div>
-                          <div className="mt-0.5 text-[11px] font-medium text-zinc-600">
+                          <div
+                            className={`mt-0.5 text-[11px] font-medium ${
+                              activePhase === "BRASIL" ? "text-white/90" : "text-zinc-600"
+                            }`}
+                          >
                             Tudo que você resolve antes de embarcar.
                           </div>
                         </div>
@@ -1508,7 +1512,7 @@ export default function ChecklistPage() {
                       onClick={() => setActivePhase("PORTUGAL")}
                       className={`min-w-0 flex-1 cursor-pointer rounded-xl px-3 py-2 text-left transition ${
                         activePhase === "PORTUGAL"
-                          ? "bg-rose-100/80 text-rose-900"
+                          ? "bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white"
                           : "text-zinc-700 hover:bg-zinc-50"
                       }`}
                       aria-pressed={activePhase === "PORTUGAL"}
@@ -1516,7 +1520,11 @@ export default function ChecklistPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="break-words text-sm font-semibold">🇵🇹 Fase 2 — já em Portugal</div>
-                          <div className="mt-0.5 text-[11px] font-medium text-zinc-600">
+                          <div
+                            className={`mt-0.5 text-[11px] font-medium ${
+                              activePhase === "PORTUGAL" ? "text-white/90" : "text-zinc-600"
+                            }`}
+                          >
                             Documentos e etapas logo após chegar.
                           </div>
                         </div>

@@ -270,6 +270,12 @@ export function FloatingWhatsAppButton({
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
                       <span>
+                        Acesso completo ao <strong className="text-zinc-800">Plano de imigração</strong>.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
+                      <span>
                         <strong className="text-zinc-800">Acesso às lives da Rafa</strong> exclusivas para membros VIP.
                       </span>
                     </li>
@@ -283,12 +289,6 @@ export function FloatingWhatsAppButton({
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
                       <span><strong className="text-zinc-800">Ebook Portugal Sem Perrenge</strong> completo e com atualizações.</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span>
-                        <strong className="text-zinc-800">Acesso completo ao plano de imigração</strong>.
-                      </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>

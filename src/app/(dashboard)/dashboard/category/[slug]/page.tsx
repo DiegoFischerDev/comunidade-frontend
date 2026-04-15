@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 
 type PartnerService = {
@@ -31,6 +32,7 @@ type CategoryWithPartners = {
 
 export default function CategoryPage() {
   const params = useParams<{ slug: string }>();
+  const router = useRouter();
   const [categories, setCategories] = useState<CategoryWithPartners[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -59,6 +61,15 @@ export default function CategoryPage() {
   }, []);
 
   const category = categories.find((c) => c.slug === params.slug);
+
+  // Se a categoria tiver apenas um parceiro, não há necessidade de mostrar esta página.
+  useEffect(() => {
+    if (!category) return;
+    if (category.partners.length !== 1) return;
+    const only = category.partners[0];
+    if (!only?.id) return;
+    router.replace(`/dashboard/partner/${only.id}`);
+  }, [category, router]);
 
   useEffect(() => {
     if (!category) return;
@@ -128,6 +139,10 @@ export default function CategoryPage() {
     );
   }
 
+  if (category.partners.length === 1) {
+    return <p className="text-sm text-zinc-600">A redirecionar para o parceiro…</p>;
+  }
+
   const heroBg =
     category.backgroundImageUrl &&
     (category.backgroundImageUrl.startsWith('/uploads/')
@@ -137,7 +152,7 @@ export default function CategoryPage() {
   return (
     <div className="space-y-8">
       {/* Hero da categoria */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#d46a76] to-[#a93a4d] text-white">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#910001] to-[#5f0001] text-white">
         {heroBg && (
           <div
             className="absolute inset-0 bg-cover bg-center opacity-40"
@@ -145,14 +160,14 @@ export default function CategoryPage() {
           />
         )}
         <div className="relative z-10 px-6 py-10 sm:px-10 sm:py-14">
-          <p className="text-xs uppercase tracking-wide text-blue-100">
+          <p className="text-xs uppercase tracking-wide text-amber-100/90">
             Categoria
           </p>
           <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
             {category.name}
           </h1>
           {(category.fullDescription || category.shortDescription) && (
-            <p className="mt-3 max-w-2xl text-sm text-blue-50 sm:text-base">
+            <p className="mt-3 max-w-2xl text-sm text-amber-50/90 sm:text-base">
               {category.fullDescription || category.shortDescription}
             </p>
           )}

@@ -73,12 +73,11 @@ export default function ReclameAquiUserPage() {
   if (!user) return null;
   if (!isMember) {
     return (
-      <div className="mx-auto w-full max-w-[820px] text-center">
+      <div className="mx-auto w-full max-w-[820px]">
         <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
-        <p className="mt-2 text-sm text-zinc-600">
-          Para abrir um ticket (elogio/reclamação/bug), torna-te membro da Comunidade RPM.
-        </p>
-        <div className="mt-4 flex justify-center">
+        <p className="mt-2 text-zinc-600">Aqui podes abrir um ticket (elogio/reclamação/bug). Se tens qualquer problema, queremos te ouvir.</p>
+        <p className="mt-2 text-zinc-600">Essa funcionalidade é exclusiva para membros da Comunidade RPM.</p>
+        <div className="mt-4 flex">
           <CardButton
             type="button"
             onClick={() => window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT))}
