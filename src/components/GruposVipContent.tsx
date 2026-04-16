@@ -110,7 +110,12 @@ export function GruposVipContent() {
                 g.id === 'geral' ? 'md:col-span-2' : ''
               }`}
             >
-              {!g.isPublic ? <VipCornerBadge /> : null}
+              {!g.isPublic &&
+              g.id !== 'rpm-alugueis' &&
+              g.id !== 'rpm-compra-imoveis' &&
+              g.id !== 'compra-automovel' ? (
+                <VipCornerBadge />
+              ) : null}
               <div className="flex h-full flex-col items-center text-center">
                 <WhatsAppLogo />
 

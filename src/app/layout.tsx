@@ -26,7 +26,7 @@ export const metadata: Metadata = {
       "A tua comunidade para imigrar para Portugal com planejamento, parceiros e apoio em cada etapa.",
     images: [
       {
-        url: "/logo_comunidade.png",
+        url: "/comunidade_bg.svg",
         width: 1200,
         height: 630,
         alt: "Comunidade RPM",

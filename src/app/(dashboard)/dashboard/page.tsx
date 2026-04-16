@@ -440,7 +440,10 @@ export default function DashboardPage() {
                   />
                   <p className="truncate text-sm font-medium text-zinc-900">{g.title}</p>
                 </div>
-                {!g.isPublic ? (
+                {!g.isPublic &&
+                g.id !== "rpm-alugueis" &&
+                g.id !== "rpm-compra-imoveis" &&
+                g.id !== "compra-automovel" ? (
                   <Image
                     src="/vip-card.png"
                     alt="VIP"
