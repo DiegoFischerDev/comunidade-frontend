@@ -438,19 +438,18 @@ export const api = {
             whatsapp: string;
             logoUrl: string | null;
             createdAt: string;
-            user: { id: string; email: string; role: string };
+            user: { id: string; email: string | null; role: string };
             category: { id: string; name: string; slug: string } | null;
           }[]
         >('/partners', { method: 'GET' }),
       create: (input: {
-        email: string;
         password: string;
         name: string;
         whatsapp: string;
         logoUrl?: string;
       }) =>
         request<{
-          user: { id: string; email: string; role: string };
+          user: { id: string; email: string | null; role: string };
           partner: {
             id: string;
             name: string;
@@ -471,7 +470,7 @@ export const api = {
           whatsapp: string;
           logoUrl: string | null;
           createdAt: string;
-          user: { id: string; email: string; role: string };
+          user: { id: string; email: string | null; role: string };
           category: { id: string; name: string; slug: string } | null;
         }>(`/partners/admin/${id}`, {
           method: 'PATCH',
@@ -737,6 +736,21 @@ export const api = {
               whatsapp: string | null;
               tier: 'VISITOR' | 'MEMBER';
             };
+            immigrationPlan: {
+              updatedAt: string;
+              answers: {
+                visaType: string | null;
+                cidade: string | null;
+                cidadePlanoB: string | null;
+                agregadoFamiliar: string | null;
+                numQuartos: string | null;
+                profissoesPossiveis: string[];
+                precisaCarro: boolean | null;
+                dataViagem: string | null;
+                dataAima: string | null;
+                notas: string | null;
+              };
+            } | null;
           }[]
         >('/partners/me/leads', { method: 'GET' }),
     },

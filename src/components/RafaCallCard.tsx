@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -234,6 +235,7 @@ function PaymentMethodRow({
 
 export function RafaCallCard() {
   const { user, token } = useAuth();
+  const searchParams = useSearchParams();
   const [payOpen, setPayOpen] = useState(false);
   const [payOptions, setPayOptions] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
@@ -393,6 +395,21 @@ export function RafaCallCard() {
     amountsLoading,
     openScheduler,
   ]);
+
+  useEffect(() => {
+    if (searchParams.get('openRafaCall') !== '1') return;
+
+    // Evita reabrir ao voltar/recarregar.
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('openRafaCall');
+      window.history.replaceState({}, '', url.toString());
+    } catch {
+      // noop
+    }
+
+    void handleAgendar();
+  }, [searchParams, handleAgendar]);
 
   const handleReagendar = useCallback(() => {
     void handleAgendar();
