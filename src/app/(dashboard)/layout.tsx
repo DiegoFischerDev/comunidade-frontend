@@ -348,6 +348,10 @@ export default function DashboardLayout({
           </button>
         </div>
 
+        <div className="mt-2 flex items-center justify-center text-2xl leading-none" aria-hidden>
+          🇧🇷 🇵🇹
+        </div>
+
         <div className="mt-3 flex items-center justify-center gap-3">
           <a
             href="https://www.instagram.com/rafaapelomundo/"
