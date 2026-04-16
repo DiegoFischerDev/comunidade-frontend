@@ -11,7 +11,7 @@ type PartnerRow = {
   whatsapp: string;
   logoUrl: string | null;
   createdAt: string;
-  user: { id: string; email: string; role: string };
+  user: { id: string; email: string | null; role: string };
   category: { id: string; name: string; slug: string } | null;
 };
 
@@ -27,7 +27,6 @@ export default function PartnersPage() {
     null,
   );
 
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
@@ -86,7 +85,6 @@ export default function PartnersPage() {
     setCreating(true);
     try {
       const result = await api.admin.partners.create({
-        email,
         password,
         name,
         whatsapp,
@@ -104,7 +102,6 @@ export default function PartnersPage() {
         },
         ...prev,
       ]);
-      setEmail('');
       setPassword('');
       setName('');
       setWhatsapp('');
@@ -171,18 +168,6 @@ export default function PartnersPage() {
         onSubmit={handleCreatePartner}
         className="mt-6 grid gap-4 rounded-lg border border-zinc-200 bg-white p-4 md:grid-cols-2"
       >
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-zinc-700">
-            E-mail do parceiro
-          </label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
         <div className="space-y-1">
           <label className="block text-sm font-medium text-zinc-700">
             Senha inicial
@@ -262,7 +247,6 @@ export default function PartnersPage() {
               <tr>
                 <th className="px-4 py-2 text-left">Logo</th>
                 <th className="px-4 py-2 text-left">Nome</th>
-                <th className="px-4 py-2 text-left">E-mail</th>
                 <th className="px-4 py-2 text-left">WhatsApp</th>
                 <th className="px-4 py-2 text-left">Categoria</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
@@ -284,7 +268,6 @@ export default function PartnersPage() {
                     )}
                   </td>
                   <td className="px-4 py-2">{p.name}</td>
-                  <td className="px-4 py-2">{p.user.email}</td>
                   <td className="px-4 py-2">{p.whatsapp}</td>
                   <td className="px-4 py-2">
                     <select
@@ -355,7 +338,7 @@ export default function PartnersPage() {
                       onClick={async () => {
                         if (
                           !window.confirm(
-                            `Tem certeza que deseja remover este parceiro? Esta ação é irreversível.\n\nNome: ${p.name}\nEmail: ${p.user.email}\nCategoria: ${p.category?.name ?? '—'}`,
+                            `Tem certeza que deseja remover este parceiro? Esta ação é irreversível.\n\nNome: ${p.name}\nWhatsApp: ${p.whatsapp}\nCategoria: ${p.category?.name ?? '—'}`,
                           )
                         ) {
                           return;

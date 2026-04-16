@@ -438,19 +438,18 @@ export const api = {
             whatsapp: string;
             logoUrl: string | null;
             createdAt: string;
-            user: { id: string; email: string; role: string };
+            user: { id: string; email: string | null; role: string };
             category: { id: string; name: string; slug: string } | null;
           }[]
         >('/partners', { method: 'GET' }),
       create: (input: {
-        email: string;
         password: string;
         name: string;
         whatsapp: string;
         logoUrl?: string;
       }) =>
         request<{
-          user: { id: string; email: string; role: string };
+          user: { id: string; email: string | null; role: string };
           partner: {
             id: string;
             name: string;
@@ -471,7 +470,7 @@ export const api = {
           whatsapp: string;
           logoUrl: string | null;
           createdAt: string;
-          user: { id: string; email: string; role: string };
+          user: { id: string; email: string | null; role: string };
           category: { id: string; name: string; slug: string } | null;
         }>(`/partners/admin/${id}`, {
           method: 'PATCH',
