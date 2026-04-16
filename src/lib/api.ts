@@ -639,6 +639,8 @@ export const api = {
         billingPostalCode?: string | null;
       }>('/partners/me', { method: 'GET' }),
     updateMe: (input: {
+      name?: string;
+      whatsapp?: string;
       logoUrl?: string;
       shortDescription?: string;
       fullDescription?: string;

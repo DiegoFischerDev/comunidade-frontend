@@ -88,6 +88,8 @@ export default function BusinessPage() {
 
     try {
       const updated = await api.partner.updateMe({
+        name: name.trim(),
+        whatsapp: whatsapp.trim() || undefined,
         logoUrl: logoUrl || undefined,
         shortDescription: shortDescription || undefined,
         fullDescription: fullDescription || undefined,
@@ -101,6 +103,8 @@ export default function BusinessPage() {
         // whatsapp da empresa sincronizado via serviço de parceiro
       });
 
+      setName(updated.name);
+      setWhatsapp(updated.whatsapp || '');
       setLogoUrl(updated.logoUrl ?? '');
       setShortDescription(updated.shortDescription ?? '');
       setFullDescription(updated.fullDescription ?? '');
@@ -190,6 +194,8 @@ export default function BusinessPage() {
 
   async function saveCatalogImages(newUrls: string[]) {
     const updated = await api.partner.updateMe({
+      name: name.trim(),
+      whatsapp: whatsapp.trim() || undefined,
       logoUrl: logoUrl || undefined,
       shortDescription: shortDescription || undefined,
       fullDescription: fullDescription || undefined,
@@ -201,6 +207,8 @@ export default function BusinessPage() {
       billingAddress: billingAddress.trim() || null,
       billingPostalCode: billingPostalCode.trim() || null,
     });
+    setName(updated.name);
+    setWhatsapp(updated.whatsapp || '');
     setCatalogImageUrls(
       Array.isArray(updated.catalogImageUrls) ? updated.catalogImageUrls : [],
     );
@@ -299,8 +307,9 @@ export default function BusinessPage() {
               <input
                 type="text"
                 value={name}
-                disabled
-                className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-500"
+                required
+                onChange={(e) => setName(e.target.value)}
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
             <div className="space-y-1">
