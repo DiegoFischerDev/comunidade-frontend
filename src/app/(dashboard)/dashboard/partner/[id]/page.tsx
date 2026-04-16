@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CatalogCarousel } from '@/components/CatalogCarousel';
+import { CardButton } from '@/components/ui/CardButton';
 
 type PartnerDetails = {
   id: string;
@@ -89,7 +90,10 @@ export default function PartnerPage() {
 
   const whatsappUrl = `https://wa.me/${partner.whatsapp.replace(/\D/g, '')}`;
   const buildServiceWhatsAppUrl = (serviceTitle: string) => {
-    const text = `Olá, tenho interesse em saber mais informações sobre o serviço ${serviceTitle}`;
+    const isMember = user?.tier === 'MEMBER';
+    const text = isMember
+      ? `Olá, tenho interesse em saber mais informações sobre o serviço ${serviceTitle} com desconto de 10€ da comunidade RPM`
+      : `Olá, tenho interesse em saber mais informações sobre o serviço ${serviceTitle}`;
     return `${whatsappUrl}?text=${encodeURIComponent(text)}`;
   };
   const logoSrc =
@@ -119,14 +123,14 @@ export default function PartnerPage() {
   return (
     <div className="space-y-8">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#910001] to-[#5f0001] text-white">
         {partner.backgroundImageUrl && (
           <div
-            className="absolute inset-0 bg-cover bg-center opacity-40"
+            className="absolute inset-0 bg-cover bg-center opacity-35"
             style={{ backgroundImage: `url(${partner.backgroundImageUrl})` }}
           />
         )}
-        <div className="relative z-10 px-6 py-6 sm:px-10 sm:py-8">
+        <div className="relative z-10 min-h-[260px] px-6 py-9 sm:min-h-[340px] sm:px-10 sm:py-12">
           <button
             type="button"
             onClick={() =>
@@ -134,7 +138,7 @@ export default function PartnerPage() {
                 ? router.push(`/dashboard/category/${partner.category.slug}`)
                 : router.back()
             }
-            className="absolute left-4 top-4 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/95 text-emerald-700 shadow-lg ring-1 ring-emerald-500/40 hover:bg-white sm:left-6 sm:top-6"
+              className="absolute left-4 top-4 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/95 text-[#910001] shadow-lg ring-1 ring-[#d58901]/50 hover:bg-white sm:left-6 sm:top-6"
             aria-label={
               partner.category
                 ? `Voltar para ${partner.category.name}`
@@ -169,37 +173,17 @@ export default function PartnerPage() {
               </div>
             )}
             <div>
-              <p className="text-xs uppercase tracking-wide text-emerald-100">
+              <p className="text-xs uppercase tracking-wide text-white/80">
                 {partner.category?.name ?? 'Parceiro'}
               </p>
               <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
                 {partner.name}
               </h1>
               {partner.shortDescription && (
-                <p className="mt-3 max-w-2xl text-sm text-emerald-50 sm:text-base">
+                <p className="mt-3 max-w-2xl text-sm text-white/90 sm:text-base">
                   {partner.shortDescription}
                 </p>
               )}
-              <div className="mt-5 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => registerLeadThenOpen(() => setShowContact(true))}
-                className="inline-flex cursor-pointer items-center rounded-full bg-white px-4 py-2 text-sm font-medium text-emerald-700 shadow-sm hover:bg-emerald-50"
-              >
-                Entrar em contacto
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  registerLeadThenOpen(() =>
-                    window.open(whatsappUrl, '_blank', 'noopener,noreferrer'),
-                  )
-                }
-                className="inline-flex cursor-pointer items-center rounded-full border border-emerald-100 bg-emerald-500/40 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500/60"
-              >
-                Falar no WhatsApp
-              </button>
-            </div>
           </div>
           </div>
         </div>
@@ -243,7 +227,7 @@ export default function PartnerPage() {
             {partner.services.map((service) => (
               <div
                 key={service.id}
-                className="relative flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 pb-[50px] shadow-sm"
+                className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
               >
                 <h3 className="text-sm font-semibold text-zinc-900">
                   {service.title}
@@ -253,24 +237,14 @@ export default function PartnerPage() {
                     {service.description}
                   </p>
                 )}
-                <div className="mt-2 rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-700">
-                  <p>
-                    Valor do serviço{' '}
-                    {service.priceOnRequest
-                      ? 'sob consulta.'
-                      : service.price
-                      ? `${service.price} €.`
-                      : 'não informado.'}
-                  </p>
-                </div>
-                <div className="absolute bottom-4 left-4 inline-flex items-center gap-2">
+                <div className="mt-4 inline-flex items-center gap-2">
                   <Image
                     src="/euro2.png"
                     alt="Valor do serviço"
                     width={20}
                     height={20}
                   />
-                  <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'black' }}>
+                  <span className="text-[0.95rem] font-semibold text-zinc-900">
                     {service.priceOnRequest
                       ? 'Sob consulta'
                       : service.price
@@ -278,32 +252,31 @@ export default function PartnerPage() {
                       : '—'}
                   </span>
                 </div>
-                <div className="absolute bottom-4 right-4">
-                  <a
-                    href={user ? buildServiceWhatsAppUrl(service.title) : '#'}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={(e) => {
+                <div className="mt-3">
+                  <CardButton
+                    type="button"
+                    size="sm"
+                    variant="primary"
+                    onClick={() => {
                       if (!user) {
-                        e.preventDefault();
                         window.dispatchEvent(
                           new CustomEvent('open-auth-modal', {
-                            detail: {
-                              mode: 'login',
-                            },
+                            detail: { mode: 'login' },
                           }),
                         );
-                      } else {
-                        // registo de lead não é obrigatório aqui, apenas contacto direto
-                        void api.marketplace
-                          .registerLead(partner.id)
-                          .catch(() => {});
+                        return;
                       }
+                      // registo de lead não é obrigatório aqui, apenas contacto direto
+                      void api.marketplace.registerLead(partner.id).catch(() => {});
+                      window.open(
+                        buildServiceWhatsAppUrl(service.title),
+                        '_blank',
+                        'noopener,noreferrer',
+                      );
                     }}
-                    className="inline-flex cursor-pointer items-center rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
                   >
-                    Mais informações
-                  </a>
+                    Entrar em contacto
+                  </CardButton>
                 </div>
               </div>
             ))}
@@ -313,8 +286,8 @@ export default function PartnerPage() {
 
       {/* Modal de contacto */}
       {showContact && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="my-8 w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center gap-3">
               {logoSrc && (
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-50 p-1">

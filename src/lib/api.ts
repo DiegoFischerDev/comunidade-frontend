@@ -31,10 +31,13 @@ async function request<T>(
   options: RequestOptions = {},
 ): Promise<T> {
   const { token = getToken(), ...init } = options;
+  const method = (init.method ?? 'GET').toString().toUpperCase();
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
     ...(init.headers as Record<string, string>),
   };
+  if (method !== 'GET' && method !== 'HEAD') {
+    (headers as Record<string, string>)['Content-Type'] = 'application/json';
+  }
   if (token) {
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
   }
@@ -54,31 +57,55 @@ async function request<T>(
 export const api = {
   auth: {
     register: (params: {
-      email: string;
-      password: string;
       name: string;
-      whatsapp: string;
+      password: string;
       affiliateCode?: string;
     }) =>
       request<{
         user: {
           id: string;
-          email: string;
           role: string;
           name: string;
-          whatsapp: string;
+          whatsapp?: string;
           createdAt: string;
         };
         requiresEmailVerification: boolean;
+        requiresWhatsappVerification?: boolean;
+        whatsappVerificationCode?: string;
+        whatsappRegistrationNumber?: string;
+        whatsappOpenUrl?: string;
+        whatsappBrowserSessionToken?: string;
       }>('/auth/register', {
         method: 'POST',
         body: JSON.stringify(params),
       }),
-    login: (email: string, password: string) =>
-      request<{ user: { id: string; email: string; role: string }; token: string }>(
+    login: (whatsapp: string, password: string) =>
+      request<{ user: { id: string; email: string | null; whatsapp: string | null; role: string }; token: string }>(
         '/auth/login',
-        { method: 'POST', body: JSON.stringify({ email, password }) },
+        { method: 'POST', body: JSON.stringify({ whatsapp, password }) },
       ),
+    /** Polling após registo com WhatsApp: JWT quando a conta estiver criada. */
+    pollWhatsappRegistration: (browserSessionToken: string) =>
+      request<
+        | { status: 'pending' }
+        | {
+            status: 'ready';
+            token: string;
+            user: {
+              id: string;
+              email: string | null;
+              role: string;
+              whatsapp: string;
+            };
+          }
+        | { status: 'expired' }
+        | { status: 'consumed' }
+        | { status: 'invalid' }
+      >(
+        `/auth/whatsapp/registration-poll?token=${encodeURIComponent(browserSessionToken)}`,
+        { method: 'GET' },
+      ),
+    // Endpoints de verificação por e-mail são mantidos apenas para retrocompatibilidade.
     verifyEmail: (email: string, code: string) =>
       request<{ success: boolean }>('/auth/verify-email', {
         method: 'POST',
@@ -89,13 +116,13 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ email }),
       }),
-    forgotPassword: (email: string) =>
+    forgotPassword: (whatsapp: string) =>
       request<{ success: boolean }>('/auth/forgot-password', {
         method: 'POST',
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ whatsapp }),
       }),
     resetPassword: (params: {
-      email: string;
+      whatsapp: string;
       code: string;
       newPassword: string;
     }) =>
@@ -130,6 +157,7 @@ export const api = {
         {
           method: 'GET',
           token,
+          cache: 'no-store',
         },
       ),
     impersonate: (userId: string) =>
@@ -161,6 +189,79 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(params),
       }),
+    getRafaCallAmounts: () =>
+      request<{ eurCents: number; pixCentavos: number }>('/stripe/rafa-call-amounts', {
+        method: 'GET',
+      }),
+    createRafaCallUnlockSession: (params: { successUrl: string; cancelUrl: string }) =>
+      request<{ url: string }>('/stripe/create-rafa-call-unlock-session', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }),
+    createRafaCallUnlockMbWaySession: (params: { successUrl: string; cancelUrl: string }) =>
+      request<{ url: string }>('/stripe/create-rafa-call-unlock-mbway-session', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }),
+    createRafaCallUnlockPixSession: (params: { successUrl: string; cancelUrl: string }) =>
+      request<{ url: string }>('/stripe/create-rafa-call-unlock-pix-session', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }),
+  },
+  rafacall: {
+    status: () =>
+      request<{
+        isMember: boolean;
+        schedulingUnlocked: boolean;
+        slotStartsAt: string | null;
+        slotEndsAt: string | null;
+        canOpenCalEmbed: boolean;
+      }>('/rafacall/status', { method: 'GET' }),
+    booking: () =>
+      request<{
+        booking:
+          | {
+              id: string;
+              status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+              startsAt: string;
+              endsAt: string;
+              timezone: string;
+            }
+          | null;
+      }>('/rafacall/booking', { method: 'GET' }),
+    availability: (params: { from: string; to: string; tz: string }) => {
+      const q = new URLSearchParams({
+        from: params.from,
+        to: params.to,
+        tz: params.tz,
+      });
+      return request<{
+        tz: string;
+        days: { date: string; slots: { startsAt: string; endsAt: string }[] }[];
+      }>(`/rafacall/availability?${q.toString()}`, { method: 'GET' });
+    },
+    book: (body: { startsAtUtcIso: string; tz: string }) =>
+      request<{
+        id: string;
+        status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+        startsAt: string;
+        endsAt: string;
+        timezone: string;
+      }>('/rafacall/book', { method: 'POST', body: JSON.stringify(body) }),
+    reschedule: (body: { bookingId: string; newStartsAtUtcIso: string; tz: string }) =>
+      request<{
+        id: string;
+        status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+        startsAt: string;
+        endsAt: string;
+        timezone: string;
+      }>('/rafacall/reschedule', { method: 'POST', body: JSON.stringify(body) }),
+    cancel: (body: { bookingId: string; reason?: string | null }) =>
+      request<{
+        id: string;
+        status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+      }>('/rafacall/cancel', { method: 'POST', body: JSON.stringify(body) }),
   },
   admin: {
     users: {
@@ -180,11 +281,14 @@ export const api = {
           {
             id: string;
             name: string;
-            email: string;
+            email: string | null;
             whatsapp: string;
             role: string;
             tier: string;
             membershipExpiresAt: string | null;
+            rafaCallSchedulingUnlocked: boolean;
+            rafaCallSlotStartsAt: string | null;
+            rafaCallSlotEndsAt: string | null;
             createdAt: string;
           }[]
         >(
@@ -198,11 +302,14 @@ export const api = {
         request<{
           id: string;
           name: string;
-          email: string;
+          email: string | null;
           whatsapp: string;
           role: string;
           tier: string;
           membershipExpiresAt: string | null;
+          rafaCallSchedulingUnlocked: boolean;
+          rafaCallSlotStartsAt: string | null;
+          rafaCallSlotEndsAt: string | null;
           createdAt: string;
         }>(`/users/${id}`, {
           method: 'PATCH',
@@ -212,11 +319,14 @@ export const api = {
         request<{
           id: string;
           name: string;
-          email: string;
+          email: string | null;
           whatsapp: string;
           role: string;
           tier: string;
           membershipExpiresAt: string | null;
+          rafaCallSchedulingUnlocked: boolean;
+          rafaCallSlotStartsAt: string | null;
+          rafaCallSlotEndsAt: string | null;
           createdAt: string;
         }>(
           `/users/${id}/role`,
@@ -226,18 +336,98 @@ export const api = {
         request<{
           id: string;
           name: string;
-          email: string;
+          email: string | null;
           whatsapp: string;
           role: string;
           tier: string;
           membershipExpiresAt: string | null;
+          rafaCallSchedulingUnlocked: boolean;
+          rafaCallSlotStartsAt: string | null;
+          rafaCallSlotEndsAt: string | null;
           createdAt: string;
         }>(`/users/${id}/tier`, {
           method: 'PATCH',
           body: JSON.stringify(body),
         }),
+      updateRafacall: (
+        id: string,
+        body: {
+          rafaCallSchedulingUnlocked?: boolean;
+          rafaCallSlotEndsAt?: string | null;
+        },
+      ) =>
+        request<{
+          id: string;
+          name: string;
+          email: string | null;
+          whatsapp: string;
+          role: string;
+          tier: string;
+          membershipExpiresAt: string | null;
+          rafaCallSchedulingUnlocked: boolean;
+          rafaCallSlotStartsAt: string | null;
+          rafaCallSlotEndsAt: string | null;
+          createdAt: string;
+        }>(`/users/${id}/rafacall`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        }),
       delete: (id: string) =>
         request<void>(`/users/${id}`, { method: 'DELETE' }),
+    },
+    rafacall: {
+      schedule: (tz?: string) => {
+        const q = tz ? `?tz=${encodeURIComponent(tz)}` : '';
+        return request<{
+          tz: string;
+          days: {
+            date: string; // YYYY-MM-DD no tz do admin
+            items: {
+              id: string;
+              status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+              startsAt: string;
+              endsAt: string;
+              userId: string;
+              userName: string;
+              whatsappDigits: string;
+              bookingTimezone: string;
+            }[];
+          }[];
+        }>(`/admin/rafacall/schedule${q}`, { method: 'GET' });
+      },
+      blocks: (params: { fromUtcIso: string; toUtcIso: string }) => {
+        const q = new URLSearchParams({
+          from: params.fromUtcIso,
+          to: params.toUtcIso,
+        });
+        return request<{
+          blocks: {
+            id: string;
+            startsAt: string;
+            endsAt: string;
+            reason: string | null;
+            createdAt: string;
+            createdByUserId: string;
+          }[];
+        }>(`/admin/rafacall/blocks?${q.toString()}`, { method: 'GET' });
+      },
+      createBlock: (body: { startsAtUtcIso: string; endsAtUtcIso: string; reason?: string }) =>
+        request<{ id: string; startsAt: string; endsAt: string; reason: string | null }>(
+          '/admin/rafacall/blocks',
+          { method: 'POST', body: JSON.stringify(body) },
+        ),
+      deleteBlock: (id: string) =>
+        request<{ ok: true }>(`/admin/rafacall/blocks/${id}`, { method: 'DELETE' }),
+      cancelBooking: (bookingId: string, reason?: string | null) =>
+        request<{ id: string; status: 'CANCELLED' }>(
+          `/admin/rafacall/bookings/${bookingId}/cancel`,
+          { method: 'POST', body: JSON.stringify({ reason }) },
+        ),
+      completeBooking: (bookingId: string) =>
+        request<{ id: string; status: 'COMPLETED' }>(
+          `/admin/rafacall/bookings/${bookingId}/complete`,
+          { method: 'POST', body: JSON.stringify({}) },
+        ),
     },
     partners: {
       list: () =>
@@ -297,6 +487,46 @@ export const api = {
           }[]
         >('/partners/admin/categories', { method: 'GET' }),
     },
+    services: {
+      listGrouped: () =>
+        request<
+          {
+            id: string;
+            name: string;
+            services: {
+              id: string;
+              title: string;
+              price: string | null;
+              priceOnRequest: boolean;
+              rpmCommissionEur: string | null;
+            }[];
+          }[]
+        >('/partners/admin/services', { method: 'GET' }),
+      updateCommission: (serviceId: string, rpmCommissionEur: string | null) =>
+        request<{ id: string; rpmCommissionEur: string | null }>(
+          `/partners/admin/services/${serviceId}/commission`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify({ rpmCommissionEur }),
+          },
+        ),
+    },
+    sales: {
+      list: () =>
+        request<
+          {
+            id: string;
+            createdAt: string;
+            amountEur: string;
+            commissionPaymentStatus: 'PENDING' | 'PAID';
+            commissionPaidEur: string | null;
+            wantsInvoice: boolean;
+            partner: { id: string; name: string };
+            user: { id: string; name: string | null; whatsapp: string | null; tier: 'VISITOR' | 'MEMBER' };
+            service: { id: string; title: string };
+          }[]
+        >('/partners/admin/sales', { method: 'GET' }),
+    },
     categories: {
       list: () =>
         request<
@@ -304,7 +534,8 @@ export const api = {
             id: string;
             slug: string;
             name: string;
-            description?: string;
+            shortDescription?: string;
+            fullDescription?: string;
             backgroundImageUrl?: string;
             sortOrder: number;
           }[]
@@ -312,7 +543,8 @@ export const api = {
       create: (input: {
         slug: string;
         name: string;
-        description?: string;
+        shortDescription?: string;
+        fullDescription?: string;
         backgroundImageUrl?: string;
         sortOrder?: number;
       }) =>
@@ -320,7 +552,8 @@ export const api = {
           id: string;
           slug: string;
           name: string;
-          description?: string;
+          shortDescription?: string;
+          fullDescription?: string;
           backgroundImageUrl?: string;
           sortOrder: number;
         }>('/partners/admin/categories', {
@@ -332,7 +565,8 @@ export const api = {
         input: {
           slug?: string;
           name?: string;
-          description?: string;
+          shortDescription?: string;
+          fullDescription?: string;
           backgroundImageUrl?: string;
           sortOrder?: number;
         },
@@ -341,7 +575,8 @@ export const api = {
           id: string;
           slug: string;
           name: string;
-          description?: string;
+          shortDescription?: string;
+          fullDescription?: string;
           backgroundImageUrl?: string;
           sortOrder: number;
         }>(`/partners/admin/categories/${id}`, {
@@ -351,6 +586,39 @@ export const api = {
       delete: (id: string) =>
         request<void>(`/partners/admin/categories/${id}`, {
           method: 'DELETE',
+        }),
+    },
+    support: {
+      tickets: (take?: number) => {
+        const q = take ? `?take=${encodeURIComponent(String(take))}` : '';
+        return request<{
+          items: {
+            id: string;
+            createdAt: string;
+            updatedAt: string;
+            status: 'REGISTERED' | 'IN_REVIEW' | 'DONE';
+            message: string;
+            adminReply?: string | null;
+            user: { id: string; name: string; whatsapp: string };
+          }[];
+        }>(`/admin/support/tickets${q}`, { method: 'GET' });
+      },
+      deleteTicket: (id: string) =>
+        request<{ ok: true }>(`/admin/support/tickets/${id}`, { method: 'DELETE' }),
+      updateTicket: (
+        id: string,
+        body: { status?: 'REGISTERED' | 'IN_REVIEW' | 'DONE'; adminReply?: string | null },
+      ) =>
+        request<{
+          id: string;
+          createdAt: string;
+          updatedAt: string;
+          status: 'REGISTERED' | 'IN_REVIEW' | 'DONE';
+          message: string;
+          adminReply?: string | null;
+        }>(`/admin/support/tickets/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
         }),
     },
   },
@@ -410,6 +678,7 @@ export const api = {
             description: string | null;
             price: string | null;
             priceOnRequest: boolean;
+            rpmCommissionEur: string | null;
             createdAt: string;
           }[]
         >('/partners/me/services', { method: 'GET' }),
@@ -425,6 +694,7 @@ export const api = {
           description: string | null;
           price: string | null;
           priceOnRequest: boolean;
+          rpmCommissionEur: string | null;
           createdAt: string;
         }>('/partners/me/services', {
           method: 'POST',
@@ -445,6 +715,7 @@ export const api = {
           description: string | null;
           price: string | null;
           priceOnRequest: boolean;
+          rpmCommissionEur: string | null;
           createdAt: string;
         }>(`/partners/me/services/${id}`, {
           method: 'PATCH',
@@ -459,9 +730,60 @@ export const api = {
           {
             id: string;
             createdAt: string;
-            user: { name: string | null; email: string; whatsapp: string | null };
+            user: {
+              id: string;
+              name: string | null;
+              email: string;
+              whatsapp: string | null;
+              tier: 'VISITOR' | 'MEMBER';
+            };
           }[]
         >('/partners/me/leads', { method: 'GET' }),
+    },
+    sales: {
+      list: () =>
+        request<
+          {
+            id: string;
+            createdAt: string;
+            paidAt?: string | null;
+            amountEur: string;
+            commissionPaymentStatus: 'PENDING' | 'PAID';
+            commissionSuggestedEur: string | null;
+            commissionPaidEur: string | null;
+            wantsInvoice: boolean;
+            user: { id: string; name: string | null; whatsapp: string | null; tier: 'VISITOR' | 'MEMBER' };
+            service: { id: string; title: string; rpmCommissionEur: string | null };
+          }[]
+        >('/partners/me/sales', { method: 'GET' }),
+      create: (body: { leadUserId: string; serviceId: string; amountEur: string }) =>
+        request<{
+          id: string;
+          createdAt: string;
+          paidAt?: string | null;
+          amountEur: string;
+          commissionPaymentStatus: 'PENDING' | 'PAID';
+          commissionSuggestedEur: string | null;
+          commissionPaidEur: string | null;
+          wantsInvoice: boolean;
+          user: { id: string; name: string | null; whatsapp: string | null; tier: 'VISITOR' | 'MEMBER' };
+          service: { id: string; title: string; rpmCommissionEur: string | null };
+        }>('/partners/me/sales', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
+      delete: (id: string) =>
+        request<{ ok: true }>(`/partners/me/sales/${id}`, { method: 'DELETE' }),
+      payCommission: (saleId: string, body: { commissionEur: string; wantsInvoice: boolean }) =>
+        request<{ url: string }>(`/partners/me/sales/${saleId}/pay-commission`, {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
+      payCommissionMbWay: (saleId: string, body: { commissionEur: string; wantsInvoice: boolean }) =>
+        request<{ url: string }>(`/partners/me/sales/${saleId}/pay-commission-mbway`, {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
     },
   },
   marketplace: {
@@ -471,11 +793,13 @@ export const api = {
           id: string;
           slug: string;
           name: string;
-          description?: string;
+          shortDescription?: string;
+          fullDescription?: string;
           backgroundImageUrl?: string;
           partners: {
             id: string;
             name: string;
+            logoUrl: string | null;
             backgroundImageUrl: string | null;
             shortDescription: string | null;
           }[];
@@ -507,6 +831,20 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({}),
       }),
+  },
+  checklist: {
+    me: () =>
+      request<{ data: Record<string, unknown>; version: number; updatedAt: string | null }>('/checklist/me', {
+        method: 'GET',
+      }),
+    updateMe: (body: { data: Record<string, unknown>; version?: number }) =>
+      request<{ data: Record<string, unknown>; version: number; updatedAt: string }>(
+        '/checklist/me',
+        {
+          method: 'PUT',
+          body: JSON.stringify(body),
+        },
+      ),
   },
   affiliate: {
     enroll: (body: {
@@ -645,5 +983,38 @@ export const api = {
         return data as { paidCount: number; paymentProofUrl: string };
       });
     },
+  },
+
+  support: {
+    createTicket: (message: string) =>
+      request<{ id: string; message: string; createdAt: string }>(`/support/tickets`, {
+        method: 'POST',
+        body: JSON.stringify({ message }),
+      }),
+    myTickets: () =>
+      request<{
+        items: {
+          id: string;
+          createdAt: string;
+          updatedAt: string;
+          status: 'REGISTERED' | 'IN_REVIEW' | 'DONE';
+          message: string;
+          adminReply?: string | null;
+        }[];
+      }>(`/support/tickets/me`, { method: 'GET' }),
+    updateMyTicket: (id: string, message: string) =>
+      request<{
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        status: 'REGISTERED' | 'IN_REVIEW' | 'DONE';
+        message: string;
+        adminReply?: string | null;
+      }>(`/support/tickets/me/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ message }),
+      }),
+    deleteMyTicket: (id: string) =>
+      request<{ ok: true }>(`/support/tickets/me/${id}`, { method: 'DELETE' }),
   },
 };

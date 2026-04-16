@@ -3,13 +3,15 @@
 import { useEffect, useState } from 'react';
 import { api, getAuthToken } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { CardButton } from '@/components/ui/CardButton';
 
 type CategoryRow = {
   id: string;
   slug: string;
   name: string;
   sortOrder: number;
-  description?: string;
+  shortDescription?: string;
+  fullDescription?: string;
   backgroundImageUrl?: string;
 };
 
@@ -22,7 +24,8 @@ export default function CategoriesPage() {
   const [slug, setSlug] = useState('');
   const [name, setName] = useState('');
   const [sortOrder, setSortOrder] = useState('');
-  const [description, setDescription] = useState('');
+  const [shortDescription, setShortDescription] = useState('');
+  const [fullDescription, setFullDescription] = useState('');
   const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -30,7 +33,8 @@ export default function CategoriesPage() {
   const [editingSlug, setEditingSlug] = useState('');
   const [editingName, setEditingName] = useState('');
   const [editingSortOrder, setEditingSortOrder] = useState('');
-  const [editingDescription, setEditingDescription] = useState('');
+  const [editingShortDescription, setEditingShortDescription] = useState('');
+  const [editingFullDescription, setEditingFullDescription] = useState('');
   const [editingBackgroundImageUrl, setEditingBackgroundImageUrl] =
     useState('');
   const [savingEdit, setSavingEdit] = useState(false);
@@ -83,7 +87,8 @@ export default function CategoriesPage() {
       const created = await api.admin.categories.create({
         slug,
         name,
-        description: description || undefined,
+        shortDescription: shortDescription || undefined,
+        fullDescription: fullDescription || undefined,
         backgroundImageUrl: backgroundImageUrl || undefined,
         sortOrder: sortOrder ? Number(sortOrder) : undefined,
       });
@@ -91,7 +96,8 @@ export default function CategoriesPage() {
       setSlug('');
       setName('');
       setSortOrder('');
-      setDescription('');
+      setShortDescription('');
+      setFullDescription('');
       setBackgroundImageUrl('');
     } catch (err) {
       setError(
@@ -145,7 +151,8 @@ export default function CategoriesPage() {
     setEditingSlug(row.slug);
     setEditingName(row.name);
     setEditingSortOrder(String(row.sortOrder ?? ''));
-    setEditingDescription(row.description ?? '');
+    setEditingShortDescription(row.shortDescription ?? '');
+    setEditingFullDescription(row.fullDescription ?? '');
     setEditingBackgroundImageUrl(row.backgroundImageUrl ?? '');
   }
 
@@ -195,7 +202,8 @@ export default function CategoriesPage() {
         slug: editingSlug || undefined,
         name: editingName || undefined,
         sortOrder: editingSortOrder ? Number(editingSortOrder) : undefined,
-        description: editingDescription || undefined,
+        shortDescription: editingShortDescription || undefined,
+        fullDescription: editingFullDescription || undefined,
         backgroundImageUrl: editingBackgroundImageUrl || undefined,
       });
       setCategories((prev) =>
@@ -205,7 +213,8 @@ export default function CategoriesPage() {
       setEditingSlug('');
       setEditingName('');
       setEditingSortOrder('');
-      setEditingDescription('');
+      setEditingShortDescription('');
+      setEditingFullDescription('');
       setEditingBackgroundImageUrl('');
     } catch (err) {
       setError(
@@ -277,12 +286,23 @@ export default function CategoriesPage() {
         </div>
         <div className="space-y-1 md:col-span-3">
           <label className="block text-sm font-medium text-zinc-700">
-            Descrição (opcional)
+            Descrição curta (card)
           </label>
           <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            value={shortDescription}
+            onChange={(e) => setShortDescription(e.target.value)}
             rows={2}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <div className="space-y-1 md:col-span-3">
+          <label className="block text-sm font-medium text-zinc-700">
+            Descrição completa (hero da categoria)
+          </label>
+          <textarea
+            value={fullDescription}
+            onChange={(e) => setFullDescription(e.target.value)}
+            rows={4}
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
@@ -338,13 +358,9 @@ export default function CategoriesPage() {
           />
         </div>
         <div className="md:col-span-3">
-          <button
-            type="submit"
-            disabled={creating}
-            className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
+          <CardButton type="submit" variant="primary" loading={creating}>
             {creating ? 'Criando categoria…' : 'Criar categoria'}
-          </button>
+          </CardButton>
         </div>
       </form>
 
@@ -361,7 +377,7 @@ export default function CategoriesPage() {
               <tr>
                 <th className="px-4 py-2 text-left">Slug</th>
                 <th className="px-4 py-2 text-left">Nome</th>
-                <th className="px-4 py-2 text-left">Descrição</th>
+                <th className="px-4 py-2 text-left">Descrição (curta)</th>
                 <th className="px-4 py-2 text-left">Ordem</th>
                 <th className="px-4 py-2 text-left">Background</th>
                 <th className="px-4 py-2 text-right">Ações</th>
@@ -396,15 +412,37 @@ export default function CategoriesPage() {
                   </td>
                   <td className="px-4 py-2 align-top">
                     {editingId === c.id ? (
-                      <textarea
-                        value={editingDescription}
-                        onChange={(e) => setEditingDescription(e.target.value)}
-                        rows={2}
-                        className="w-full rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      />
-                    ) : c.description ? (
+                      <div className="space-y-2">
+                        <div className="space-y-1">
+                          <label className="block text-[11px] font-medium text-zinc-600">
+                            Curta
+                          </label>
+                          <textarea
+                            value={editingShortDescription}
+                            onChange={(e) =>
+                              setEditingShortDescription(e.target.value)
+                            }
+                            rows={2}
+                            className="w-full rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[11px] font-medium text-zinc-600">
+                            Completa
+                          </label>
+                          <textarea
+                            value={editingFullDescription}
+                            onChange={(e) =>
+                              setEditingFullDescription(e.target.value)
+                            }
+                            rows={3}
+                            className="w-full rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+                    ) : c.shortDescription ? (
                       <p className="line-clamp-3 max-w-xs text-xs text-zinc-600">
-                        {c.description}
+                        {c.shortDescription}
                       </p>
                     ) : (
                       <span className="text-xs text-zinc-400">Sem descrição</span>
@@ -466,15 +504,16 @@ export default function CategoriesPage() {
                   <td className="px-4 py-2 text-right align-top space-x-2">
                     {editingId === c.id ? (
                       <>
-                        <button
+                        <CardButton
                           type="button"
                           onClick={handleSaveEdit}
-                          disabled={savingEdit}
-                          className="cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                          loading={savingEdit}
+                          variant="primary"
+                          size="sm"
                         >
                           {savingEdit ? 'Salvando…' : 'Salvar'}
-                        </button>
-                        <button
+                        </CardButton>
+                        <CardButton
                           type="button"
                           onClick={() => {
                             setEditingId(null);
@@ -482,27 +521,30 @@ export default function CategoriesPage() {
                             setEditingName('');
                             setEditingSortOrder('');
                           }}
-                          className="cursor-pointer rounded bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                          variant="secondary"
+                          size="sm"
                         >
                           Cancelar
-                        </button>
+                        </CardButton>
                       </>
                     ) : (
                       <>
-                        <button
+                        <CardButton
                           type="button"
                           onClick={() => startEdit(c)}
-                          className="cursor-pointer rounded bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                          variant="secondary"
+                          size="sm"
                         >
                           Editar
-                        </button>
-                        <button
+                        </CardButton>
+                        <CardButton
                           type="button"
                           onClick={() => handleDeleteCategory(c)}
-                          className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                          variant="danger"
+                          size="sm"
                         >
                           Remover
-                        </button>
+                        </CardButton>
                       </>
                     )}
                   </td>

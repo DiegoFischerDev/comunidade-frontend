@@ -12,7 +12,7 @@ import { api, setAuthToken, clearAuthToken, getAuthToken } from '@/lib/api';
 
 type User = {
   id: string;
-  email: string;
+  email: string | null;
   role: string;
   name?: string;
   whatsapp?: string;
@@ -27,14 +27,21 @@ type AuthContextValue = {
   token: string | null;
   loading: boolean;
   isImpersonating: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (whatsapp: string, password: string) => Promise<void>;
+  /** Após confirmação no WhatsApp, aplica o JWT devolvido pelo polling. */
+  loginWithToken: (token: string) => Promise<void>;
   register: (params: {
-    email: string;
-    password: string;
     name: string;
-    whatsapp: string;
+    password: string;
     affiliateCode?: string;
-  }) => Promise<void>;
+  }) => Promise<{
+    requiresEmailVerification: boolean;
+    requiresWhatsappVerification?: boolean;
+    whatsappVerificationCode?: string;
+    whatsappRegistrationNumber?: string;
+    whatsappOpenUrl?: string;
+    whatsappBrowserSessionToken?: string;
+  }>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   impersonateAsUser: (userId: string) => Promise<void>;
@@ -79,8 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadUser]);
 
   const login = useCallback(
-    async (email: string, password: string) => {
-      const { token: t } = await api.auth.login(email, password);
+    async (whatsapp: string, password: string) => {
+      const { token: t } = await api.auth.login(whatsapp, password);
       setAuthToken(t);
       await loadUser(t);
       // não alteramos a rota: o utilizador permanece na página atual
@@ -88,15 +95,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [loadUser],
   );
 
+  const loginWithToken = useCallback(
+    async (t: string) => {
+      setAuthToken(t);
+      await loadUser(t);
+    },
+    [loadUser],
+  );
+
   const register = useCallback(
     async (params: {
-      email: string;
-      password: string;
       name: string;
-      whatsapp: string;
+      password: string;
       affiliateCode?: string;
     }) => {
-      await api.auth.register(params);
+      return api.auth.register(params);
     },
     [],
   );
@@ -153,6 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     isImpersonating,
     login,
+    loginWithToken,
     register,
     logout,
     refreshUser,

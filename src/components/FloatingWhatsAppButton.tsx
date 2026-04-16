@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import { CardButton } from '@/components/ui/CardButton';
 
 const WHATSAPP_NUMBER = '351927398547';
-const WHATSAPP_MESSAGE = 'Oi Rafa, preciso de ajuda na comunidade RPM';
+const WHATSAPP_MESSAGE = 'Ola, preciso de ajuda na comunidade RPM';
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
 
 export const OPEN_MEMBERSHIP_MODAL_EVENT = 'open-membership-modal';
@@ -22,6 +23,15 @@ function formatEur(cents: number): string {
   }).format(cents / 100);
 }
 
+function formatEurNoDecimals(cents: number): string {
+  return new Intl.NumberFormat('pt-PT', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
+}
+
 function formatBrl(centavos: number): string {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -31,7 +41,14 @@ function formatBrl(centavos: number): string {
   }).format(centavos / 100);
 }
 
-export function FloatingWhatsAppButton() {
+type FloatingWhatsAppButtonProps = {
+  /** Esconde o botão e o popup (display: none); o modal VIP continua a abrir via evento. */
+  hideFloatingButton?: boolean;
+};
+
+export function FloatingWhatsAppButton({
+  hideFloatingButton = false,
+}: FloatingWhatsAppButtonProps) {
   const [open, setOpen] = useState(false);
   const [showMembershipModal, setShowMembershipModal] = useState(false);
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
@@ -65,7 +82,7 @@ export function FloatingWhatsAppButton() {
           : method === 'mbway'
             ? await api.stripe.createMbWayCheckoutSession({ successUrl, cancelUrl })
             : await api.stripe.createCheckoutSession({ successUrl, cancelUrl });
-      window.open(url, '_blank', 'noopener,noreferrer');
+      window.location.assign(url);
       setCheckoutLoading(false);
       closeAll();
     } catch (e) {
@@ -135,12 +152,16 @@ export function FloatingWhatsAppButton() {
 
   return (
     <>
-      <div ref={containerRef} className="fixed bottom-6 right-6 z-30 flex flex-col items-end">
+      <div
+        ref={containerRef}
+        className={`fixed bottom-6 right-6 z-30 flex flex-col items-end${hideFloatingButton ? ' hidden' : ''}`}
+        aria-hidden={hideFloatingButton}
+      >
         {/* Popup pequeno acima do ícone — só quando não está no modal de membros */}
         {open && !showMembershipModal && (
           <div className="absolute bottom-full right-0 mb-2 w-72 rounded-xl border border-zinc-200 bg-white p-4 shadow-xl">
             <p className="text-sm font-medium text-zinc-800">
-              Precisa de ajuda? Fale com a Rafa no WhatsApp
+              Precisa de ajuda? Fale com a nossa equipe no whatsapp
             </p>
             <div className="mt-3 flex flex-col gap-2">
               {isMember ? (
@@ -148,7 +169,7 @@ export function FloatingWhatsAppButton() {
                   href={WHATSAPP_URL}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-[#25D366] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#20BD5A]"
+                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-medium text-white hover:from-[#c07c01] hover:to-[#e7a01f]"
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -159,7 +180,7 @@ export function FloatingWhatsAppButton() {
                 <button
                   type="button"
                   onClick={() => setShowMembershipModal(true)}
-                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-[#25D366] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#20BD5A]"
+                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-medium text-white hover:from-[#c07c01] hover:to-[#e7a01f]"
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -174,7 +195,7 @@ export function FloatingWhatsAppButton() {
         <button
           type="button"
           onClick={() => setOpen((prev) => !prev)}
-          className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-105 hover:shadow-xl"
+          className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white shadow-lg transition-transform hover:scale-105 hover:shadow-xl"
           aria-label="Ajuda no WhatsApp"
         >
           <svg
@@ -191,12 +212,12 @@ export function FloatingWhatsAppButton() {
       {/* Modal fullscreen só para "Junte-se à Comunidade" */}
       {open && showMembershipModal && (
         <div
-          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
           onClick={closeAll}
           role="presentation"
         >
           <div
-            className="relative w-full max-w-md rounded-2xl bg-white p-5 pt-10 shadow-xl"
+            className="relative my-8 w-full max-w-lg rounded-2xl bg-white p-5 pt-10 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -222,62 +243,73 @@ export function FloatingWhatsAppButton() {
                   <h3 className="text-lg font-bold tracking-tight text-zinc-900">
                     Junte-se à Comunidade RPM
                   </h3>
-                  <p className="mt-0.5 text-sm font-medium text-zinc-600">
+                  <div className="mt-2 flex justify-center">
                     {amountsLoading ? (
-                      'A carregar…'
+                      <span className="inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-sm font-semibold text-zinc-600">
+                        A carregar…
+                      </span>
                     ) : amounts ? (
-                      <>
-                        {formatEur(amounts.eurCents)}/ano — menos de{' '}
-                        {Math.ceil(amounts.eurCents / 100 / 12)} € por mês
-                      </>
+                      <span className="inline-flex items-center gap-2 rounded-xl border border-emerald-200/70 bg-gradient-to-r from-emerald-50 to-emerald-100 px-4 py-2 text-base font-extrabold text-emerald-900 shadow-sm">
+                        {formatEurNoDecimals(amounts.eurCents)}/ano
+                      </span>
                     ) : (
-                      'Acesso por 1 ano — escolha a forma de pagamento'
+                      <span className="text-sm font-medium text-zinc-600">
+                        Acesso por 1 ano — escolha a forma de pagamento
+                      </span>
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
 
               {!showPaymentOptions ? (
                 <>
-                  <p className="text-sm leading-relaxed text-zinc-700 mb-4">
-                    Por menos de um café por mês, tenha acesso a tudo o que a comunidade oferece.
-                  </p>
                   <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700">
                     O que inclui:
                   </p>
                   <ul className="mt-2 space-y-2 text-sm text-zinc-700">
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span><strong className="text-zinc-800">Vantagens e condições exclusivas</strong> em serviços de parceiros.</span>
+                      <span>
+                        Acesso completo ao <strong className="text-zinc-800">Plano de imigração</strong>.
+                      </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span><strong className="text-zinc-800">Ebook Portugal Sem Perrenge</strong> — acesso completo ao guia.</span>
+                      <span>
+                        <strong className="text-zinc-800">Acesso às lives da Rafa</strong> exclusivas para membros VIP.
+                      </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span><strong className="text-zinc-800">Suporte de imigração</strong> — contacto direto com a Rafa e a equipe.</span>
+                      <span>
+                        <strong className="text-zinc-800">10 € de desconto</strong> em qualquer serviço
+                        contratado com parceiros da comunidade.
+                      </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span><strong className="text-zinc-800">Grupos exclusivos no WhatsApp</strong> — rede e conteúdo só para membros.</span>
+                      <span><strong className="text-zinc-800">Ebook Portugal Sem Perrenge</strong> completo e com atualizações.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
+                      <span>
+                        <strong className="text-zinc-800">Acesso aos grupos VIP no Whatsapp</strong> incluindo grupos de imóveis disponíveis.
+                      </span>
                     </li>
                   </ul>
                   <div className="mt-6">
-                    <button
+                    <CardButton
                       type="button"
                       onClick={handleQueroSerMembro}
-                      className="w-full rounded-full bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white shadow-md transition-colors hover:bg-emerald-700"
+                      variant="primary"
+                      fullWidth
                     >
                       Ativar acesso
-                    </button>
+                    </CardButton>
                   </div>
                 </>
               ) : (
                 <>
-                  <p className="text-sm leading-relaxed text-zinc-700 mb-4">
-                    Por menos de um café por mês, tenha acesso a tudo o que a comunidade oferece.
-                  </p>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
                     Escolha a forma de pagamento
                   </p>

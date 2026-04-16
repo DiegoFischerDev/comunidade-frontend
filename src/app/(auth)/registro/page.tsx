@@ -1,64 +1,152 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import {
+  WHATSAPP_REGISTRATION_POLL_MAX_MS,
+  WHATSAPP_REGISTRATION_POLL_TIMEOUT_MESSAGE,
+} from '@/lib/whatsapp-registration-poll';
+
+function formatWhatsappRegistrationDisplay(digits: string) {
+  const d = digits.replace(/\D/g, '');
+  if (d.length >= 12 && d.startsWith('351')) {
+    const rest = d.slice(3);
+    return `+351 ${rest.slice(0, 3)} ${rest.slice(3, 6)} ${rest.slice(6)}`.trim();
+  }
+  return d ? `+${d}` : '';
+}
 
 export default function RegistroPage() {
-  const { register, login } = useAuth();
+  const router = useRouter();
+  const { register, loginWithToken } = useAuth();
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
   const [password, setPassword] = useState('');
-  const [affiliateCode, setAffiliateCode] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<'form' | 'verify'>('form');
-  const [verificationCode, setVerificationCode] = useState('');
+  const [step, setStep] = useState<'form' | 'whatsappVerify'>('form');
   const [info, setInfo] = useState('');
+  const [waCode, setWaCode] = useState('');
+  const [waOpenUrl, setWaOpenUrl] = useState('');
+  const [waRegistrationNumber, setWaRegistrationNumber] = useState('');
+  const [waBrowserSessionToken, setWaBrowserSessionToken] = useState('');
+  const waPollStartedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const stored = window.localStorage.getItem('comunidade_ref_affiliate');
-    if (stored && stored !== 'nenhum') {
-      setAffiliateCode(stored);
+    if (step === 'whatsappVerify' && waBrowserSessionToken) {
+      waPollStartedAtRef.current = Date.now();
+    } else {
+      waPollStartedAtRef.current = null;
     }
-  }, []);
+  }, [step, waBrowserSessionToken]);
+
+  useEffect(() => {
+    if (step !== 'whatsappVerify' || !waBrowserSessionToken) return;
+    let cancelled = false;
+    const tick = async () => {
+      const started = waPollStartedAtRef.current;
+      if (
+        started != null &&
+        Date.now() - started > WHATSAPP_REGISTRATION_POLL_MAX_MS
+      ) {
+        if (!cancelled) {
+          setError(WHATSAPP_REGISTRATION_POLL_TIMEOUT_MESSAGE);
+          setWaBrowserSessionToken('');
+          setStep('form');
+        }
+        return;
+      }
+      try {
+        const r = await api.auth.pollWhatsappRegistration(waBrowserSessionToken);
+        if (cancelled) return;
+        if (r.status === 'ready') {
+          try {
+            sessionStorage.setItem('comunidade_welcome_after_wa', '1');
+          } catch {
+            // noop
+          }
+          await loginWithToken(r.token);
+          router.push('/dashboard');
+          return;
+        }
+        if (r.status === 'expired') {
+          setError(
+            'O tempo para ativar a conta neste passo expirou. Crie a conta de novo.',
+          );
+          setWaBrowserSessionToken('');
+          setStep('form');
+          return;
+        }
+        if (r.status === 'consumed') {
+          setError(
+            'Esta sessão já foi utilizada. Entre com o WhatsApp e a palavra-passe em Entrar.',
+          );
+          setWaBrowserSessionToken('');
+          setStep('form');
+          return;
+        }
+        if (r.status === 'invalid') {
+          setError(
+            'Não encontrámos o pedido de registo. Volte atrás e tente criar a conta outra vez.',
+          );
+          setWaBrowserSessionToken('');
+          setStep('form');
+        }
+      } catch {
+        // próximo intervalo
+      }
+    };
+    void tick();
+    const id = window.setInterval(() => void tick(), 2500);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [step, waBrowserSessionToken, loginWithToken, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setInfo('');
+    if (password !== passwordConfirm) {
+      setError('As senhas não coincidem.');
+      return;
+    }
     setLoading(true);
     try {
-      await register({ email, password, name, whatsapp, affiliateCode: affiliateCode.trim() || undefined });
-      setStep('verify');
-      setInfo(
-        'Enviámos um código de confirmação para o seu e-mail. Introduza o código abaixo para concluir o registo.',
-      );
+      const refRaw =
+        typeof window !== 'undefined'
+          ? window.localStorage.getItem('comunidade_ref_affiliate')
+          : null;
+      const refTrimmed =
+        refRaw && refRaw !== 'nenhum' && refRaw.trim().length > 0
+          ? refRaw.trim()
+          : undefined;
+
+      const res = await register({
+        name,
+        password,
+        affiliateCode: refTrimmed,
+      });
+      if (
+        res.requiresWhatsappVerification &&
+        res.whatsappOpenUrl &&
+        res.whatsappVerificationCode &&
+        res.whatsappRegistrationNumber &&
+        res.whatsappBrowserSessionToken
+      ) {
+        setWaCode(res.whatsappVerificationCode);
+        setWaOpenUrl(res.whatsappOpenUrl);
+        setWaRegistrationNumber(res.whatsappRegistrationNumber);
+        setWaBrowserSessionToken(res.whatsappBrowserSessionToken);
+        setStep('whatsappVerify');
+        return;
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar conta.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleVerify(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    setInfo('');
-    setLoading(true);
-    try {
-      await api.auth.verifyEmail(email, verificationCode);
-      await login(email, password);
-      setInfo('E-mail confirmado com sucesso. A entrar na sua conta…');
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Erro ao confirmar o e-mail. Verifique o código e tente novamente.',
-      );
     } finally {
       setLoading(false);
     }
@@ -97,36 +185,6 @@ export default function RegistroPage() {
             />
           </div>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-zinc-700">
-              E-mail
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="whatsapp"
-              className="block text-sm font-medium text-zinc-700"
-            >
-              WhatsApp
-            </label>
-            <input
-              id="whatsapp"
-              type="text"
-              value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
-              required
-              placeholder="Ex: 351256854756"
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-          <div>
             <label
               htmlFor="password"
               className="block text-sm font-medium text-zinc-700"
@@ -144,15 +202,19 @@ export default function RegistroPage() {
             />
           </div>
           <div>
-            <label htmlFor="affiliateCode" className="block text-sm font-medium text-zinc-700">
-              @ de quem te indicou (opcional)
+            <label
+              htmlFor="passwordConfirm"
+              className="block text-sm font-medium text-zinc-700"
+            >
+              Confirmar senha
             </label>
             <input
-              id="affiliateCode"
-              type="text"
-              value={affiliateCode}
-              onChange={(e) => setAffiliateCode(e.target.value)}
-              placeholder="Opcional"
+              id="passwordConfirm"
+              type="password"
+              value={passwordConfirm}
+              onChange={(e) => setPasswordConfirm(e.target.value)}
+              required
+              minLength={6}
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
@@ -161,43 +223,60 @@ export default function RegistroPage() {
             disabled={loading}
             className="w-full rounded-lg bg-blue-600 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? 'Criando conta…' : 'Criar conta'}
+            {loading ? 'A processar…' : 'Criar conta'}
           </button>
         </form>
       )}
 
-      {step === 'verify' && (
-        <form onSubmit={handleVerify} className="mt-6 space-y-4">
-          <p className="text-sm text-zinc-600">
-            Introduza o código de 6 dígitos que recebeu em{' '}
-            <span className="font-medium">{email}</span>.
+      {step === 'whatsappVerify' && (
+        <div className="mt-6 space-y-4">
+          <h2 className="text-lg font-semibold text-zinc-900">
+            Ativar conta no WhatsApp
+          </h2>
+          <p className="text-sm text-zinc-500">
+            Assim que a mensagem for confirmada, vamos iniciar sessão automaticamente e
+            levá-lo ao painel.
+          </p>
+          <p className="text-sm leading-relaxed text-zinc-700">
+            Para ativar a sua conta, envie o código de verificação pelo WhatsApp para{' '}
+            <span className="font-semibold text-zinc-900">
+              {formatWhatsappRegistrationDisplay(waRegistrationNumber)}
+            </span>
+            .
           </p>
           <div>
-            <label
-              htmlFor="verificationCode"
-              className="block text-sm font-medium text-zinc-700"
-            >
-              Código de confirmação
-            </label>
-            <input
-              id="verificationCode"
-              type="text"
-              value={verificationCode}
-              onChange={(e) => setVerificationCode(e.target.value)}
-              required
-              maxLength={10}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
+            <p className="text-sm font-medium text-zinc-600">Código de verificação</p>
+            <p className="mt-1 select-all rounded-lg border border-zinc-200 bg-zinc-50 py-3 text-center text-2xl font-bold tracking-[0.2em] text-zinc-900">
+              {waCode}
+            </p>
           </div>
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-blue-600 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            type="button"
+            onClick={() => {
+              if (waOpenUrl) {
+                window.open(waOpenUrl, '_blank', 'noopener,noreferrer');
+              }
+            }}
+            className="w-full rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] py-2.5 font-medium text-white hover:from-[#c07c01] hover:to-[#e7a01f]"
           >
-            {loading ? 'Confirmando…' : 'Confirmar e-mail e entrar'}
+            Enviar
           </button>
-        </form>
+          <button
+            type="button"
+            onClick={() => {
+              setStep('form');
+              setWaCode('');
+              setWaOpenUrl('');
+              setWaRegistrationNumber('');
+              setWaBrowserSessionToken('');
+            }}
+            className="w-full text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+          >
+            Voltar ao registo
+          </button>
+        </div>
       )}
+
       <p className="mt-4 text-center text-sm text-zinc-600">
         Já tem conta?{' '}
         <Link href="/login" className="font-medium text-blue-600 hover:underline">

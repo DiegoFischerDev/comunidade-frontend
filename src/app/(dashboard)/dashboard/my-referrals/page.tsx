@@ -11,6 +11,7 @@ import {
 import { AffiliatePromoCard } from '@/components/affiliate/AffiliatePromoCard';
 import { AffiliateEnrollModal } from '@/components/affiliate/AffiliateEnrollModal';
 import { AffiliateMemberDashboardCard } from '@/components/affiliate/AffiliateMemberDashboardCard';
+import { CardButton } from '@/components/ui/CardButton';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -238,26 +239,24 @@ export default function MyReferralsPage() {
               <div className="relative h-12 w-12 flex-shrink-0">
                 <Image
                   src="/vip-card.png"
-                  alt="Tornar-se membro"
+                  alt="Tornar-se membro VIP"
                   fill
                   className="rounded-xl object-contain"
                   sizes="48px"
                 />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-zinc-900">Torne-se membro</h2>
-                <p className="mt-1 text-xs text-zinc-600">
+                <h2 className="text-sm font-semibold text-zinc-900">Torne-se membro VIP</h2>
+                <p className="mt-1 text-sm text-zinc-600">
                   Desbloqueie benefícios exclusivos e participe do programa de afiliados.
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={openMembershipModal}
-              className="mt-4 inline-flex cursor-pointer items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-            >
-              Tornar-se membro
-            </button>
+            <div className="mt-4">
+              <CardButton type="button" onClick={openMembershipModal} variant="primary">
+                Tornar-se membro VIP
+              </CardButton>
+            </div>
           </section>
 
           {!loading && !affiliate && affiliatePromoCard}
@@ -273,7 +272,7 @@ export default function MyReferralsPage() {
       {loading ? (
         <p className="mt-4 text-sm text-zinc-600">Carregando dados…</p>
       ) : !hasAffiliateEnrollment ? (
-        // Visitante: o card já está na grelha acima com "Torne-se membro"
+        // Visitante: o card já está na grelha acima com "Torne-se membro VIP"
         !isVisitor ? (
           <div className="mt-4">{affiliatePromoCard}</div>
         ) : null
@@ -289,7 +288,7 @@ export default function MyReferralsPage() {
             />
 
             <section className="min-w-0 w-full rounded-lg border border-zinc-200 bg-white p-4">
-              <h2 className="text-sm font-semibold text-zinc-900">Dados para recebimento</h2>
+              <h2 className="text-base font-semibold text-zinc-900">Dados para recebimento</h2>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <select
                   value={payoutMethod}
@@ -366,8 +365,8 @@ export default function MyReferralsPage() {
             </section>
 
             <section className="min-w-0 w-full rounded-lg border border-zinc-200 bg-white p-4">
-              <h2 className="text-sm font-semibold text-zinc-900">Pagamentos recebidos</h2>
-              <p className="mt-1 text-xs text-zinc-500">
+              <h2 className="text-base font-semibold text-zinc-900">Pagamentos recebidos</h2>
+              <p className="mt-1 text-sm text-zinc-500">
                 As comissões são geralmente pagas no final de cada mês.
               </p>
               {!paidCommissionPayments.length ? (
@@ -421,7 +420,7 @@ export default function MyReferralsPage() {
           </div>
 
           <section className="rounded-lg border border-zinc-200 bg-white p-4">
-            <h2 className="text-sm font-semibold text-zinc-900">Contas indicadas</h2>
+            <h2 className="text-base font-semibold text-zinc-900">Contas indicadas</h2>
             {!referrals?.referrals?.length ? (
               <p className="mt-2 text-sm text-zinc-500">Nenhum usuário indicado ainda.</p>
             ) : (

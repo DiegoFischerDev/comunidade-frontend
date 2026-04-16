@@ -2,18 +2,29 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+
+type PartnerService = {
+  id: string;
+  title: string;
+  price: string | null;
+  priceOnRequest: boolean;
+};
 
 type CategoryWithPartners = {
   id: string;
   slug: string;
   name: string;
-  description?: string;
+  shortDescription?: string;
+  fullDescription?: string;
   backgroundImageUrl?: string;
   partners: {
     id: string;
     name: string;
+    logoUrl: string | null;
     backgroundImageUrl: string | null;
     shortDescription: string | null;
   }[];
@@ -21,9 +32,13 @@ type CategoryWithPartners = {
 
 export default function CategoryPage() {
   const params = useParams<{ slug: string }>();
+  const router = useRouter();
   const [categories, setCategories] = useState<CategoryWithPartners[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [partnerServicesById, setPartnerServicesById] = useState<
+    Record<string, PartnerService[] | undefined>
+  >({});
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -46,6 +61,58 @@ export default function CategoryPage() {
   }, []);
 
   const category = categories.find((c) => c.slug === params.slug);
+
+  // Se a categoria tiver apenas um parceiro, não há necessidade de mostrar esta página.
+  useEffect(() => {
+    if (!category) return;
+    if (category.partners.length !== 1) return;
+    const only = category.partners[0];
+    if (!only?.id) return;
+    router.replace(`/dashboard/partner/${only.id}`);
+  }, [category, router]);
+
+  useEffect(() => {
+    if (!category) return;
+    let cancelled = false;
+
+    (async () => {
+      const ids = category.partners.map((p) => p.id);
+      const missingIds = ids.filter((id) => partnerServicesById[id] === undefined);
+      if (missingIds.length === 0) return;
+
+      try {
+        const results = await Promise.allSettled(
+          missingIds.map(async (id) => {
+            const details = await api.marketplace.partnerDetails(id);
+            return { id, services: details.services as PartnerService[] };
+          }),
+        );
+
+        if (cancelled) return;
+        setPartnerServicesById((prev) => {
+          const next = { ...prev };
+          for (const r of results) {
+            if (r.status === 'fulfilled') {
+              next[r.value.id] = r.value.services;
+            }
+          }
+          return next;
+        });
+      } catch {
+        // silencioso: não bloqueia a lista de parceiros
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [category, partnerServicesById]);
+
+  const formatServicePrice = (s: PartnerService) => {
+    if (s.priceOnRequest) return 'Sob consulta';
+    if (s.price) return `${s.price} €`;
+    return '—';
+  };
 
   if (loading) {
     return <p className="text-sm text-zinc-600">Carregando categoria…</p>;
@@ -72,6 +139,10 @@ export default function CategoryPage() {
     );
   }
 
+  if (category.partners.length === 1) {
+    return <p className="text-sm text-zinc-600">A redirecionar para o parceiro…</p>;
+  }
+
   const heroBg =
     category.backgroundImageUrl &&
     (category.backgroundImageUrl.startsWith('/uploads/')
@@ -81,7 +152,7 @@ export default function CategoryPage() {
   return (
     <div className="space-y-8">
       {/* Hero da categoria */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#910001] to-[#5f0001] text-white">
         {heroBg && (
           <div
             className="absolute inset-0 bg-cover bg-center opacity-40"
@@ -89,15 +160,15 @@ export default function CategoryPage() {
           />
         )}
         <div className="relative z-10 px-6 py-10 sm:px-10 sm:py-14">
-          <p className="text-xs uppercase tracking-wide text-blue-100">
+          <p className="text-xs uppercase tracking-wide text-amber-100/90">
             Categoria
           </p>
           <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
             {category.name}
           </h1>
-          {category.description && (
-            <p className="mt-3 max-w-2xl text-sm text-blue-50 sm:text-base">
-              {category.description}
+          {(category.fullDescription || category.shortDescription) && (
+            <p className="mt-3 max-w-2xl text-sm text-amber-50/90 sm:text-base">
+              {category.fullDescription || category.shortDescription}
             </p>
           )}
         </div>
@@ -108,37 +179,73 @@ export default function CategoryPage() {
           Ainda não há parceiros nesta categoria.
         </p>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {category.partners.map((partner) => {
             const partnerBg =
               partner.backgroundImageUrl &&
               (partner.backgroundImageUrl.startsWith('/uploads/')
                 ? `${API_URL}${partner.backgroundImageUrl}`
                 : partner.backgroundImageUrl);
+            const partnerLogo =
+              partner.logoUrl &&
+              (partner.logoUrl.startsWith('/uploads/')
+                ? `${API_URL}${partner.logoUrl}`
+                : partner.logoUrl);
             return (
               <Link
                 key={partner.id}
                 href={`/dashboard/partner/${partner.id}`}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
+                className="group flex w-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
               >
-                <div className="relative h-28 w-full overflow-hidden bg-gradient-to-r from-zinc-100 to-zinc-200">
+                <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-r from-zinc-100 to-zinc-200">
                   {partnerBg && (
                     <div
-                      className="absolute inset-0 bg-cover bg-center transition group-hover:scale-105"
+                      className="absolute inset-0 bg-cover bg-center"
                       style={{ backgroundImage: `url(${partnerBg})` }}
                     />
                   )}
-                  <div className="relative z-10 flex h-full items-end bg-gradient-to-t from-black/50 via-black/10 to-transparent px-4 pb-3">
+                  <div className="relative z-10 flex h-full flex-col justify-end gap-2 bg-gradient-to-t from-black/50 via-black/10 to-transparent px-4 pb-3">
+                    {partnerLogo ? (
+                      <div className="relative h-11 w-11 overflow-hidden rounded-xl border border-white/70 bg-white shadow-md">
+                        <Image
+                          src={partnerLogo}
+                          alt=""
+                          fill
+                          className="object-contain p-2"
+                          sizes="44px"
+                        />
+                      </div>
+                    ) : null}
                     <h2 className="text-sm font-semibold text-white drop-shadow">
                       {partner.name}
                     </h2>
                   </div>
                 </div>
-                {partner.shortDescription && (
-                  <p className="line-clamp-3 px-4 pb-4 pt-3 text-xs text-zinc-600">
-                    {partner.shortDescription}
-                  </p>
-                )}
+                <div className="px-4 pb-4 pt-3">
+                  {partner.shortDescription ? (
+                    <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-600">
+                      {partner.shortDescription}
+                    </p>
+                  ) : null}
+
+                  {partnerServicesById[partner.id]?.length ? (
+                    <div className="mt-3 space-y-1.5">
+                      {partnerServicesById[partner.id]!.map((s) => (
+                        <div
+                          key={s.id}
+                          className="flex items-start justify-between gap-3 text-xs text-zinc-700"
+                        >
+                          <span className="min-w-0 flex-1 truncate">
+                            {s.title}
+                          </span>
+                          <span className="shrink-0 font-semibold text-zinc-900">
+                            {formatServicePrice(s)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
               </Link>
             );
           })}

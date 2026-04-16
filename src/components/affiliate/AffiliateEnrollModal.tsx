@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { CardButton } from "@/components/ui/CardButton";
 
 type AffiliatePayoutMethod = "MBWAY" | "PIX";
 
@@ -57,12 +58,12 @@ export function AffiliateEnrollModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
       onClick={() => !saving && onClose()}
       role="presentation"
     >
       <div
-        className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl"
+        className="my-8 w-full max-w-3xl rounded-2xl bg-white p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative mb-4 h-52 w-full overflow-hidden rounded-xl">
@@ -166,20 +167,17 @@ export function AffiliateEnrollModal({
           </label>
           {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>}
           <div className="flex justify-end gap-3">
-            <button
+            <CardButton
               type="button"
               onClick={() => !saving && onClose()}
-              className="cursor-pointer rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700"
+              disabled={saving}
+              variant="secondary"
             >
               Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="cursor-pointer rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white"
-            >
+            </CardButton>
+            <CardButton type="submit" loading={saving} variant="primary">
               {saving ? "Confirmando…" : "Confirmar afiliação"}
-            </button>
+            </CardButton>
           </div>
         </form>
       </div>
