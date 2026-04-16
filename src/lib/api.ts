@@ -737,6 +737,21 @@ export const api = {
               whatsapp: string | null;
               tier: 'VISITOR' | 'MEMBER';
             };
+            immigrationPlan: {
+              updatedAt: string;
+              answers: {
+                visaType: string | null;
+                cidade: string | null;
+                cidadePlanoB: string | null;
+                agregadoFamiliar: string | null;
+                numQuartos: string | null;
+                profissoesPossiveis: string[];
+                precisaCarro: boolean | null;
+                dataViagem: string | null;
+                dataAima: string | null;
+                notas: string | null;
+              };
+            } | null;
           }[]
         >('/partners/me/leads', { method: 'GET' }),
     },
