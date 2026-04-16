@@ -3,10 +3,7 @@ import type { Viewport } from "next";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  process.env.NEXT_PUBLIC_APP_URL ||
-  "https://comunidade.rafaapelomundo.com";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://comunidade.rafaapelomundo.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -31,7 +28,7 @@ export const metadata: Metadata = {
       "A tua comunidade para imigrar para Portugal com planejamento, parceiros e apoio em cada etapa.",
     images: [
       {
-        url: `${siteUrl}/og-comunidade.png`,
+        url: "/og-comunidade.png",
         width: 1200,
         height: 630,
         alt: "Comunidade RPM",
@@ -43,7 +40,7 @@ export const metadata: Metadata = {
     title: "Comunidade Rafa pelo mundo",
     description:
       "A tua comunidade para imigrar para Portugal com planejamento, parceiros e apoio em cada etapa.",
-    images: [`${siteUrl}/og-comunidade.png`],
+    images: ["/og-comunidade.png"],
   },
 };
 
