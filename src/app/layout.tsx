@@ -31,7 +31,7 @@ export const metadata: Metadata = {
       "A tua comunidade para imigrar para Portugal com planejamento, parceiros e apoio em cada etapa.",
     images: [
       {
-        url: `${siteUrl}/logo_comunidade.png`,
+        url: `${siteUrl}/og-comunidade.png`,
         width: 1200,
         height: 630,
         alt: "Comunidade RPM",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     title: "Comunidade Rafa pelo mundo",
     description:
       "A tua comunidade para imigrar para Portugal com planejamento, parceiros e apoio em cada etapa.",
-    images: [`${siteUrl}/logo_comunidade.png`],
+    images: [`${siteUrl}/og-comunidade.png`],
   },
 };
 
