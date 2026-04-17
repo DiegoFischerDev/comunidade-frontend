@@ -134,6 +134,7 @@ export default function PartnerLeadsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filterInput, setFilterInput] = useState('');
+  const [openPlanByLeadId, setOpenPlanByLeadId] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!user) return;
@@ -247,14 +248,44 @@ export default function PartnerLeadsPage() {
                     <td className="px-4 py-2 align-top">
                       {lead.immigrationPlan ? (
                         <div className="max-w-sm space-y-2">
-                          <p className="text-xs font-medium text-zinc-500">
-                            Atualizado em {new Date(lead.immigrationPlan.updatedAt).toLocaleString('pt-PT')}
-                          </p>
-                          <div className="space-y-1 text-xs text-zinc-700">
-                            {planLines.map((line) => (
-                              <p key={`${lead.id}-${line}`}>{line}</p>
-                            ))}
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setOpenPlanByLeadId((prev) => ({
+                                ...prev,
+                                [lead.id]: !prev[lead.id],
+                              }))
+                            }
+                            className="group inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
+                            aria-expanded={Boolean(openPlanByLeadId[lead.id])}
+                            title="Abrir/fechar plano de imigração"
+                          >
+                            <span>Plano</span>
+                            <span
+                              className={`transition-transform ${openPlanByLeadId[lead.id] ? 'rotate-180' : ''}`}
+                              aria-hidden="true"
+                            >
+                              ▾
+                            </span>
+                          </button>
+
+                          {openPlanByLeadId[lead.id] ? (
+                            <div className="space-y-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2">
+                              <p className="text-xs font-medium text-zinc-500">
+                                Atualizado em{' '}
+                                {new Date(lead.immigrationPlan.updatedAt).toLocaleString('pt-PT')}
+                              </p>
+                              {planLines.length ? (
+                                <div className="space-y-1 text-xs text-zinc-700">
+                                  {planLines.map((line) => (
+                                    <p key={`${lead.id}-${line}`}>{line}</p>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-xs text-zinc-500">Sem respostas no plano.</p>
+                              )}
+                            </div>
+                          ) : null}
                         </div>
                       ) : (
                         <span className="text-zinc-400">—</span>
