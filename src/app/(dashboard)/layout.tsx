@@ -45,7 +45,7 @@ export default function DashboardLayout({
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<
     'login' | 'register' | 'registerWhatsappVerify' | 'forgot' | 'resetPassword'
-  >('login');
+  >('register');
   const [whatsappVerifyCode, setWhatsappVerifyCode] = useState('');
   const [whatsappVerifyOpenUrl, setWhatsappVerifyOpenUrl] = useState('');
   const [whatsappRegistrationNumber, setWhatsappRegistrationNumber] =
@@ -91,7 +91,8 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const openLogin = () => {
-      setAuthMode('login');
+      // Por padrão, abrimos no fluxo de criação de conta.
+      setAuthMode('register');
       setIsAuthModalOpen(true);
     };
     window.addEventListener(OPEN_AUTH_LOGIN_EVENT, openLogin);
@@ -186,7 +187,7 @@ export default function DashboardLayout({
       const custom = event as CustomEvent<{
         mode?: 'login' | 'register';
       }>;
-      const mode = custom.detail?.mode ?? 'login';
+      const mode = custom.detail?.mode ?? 'register';
       setAuthMode(mode);
       setIsAuthModalOpen(true);
     };
@@ -718,6 +719,14 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50 md:pl-56">
+      {/* Preload de imagens usadas em modais (evita carregar só quando abre) */}
+      <div className="pointer-events-none fixed -left-[9999px] -top-[9999px] h-0 w-0 overflow-hidden opacity-0">
+        <Image src="/afiliados.png" alt="" width={1200} height={630} priority />
+        <Image src="/videocall.png" alt="" width={256} height={256} priority />
+        {/* Membership modal usa <img> com este SVG; pré-carrega via img escondida */}
+        <img src="/comunidade_bg.svg" alt="" loading="eager" />
+      </div>
+
       {/* Mobile: atalho flutuante para início */}
       <button
         type="button"
@@ -793,7 +802,19 @@ export default function DashboardLayout({
 
       {/* Modal de autenticação (login / criar conta) */}
       {isAuthModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
+          onMouseDown={(e) => {
+            // Fecha ao clicar fora do modal (no backdrop).
+            if (e.target !== e.currentTarget) return;
+            setWhatsappVerifyCode('');
+            setWhatsappVerifyOpenUrl('');
+            setWhatsappRegistrationNumber('');
+            setWhatsappBrowserSessionToken('');
+            setWhatsappPollError('');
+            setIsAuthModalOpen(false);
+          }}
+        >
           <div className="my-8 w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
               <div>

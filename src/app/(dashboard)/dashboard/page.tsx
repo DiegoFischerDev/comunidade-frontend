@@ -607,6 +607,93 @@ export default function DashboardPage() {
             </div>
           </div>
         </section>
+
+        <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50">
+                <Image src="/youtube.png" alt="" fill className="object-contain" sizes="56px" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-zinc-900">Nosso canal no Youtube</h2>
+                <p className="mt-1 text-sm text-zinc-600">
+                  Assiste os nossos episódios e conteúdos sobre a vida em Portugal.
+                </p>
+              </div>
+            </div>
+            <div className="shrink-0">
+              <CardLinkButton
+                href="https://www.youtube.com/@rafaapelomundo"
+                target="_blank"
+                rel="noreferrer"
+                variant="primary"
+              >
+                Ver canal
+              </CardLinkButton>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            {[
+              {
+                id: "yt-1",
+                title:
+                  "🏡 Ep 8 | VALEU A PENA? Valor e financiamento da nossa casa numa vila no interior de Portugal 🇵🇹",
+                thumb: "/youtube_1.png",
+                href: "https://www.youtube.com/watch?v=nSuXTX0z9Vk&list=PLE6qyBhvOLI0C0Ardu5fY3z8JK3kv-OKI&index=8",
+              },
+              {
+                id: "yt-2",
+                title:
+                  "🏡 Ep 13 | Tiramos as maiores dúvidas sobre crédito habitação em Portugal 🇵🇹",
+                thumb: "/youtube_2.png",
+                href: "https://www.youtube.com/watch?v=v04RVqeT9aQ&list=PLE6qyBhvOLI0C0Ardu5fY3z8JK3kv-OKI&index=12",
+              },
+              {
+                id: "yt-3",
+                title:
+                  "🏡 Ep 6 | Primeiros dias na nossa casa na aldeia em Portugal 🇵🇹",
+                thumb: "/youtube_3.png",
+                href: "https://www.youtube.com/watch?v=Z4Dv3M2ZLOQ&list=PLE6qyBhvOLI0C0Ardu5fY3z8JK3kv-OKI",
+              },
+            ].map((v) => {
+              return (
+                <a
+                  key={v.id}
+                  href={v.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group rounded-xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <div className="relative aspect-video w-full overflow-hidden rounded-t-xl bg-zinc-100">
+                    <Image
+                      src={v.thumb}
+                      alt=""
+                      fill
+                      className="object-cover"
+                      sizes="(min-width: 768px) 33vw, 100vw"
+                    />
+                    <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/5" />
+                  </div>
+                  <div className="p-4">
+                    <p className="line-clamp-2 text-sm font-semibold text-zinc-900">
+                      {v.title}
+                    </p>
+                    <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-1 font-medium text-zinc-700">
+                        <span className="relative h-4 w-4" aria-hidden>
+                          <Image src="/youtube.png" alt="" fill className="object-contain" />
+                        </span>
+                        YouTube
+                      </span>
+                      <span className="truncate">Rafa Pelo Mundo</span>
+                    </div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </section>
       </div>
       </div>
 
