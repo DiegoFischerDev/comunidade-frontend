@@ -21,6 +21,15 @@ const CITY_LABELS: Record<string, string> = {
   VISEU: "Viseu",
 };
 
+const TYPOLOGY_LABELS: Record<string, string> = {
+  T1: "T1",
+  T2: "T2",
+  T3: "T3",
+  T4: "T4",
+  T5: "T5",
+  QUARTO_AP_COMPARTILHADO: "Quarto em Ap compartilhado",
+};
+
 function formatDatePt(value: string) {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
@@ -60,6 +69,9 @@ export default function PartnerHousesPage() {
       const text = [
         r.title,
         r.city,
+        CITY_LABELS[r.city] ?? "",
+        r.typology,
+        TYPOLOGY_LABELS[r.typology] ?? "",
         r.priceEur,
         r.requirements,
         r.status,
@@ -136,7 +148,7 @@ export default function PartnerHousesPage() {
             <input
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              placeholder="Pesquisar por título, cidade, preço…"
+              placeholder="Pesquisar por título, cidade, tipologia, preço…"
               className="mt-1 w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
@@ -147,6 +159,7 @@ export default function PartnerHousesPage() {
                 <tr>
                   <th className="px-4 py-3 text-left font-medium">Título</th>
                   <th className="px-4 py-3 text-left font-medium">Cidade</th>
+                  <th className="px-4 py-3 text-left font-medium">Tipologia</th>
                   <th className="px-4 py-3 text-left font-medium">Disponível em</th>
                   <th className="px-4 py-3 text-left font-medium">Preço</th>
                   <th className="px-4 py-3 text-left font-medium">Exigências</th>
@@ -166,6 +179,9 @@ export default function PartnerHousesPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-zinc-700">{CITY_LABELS[r.city] ?? r.city}</td>
+                    <td className="px-4 py-3 text-zinc-700">
+                      {TYPOLOGY_LABELS[r.typology] ?? r.typology}
+                    </td>
                     <td className="px-4 py-3 text-zinc-700">{formatDatePt(r.availableFrom)}</td>
                     <td className="px-4 py-3 text-zinc-700">{r.priceEur}</td>
                     <td className="px-4 py-3 text-zinc-700">{r.requirements}</td>

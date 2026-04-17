@@ -1,24 +1,41 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
+import { Suspense, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
-export default function LoginPage() {
+function isSafeInternalNextPath(value: string): boolean {
+  return value.startsWith("/") && !value.startsWith("//");
+}
+
+function LoginForm() {
   const { login } = useAuth();
-  const [whatsapp, setWhatsapp] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
+
+  const [whatsapp, setWhatsapp] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const registroHref =
+    next && isSafeInternalNextPath(next)
+      ? `/registro?next=${encodeURIComponent(next)}`
+      : "/registro";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
     try {
       await login(whatsapp, password);
+      if (next && isSafeInternalNextPath(next)) {
+        router.replace(next);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao entrar.');
+      setError(err instanceof Error ? err.message : "Erro ao entrar.");
     } finally {
       setLoading(false);
     }
@@ -27,14 +44,10 @@ export default function LoginPage() {
   return (
     <div className="rounded-xl bg-white p-8 shadow-sm ring-1 ring-zinc-200">
       <h1 className="text-2xl font-semibold text-zinc-900">Entrar</h1>
-      <p className="mt-1 text-sm text-zinc-500">
-        Comunidade RPM
-      </p>
+      <p className="mt-1 text-sm text-zinc-500">Comunidade RPM</p>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         {error && (
-          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </div>
+          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
         )}
         <div>
           <label htmlFor="whatsapp" className="block text-sm font-medium text-zinc-700">
@@ -68,15 +81,29 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full rounded-lg bg-blue-600 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
-          {loading ? 'Entrando…' : 'Entrar'}
+          {loading ? "Entrando…" : "Entrar"}
         </button>
       </form>
       <p className="mt-4 text-center text-sm text-zinc-600">
-        Não tem conta?{' '}
-        <Link href="/registro" className="font-medium text-blue-600 hover:underline">
+        Não tem conta?{" "}
+        <Link href={registroHref} className="font-medium text-blue-600 hover:underline">
           Criar conta
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-xl bg-white p-8 text-center text-sm text-zinc-500 ring-1 ring-zinc-200">
+          A carregar…
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

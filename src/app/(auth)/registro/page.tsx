@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import {
@@ -19,8 +19,14 @@ function formatWhatsappRegistrationDisplay(digits: string) {
   return d ? `+${d}` : '';
 }
 
-export default function RegistroPage() {
+function isSafeInternalNextPath(value: string): boolean {
+  return value.startsWith('/') && !value.startsWith('//');
+}
+
+function RegistroPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next');
   const { register, loginWithToken } = useAuth();
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -69,7 +75,11 @@ export default function RegistroPage() {
             // noop
           }
           await loginWithToken(r.token);
-          router.push('/dashboard');
+          if (next && isSafeInternalNextPath(next)) {
+            router.replace(next);
+          } else {
+            router.push('/dashboard');
+          }
           return;
         }
         if (r.status === 'expired') {
@@ -279,10 +289,31 @@ export default function RegistroPage() {
 
       <p className="mt-4 text-center text-sm text-zinc-600">
         Já tem conta?{' '}
-        <Link href="/login" className="font-medium text-blue-600 hover:underline">
+        <Link
+          href={
+            next && isSafeInternalNextPath(next)
+              ? `/login?next=${encodeURIComponent(next)}`
+              : '/login'
+          }
+          className="font-medium text-blue-600 hover:underline"
+        >
           Entrar
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function RegistroPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-xl bg-white p-8 text-center text-sm text-zinc-500 ring-1 ring-zinc-200">
+          A carregar…
+        </div>
+      }
+    >
+      <RegistroPageInner />
+    </Suspense>
   );
 }

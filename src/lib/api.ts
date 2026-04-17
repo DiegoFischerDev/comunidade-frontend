@@ -805,6 +805,7 @@ export const api = {
             id: string;
             title: string;
             description: string;
+            typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
             city: string;
             availableFrom: string;
             priceEur: string;
@@ -820,6 +821,7 @@ export const api = {
         images: File[];
         title: string;
         description: string;
+        typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
         city: string;
         availableFrom: string;
         priceEur: string;
@@ -829,6 +831,7 @@ export const api = {
         for (const file of input.images) fd.append('images', file);
         fd.append('title', input.title);
         fd.append('description', input.description);
+        fd.append('typology', input.typology);
         fd.append('city', input.city);
         fd.append('availableFrom', input.availableFrom);
         fd.append('priceEur', input.priceEur);
@@ -837,6 +840,7 @@ export const api = {
           id: string;
           title: string;
           description: string;
+          typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
           city: string;
           availableFrom: string;
           priceEur: string;
@@ -948,6 +952,16 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({}),
       }),
+    houseContact: (houseId: string) =>
+      request<{
+        id: string;
+        status: 'AVAILABLE' | 'UNAVAILABLE';
+        partnerId: string;
+        title: string;
+        city: string;
+        typology: string;
+        priceEur: string;
+      }>(`/partners/houses/${encodeURIComponent(houseId)}/contact`, { method: 'GET' }),
   },
   checklist: {
     me: () =>

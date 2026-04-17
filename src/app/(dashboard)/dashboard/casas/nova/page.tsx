@@ -21,12 +21,22 @@ const CITIES = [
   { id: "VISEU", label: "Viseu" },
 ];
 
+const TYPOLOGIES = [
+  { id: "T1", label: "T1" },
+  { id: "T2", label: "T2" },
+  { id: "T3", label: "T3" },
+  { id: "T4", label: "T4" },
+  { id: "T5", label: "T5" },
+  { id: "QUARTO_AP_COMPARTILHADO", label: "Quarto em Ap compartilhado" },
+] as const;
+
 export default function NewHousePostPage() {
   const { user } = useAuth();
   const router = useRouter();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [typology, setTypology] = useState<(typeof TYPOLOGIES)[number]["id"]>("T2");
   const [city, setCity] = useState(CITIES[0].id);
   const [availableFrom, setAvailableFrom] = useState("");
   const [priceEur, setPriceEur] = useState("");
@@ -75,6 +85,7 @@ export default function NewHousePostPage() {
         images,
         title: cleanTitle,
         description: cleanDesc,
+        typology,
         city,
         availableFrom,
         priceEur: cleanPrice,
@@ -160,14 +171,29 @@ export default function NewHousePostPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-zinc-700">Disponível em</label>
-            <input
-              type="date"
-              value={availableFrom}
-              onChange={(e) => setAvailableFrom(e.target.value)}
+            <label className="block text-xs font-medium text-zinc-700">Tipologia</label>
+            <select
+              value={typology}
+              onChange={(e) => setTypology(e.target.value as (typeof TYPOLOGIES)[number]["id"])}
               className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
-            />
+            >
+              {TYPOLOGIES.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
           </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-zinc-700">Disponível em</label>
+          <input
+            type="date"
+            value={availableFrom}
+            onChange={(e) => setAvailableFrom(e.target.value)}
+            className="mt-1 w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+          />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
