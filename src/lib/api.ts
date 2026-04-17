@@ -391,6 +391,8 @@ export const api = {
               userName: string;
               whatsappDigits: string;
               bookingTimezone: string;
+              bookingOrigin: 'USER_PAID' | 'AFFILIATE_FREE';
+              affiliateInstagram: string | null;
             }[];
           }[];
         }>(`/admin/rafacall/schedule${q}`, { method: 'GET' });
@@ -428,6 +430,14 @@ export const api = {
           `/admin/rafacall/bookings/${bookingId}/complete`,
           { method: 'POST', body: JSON.stringify({}) },
         ),
+    },
+    checklist: {
+      getByUserId: (userId: string) =>
+        request<{
+          updatedAt: string | null;
+          version: number;
+          meta: Record<string, unknown>;
+        }>(`/checklist/admin/${encodeURIComponent(userId)}`, { method: 'GET' }),
     },
     partners: {
       list: () =>

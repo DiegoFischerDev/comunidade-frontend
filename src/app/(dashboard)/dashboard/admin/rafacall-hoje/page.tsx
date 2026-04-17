@@ -62,6 +62,104 @@ function waUrl(digits: string, leadName: string, startsAtIso: string, tz: string
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }
 
+function bookingOriginLabel(origin: 'USER_PAID' | 'AFFILIATE_FREE'): {
+  label: string;
+  className: string;
+} {
+  if (origin === 'AFFILIATE_FREE') {
+    return {
+      label: 'Afiliado (gratuito)',
+      className: 'bg-indigo-50 text-indigo-800',
+    };
+  }
+  return {
+    label: 'Usuário (pago)',
+    className: 'bg-blue-50 text-blue-800',
+  };
+}
+
+const VISA_LABELS: Record<string, string> = {
+  ESTUDO: 'Estudo',
+  TRABALHO: 'Trabalho',
+  D8_NOMADE: 'D8 / Nómade digital',
+  D7_PASSIVO: 'D7 / Rendimentos',
+  D2_EMPREENDEDOR: 'D2 / Empreendedor',
+  REAGRUPAMENTO: 'Reagrupamento',
+};
+
+const CITY_LABELS: Record<string, string> = {
+  INTERIOR: 'Interior',
+  LISBOA: 'Lisboa',
+  PORTO: 'Porto',
+  BRAGA: 'Braga',
+  COIMBRA: 'Coimbra',
+  AVEIRO: 'Aveiro',
+  FARO: 'Faro',
+  ALGARVE: 'Algarve',
+  EVORA: 'Évora',
+  VISEU: 'Viseu',
+};
+
+const FAMILY_LABELS: Record<string, string> = {
+  '1': '1 pessoa',
+  '2': '2 pessoas',
+  '3': '3 pessoas',
+  '4': '4 pessoas',
+  '5+': '5+ pessoas',
+};
+
+const ROOMS_LABELS: Record<string, string> = {
+  '0': 'Quarto',
+  '1': '1 quarto',
+  '2': '2 quartos',
+  '3': '3 quartos',
+  '4+': '4+ quartos',
+};
+
+function formatPtDate(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const date = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString('pt-PT');
+}
+
+function planLinesFromMeta(meta: Record<string, unknown> | undefined): string[] {
+  if (!meta) return [];
+  const lines: string[] = [];
+
+  const visaType = typeof meta.visaType === 'string' ? meta.visaType : null;
+  const cidade = typeof meta.cidade === 'string' ? meta.cidade : null;
+  const cidadePlanoB = typeof meta.cidadePlanoB === 'string' ? meta.cidadePlanoB : null;
+  const agregado = typeof meta.agregadoFamiliar === 'string' ? meta.agregadoFamiliar : null;
+  const numQuartos = typeof meta.numQuartos === 'string' ? meta.numQuartos : null;
+  const profs = Array.isArray(meta.profissoesPossiveis)
+    ? meta.profissoesPossiveis.filter(
+        (x): x is string => typeof x === 'string' && x.trim().length > 0,
+      )
+    : [];
+  const precisaCarro =
+    typeof meta.precisaCarro === 'boolean' || meta.precisaCarro === null ? meta.precisaCarro : undefined;
+  const dataViagem = formatPtDate(meta.dataViagem);
+  const dataAima = formatPtDate(meta.dataAima);
+  const notas = typeof meta.notas === 'string' && meta.notas.trim() ? meta.notas.trim() : null;
+
+  if (visaType) lines.push(`Visto: ${VISA_LABELS[visaType] ?? visaType}`);
+  if (cidade) lines.push(`Cidade: ${CITY_LABELS[cidade] ?? cidade}`);
+  if (cidadePlanoB) lines.push(`Plano B: ${CITY_LABELS[cidadePlanoB] ?? cidadePlanoB}`);
+  if (agregado) lines.push(`Agregado: ${FAMILY_LABELS[agregado] ?? agregado}`);
+  if (numQuartos) lines.push(`Quartos: ${ROOMS_LABELS[numQuartos] ?? numQuartos}`);
+  if (profs.length) lines.push(`Profissões: ${profs.join(', ')}`);
+  if (precisaCarro !== undefined) {
+    if (precisaCarro === null) lines.push('Carro: Talvez');
+    else lines.push(`Carro: ${precisaCarro ? 'Sim' : 'Não'}`);
+  }
+  if (dataViagem) lines.push(`Viagem: ${dataViagem}`);
+  if (dataAima) lines.push(`AIMA: ${dataAima}`);
+  if (notas) lines.push(`Notas: ${notas}`);
+
+  return lines;
+}
+
 export default function AdminRafaCallHojePage() {
   const { user } = useAuth();
   const [data, setData] = useState<SchedulePayload | null>(null);
@@ -69,6 +167,11 @@ export default function AdminRafaCallHojePage() {
   const [error, setError] = useState('');
   const [cancelingBookingId, setCancelingBookingId] = useState<string | null>(null);
   const [completingBookingId, setCompletingBookingId] = useState<string | null>(null);
+  const [openPlanByUserId, setOpenPlanByUserId] = useState<Record<string, boolean>>({});
+  const [planByUserId, setPlanByUserId] = useState<Record<
+    string,
+    { loading: boolean; error?: string; updatedAt?: string | null; meta?: Record<string, unknown> }
+  >>({});
 
   const tz = useMemo(() => 'Europe/Lisbon', []);
 
@@ -130,6 +233,29 @@ export default function AdminRafaCallHojePage() {
       setSchedLoading(false);
     }
   }, [tz]);
+
+  const togglePlan = useCallback(
+    async (userId: string) => {
+      setOpenPlanByUserId((prev) => ({ ...prev, [userId]: !prev[userId] }));
+      const nextOpen = !openPlanByUserId[userId];
+      if (!nextOpen) return;
+      if (planByUserId[userId]?.meta || planByUserId[userId]?.loading) return;
+      setPlanByUserId((prev) => ({ ...prev, [userId]: { loading: true } }));
+      try {
+        const res = await api.admin.checklist.getByUserId(userId);
+        setPlanByUserId((prev) => ({
+          ...prev,
+          [userId]: { loading: false, meta: res.meta, updatedAt: res.updatedAt },
+        }));
+      } catch (e) {
+        setPlanByUserId((prev) => ({
+          ...prev,
+          [userId]: { loading: false, error: e instanceof Error ? e.message : 'Erro ao carregar.' },
+        }));
+      }
+    },
+    [openPlanByUserId, planByUserId],
+  );
 
   useEffect(() => {
     if (!user || user.role !== 'ADMIN') return;
@@ -360,7 +486,7 @@ export default function AdminRafaCallHojePage() {
             return (
               <div
                 key={day.date}
-                className="w-full max-w-[700px] rounded-xl border border-zinc-200 bg-white shadow-sm"
+                className="w-full max-w-[1100px] rounded-xl border border-zinc-200 bg-white shadow-sm"
               >
                 <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 px-4 py-3">
                   <p className="text-sm font-semibold text-zinc-900">
@@ -389,6 +515,7 @@ export default function AdminRafaCallHojePage() {
                       <tr>
                         <th className="px-4 py-3">Horário (Lisboa)</th>
                         <th className="px-4 py-3 w-28">Estado</th>
+                        <th className="px-4 py-3 w-44">Origem</th>
                         <th className="px-4 py-3">Lead</th>
                         <th className="px-4 py-3 w-40">WhatsApp</th>
                       </tr>
@@ -411,6 +538,7 @@ export default function AdminRafaCallHojePage() {
                               : row.item.status === 'CANCELLED'
                                 ? 'bg-amber-50 text-amber-800'
                                 : 'bg-emerald-50 text-emerald-800';
+                          const origin = bookingOriginLabel(row.item.bookingOrigin);
                           return (
                             <tr key={`b:${row.item.id}`} className="text-zinc-800">
                               <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-900">
@@ -424,7 +552,72 @@ export default function AdminRafaCallHojePage() {
                                   {statusLabel}
                                 </span>
                               </td>
-                              <td className="px-4 py-3">{row.item.userName}</td>
+                              <td className="px-4 py-3">
+                                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${origin.className}`}>
+                                  {origin.label}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="space-y-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => void togglePlan(row.item.userId)}
+                                    className="group inline-flex items-center gap-2 text-left text-zinc-800"
+                                    aria-expanded={Boolean(openPlanByUserId[row.item.userId])}
+                                  >
+                                    <span>
+                                      {row.item.userName}
+                                      {row.item.bookingOrigin === 'AFFILIATE_FREE' && row.item.affiliateInstagram ? (
+                                        <span className="ml-2 align-middle text-xs font-medium text-indigo-700">
+                                          {row.item.affiliateInstagram}
+                                        </span>
+                                      ) : null}
+                                    </span>
+                                    <span
+                                      className={`inline-flex h-6 w-6 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 transition-transform group-hover:bg-zinc-50 ${
+                                        openPlanByUserId[row.item.userId] ? 'rotate-180' : ''
+                                      }`}
+                                      aria-hidden="true"
+                                      title={openPlanByUserId[row.item.userId] ? 'Fechar plano' : 'Abrir plano'}
+                                    >
+                                      ▾
+                                    </span>
+                                  </button>
+
+                                  {openPlanByUserId[row.item.userId] ? (
+                                    <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-700">
+                                      {planByUserId[row.item.userId]?.loading ? (
+                                        <p className="text-zinc-600">A carregar…</p>
+                                      ) : planByUserId[row.item.userId]?.error ? (
+                                        <p className="text-red-700">
+                                          {planByUserId[row.item.userId]?.error}
+                                        </p>
+                                      ) : planByUserId[row.item.userId]?.meta ? (
+                                        <>
+                                          <p className="mb-2 text-[11px] font-medium text-zinc-500">
+                                            {planByUserId[row.item.userId]?.updatedAt
+                                              ? `Atualizado em ${new Date(
+                                                  planByUserId[row.item.userId]?.updatedAt as string,
+                                                ).toLocaleString('pt-PT')}`
+                                              : 'Sem data de atualização'}
+                                          </p>
+                                          {planLinesFromMeta(planByUserId[row.item.userId]?.meta).length ? (
+                                            <div className="space-y-1">
+                                              {planLinesFromMeta(planByUserId[row.item.userId]?.meta).map((line) => (
+                                                <p key={`${row.item.userId}:${line}`}>{line}</p>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <p className="text-zinc-500">Sem respostas no plano.</p>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <p className="text-zinc-500">Sem respostas no plano.</p>
+                                      )}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </td>
                               <td className="px-4 py-3">
                                 <div className="flex items-center justify-end gap-2">
                                   <a
@@ -506,6 +699,7 @@ export default function AdminRafaCallHojePage() {
                                 Ocupado
                               </span>
                             </td>
+                            <td className="px-4 py-3 text-zinc-400">—</td>
                             <td className="px-4 py-3">
                               <span className="text-zinc-800">{row.item.reason || 'Bloqueado pelo admin'}</span>
                             </td>
