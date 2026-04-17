@@ -54,6 +54,38 @@ async function request<T>(
   return data as T;
 }
 
+async function requestFormData<T>(
+  path: string,
+  formData: FormData,
+  options: Omit<RequestOptions, 'body' | 'headers'> & { headers?: HeadersInit } = {},
+): Promise<T> {
+  const { token = getToken(), ...init } = options;
+  const headers: HeadersInit = {
+    ...(init.headers as Record<string, string>),
+  };
+  // NÃO definir Content-Type: o browser define boundary para multipart/form-data
+  if (token) {
+    (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+  }
+  const res = await fetch(`${API_URL}${path}`, {
+    ...init,
+    method: (init.method ?? 'POST') as any,
+    headers,
+    body: formData,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    let msg =
+      Array.isArray((data as any).message) ? (data as any).message[0] : (data as any).message || (data as any).error || `Erro ${res.status}`;
+    msg = typeof msg === 'string' ? msg : String(msg);
+    if (shouldHideApiMessage(msg)) {
+      throw new Error('');
+    }
+    throw new Error(msg);
+  }
+  return data as T;
+}
+
 export const api = {
   auth: {
     register: (params: {
@@ -765,6 +797,65 @@ export const api = {
             } | null;
           }[]
         >('/partners/me/leads', { method: 'GET' }),
+    },
+    houses: {
+      list: () =>
+        request<
+          {
+            id: string;
+            title: string;
+            description: string;
+            city: string;
+            availableFrom: string;
+            priceEur: string;
+            requirements: string;
+            status: 'AVAILABLE' | 'UNAVAILABLE';
+            whatsappSentAt: string | null;
+            whatsappError: string | null;
+            createdAt: string;
+            updatedAt: string;
+          }[]
+        >('/partners/me/houses', { method: 'GET' }),
+      create: (input: {
+        images: File[];
+        title: string;
+        description: string;
+        city: string;
+        availableFrom: string;
+        priceEur: string;
+        requirements: string;
+      }) => {
+        const fd = new FormData();
+        for (const file of input.images) fd.append('images', file);
+        fd.append('title', input.title);
+        fd.append('description', input.description);
+        fd.append('city', input.city);
+        fd.append('availableFrom', input.availableFrom);
+        fd.append('priceEur', input.priceEur);
+        fd.append('requirements', input.requirements);
+        return requestFormData<{
+          id: string;
+          title: string;
+          description: string;
+          city: string;
+          availableFrom: string;
+          priceEur: string;
+          requirements: string;
+          status: 'AVAILABLE' | 'UNAVAILABLE';
+          whatsappSentAt: string | null;
+          whatsappError: string | null;
+          createdAt: string;
+          updatedAt: string;
+        }>('/partners/me/houses', fd, { method: 'POST' });
+      },
+      updateStatus: (id: string, status: 'AVAILABLE' | 'UNAVAILABLE') =>
+        request<{
+          id: string;
+          status: 'AVAILABLE' | 'UNAVAILABLE';
+        }>(`/partners/me/houses/${id}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status }),
+        }),
     },
     sales: {
       list: () =>

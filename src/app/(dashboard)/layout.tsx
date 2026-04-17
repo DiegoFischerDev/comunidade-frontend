@@ -457,6 +457,16 @@ export default function DashboardLayout({
               >
                 Meus leads
               </Link>
+              <Link
+                href="/dashboard/casas"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/casas' || pathname.startsWith('/dashboard/casas/')
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Minhas casas
+              </Link>
               {partnerId ? (
                 <Link
                   href={`/dashboard/partner/${partnerId}`}
