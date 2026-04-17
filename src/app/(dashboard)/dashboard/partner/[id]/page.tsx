@@ -123,10 +123,10 @@ export default function PartnerPage() {
   return (
     <div className="space-y-8">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#910001] to-[#5f0001] text-white">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
         {partner.backgroundImageUrl && (
           <div
-            className="absolute inset-0 bg-cover bg-center opacity-35"
+            className="absolute inset-0 bg-cover bg-center opacity-40"
             style={{ backgroundImage: `url(${partner.backgroundImageUrl})` }}
           />
         )}
@@ -138,7 +138,7 @@ export default function PartnerPage() {
                 ? router.push(`/dashboard/category/${partner.category.slug}`)
                 : router.back()
             }
-              className="absolute left-4 top-4 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/95 text-[#910001] shadow-lg ring-1 ring-[#d58901]/50 hover:bg-white sm:left-6 sm:top-6"
+              className="absolute left-4 top-4 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/95 text-emerald-700 shadow-lg ring-1 ring-[#d58901]/50 hover:bg-white sm:left-6 sm:top-6"
             aria-label={
               partner.category
                 ? `Voltar para ${partner.category.name}`
@@ -173,14 +173,14 @@ export default function PartnerPage() {
               </div>
             )}
             <div>
-              <p className="text-xs uppercase tracking-wide text-white/80">
+              <p className="text-xs uppercase tracking-wide text-emerald-100">
                 {partner.category?.name ?? 'Parceiro'}
               </p>
               <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
                 {partner.name}
               </h1>
               {partner.shortDescription && (
-                <p className="mt-3 max-w-2xl text-sm text-white/90 sm:text-base">
+                <p className="mt-3 max-w-2xl text-sm text-emerald-50 sm:text-base">
                   {partner.shortDescription}
                 </p>
               )}
