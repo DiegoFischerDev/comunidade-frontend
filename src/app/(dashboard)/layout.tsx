@@ -11,6 +11,7 @@ import {
   WHATSAPP_REGISTRATION_POLL_TIMEOUT_MESSAGE,
 } from '@/lib/whatsapp-registration-poll';
 import { useAuth } from '@/contexts/AuthContext';
+import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { CardButton } from '@/components/ui/CardButton';
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
 
@@ -950,23 +951,12 @@ export default function DashboardLayout({
                     {loginError}
                   </div>
                 )}
-                <div>
-                  <label
-                    htmlFor="auth-whatsapp"
-                    className="block text-xs font-medium text-zinc-700"
-                  >
-                    WhatsApp
-                  </label>
-                  <input
-                    id="auth-whatsapp"
-                    type="tel"
-                    value={loginWhatsapp}
-                    onChange={(e) => setLoginWhatsapp(e.target.value)}
-                    required
-                    placeholder="Ex.: 351954785654 ou 55999867458"
-                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
+                <LoginWhatsappFields
+                  idPrefix="auth-modal"
+                  value={loginWhatsapp}
+                  onChange={setLoginWhatsapp}
+                  disabled={loginLoading}
+                />
                 <div>
                   <label
                     htmlFor="auth-password"
@@ -976,10 +966,12 @@ export default function DashboardLayout({
                   </label>
                   <input
                     id="auth-password"
+                    name="password"
                     type="password"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     required
+                    autoComplete="current-password"
                     className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -1229,23 +1221,13 @@ export default function DashboardLayout({
                     {forgotInfo}
                   </div>
                 )}
-                <div>
-                  <label
-                    htmlFor="auth-forgot-whatsapp"
-                    className="block text-xs font-medium text-zinc-700"
-                  >
-                    WhatsApp da conta
-                  </label>
-                  <input
-                    id="auth-forgot-whatsapp"
-                    type="tel"
-                    value={forgotWhatsapp}
-                    onChange={(e) => setForgotWhatsapp(e.target.value)}
-                    required
-                    placeholder="Ex.: 351954785654 ou 55999867458"
-                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
+                <LoginWhatsappFields
+                  idPrefix="auth-forgot"
+                  value={forgotWhatsapp}
+                  onChange={setForgotWhatsapp}
+                  disabled={forgotLoading}
+                  label="WhatsApp da conta"
+                />
                 <button
                   type="submit"
                   disabled={forgotLoading}

@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { LoginWhatsappFields } from "@/components/auth/LoginWhatsappFields";
 import { useAuth } from "@/contexts/AuthContext";
 
 function isSafeInternalNextPath(value: string): boolean {
@@ -49,30 +50,24 @@ function LoginForm() {
         {error && (
           <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
         )}
-        <div>
-          <label htmlFor="whatsapp" className="block text-sm font-medium text-zinc-700">
-            WhatsApp
-          </label>
-          <input
-            id="whatsapp"
-            type="tel"
-            value={whatsapp}
-            onChange={(e) => setWhatsapp(e.target.value)}
-            required
-            placeholder="Ex.: 351954785654 ou 55999867458"
-            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
+        <LoginWhatsappFields
+          idPrefix="page-login"
+          value={whatsapp}
+          onChange={setWhatsapp}
+          disabled={loading}
+        />
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-zinc-700">
             Senha
           </label>
           <input
             id="password"
+            name="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            autoComplete="current-password"
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
