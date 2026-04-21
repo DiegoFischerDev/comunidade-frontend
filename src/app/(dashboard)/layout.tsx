@@ -15,6 +15,105 @@ import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { CardButton } from '@/components/ui/CardButton';
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
 
+/** Sub-link do menu lateral (indentado, sob “Minha empresa” / “Serviços”). */
+function SidebarNavSubLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <li>
+      <Link
+        href={href}
+        className={`block rounded-md py-1.5 pl-2 pr-2 text-[13px] leading-snug transition ${
+          active
+            ? 'bg-gradient-to-r from-[#d58901]/12 to-amber-50/90 font-medium text-zinc-900 ring-1 ring-amber-200/70'
+            : 'text-zinc-600 hover:bg-zinc-100/90 hover:text-zinc-900'
+        }`}
+      >
+        {children}
+      </Link>
+    </li>
+  );
+}
+
+/**
+ * Secção com título navegável + submenu recolhível (chevron).
+ * `sectionActive`: qualquer rota dentro do grupo — reabre ao navegar para um subitem.
+ */
+function SidebarNavSection({
+  title,
+  href,
+  titleActive,
+  sectionActive,
+  children,
+}: {
+  title: string;
+  href: string;
+  titleActive: boolean;
+  sectionActive: boolean;
+  children: React.ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(true);
+  useEffect(() => {
+    if (sectionActive) setExpanded(true);
+  }, [sectionActive]);
+
+  return (
+    <div className="space-y-1">
+      <div
+        className={`flex items-stretch overflow-hidden rounded-lg ${
+          titleActive
+            ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white shadow-sm'
+            : 'bg-transparent'
+        }`}
+      >
+        <Link
+          href={href}
+          className={`flex min-w-0 flex-1 items-center px-3 py-2 text-sm transition ${
+            titleActive
+              ? 'text-white'
+              : 'text-zinc-800 hover:bg-zinc-100/90 rounded-lg'
+          }`}
+        >
+          <span className="truncate">{title}</span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          className={`flex w-9 shrink-0 items-center justify-center border-l transition ${
+            titleActive
+              ? 'border-white/20 text-white hover:bg-white/15'
+              : 'border-transparent bg-zinc-100/80 text-zinc-500 hover:bg-zinc-200/80 hover:text-zinc-800'
+          }`}
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Recolher submenu' : 'Expandir submenu'}
+        >
+          <svg
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className={`h-4 w-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+            aria-hidden
+          >
+            <path
+              fillRule="evenodd"
+              d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </button>
+      </div>
+      {expanded ? (
+        <ul className="relative ml-1.5 space-y-0.5 border-l-2 border-amber-200/40 pl-3">{children}</ul>
+      ) : null}
+    </div>
+  );
+}
+
 function formatWhatsappRegistrationDisplay(digits: string) {
   const d = digits.replace(/\D/g, '');
   if (d.length >= 12 && d.startsWith('351')) {
@@ -148,6 +247,14 @@ export default function DashboardLayout({
   // Sincroniza categoria ativa no menu com rota atual (categoria ou parceiro)
   useEffect(() => {
     if (pathname === '/dashboard/relocation' || pathname.startsWith('/dashboard/relocation/')) {
+      setActiveCategorySlug('relocation');
+      return;
+    }
+    if (
+      pathname.startsWith('/dashboard/casas/') &&
+      pathname !== '/dashboard/casas/nova' &&
+      !pathname.endsWith('/edit')
+    ) {
       setActiveCategorySlug('relocation');
       return;
     }
@@ -335,6 +442,33 @@ export default function DashboardLayout({
           ? 'Membro'
           : 'Visitante';
 
+  /** Parceiro na própria página pública (menu “Minha página”) — não ativar “Serviços” nem categorias em baixo. */
+  const partnerViewingOwnPublicPage =
+    user?.role === 'PARTNER' &&
+    partnerId &&
+    pathname === `/dashboard/partner/${partnerId}`;
+
+  const servicesNavTitleActive =
+    pathname === '/dashboard/services' ||
+    pathname.startsWith('/dashboard/category/') ||
+    (pathname.startsWith('/dashboard/partner/') && !partnerViewingOwnPublicPage) ||
+    pathname === '/dashboard/relocation' ||
+    pathname.startsWith('/dashboard/relocation/') ||
+    (pathname.startsWith('/dashboard/casas/') &&
+      pathname !== '/dashboard/casas/nova' &&
+      !pathname.endsWith('/edit'));
+
+  const partnerCompanyTitleActive =
+    pathname === '/dashboard/business' ||
+    pathname === '/dashboard/leads' ||
+    pathname.startsWith('/dashboard/casas') ||
+    pathname.startsWith('/dashboard/partner/') ||
+    pathname === '/dashboard/my-sales' ||
+    pathname === '/dashboard/my-services' ||
+    pathname === '/dashboard/commissions';
+
+  const partnerNavSectionActive = user?.role === 'PARTNER' && partnerCompanyTitleActive;
+
   const sidebarContent = (
     <div className="flex h-full flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
@@ -457,75 +591,63 @@ export default function DashboardLayout({
             </Link>
           ) : null}
 
-          {/* Links “extras” (antes ficavam no grupo de baixo) */}
+          {user?.tier === 'MEMBER' && (
+            <Link
+              href="/dashboard/my-referrals"
+              className={`block rounded-md px-3 py-2 text-sm ${
+                pathname === '/dashboard/my-referrals'
+                  ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                  : 'text-zinc-800 hover:bg-zinc-100'
+              }`}
+            >
+              Minhas indicações
+            </Link>
+          )}
+
+          {/* Parceiro: Minha empresa + submenu recolhível */}
           {user?.role === 'PARTNER' && (
-            <>
-              <Link
-                href="/dashboard/leads"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/leads'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
+            <SidebarNavSection
+              title="Minha empresa"
+              href="/dashboard/business"
+              titleActive={partnerCompanyTitleActive}
+              sectionActive={partnerNavSectionActive}
+            >
+              <SidebarNavSubLink href="/dashboard/leads" active={pathname === '/dashboard/leads'}>
                 Meus leads
-              </Link>
+              </SidebarNavSubLink>
               {partnerCategorySlug === 'relocation' ? (
-                <Link
+                <SidebarNavSubLink
                   href="/dashboard/casas"
-                  className={`block rounded-md px-3 py-2 text-sm ${
+                  active={
                     pathname === '/dashboard/casas' || pathname.startsWith('/dashboard/casas/')
-                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                      : 'text-zinc-800 hover:bg-zinc-100'
-                  }`}
+                  }
                 >
                   Minhas casas
-                </Link>
+                </SidebarNavSubLink>
               ) : null}
               {partnerId ? (
-                <Link
+                <SidebarNavSubLink
                   href={`/dashboard/partner/${partnerId}`}
-                  className={`block rounded-md px-3 py-2 text-sm ${
-                    pathname === `/dashboard/partner/${partnerId}`
-                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                      : 'text-zinc-800 hover:bg-zinc-100'
-                  }`}
+                  active={pathname === `/dashboard/partner/${partnerId}`}
                 >
                   Minha página
-                </Link>
+                </SidebarNavSubLink>
               ) : null}
-              <Link
+              <SidebarNavSubLink
                 href="/dashboard/my-sales"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/my-sales'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
+                active={pathname === '/dashboard/my-sales'}
               >
                 Minhas vendas
-              </Link>
-              <Link
-                href="/dashboard/business"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/business'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Minha empresa
-              </Link>
-              <Link
+              </SidebarNavSubLink>
+              <SidebarNavSubLink
                 href="/dashboard/my-services"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/my-services' ||
-                  pathname === '/dashboard/commissions'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
+                active={
+                  pathname === '/dashboard/my-services' || pathname === '/dashboard/commissions'
+                }
               >
                 Meus serviços
-              </Link>
-            </>
+              </SidebarNavSubLink>
+            </SidebarNavSection>
           )}
           {user?.role === 'ADMIN' && (
             <>
@@ -622,64 +744,47 @@ export default function DashboardLayout({
               </Link>
             </>
           )}
-          {user?.tier === 'MEMBER' && (
+
+          {categoriesLoaded && categories.length ? (
+            <SidebarNavSection
+              title="Serviços"
+              href="/dashboard/services"
+              titleActive={servicesNavTitleActive}
+              sectionActive={servicesNavTitleActive}
+            >
+              {categories.map((c) => {
+                const relocation = c.slug === 'relocation';
+                const catHref = relocation ? '/dashboard/relocation' : `/dashboard/category/${c.slug}`;
+                const isActive =
+                  !partnerViewingOwnPublicPage &&
+                  (relocation
+                    ? pathname === '/dashboard/relocation' ||
+                      pathname.startsWith('/dashboard/relocation/') ||
+                      (pathname.startsWith('/dashboard/casas/') &&
+                        pathname !== '/dashboard/casas/nova' &&
+                        !pathname.endsWith('/edit'))
+                    : pathname === `/dashboard/category/${c.slug}` ||
+                      (pathname.startsWith('/dashboard/partner/') &&
+                        activeCategorySlug === c.slug));
+                return (
+                  <SidebarNavSubLink key={c.id} href={catHref} active={isActive}>
+                    {c.name}
+                  </SidebarNavSubLink>
+                );
+              })}
+            </SidebarNavSection>
+          ) : (
             <Link
-              href="/dashboard/my-referrals"
+              href="/dashboard/services"
               className={`block rounded-md px-3 py-2 text-sm ${
-                pathname === '/dashboard/my-referrals'
+                servicesNavTitleActive
                   ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                   : 'text-zinc-800 hover:bg-zinc-100'
               }`}
             >
-              Minhas indicações
+              Serviços
             </Link>
           )}
-
-          <Link
-            href="/dashboard/services"
-            className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/dashboard/services' ||
-              pathname.startsWith('/dashboard/category/') ||
-              pathname.startsWith('/dashboard/partner/') ||
-              pathname === '/dashboard/relocation' ||
-              pathname.startsWith('/dashboard/relocation/')
-                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                : 'text-zinc-800 hover:bg-zinc-100'
-            }`}
-          >
-            Serviços
-          </Link>
-          {categoriesLoaded && categories.length ? (
-            <div className="mt-2 space-y-1 border-l border-zinc-200 pl-3">
-              {categories.map((c) => {
-                const relocation = c.slug === 'relocation';
-                const catHref = relocation ? '/dashboard/relocation' : `/dashboard/category/${c.slug}`;
-                const isActive = relocation
-                  ? pathname === '/dashboard/relocation' || pathname.startsWith('/dashboard/relocation/')
-                  : pathname === `/dashboard/category/${c.slug}` ||
-                    (pathname.startsWith('/dashboard/partner/') && activeCategorySlug === c.slug);
-                return (
-                  <Link
-                    key={c.id}
-                    href={catHref}
-                    className={`relative block rounded-lg px-3 py-2 text-xs font-medium transition ${
-                      isActive
-                        ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white shadow-sm'
-                        : 'text-zinc-700 hover:bg-white hover:shadow-sm'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none absolute -left-[7px] top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full ring-2 ring-white ${
-                        isActive ? 'bg-[#d58901]' : 'bg-zinc-300'
-                      }`}
-                      aria-hidden
-                    />
-                    {c.name}
-                  </Link>
-                );
-              })}
-            </div>
-          ) : null}
         </nav>
       </div>
 

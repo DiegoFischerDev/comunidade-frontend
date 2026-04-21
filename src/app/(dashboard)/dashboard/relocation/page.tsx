@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
+import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
 import { api } from "@/lib/api";
 import { formatHouseEntradaShort, orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
@@ -34,6 +35,16 @@ const TYPOLOGY_LABELS: Record<string, string> = {
 
 function resolveMediaUrl(url: string) {
   return resolveUploadsUrl(url);
+}
+
+/**
+ * URL para fundo da categoria — alinhado a `resolveUploadsUrl` e ao card em `/dashboard/services`.
+ */
+function categoryBackgroundImageUrl(stored: string | null | undefined): string | null {
+  const raw = stored?.trim();
+  if (!raw) return null;
+  const u = resolveUploadsUrl(raw);
+  return u || null;
 }
 
 /** Domínios fora de `remotePatterns` (ex. R2): usar next/image sem otimização. */
@@ -112,8 +123,26 @@ export default function RelocationHousesPage() {
   const [rows, setRows] = useState<HouseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [modalHouse, setModalHouse] = useState<HouseRow | null>(null);
-  const [photoIndex, setPhotoIndex] = useState(0);
+  const [heroCoverUrl, setHeroCoverUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [cat, categories] = await Promise.all([
+          api.marketplace.relocationCategory().catch(() => null),
+          api.marketplace.categoriesWithPartners().catch(() => []),
+        ]);
+        let url = categoryBackgroundImageUrl(cat?.backgroundImageUrl);
+        if (!url) {
+          const fromList = categories.find((c) => c.slug === "relocation");
+          url = categoryBackgroundImageUrl(fromList?.backgroundImageUrl);
+        }
+        setHeroCoverUrl(url);
+      } catch {
+        setHeroCoverUrl(null);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -128,28 +157,36 @@ export default function RelocationHousesPage() {
     })();
   }, []);
 
-  useEffect(() => {
-    setPhotoIndex(0);
-  }, [modalHouse?.id]);
-
-  const closeModal = useCallback(() => setModalHouse(null), []);
-
-  const modalVideoSrc = modalHouse?.videoUrl
-    ? resolveMediaUrl(modalHouse.videoUrl)
-    : null;
-  const photos = modalHouse?.imageUrls?.length
-    ? orderHouseImagesWithCoverFirst(modalHouse.imageUrls, modalHouse.coverImageUrl).map(resolveMediaUrl)
-    : [];
-
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#910001] to-[#5f0001] text-white">
+      <section className="relative isolate min-h-[11rem] overflow-hidden rounded-2xl text-white sm:min-h-[13rem]">
+        {heroCoverUrl ? (
+          <>
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-zinc-200"
+              style={{ backgroundImage: `url(${JSON.stringify(heroCoverUrl)})` }}
+              aria-hidden
+            />
+            <div
+              className="absolute inset-0 bg-gradient-to-r from-[#1a0505]/92 via-[#5f0001]/78 to-[#3d0001]/65"
+              aria-hidden
+            />
+          </>
+        ) : (
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-[#910001] to-[#5f0001]"
+            aria-hidden
+          />
+        )}
         <div className="relative z-10 px-6 py-10 sm:px-10 sm:py-14">
           <p className="text-xs uppercase tracking-wide text-amber-100/90">Serviços</p>
-          <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">Relocation — imóveis</h1>
+          <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
+            Relocation — Aluguel de imóveis em Portugal
+          </h1>
           <p className="mt-3 max-w-2xl text-sm text-amber-50/90 sm:text-base">
-            Anúncios de parceiros da categoria Relocation. Os disponíveis aparecem primeiro; dentro desse grupo,
-            ordenamos por data de disponibilidade mais futura. Os indisponíveis ficam no fim da lista.
+            Chegue a Portugal com tudo pronto: casa garantida, chave na mão e serviços essenciais como água, luz e
+            internet já instalados. Cuidamos de todo o processo para que você comece sua nova vida com tranquilidade,
+            segurança e zero complicação.
           </p>
         </div>
       </section>
@@ -166,65 +203,44 @@ export default function RelocationHousesPage() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((h) => {
             const videoSrc = h.videoUrl ? resolveMediaUrl(h.videoUrl) : null;
-            const cardImages = orderHouseImagesWithCoverFirst(h.imageUrls ?? [], h.coverImageUrl)
-              .slice(0, 4)
-              .map((u) => resolveMediaUrl(u));
+            const orderedUrls = orderHouseImagesWithCoverFirst(h.imageUrls ?? [], h.coverImageUrl);
+            const primaryImageSrc = orderedUrls[0] ? resolveMediaUrl(orderedUrls[0]) : null;
             const cityLabel = CITY_LABELS[h.city] ?? h.city;
             const typoLabel = TYPOLOGY_LABELS[h.typology] ?? h.typology;
-            const isUnavailable = h.status === "UNAVAILABLE";
+            const isListedButNotForContact = h.status !== "AVAILABLE";
             return (
-              <button
+              <article
                 key={h.id}
-                type="button"
-                onClick={() => setModalHouse(h)}
-                className={`group flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-                  isUnavailable
-                    ? "border-zinc-200 bg-zinc-50 opacity-90 hover:border-zinc-300"
-                    : "border-zinc-200 bg-white hover:border-amber-200"
+                className={`group flex w-full flex-col overflow-hidden rounded-xl border text-left shadow-sm ring-1 ring-zinc-900/5 transition-shadow duration-200 hover:shadow-md ${
+                  isListedButNotForContact
+                    ? "border-zinc-200/90 bg-zinc-50/80 opacity-[0.97] hover:border-zinc-300"
+                    : "border-zinc-200/90 bg-white hover:border-zinc-300"
                 }`}
               >
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-100">
-                  {cardImages.length > 0 ? (
-                    cardImages.length === 1 ? (
-                      <Image
-                        src={cardImages[0]}
-                        alt=""
-                        fill
-                        className="object-cover transition group-hover:scale-[1.02]"
-                        sizes="(max-width: 640px) 100vw, 33vw"
-                        unoptimized={nextImageUnoptimized(cardImages[0])}
-                      />
-                    ) : (
-                      <div className="grid h-full w-full grid-cols-2 grid-rows-2 gap-px bg-zinc-300 p-px">
-                        {[0, 1, 2, 3].map((i) => {
-                          const src = cardImages[i];
-                          return (
-                            <div key={i} className="relative min-h-0 bg-zinc-100">
-                              {src ? (
-                                <Image
-                                  src={src}
-                                  alt=""
-                                  fill
-                                  className="object-cover transition group-hover:scale-[1.02]"
-                                  sizes="(max-width: 640px) 50vw, 17vw"
-                                  unoptimized={nextImageUnoptimized(src)}
-                                />
-                              ) : null}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )
+                <Link
+                  href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
+                  className="relative block aspect-[4/3] w-full cursor-pointer overflow-hidden bg-zinc-100 outline-none ring-inset transition hover:opacity-[0.98] focus-visible:ring-2 focus-visible:ring-amber-500/90 focus-visible:ring-offset-0"
+                  aria-label={`Ver imóvel: ${h.title}`}
+                >
+                  {primaryImageSrc ? (
+                    <Image
+                      src={primaryImageSrc}
+                      alt=""
+                      fill
+                      className="object-cover transition group-hover:scale-[1.02]"
+                      sizes="(max-width: 640px) 100vw, 33vw"
+                      unoptimized={nextImageUnoptimized(primaryImageSrc)}
+                    />
                   ) : videoSrc ? (
                     <video
                       src={videoSrc}
-                      className="h-full w-full object-cover transition group-hover:scale-[1.02]"
+                      className="pointer-events-none h-full w-full object-cover transition group-hover:scale-[1.02]"
                       muted
                       playsInline
                       preload="metadata"
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-sm text-zinc-400">
+                    <div className="flex h-full min-h-[8rem] items-center justify-center text-sm text-zinc-400">
                       Sem média
                     </div>
                   )}
@@ -233,179 +249,82 @@ export default function RelocationHousesPage() {
                       Vídeo
                     </span>
                   ) : null}
-                  {isUnavailable ? (
-                    <span className="pointer-events-none absolute left-2 top-2 rounded bg-zinc-800/85 px-2 py-0.5 text-[10px] font-medium text-white">
-                      Indisponível
+                  <div className="pointer-events-none absolute left-2 top-2 z-10">
+                    <HouseStatusBadge status={h.status} variant="overlay" />
+                  </div>
+                </Link>
+                <div className="flex flex-1 flex-col gap-3 px-4 pb-1 pt-4">
+                  <div>
+                    <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug text-zinc-900 sm:text-base">
+                      {h.title}
+                    </h2>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {typoLabel} · {cityLabel}
+                    </p>
+                  </div>
+
+                  <div className="border-t border-zinc-100 pt-3">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-400">
+                      Renda mensal
+                    </p>
+                    <p className="mt-1 text-lg font-semibold tabular-nums tracking-tight text-zinc-900">
+                      {formatRentPerMonth(h.priceEur)}
+                    </p>
+                  </div>
+
+                  <p className="text-xs text-zinc-500">{availabilityLabel(h.availableFrom)}</p>
+
+                  <dl className="space-y-2 text-xs">
+                    <div className="flex items-start justify-between gap-3">
+                      <dt className="shrink-0 text-zinc-500">Taxa relocation</dt>
+                      <dd className="text-right font-medium tabular-nums text-zinc-800">
+                        {formatRelocationFeeEur(h.relocationFeeEur)}
+                      </dd>
+                    </div>
+                    <div className="flex items-start justify-between gap-3">
+                      <dt className="shrink-0 text-zinc-500">Entrada</dt>
+                      <dd className="text-right font-medium text-zinc-800">
+                        {formatHouseEntradaShort(h.caucoesCount, h.rendasEntradaCount)}
+                      </dd>
+                    </div>
+                    <div className="flex items-start justify-between gap-3 border-t border-zinc-100 pt-2">
+                      <dt className="shrink-0 text-zinc-500">Anunciante</dt>
+                      <dd className="line-clamp-2 text-right font-medium text-zinc-800">{h.partner.name}</dd>
+                    </div>
+                  </dl>
+                </div>
+                <div className="mt-auto border-t border-zinc-100 bg-zinc-50/50 px-4 py-3">
+                  {h.status === "AVAILABLE" ? (
+                    <div className="flex flex-wrap gap-2 sm:justify-end">
+                      <Link
+                        href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
+                        className="inline-flex flex-1 min-w-[8rem] justify-center rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 sm:flex-initial"
+                      >
+                        Ver imóvel
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => void openRelocationPartnerWhatsApp(h)}
+                        className="inline-flex cursor-pointer flex-1 min-w-[8rem] justify-center rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 sm:flex-initial"
+                      >
+                        Contactar relocation
+                      </button>
+                    </div>
+                  ) : h.status === "RESERVED" ? (
+                    <span className="inline-flex w-full items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs text-amber-950 sm:text-sm">
+                      Reservado — contacto não disponível
                     </span>
-                  ) : null}
+                  ) : (
+                    <span className="inline-flex w-full items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2 text-center text-xs text-zinc-600 sm:text-sm">
+                      Esse imóvel já não está mais disponível
+                    </span>
+                  )}
                 </div>
-                <div className="flex flex-1 flex-col gap-2 px-4 py-3">
-                  <h2 className="line-clamp-2 text-base font-semibold text-zinc-900">{h.title}</h2>
-                  <p className="text-xs text-zinc-500">
-                    {typoLabel} · {cityLabel}
-                  </p>
-                  <p className="text-sm font-semibold text-[#086601]">{formatRentPerMonth(h.priceEur)}</p>
-                  <p className="text-xs text-zinc-600">{availabilityLabel(h.availableFrom)}</p>
-                  <p className="line-clamp-3 text-xs leading-snug text-zinc-600">
-                    <span className="font-medium text-zinc-700">Taxa relocation:</span>{" "}
-                    {formatRelocationFeeEur(h.relocationFeeEur)}
-                    <br />
-                    <span className="font-medium text-zinc-700">Entrada:</span>{" "}
-                    {formatHouseEntradaShort(h.caucoesCount, h.rendasEntradaCount)}
-                  </p>
-                  <p className="text-xs text-zinc-500">{h.partner.name}</p>
-                </div>
-              </button>
+              </article>
             );
           })}
         </div>
       )}
-
-      {modalHouse ? (
-        <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
-          role="dialog"
-          aria-modal
-          aria-labelledby="relocation-modal-title"
-          onClick={closeModal}
-        >
-          <div
-            className="relative flex max-h-[100dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:max-h-[90vh] sm:rounded-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-lg leading-none text-zinc-700 shadow-md ring-1 ring-black/5 hover:bg-white"
-              onClick={closeModal}
-              aria-label="Fechar"
-            >
-              <span aria-hidden>×</span>
-            </button>
-            <div className="w-full shrink-0 bg-zinc-100">
-              {photos.length > 0 ? (
-                <div className="relative mx-auto h-[min(36vh,260px)] w-full overflow-hidden sm:h-[min(40vh,300px)]">
-                  <Image
-                    src={photos[photoIndex]!}
-                    alt=""
-                    fill
-                    className="object-contain"
-                    sizes="100vw"
-                    unoptimized={nextImageUnoptimized(photos[photoIndex]!)}
-                  />
-                  {photos.length > 1 ? (
-                    <>
-                      <button
-                        type="button"
-                        className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2 py-1 text-sm shadow"
-                        onClick={() =>
-                          setPhotoIndex((i) => (i - 1 + photos.length) % photos.length)
-                        }
-                        aria-label="Foto anterior"
-                      >
-                        ‹
-                      </button>
-                      <button
-                        type="button"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2 py-1 text-sm shadow"
-                        onClick={() => setPhotoIndex((i) => (i + 1) % photos.length)}
-                        aria-label="Foto seguinte"
-                      >
-                        ›
-                      </button>
-                      <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
-                        {photos.map((_, i) => (
-                          <span
-                            key={i}
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              i === photoIndex ? "bg-zinc-800" : "bg-zinc-800/35"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  ) : null}
-                </div>
-              ) : null}
-              {modalVideoSrc ? (
-                <div
-                  className={`relative w-full overflow-hidden bg-black ${
-                    photos.length ? "border-t border-zinc-200" : ""
-                  }`}
-                >
-                  <video
-                    src={modalVideoSrc}
-                    className="mx-auto max-h-[min(36vh,260px)] w-full object-contain sm:max-h-[min(40vh,300px)]"
-                    controls
-                    playsInline
-                    preload="metadata"
-                  />
-                </div>
-              ) : null}
-              {!photos.length && !modalVideoSrc ? (
-                <div className="flex h-[min(28vh,200px)] min-h-[140px] items-center justify-center text-sm text-zinc-400">
-                  Sem fotos nem vídeo
-                </div>
-              ) : null}
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3">
-              <h2 id="relocation-modal-title" className="text-lg font-semibold text-zinc-900">
-                {modalHouse.title}
-              </h2>
-              <p className="mt-1 text-xs text-zinc-500">
-                {TYPOLOGY_LABELS[modalHouse.typology] ?? modalHouse.typology} ·{" "}
-                {CITY_LABELS[modalHouse.city] ?? modalHouse.city}
-              </p>
-              <p className="mt-1 text-xs text-zinc-500">
-                Mobilado: {modalHouse.furnished ? "sim" : "não"}
-              </p>
-              <p className="mt-2 text-sm text-zinc-700">{availabilityLabel(modalHouse.availableFrom)}</p>
-              <p className="mt-2 text-lg font-semibold text-[#086601]">
-                {formatRentPerMonth(modalHouse.priceEur)}
-              </p>
-              <div className="mt-3 rounded-lg bg-zinc-50 px-3 py-2 text-sm text-zinc-800">
-                <p>
-                  <span className="font-medium text-zinc-800">Taxa relocation:</span>{" "}
-                  {formatRelocationFeeEur(modalHouse.relocationFeeEur)}
-                </p>
-                <p className="mt-1">
-                  <span className="font-medium text-zinc-800">Entrada:</span>{" "}
-                  {formatHouseEntradaShort(modalHouse.caucoesCount, modalHouse.rendasEntradaCount)}
-                </p>
-              </div>
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">
-                {modalHouse.description}
-              </p>
-            </div>
-
-            <div className="shrink-0 border-t border-zinc-100 bg-white">
-              <div className="flex flex-wrap justify-end gap-2 px-4 py-3">
-                {modalHouse.status === "AVAILABLE" ? (
-                  <>
-                    <Link
-                      href={`/casas/${encodeURIComponent(modalHouse.id)}`}
-                      className="inline-flex rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50"
-                    >
-                      Ver anúncio
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => void openRelocationPartnerWhatsApp(modalHouse)}
-                      className="inline-flex rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-105"
-                    >
-                      Contactar relocation
-                    </button>
-                  </>
-                ) : (
-                  <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-600">
-                    Anúncio indisponível — contacto não disponível
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

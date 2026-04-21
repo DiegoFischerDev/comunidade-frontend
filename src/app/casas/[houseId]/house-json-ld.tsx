@@ -45,7 +45,9 @@ export function HouseJsonLd({ house, pageUrl }: Props) {
       availability:
         house.status === "AVAILABLE"
           ? "https://schema.org/InStock"
-          : "https://schema.org/OutOfStock",
+          : house.status === "RESERVED"
+            ? "https://schema.org/LimitedAvailability"
+            : "https://schema.org/OutOfStock",
       url: pageUrl,
     },
   };

@@ -14,7 +14,7 @@ type Props = {
   typology: string;
   priceEur: string;
   furnished: boolean;
-  status: "AVAILABLE" | "UNAVAILABLE";
+  status: "AVAILABLE" | "RESERVED" | "UNAVAILABLE";
 };
 
 const CITY_LABELS: Record<string, string> = {
@@ -67,7 +67,7 @@ export function HouseContactSection({
   const [busy, setBusy] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
-  const nextPath = `/casas/${houseId}`;
+  const nextPath = `/dashboard/casas/${houseId}`;
   const loginHref = `/login?next=${encodeURIComponent(nextPath)}`;
   const registroHref = `/registro?next=${encodeURIComponent(nextPath)}`;
 
@@ -119,6 +119,18 @@ export function HouseContactSection({
       <p className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700">
         Este anúncio está indisponível. Explora outros imóveis na{" "}
         <Link href="/dashboard/relocation" className="font-medium text-amber-800 underline">
+          listagem Relocation
+        </Link>
+        .
+      </p>
+    );
+  }
+
+  if (status === "RESERVED") {
+    return (
+      <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+        Este imóvel está <strong className="font-semibold">reservado</strong>. Explora outros anúncios na{" "}
+        <Link href="/dashboard/relocation" className="font-medium text-amber-900 underline">
           listagem Relocation
         </Link>
         .

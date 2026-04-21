@@ -61,7 +61,7 @@ function CasasInteresseContent() {
 
   useEffect(() => {
     if (houseId) {
-      router.replace(`/casas/${houseId}`);
+      router.replace(`/dashboard/casas/${houseId}`);
     }
   }, [houseId, router]);
 

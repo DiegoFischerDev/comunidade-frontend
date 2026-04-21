@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
 import { api } from "@/lib/api";
 import { formatHouseEntradaShort } from "@/lib/house-entrance";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,6 +47,7 @@ export default function PartnerHousesPage() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("");
   const [savingById, setSavingById] = useState<Record<string, boolean>>({});
+  const [deletingById, setDeletingById] = useState<Record<string, boolean>>({});
   const [canManageHouses, setCanManageHouses] = useState<boolean | null>(null);
   const [showUpdatedBanner, setShowUpdatedBanner] = useState(false);
 
@@ -104,6 +106,11 @@ export default function PartnerHousesPage() {
         formatHouseEntradaShort(r.caucoesCount, r.rendasEntradaCount),
         r.furnished ? "mobilado sim" : "mobilado não",
         r.status,
+        r.status === "AVAILABLE"
+          ? "disponível"
+          : r.status === "RESERVED"
+            ? "reservado"
+            : "indisponível",
       ]
         .join(" ")
         .toLowerCase();
@@ -111,7 +118,10 @@ export default function PartnerHousesPage() {
     });
   }, [rows, filter]);
 
-  async function handleUpdateStatus(id: string, status: "AVAILABLE" | "UNAVAILABLE") {
+  async function handleUpdateStatus(
+    id: string,
+    status: "AVAILABLE" | "RESERVED" | "UNAVAILABLE",
+  ) {
     setSavingById((s) => ({ ...s, [id]: true }));
     try {
       const updated = await api.partner.houses.updateStatus(id, status);
@@ -120,6 +130,23 @@ export default function PartnerHousesPage() {
       setError(err instanceof Error ? err.message : "Erro ao atualizar status.");
     } finally {
       setSavingById((s) => ({ ...s, [id]: false }));
+    }
+  }
+
+  async function handleDeleteHouse(id: string) {
+    const ok = window.confirm(
+      "Excluir este imóvel? As fotos e o vídeo serão removidos. Esta ação não pode ser desfeita.",
+    );
+    if (!ok) return;
+    setDeletingById((s) => ({ ...s, [id]: true }));
+    setError("");
+    try {
+      await api.partner.houses.delete(id);
+      setRows((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível excluir o imóvel.");
+    } finally {
+      setDeletingById((s) => ({ ...s, [id]: false }));
     }
   }
 
@@ -257,25 +284,42 @@ export default function PartnerHousesPage() {
                       <div>{formatHouseEntradaShort(r.caucoesCount, r.rendasEntradaCount)}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <select
-                        value={r.status}
-                        disabled={savingById[r.id]}
-                        onChange={(e) =>
-                          handleUpdateStatus(r.id, e.target.value as "AVAILABLE" | "UNAVAILABLE")
-                        }
-                        className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900"
-                      >
-                        <option value="AVAILABLE">Disponível</option>
-                        <option value="UNAVAILABLE">Indisponível</option>
-                      </select>
+                      <div className="flex flex-col gap-2">
+                        <HouseStatusBadge status={r.status} />
+                        <select
+                          value={r.status}
+                          disabled={savingById[r.id]}
+                          onChange={(e) =>
+                            handleUpdateStatus(
+                              r.id,
+                              e.target.value as "AVAILABLE" | "RESERVED" | "UNAVAILABLE",
+                            )
+                          }
+                          className="w-full min-w-[10rem] rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900"
+                        >
+                          <option value="AVAILABLE">Disponível</option>
+                          <option value="RESERVED">Reservado</option>
+                          <option value="UNAVAILABLE">Indisponível</option>
+                        </select>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
-                      <Link
-                        href={`/dashboard/casas/${r.id}/edit`}
-                        className="text-sm font-medium text-blue-700 underline-offset-2 hover:underline"
-                      >
-                        Editar
-                      </Link>
+                      <div className="flex flex-col gap-1.5">
+                        <Link
+                          href={`/dashboard/casas/${r.id}/edit`}
+                          className="text-sm font-medium text-blue-700 underline-offset-2 hover:underline"
+                        >
+                          Editar
+                        </Link>
+                        <button
+                          type="button"
+                          disabled={deletingById[r.id]}
+                          onClick={() => handleDeleteHouse(r.id)}
+                          className="text-left text-sm font-medium text-red-700 underline-offset-2 hover:underline disabled:opacity-50"
+                        >
+                          {deletingById[r.id] ? "A excluir…" : "Excluir"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

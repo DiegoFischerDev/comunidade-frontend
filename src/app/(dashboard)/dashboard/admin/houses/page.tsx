@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { HouseStatusBadge } from '@/components/house/HouseStatusBadge';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -112,11 +113,7 @@ export default function AdminHousesPage() {
                     {h.partner.category?.name ?? '—'}
                   </td>
                   <td className="px-4 py-2 align-top">
-                    {h.status === 'AVAILABLE' ? (
-                      <span className="text-xs font-medium text-emerald-700">Disponível</span>
-                    ) : (
-                      <span className="text-xs font-medium text-zinc-600">Indisponível</span>
-                    )}
+                    <HouseStatusBadge status={h.status} />
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 align-top">
                     {new Date(h.availableFrom).toLocaleDateString('pt-PT')}
@@ -127,7 +124,7 @@ export default function AdminHousesPage() {
                   <td className="px-4 py-2 text-right align-top">
                     <div className="flex flex-wrap items-center justify-end gap-2">
                       <Link
-                        href={`/casas/${encodeURIComponent(h.id)}`}
+                        href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex rounded-md border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-50"

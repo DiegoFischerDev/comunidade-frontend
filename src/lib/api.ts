@@ -606,7 +606,7 @@ export const api = {
             title: string;
             city: string;
             typology: string;
-            status: 'AVAILABLE' | 'UNAVAILABLE';
+            status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
             availableFrom: string;
             priceEur: string;
             imageUrls: string[];
@@ -872,7 +872,7 @@ export const api = {
             caucoesCount: number;
             rendasEntradaCount: number;
             furnished: boolean;
-            status: 'AVAILABLE' | 'UNAVAILABLE';
+            status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
             whatsappSentAt: string | null;
             whatsappError: string | null;
             imageUrls: string[];
@@ -895,7 +895,7 @@ export const api = {
           caucoesCount: number;
           rendasEntradaCount: number;
           furnished: boolean;
-          status: 'AVAILABLE' | 'UNAVAILABLE';
+          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
           whatsappSentAt: string | null;
           whatsappError: string | null;
           imageUrls: string[];
@@ -951,7 +951,7 @@ export const api = {
           caucoesCount: number;
           rendasEntradaCount: number;
           furnished: boolean;
-          status: 'AVAILABLE' | 'UNAVAILABLE';
+          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
           whatsappSentAt: string | null;
           whatsappError: string | null;
           imageUrls: string[];
@@ -1013,7 +1013,7 @@ export const api = {
           caucoesCount: number;
           rendasEntradaCount: number;
           furnished: boolean;
-          status: 'AVAILABLE' | 'UNAVAILABLE';
+          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
           whatsappSentAt: string | null;
           whatsappError: string | null;
           imageUrls: string[];
@@ -1023,14 +1023,19 @@ export const api = {
           updatedAt: string;
         }>(`/partners/me/houses/${encodeURIComponent(id)}`, fd, { method: 'PATCH' });
       },
-      updateStatus: (id: string, status: 'AVAILABLE' | 'UNAVAILABLE') =>
+      updateStatus: (id: string, status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE') =>
         request<{
           id: string;
-          status: 'AVAILABLE' | 'UNAVAILABLE';
+          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
         }>(`/partners/me/houses/${id}/status`, {
           method: 'PATCH',
           body: JSON.stringify({ status }),
         }),
+      delete: (id: string) =>
+        request<{ ok: true }>(
+          `/partners/me/houses/${encodeURIComponent(id)}`,
+          { method: 'DELETE' },
+        ),
     },
     sales: {
       list: () =>
@@ -1126,7 +1131,7 @@ export const api = {
     houseContact: (houseId: string) =>
       request<{
         id: string;
-        status: 'AVAILABLE' | 'UNAVAILABLE';
+        status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
         partnerId: string;
         title: string;
         city: string;
@@ -1158,7 +1163,7 @@ export const api = {
           coverImageUrl: string | null;
           videoUrl: string | null;
           partnerId: string;
-          status: 'AVAILABLE' | 'UNAVAILABLE';
+          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
           partner: {
             id: string;
             name: string;
@@ -1168,7 +1173,14 @@ export const api = {
           };
         }[]
       >('/partners/relocation/houses', { method: 'GET' }),
-  },
+    /** Público: sem Bearer (evita 401 com JWT expirado em rotas @Public). */
+    relocationCategory: () =>
+      request<{
+        slug: string;
+        name: string;
+        backgroundImageUrl: string | null;
+      }>('/partners/relocation/category', { method: 'GET', token: null }),
+    },
   checklist: {
     me: () =>
       request<{ data: Record<string, unknown>; version: number; updatedAt: string | null }>('/checklist/me', {

@@ -5,6 +5,8 @@ import type { PublicHousePageData } from "@/lib/house-public-server";
 import { formatHouseEntradaShort } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 
+import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
+
 import { HouseContactSection } from "./house-contact-section";
 
 const CITY_LABELS: Record<string, string> = {
@@ -71,9 +73,11 @@ function nextImageUnoptimized(resolvedUrl: string) {
 type Props = {
   house: PublicHousePageData;
   apiBaseUrl: string;
+  /** `dashboard`: sem cabeçalho público; dentro do layout do painel. */
+  variant?: "standalone" | "dashboard";
 };
 
-export function HousePublicView({ house, apiBaseUrl }: Props) {
+export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: Props) {
   const { partner } = house;
   const cityLabel = CITY_LABELS[house.city] ?? house.city;
   const typoLabel = TYPOLOGY_LABELS[house.typology] ?? house.typology;
@@ -93,39 +97,59 @@ export function HousePublicView({ house, apiBaseUrl }: Props) {
       ? `${apiBaseUrl}${partner.logoUrl}`
       : partner.logoUrl;
 
+  const isDashboard = variant === "dashboard";
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-100 to-zinc-50">
-      <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/85 shadow-sm backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
-          <Link
-            href="/"
-            className="inline-flex min-w-0 flex-1 items-center gap-2 pr-3 sm:gap-3 sm:pr-4"
-            aria-label="Comunidade RPM — início"
-          >
-            <Image
-              src="/logo_comunidade.png"
-              alt=""
-              width={140}
-              height={32}
-              priority
-              className="h-8 w-auto shrink-0"
-            />
-            <span className="min-w-0 text-[10px] font-semibold uppercase leading-snug tracking-wide text-zinc-900 sm:text-xs md:text-sm">
-              COMUNIDADE RAFA PELO MUNDO - RELOCATION PORTUGAL
-            </span>
-          </Link>
-          <nav className="shrink-0">
+    <div
+      className={
+        isDashboard
+          ? "w-full bg-gradient-to-b from-zinc-100/80 to-zinc-50/80 pb-8 pt-2"
+          : "min-h-screen bg-gradient-to-b from-zinc-100 to-zinc-50"
+      }
+    >
+      {!isDashboard ? (
+        <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/85 shadow-sm backdrop-blur-md">
+          <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
+            <Link
+              href="/"
+              className="inline-flex min-w-0 flex-1 items-center gap-2 pr-3 sm:gap-3 sm:pr-4"
+              aria-label="Comunidade RPM — início"
+            >
+              <Image
+                src="/logo_comunidade.png"
+                alt=""
+                width={140}
+                height={32}
+                priority
+                className="h-8 w-auto shrink-0"
+              />
+              <span className="min-w-0 text-[10px] font-semibold uppercase leading-snug tracking-wide text-zinc-900 sm:text-xs md:text-sm">
+                COMUNIDADE RAFA PELO MUNDO - RELOCATION PORTUGAL
+              </span>
+            </Link>
+            <nav className="shrink-0">
+              <Link
+                href="/dashboard/relocation"
+                className="inline-flex rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 sm:px-4 sm:text-sm"
+              >
+                Catálogo de imóveis
+              </Link>
+            </nav>
+          </div>
+        </header>
+      ) : null}
+
+      <main className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-6 sm:py-8">
+        {isDashboard ? (
+          <nav className="text-sm">
             <Link
               href="/dashboard/relocation"
-              className="inline-flex rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 sm:px-4 sm:text-sm"
+              className="inline-flex font-medium text-amber-800 underline-offset-4 hover:underline"
             >
-              Catálogo de imóveis
+              ← Catálogo Relocation
             </Link>
           </nav>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
+        ) : null}
         <article className="overflow-hidden rounded-3xl border border-zinc-200/90 bg-white shadow-xl shadow-zinc-200/50">
           <div
             className={`relative w-full bg-zinc-100 ${
@@ -157,11 +181,9 @@ export function HousePublicView({ house, apiBaseUrl }: Props) {
                 Sem fotos nem vídeo
               </div>
             )}
-            {house.status === "UNAVAILABLE" ? (
-              <span className="absolute left-3 top-3 rounded-full bg-zinc-900/90 px-3 py-1 text-xs font-semibold text-white shadow-md">
-                Indisponível
-              </span>
-            ) : null}
+            <div className="absolute left-3 top-3 z-10">
+              <HouseStatusBadge status={house.status} variant="overlay" />
+            </div>
           </div>
 
           {heroImageSrc && videoSrc ? (
@@ -181,9 +203,12 @@ export function HousePublicView({ house, apiBaseUrl }: Props) {
 
           <div className="space-y-6 p-5 sm:p-8">
             <header className="space-y-2 border-b border-zinc-100 pb-6">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800/90">
-                Relocation · {cityLabel}
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800/90">
+                  Relocation · {cityLabel}
+                </p>
+                <HouseStatusBadge status={house.status} />
+              </div>
               <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">{house.title}</h1>
               <p className="text-sm text-zinc-600">
                 {typoLabel} · {availabilityLabel(house.availableFrom)}
@@ -273,7 +298,7 @@ export function HousePublicView({ house, apiBaseUrl }: Props) {
               </p>
               <h2 className="mt-1 text-xl font-semibold text-zinc-900">{partner.name}</h2>
               <Link
-                href={`/partner/${partner.id}`}
+                href={isDashboard ? `/dashboard/partner/${partner.id}` : `/partner/${partner.id}`}
                 className="mt-3 inline-flex text-sm font-medium text-amber-800 underline-offset-4 hover:underline"
               >
                 Ver perfil completo do parceiro

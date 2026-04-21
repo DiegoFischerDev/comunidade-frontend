@@ -49,6 +49,7 @@ export default function EditHousePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [error, setError] = useState("");
   const [relocationGate, setRelocationGate] = useState<"loading" | "ok" | "no">("loading");
@@ -227,6 +228,23 @@ export default function EditHousePage() {
       setError(err instanceof Error ? err.message : "Erro ao guardar.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDeleteHouse() {
+    const ok = window.confirm(
+      "Excluir este imóvel? As fotos e o vídeo serão removidos. Esta ação não pode ser desfeita.",
+    );
+    if (!ok) return;
+    setError("");
+    setDeleting(true);
+    try {
+      await api.partner.houses.delete(houseId);
+      router.push("/dashboard/casas");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível excluir o imóvel.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -561,11 +579,27 @@ export default function EditHousePage() {
         {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
 
         <div className="flex justify-end">
-          <CardButton type="submit" variant="primary" disabled={saving}>
+          <CardButton type="submit" variant="primary" disabled={saving || deleting}>
             {saving ? "A guardar…" : "Guardar alterações"}
           </CardButton>
         </div>
       </form>
+
+      <div className="mt-8 rounded-2xl border border-red-200 bg-red-50/60 p-6">
+        <h2 className="text-sm font-semibold text-zinc-900">Excluir anúncio</h2>
+        <p className="mt-1 text-sm text-zinc-600">
+          Remove o imóvel da plataforma e apaga as fotos e o vídeo armazenados. Não é possível recuperar.
+        </p>
+        <CardButton
+          type="button"
+          variant="danger"
+          className="mt-4"
+          disabled={deleting || saving}
+          onClick={handleDeleteHouse}
+        >
+          {deleting ? "A excluir…" : "Excluir imóvel"}
+        </CardButton>
+      </div>
     </div>
   );
 }
