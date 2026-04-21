@@ -17,7 +17,34 @@ export const clearAuthToken = () => {
   }
 };
 
+/**
+ * Cópia do JWT para "manter sessão neste dispositivo" após logout + refresh.
+ * Não substitui boas práticas em computadores partilhados (limpar dados do site remove).
+ */
+const DEVICE_SESSION_KEY = 'comunidade_device_session_token';
+
+export function setDeviceSessionToken(token: string) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(DEVICE_SESSION_KEY, token);
+  }
+}
+
+export function getDeviceSessionToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(DEVICE_SESSION_KEY);
+}
+
+export function clearDeviceSessionToken() {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(DEVICE_SESSION_KEY);
+  }
+}
+
 export const getAuthToken = getToken;
+
+function fallbackHttpErrorMessage(status: number): string {
+  return `Não foi possível concluir o pedido (código ${status}).`;
+}
 
 type RequestOptions = RequestInit & { token?: string | null };
 
@@ -44,7 +71,9 @@ async function request<T>(
   const res = await fetch(`${API_URL}${path}`, { ...init, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    let msg = Array.isArray(data.message) ? data.message[0] : data.message || data.error || `Erro ${res.status}`;
+    let msg = Array.isArray(data.message)
+      ? data.message[0]
+      : data.message || data.error || fallbackHttpErrorMessage(res.status);
     msg = typeof msg === 'string' ? msg : String(msg);
     if (shouldHideApiMessage(msg)) {
       throw new Error('');
@@ -75,8 +104,9 @@ async function requestFormData<T>(
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    let msg =
-      Array.isArray((data as any).message) ? (data as any).message[0] : (data as any).message || (data as any).error || `Erro ${res.status}`;
+    let msg = Array.isArray((data as any).message)
+      ? (data as any).message[0]
+      : (data as any).message || (data as any).error || fallbackHttpErrorMessage(res.status);
     msg = typeof msg === 'string' ? msg : String(msg);
     if (shouldHideApiMessage(msg)) {
       throw new Error('');
@@ -568,6 +598,33 @@ export const api = {
           }[]
         >('/partners/admin/sales', { method: 'GET' }),
     },
+    houses: {
+      list: () =>
+        request<
+          {
+            id: string;
+            title: string;
+            city: string;
+            typology: string;
+            status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+            availableFrom: string;
+            priceEur: string;
+            imageUrls: string[];
+            videoUrl: string | null;
+            createdAt: string;
+            partner: {
+              id: string;
+              name: string;
+              category: { slug: string; name: string } | null;
+            };
+          }[]
+        >('/partners/admin/houses', { method: 'GET' }),
+      delete: (houseId: string) =>
+        request<{ ok: true }>(
+          `/partners/admin/houses/${encodeURIComponent(houseId)}`,
+          { method: 'DELETE' },
+        ),
+    },
     categories: {
       list: () =>
         request<
@@ -679,6 +736,7 @@ export const api = {
         billingNif?: string | null;
         billingAddress?: string | null;
         billingPostalCode?: string | null;
+        category?: { id: string; slug: string; name: string } | null;
       }>('/partners/me', { method: 'GET' }),
     updateMe: (input: {
       name?: string;
@@ -708,6 +766,7 @@ export const api = {
         billingNif?: string | null;
         billingAddress?: string | null;
         billingPostalCode?: string | null;
+        category?: { id: string; slug: string; name: string } | null;
       }>('/partners/me', {
         method: 'PATCH',
         body: JSON.stringify(input),
@@ -809,33 +868,77 @@ export const api = {
             city: string;
             availableFrom: string;
             priceEur: string;
-            requirements: string;
-            status: 'AVAILABLE' | 'UNAVAILABLE';
+            relocationFeeEur: string;
+            caucoesCount: number;
+            rendasEntradaCount: number;
+            furnished: boolean;
+            status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
             whatsappSentAt: string | null;
             whatsappError: string | null;
+            imageUrls: string[];
+            coverImageUrl: string | null;
+            videoUrl: string | null;
             createdAt: string;
             updatedAt: string;
           }[]
         >('/partners/me/houses', { method: 'GET' }),
+      get: (id: string) =>
+        request<{
+          id: string;
+          title: string;
+          description: string;
+          typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          city: string;
+          availableFrom: string;
+          priceEur: string;
+          relocationFeeEur: string;
+          caucoesCount: number;
+          rendasEntradaCount: number;
+          furnished: boolean;
+          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+          whatsappSentAt: string | null;
+          whatsappError: string | null;
+          imageUrls: string[];
+          coverImageUrl: string | null;
+          videoUrl: string | null;
+          createdAt: string;
+          updatedAt: string;
+        }>(`/partners/me/houses/${encodeURIComponent(id)}`, { method: 'GET' }),
       create: (input: {
-        images: File[];
+        images?: File[];
+        video?: File;
         title: string;
         description: string;
         typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
         city: string;
         availableFrom: string;
         priceEur: string;
-        requirements: string;
+        relocationFeeEur: string;
+        caucoesCount: string;
+        rendasEntradaCount: string;
+        furnished: boolean;
+        coverImageIndex?: number;
       }) => {
         const fd = new FormData();
-        for (const file of input.images) fd.append('images', file);
+        if (input.video) {
+          fd.append('video', input.video);
+        }
+        if (input.images?.length) {
+          for (const file of input.images) fd.append('images', file);
+        }
+        if (input.images?.length && input.coverImageIndex != null) {
+          fd.append('coverImageIndex', String(input.coverImageIndex));
+        }
         fd.append('title', input.title);
         fd.append('description', input.description);
         fd.append('typology', input.typology);
         fd.append('city', input.city);
         fd.append('availableFrom', input.availableFrom);
         fd.append('priceEur', input.priceEur);
-        fd.append('requirements', input.requirements);
+        fd.append('relocationFeeEur', input.relocationFeeEur.trim());
+        fd.append('caucoesCount', input.caucoesCount);
+        fd.append('rendasEntradaCount', input.rendasEntradaCount);
+        fd.append('furnished', input.furnished ? 'true' : 'false');
         return requestFormData<{
           id: string;
           title: string;
@@ -844,22 +947,95 @@ export const api = {
           city: string;
           availableFrom: string;
           priceEur: string;
-          requirements: string;
-          status: 'AVAILABLE' | 'UNAVAILABLE';
+          relocationFeeEur: string;
+          caucoesCount: number;
+          rendasEntradaCount: number;
+          furnished: boolean;
+          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
           whatsappSentAt: string | null;
           whatsappError: string | null;
+          imageUrls: string[];
+          coverImageUrl: string | null;
+          videoUrl: string | null;
           createdAt: string;
           updatedAt: string;
         }>('/partners/me/houses', fd, { method: 'POST' });
       },
-      updateStatus: (id: string, status: 'AVAILABLE' | 'UNAVAILABLE') =>
+      update: (
+        id: string,
+        input: {
+          images?: File[];
+          video?: File;
+          removeVideo?: boolean;
+          keepImageUrls?: string[];
+          title?: string;
+          description?: string;
+          typology?: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          city?: string;
+          availableFrom?: string;
+          priceEur?: string;
+          relocationFeeEur?: string;
+          caucoesCount?: string;
+          rendasEntradaCount?: string;
+          furnished?: boolean;
+          coverImageIndex?: number;
+        },
+      ) => {
+        const fd = new FormData();
+        if (input.video) fd.append('video', input.video);
+        if (input.images?.length) {
+          for (const file of input.images) fd.append('images', file);
+        }
+        if (input.keepImageUrls != null) {
+          fd.append('keepImageUrls', JSON.stringify(input.keepImageUrls));
+        }
+        if (input.removeVideo) fd.append('removeVideo', 'true');
+        if (input.title != null) fd.append('title', input.title);
+        if (input.description != null) fd.append('description', input.description);
+        if (input.typology != null) fd.append('typology', input.typology);
+        if (input.city != null) fd.append('city', input.city);
+        if (input.availableFrom != null) fd.append('availableFrom', input.availableFrom);
+        if (input.priceEur != null) fd.append('priceEur', input.priceEur);
+        if (input.relocationFeeEur != null) fd.append('relocationFeeEur', input.relocationFeeEur.trim());
+        if (input.caucoesCount != null) fd.append('caucoesCount', input.caucoesCount);
+        if (input.rendasEntradaCount != null) fd.append('rendasEntradaCount', input.rendasEntradaCount);
+        if (input.furnished != null) fd.append('furnished', input.furnished ? 'true' : 'false');
+        if (input.coverImageIndex != null) fd.append('coverImageIndex', String(input.coverImageIndex));
+        return requestFormData<{
+          id: string;
+          title: string;
+          description: string;
+          typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          city: string;
+          availableFrom: string;
+          priceEur: string;
+          relocationFeeEur: string;
+          caucoesCount: number;
+          rendasEntradaCount: number;
+          furnished: boolean;
+          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+          whatsappSentAt: string | null;
+          whatsappError: string | null;
+          imageUrls: string[];
+          coverImageUrl: string | null;
+          videoUrl: string | null;
+          createdAt: string;
+          updatedAt: string;
+        }>(`/partners/me/houses/${encodeURIComponent(id)}`, fd, { method: 'PATCH' });
+      },
+      updateStatus: (id: string, status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE') =>
         request<{
           id: string;
-          status: 'AVAILABLE' | 'UNAVAILABLE';
+          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
         }>(`/partners/me/houses/${id}/status`, {
           method: 'PATCH',
           body: JSON.stringify({ status }),
         }),
+      delete: (id: string) =>
+        request<{ ok: true }>(
+          `/partners/me/houses/${encodeURIComponent(id)}`,
+          { method: 'DELETE' },
+        ),
     },
     sales: {
       list: () =>
@@ -955,14 +1131,56 @@ export const api = {
     houseContact: (houseId: string) =>
       request<{
         id: string;
-        status: 'AVAILABLE' | 'UNAVAILABLE';
+        status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
         partnerId: string;
         title: string;
         city: string;
         typology: string;
         priceEur: string;
+        furnished: boolean;
       }>(`/partners/houses/${encodeURIComponent(houseId)}/contact`, { method: 'GET' }),
-  },
+    /** Página pública do anúncio (sem auth). */
+    housePublic: (houseId: string) =>
+      request<import('@/lib/house-public-server').PublicHousePageData>(
+        `/partners/houses/${encodeURIComponent(houseId)}/public`,
+        { method: 'GET' },
+      ),
+    relocationHouses: () =>
+      request<
+        {
+          id: string;
+          title: string;
+          description: string;
+          typology: string;
+          city: string;
+          availableFrom: string;
+          priceEur: string;
+          relocationFeeEur: string;
+          caucoesCount: number;
+          rendasEntradaCount: number;
+          furnished: boolean;
+          imageUrls: string[];
+          coverImageUrl: string | null;
+          videoUrl: string | null;
+          partnerId: string;
+          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+          partner: {
+            id: string;
+            name: string;
+            whatsapp: string;
+            logoUrl: string | null;
+            shortDescription: string | null;
+          };
+        }[]
+      >('/partners/relocation/houses', { method: 'GET' }),
+    /** Público: sem Bearer (evita 401 com JWT expirado em rotas @Public). */
+    relocationCategory: () =>
+      request<{
+        slug: string;
+        name: string;
+        backgroundImageUrl: string | null;
+      }>('/partners/relocation/category', { method: 'GET', token: null }),
+    },
   checklist: {
     me: () =>
       request<{ data: Record<string, unknown>; version: number; updatedAt: string | null }>('/checklist/me', {
@@ -1108,7 +1326,7 @@ export const api = {
         if (!res.ok) {
           const msg = Array.isArray(data.message)
             ? data.message[0]
-            : data.message || data.error || `Erro ${res.status}`;
+            : data.message || data.error || fallbackHttpErrorMessage(res.status);
           throw new Error(msg);
         }
         return data as { paidCount: number; paymentProofUrl: string };

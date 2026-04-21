@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
 import { api } from "@/lib/api";
+import { formatHouseEntradaShort } from "@/lib/house-entrance";
 import { useAuth } from "@/contexts/AuthContext";
 import { CardLinkButton } from "@/components/ui/CardButton";
 
@@ -38,28 +41,52 @@ function formatDatePt(value: string) {
 
 export default function PartnerHousesPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [rows, setRows] = useState<HouseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("");
   const [savingById, setSavingById] = useState<Record<string, boolean>>({});
+  const [deletingById, setDeletingById] = useState<Record<string, boolean>>({});
+  const [canManageHouses, setCanManageHouses] = useState<boolean | null>(null);
+  const [showUpdatedBanner, setShowUpdatedBanner] = useState(false);
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("updated") === "1") {
+      setShowUpdatedBanner(true);
+      router.replace("/dashboard/casas", { scroll: false });
+    }
+  }, [router]);
 
   useEffect(() => {
     if (!user) return;
     if (user.role !== "PARTNER") {
       setLoading(false);
+      setCanManageHouses(null);
       return;
     }
+    let cancelled = false;
     (async () => {
       try {
+        const me = await api.partner.me();
+        const ok = me.category?.slug === "relocation";
+        if (!cancelled) setCanManageHouses(ok);
+        if (!ok) return;
         const data = await api.partner.houses.list();
-        setRows(data);
+        if (!cancelled) setRows(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar casas.");
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Erro ao carregar casas.");
+          setCanManageHouses(false);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const filtered = useMemo(() => {
@@ -73,8 +100,17 @@ export default function PartnerHousesPage() {
         r.typology,
         TYPOLOGY_LABELS[r.typology] ?? "",
         r.priceEur,
-        r.requirements,
+        r.relocationFeeEur,
+        String(r.caucoesCount),
+        String(r.rendasEntradaCount),
+        formatHouseEntradaShort(r.caucoesCount, r.rendasEntradaCount),
+        r.furnished ? "mobilado sim" : "mobilado não",
         r.status,
+        r.status === "AVAILABLE"
+          ? "disponível"
+          : r.status === "RESERVED"
+            ? "reservado"
+            : "indisponível",
       ]
         .join(" ")
         .toLowerCase();
@@ -82,7 +118,10 @@ export default function PartnerHousesPage() {
     });
   }, [rows, filter]);
 
-  async function handleUpdateStatus(id: string, status: "AVAILABLE" | "UNAVAILABLE") {
+  async function handleUpdateStatus(
+    id: string,
+    status: "AVAILABLE" | "RESERVED" | "UNAVAILABLE",
+  ) {
     setSavingById((s) => ({ ...s, [id]: true }));
     try {
       const updated = await api.partner.houses.updateStatus(id, status);
@@ -94,6 +133,23 @@ export default function PartnerHousesPage() {
     }
   }
 
+  async function handleDeleteHouse(id: string) {
+    const ok = window.confirm(
+      "Excluir este imóvel? As fotos e o vídeo serão removidos. Esta ação não pode ser desfeita.",
+    );
+    if (!ok) return;
+    setDeletingById((s) => ({ ...s, [id]: true }));
+    setError("");
+    try {
+      await api.partner.houses.delete(id);
+      setRows((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível excluir o imóvel.");
+    } finally {
+      setDeletingById((s) => ({ ...s, [id]: false }));
+    }
+  }
+
   if (!user) return null;
 
   if (user.role !== "PARTNER") {
@@ -101,6 +157,27 @@ export default function PartnerHousesPage() {
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
         <p className="mt-2 text-sm text-zinc-600">Esta área é exclusiva para parceiros.</p>
+      </div>
+    );
+  }
+
+  if (loading || canManageHouses === null) {
+    return (
+      <div>
+        <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
+        <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
+      </div>
+    );
+  }
+
+  if (!canManageHouses) {
+    return (
+      <div>
+        <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
+        <p className="mt-2 max-w-lg text-sm text-zinc-600">
+          Esta área é apenas para parceiros na categoria <strong>Relocation</strong>. Se precisares de
+          alterar a tua categoria, contacta a equipa.
+        </p>
       </div>
     );
   }
@@ -120,6 +197,12 @@ export default function PartnerHousesPage() {
           </CardLinkButton>
         </div>
       </div>
+
+      {showUpdatedBanner && (
+        <div className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          Imóvel atualizado. A mensagem no WhatsApp não foi reenviada.
+        </div>
+      )}
 
       {error && (
         <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
@@ -160,17 +243,28 @@ export default function PartnerHousesPage() {
                   <th className="px-4 py-3 text-left font-medium">Título</th>
                   <th className="px-4 py-3 text-left font-medium">Cidade</th>
                   <th className="px-4 py-3 text-left font-medium">Tipologia</th>
+                  <th className="px-4 py-3 text-left font-medium">Mobilado</th>
                   <th className="px-4 py-3 text-left font-medium">Disponível em</th>
                   <th className="px-4 py-3 text-left font-medium">Preço</th>
-                  <th className="px-4 py-3 text-left font-medium">Exigências</th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    Entrada (taxa relocation, cauções e rendas)
+                  </th>
                   <th className="px-4 py-3 text-left font-medium">Status</th>
+                  <th className="px-4 py-3 text-left font-medium">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
                 {filtered.map((r) => (
                   <tr key={r.id} className="align-top">
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-zinc-900">{r.title}</div>
+                      <div className="font-semibold text-zinc-900">
+                        {r.title}
+                        {r.videoUrl ? (
+                          <span className="ml-2 rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-medium text-zinc-700">
+                            Vídeo
+                          </span>
+                        ) : null}
+                      </div>
                       <div className="mt-1 text-xs text-zinc-500">
                         Enviado: {r.whatsappSentAt ? formatDatePt(r.whatsappSentAt) : "—"}
                         {r.whatsappError ? (
@@ -182,21 +276,50 @@ export default function PartnerHousesPage() {
                     <td className="px-4 py-3 text-zinc-700">
                       {TYPOLOGY_LABELS[r.typology] ?? r.typology}
                     </td>
+                    <td className="px-4 py-3 text-zinc-700">{r.furnished ? "Sim" : "Não"}</td>
                     <td className="px-4 py-3 text-zinc-700">{formatDatePt(r.availableFrom)}</td>
                     <td className="px-4 py-3 text-zinc-700">{r.priceEur}</td>
-                    <td className="px-4 py-3 text-zinc-700">{r.requirements}</td>
+                    <td className="px-4 py-3 text-zinc-700">
+                      <div className="text-xs text-zinc-500">Taxa: {r.relocationFeeEur} €</div>
+                      <div>{formatHouseEntradaShort(r.caucoesCount, r.rendasEntradaCount)}</div>
+                    </td>
                     <td className="px-4 py-3">
-                      <select
-                        value={r.status}
-                        disabled={savingById[r.id]}
-                        onChange={(e) =>
-                          handleUpdateStatus(r.id, e.target.value as "AVAILABLE" | "UNAVAILABLE")
-                        }
-                        className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900"
-                      >
-                        <option value="AVAILABLE">Disponível</option>
-                        <option value="UNAVAILABLE">Indisponível</option>
-                      </select>
+                      <div className="flex flex-col gap-2">
+                        <HouseStatusBadge status={r.status} />
+                        <select
+                          value={r.status}
+                          disabled={savingById[r.id]}
+                          onChange={(e) =>
+                            handleUpdateStatus(
+                              r.id,
+                              e.target.value as "AVAILABLE" | "RESERVED" | "UNAVAILABLE",
+                            )
+                          }
+                          className="w-full min-w-[10rem] rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900"
+                        >
+                          <option value="AVAILABLE">Disponível</option>
+                          <option value="RESERVED">Reservado</option>
+                          <option value="UNAVAILABLE">Indisponível</option>
+                        </select>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col gap-1.5">
+                        <Link
+                          href={`/dashboard/casas/${r.id}/edit`}
+                          className="text-sm font-medium text-blue-700 underline-offset-2 hover:underline"
+                        >
+                          Editar
+                        </Link>
+                        <button
+                          type="button"
+                          disabled={deletingById[r.id]}
+                          onClick={() => handleDeleteHouse(r.id)}
+                          className="text-left text-sm font-medium text-red-700 underline-offset-2 hover:underline disabled:opacity-50"
+                        >
+                          {deletingById[r.id] ? "A excluir…" : "Excluir"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

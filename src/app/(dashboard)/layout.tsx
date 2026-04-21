@@ -11,8 +11,108 @@ import {
   WHATSAPP_REGISTRATION_POLL_TIMEOUT_MESSAGE,
 } from '@/lib/whatsapp-registration-poll';
 import { useAuth } from '@/contexts/AuthContext';
+import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { CardButton } from '@/components/ui/CardButton';
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
+
+/** Sub-link do menu lateral (indentado, sob “Minha empresa” / “Serviços”). */
+function SidebarNavSubLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <li>
+      <Link
+        href={href}
+        className={`block rounded-md py-1.5 pl-2 pr-2 text-[13px] leading-snug transition ${
+          active
+            ? 'bg-gradient-to-r from-[#d58901]/12 to-amber-50/90 font-medium text-zinc-900 ring-1 ring-amber-200/70'
+            : 'text-zinc-600 hover:bg-zinc-100/90 hover:text-zinc-900'
+        }`}
+      >
+        {children}
+      </Link>
+    </li>
+  );
+}
+
+/**
+ * Secção com título navegável + submenu recolhível (chevron).
+ * `sectionActive`: qualquer rota dentro do grupo — reabre ao navegar para um subitem.
+ */
+function SidebarNavSection({
+  title,
+  href,
+  titleActive,
+  sectionActive,
+  children,
+}: {
+  title: string;
+  href: string;
+  titleActive: boolean;
+  sectionActive: boolean;
+  children: React.ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(true);
+  useEffect(() => {
+    if (sectionActive) setExpanded(true);
+  }, [sectionActive]);
+
+  return (
+    <div className="space-y-1">
+      <div
+        className={`flex items-stretch overflow-hidden rounded-lg ${
+          titleActive
+            ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white shadow-sm'
+            : 'bg-transparent'
+        }`}
+      >
+        <Link
+          href={href}
+          className={`flex min-w-0 flex-1 items-center px-3 py-2 text-sm transition ${
+            titleActive
+              ? 'text-white'
+              : 'text-zinc-800 hover:bg-zinc-100/90 rounded-lg'
+          }`}
+        >
+          <span className="truncate">{title}</span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          className={`flex w-9 shrink-0 items-center justify-center border-l transition ${
+            titleActive
+              ? 'border-white/20 text-white hover:bg-white/15'
+              : 'border-transparent bg-zinc-100/80 text-zinc-500 hover:bg-zinc-200/80 hover:text-zinc-800'
+          }`}
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Recolher submenu' : 'Expandir submenu'}
+        >
+          <svg
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className={`h-4 w-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+            aria-hidden
+          >
+            <path
+              fillRule="evenodd"
+              d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </button>
+      </div>
+      {expanded ? (
+        <ul className="relative ml-1.5 space-y-0.5 border-l-2 border-amber-200/40 pl-3">{children}</ul>
+      ) : null}
+    </div>
+  );
+}
 
 function formatWhatsappRegistrationDisplay(digits: string) {
   const d = digits.replace(/\D/g, '');
@@ -84,6 +184,7 @@ export default function DashboardLayout({
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [activeCategorySlug, setActiveCategorySlug] = useState<string | null>(null);
   const [partnerId, setPartnerId] = useState<string | null>(null);
+  const [partnerCategorySlug, setPartnerCategorySlug] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -120,15 +221,22 @@ export default function DashboardLayout({
     if (!mounted || authLoading) return;
     if (!user || user.role !== 'PARTNER') {
       setPartnerId(null);
+      setPartnerCategorySlug(null);
       return;
     }
     let cancelled = false;
     (async () => {
       try {
         const me = await api.partner.me();
-        if (!cancelled) setPartnerId(me.id);
+        if (!cancelled) {
+          setPartnerId(me.id);
+          setPartnerCategorySlug(me.category?.slug ?? null);
+        }
       } catch {
-        if (!cancelled) setPartnerId(null);
+        if (!cancelled) {
+          setPartnerId(null);
+          setPartnerCategorySlug(null);
+        }
       }
     })();
     return () => {
@@ -138,6 +246,18 @@ export default function DashboardLayout({
 
   // Sincroniza categoria ativa no menu com rota atual (categoria ou parceiro)
   useEffect(() => {
+    if (pathname === '/dashboard/relocation' || pathname.startsWith('/dashboard/relocation/')) {
+      setActiveCategorySlug('relocation');
+      return;
+    }
+    if (
+      pathname.startsWith('/dashboard/casas/') &&
+      pathname !== '/dashboard/casas/nova' &&
+      !pathname.endsWith('/edit')
+    ) {
+      setActiveCategorySlug('relocation');
+      return;
+    }
     // Página de listagem por categoria
     if (pathname.startsWith('/dashboard/category/')) {
       const segments = pathname.split('/');
@@ -322,6 +442,33 @@ export default function DashboardLayout({
           ? 'Membro'
           : 'Visitante';
 
+  /** Parceiro na própria página pública (menu “Minha página”) — não ativar “Serviços” nem categorias em baixo. */
+  const partnerViewingOwnPublicPage =
+    user?.role === 'PARTNER' &&
+    partnerId &&
+    pathname === `/dashboard/partner/${partnerId}`;
+
+  const servicesNavTitleActive =
+    pathname === '/dashboard/services' ||
+    pathname.startsWith('/dashboard/category/') ||
+    (pathname.startsWith('/dashboard/partner/') && !partnerViewingOwnPublicPage) ||
+    pathname === '/dashboard/relocation' ||
+    pathname.startsWith('/dashboard/relocation/') ||
+    (pathname.startsWith('/dashboard/casas/') &&
+      pathname !== '/dashboard/casas/nova' &&
+      !pathname.endsWith('/edit'));
+
+  const partnerCompanyTitleActive =
+    pathname === '/dashboard/business' ||
+    pathname === '/dashboard/leads' ||
+    pathname.startsWith('/dashboard/casas') ||
+    pathname.startsWith('/dashboard/partner/') ||
+    pathname === '/dashboard/my-sales' ||
+    pathname === '/dashboard/my-services' ||
+    pathname === '/dashboard/commissions';
+
+  const partnerNavSectionActive = user?.role === 'PARTNER' && partnerCompanyTitleActive;
+
   const sidebarContent = (
     <div className="flex h-full flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
@@ -444,73 +591,63 @@ export default function DashboardLayout({
             </Link>
           ) : null}
 
-          {/* Links “extras” (antes ficavam no grupo de baixo) */}
+          {user?.tier === 'MEMBER' && (
+            <Link
+              href="/dashboard/my-referrals"
+              className={`block rounded-md px-3 py-2 text-sm ${
+                pathname === '/dashboard/my-referrals'
+                  ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                  : 'text-zinc-800 hover:bg-zinc-100'
+              }`}
+            >
+              Minhas indicações
+            </Link>
+          )}
+
+          {/* Parceiro: Minha empresa + submenu recolhível */}
           {user?.role === 'PARTNER' && (
-            <>
-              <Link
-                href="/dashboard/leads"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/leads'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
+            <SidebarNavSection
+              title="Minha empresa"
+              href="/dashboard/business"
+              titleActive={partnerCompanyTitleActive}
+              sectionActive={partnerNavSectionActive}
+            >
+              <SidebarNavSubLink href="/dashboard/leads" active={pathname === '/dashboard/leads'}>
                 Meus leads
-              </Link>
-              <Link
-                href="/dashboard/casas"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/casas' || pathname.startsWith('/dashboard/casas/')
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Minhas casas
-              </Link>
+              </SidebarNavSubLink>
+              {partnerCategorySlug === 'relocation' ? (
+                <SidebarNavSubLink
+                  href="/dashboard/casas"
+                  active={
+                    pathname === '/dashboard/casas' || pathname.startsWith('/dashboard/casas/')
+                  }
+                >
+                  Minhas casas
+                </SidebarNavSubLink>
+              ) : null}
               {partnerId ? (
-                <Link
+                <SidebarNavSubLink
                   href={`/dashboard/partner/${partnerId}`}
-                  className={`block rounded-md px-3 py-2 text-sm ${
-                    pathname === `/dashboard/partner/${partnerId}`
-                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                      : 'text-zinc-800 hover:bg-zinc-100'
-                  }`}
+                  active={pathname === `/dashboard/partner/${partnerId}`}
                 >
                   Minha página
-                </Link>
+                </SidebarNavSubLink>
               ) : null}
-              <Link
+              <SidebarNavSubLink
                 href="/dashboard/my-sales"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/my-sales'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
+                active={pathname === '/dashboard/my-sales'}
               >
                 Minhas vendas
-              </Link>
-              <Link
-                href="/dashboard/business"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/business'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Minha empresa
-              </Link>
-              <Link
+              </SidebarNavSubLink>
+              <SidebarNavSubLink
                 href="/dashboard/my-services"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/my-services' ||
-                  pathname === '/dashboard/commissions'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
+                active={
+                  pathname === '/dashboard/my-services' || pathname === '/dashboard/commissions'
+                }
               >
                 Meus serviços
-              </Link>
-            </>
+              </SidebarNavSubLink>
+            </SidebarNavSection>
           )}
           {user?.role === 'ADMIN' && (
             <>
@@ -555,6 +692,16 @@ export default function DashboardLayout({
                 Todas as vendas
               </Link>
               <Link
+                href="/dashboard/admin/houses"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/admin/houses'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Casas (anúncios)
+              </Link>
+              <Link
                 href="/dashboard/admin/commissions"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/commissions' ||
@@ -597,60 +744,47 @@ export default function DashboardLayout({
               </Link>
             </>
           )}
-          {user?.tier === 'MEMBER' && (
+
+          {categoriesLoaded && categories.length ? (
+            <SidebarNavSection
+              title="Serviços"
+              href="/dashboard/services"
+              titleActive={servicesNavTitleActive}
+              sectionActive={servicesNavTitleActive}
+            >
+              {categories.map((c) => {
+                const relocation = c.slug === 'relocation';
+                const catHref = relocation ? '/dashboard/relocation' : `/dashboard/category/${c.slug}`;
+                const isActive =
+                  !partnerViewingOwnPublicPage &&
+                  (relocation
+                    ? pathname === '/dashboard/relocation' ||
+                      pathname.startsWith('/dashboard/relocation/') ||
+                      (pathname.startsWith('/dashboard/casas/') &&
+                        pathname !== '/dashboard/casas/nova' &&
+                        !pathname.endsWith('/edit'))
+                    : pathname === `/dashboard/category/${c.slug}` ||
+                      (pathname.startsWith('/dashboard/partner/') &&
+                        activeCategorySlug === c.slug));
+                return (
+                  <SidebarNavSubLink key={c.id} href={catHref} active={isActive}>
+                    {c.name}
+                  </SidebarNavSubLink>
+                );
+              })}
+            </SidebarNavSection>
+          ) : (
             <Link
-              href="/dashboard/my-referrals"
+              href="/dashboard/services"
               className={`block rounded-md px-3 py-2 text-sm ${
-                pathname === '/dashboard/my-referrals'
+                servicesNavTitleActive
                   ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                   : 'text-zinc-800 hover:bg-zinc-100'
               }`}
             >
-              Minhas indicações
+              Serviços
             </Link>
           )}
-
-          <Link
-            href="/dashboard/services"
-            className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/dashboard/services' ||
-              pathname.startsWith('/dashboard/category/') ||
-              pathname.startsWith('/dashboard/partner/')
-                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                : 'text-zinc-800 hover:bg-zinc-100'
-            }`}
-          >
-            Serviços
-          </Link>
-          {categoriesLoaded && categories.length ? (
-            <div className="mt-2 space-y-1 border-l border-zinc-200 pl-3">
-              {categories.map((c) => {
-                const isActive =
-                  pathname === `/dashboard/category/${c.slug}` ||
-                  (pathname.startsWith('/dashboard/partner/') &&
-                    activeCategorySlug === c.slug);
-                return (
-                  <Link
-                    key={c.id}
-                    href={`/dashboard/category/${c.slug}`}
-                    className={`relative block rounded-lg px-3 py-2 text-xs font-medium transition ${
-                      isActive
-                        ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white shadow-sm'
-                        : 'text-zinc-700 hover:bg-white hover:shadow-sm'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none absolute -left-[7px] top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full ring-2 ring-white ${
-                        isActive ? 'bg-[#d58901]' : 'bg-zinc-300'
-                      }`}
-                      aria-hidden
-                    />
-                    {c.name}
-                  </Link>
-                );
-              })}
-            </div>
-          ) : null}
         </nav>
       </div>
 
@@ -692,7 +826,7 @@ export default function DashboardLayout({
             {user ? (
               <button
                 type="button"
-                onClick={logout}
+                onClick={() => logout()}
                 className="cursor-pointer text-xs font-medium text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
               >
                 Sair
@@ -703,6 +837,7 @@ export default function DashboardLayout({
                 onClick={() => {
                   setAuthMode('login');
                   setIsAuthModalOpen(true);
+                  setIsMenuOpen(false);
                 }}
                 className="cursor-pointer text-xs font-medium text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
               >
@@ -922,23 +1057,12 @@ export default function DashboardLayout({
                     {loginError}
                   </div>
                 )}
-                <div>
-                  <label
-                    htmlFor="auth-whatsapp"
-                    className="block text-xs font-medium text-zinc-700"
-                  >
-                    WhatsApp
-                  </label>
-                  <input
-                    id="auth-whatsapp"
-                    type="tel"
-                    value={loginWhatsapp}
-                    onChange={(e) => setLoginWhatsapp(e.target.value)}
-                    required
-                    placeholder="Ex.: 351954785654 ou 55999867458"
-                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
+                <LoginWhatsappFields
+                  idPrefix="auth-modal"
+                  value={loginWhatsapp}
+                  onChange={setLoginWhatsapp}
+                  disabled={loginLoading}
+                />
                 <div>
                   <label
                     htmlFor="auth-password"
@@ -948,10 +1072,12 @@ export default function DashboardLayout({
                   </label>
                   <input
                     id="auth-password"
+                    name="password"
                     type="password"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     required
+                    autoComplete="current-password"
                     className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -1177,8 +1303,12 @@ export default function DashboardLayout({
                     setResetCode('');
                     setResetPassword('');
                     setResetError('');
+                    const waDisplay =
+                      formatWhatsappRegistrationDisplay(forgotWhatsapp) ||
+                      forgotWhatsapp.replace(/\D/g, '') ||
+                      forgotWhatsapp.trim();
                     setResetInfo(
-                      'Enviámos um código de recuperação para o WhatsApp informado.',
+                      `Enviámos um código de recuperação para o WhatsApp ${waDisplay}.`,
                     );
                   } catch (err) {
                     setForgotError(
@@ -1201,23 +1331,13 @@ export default function DashboardLayout({
                     {forgotInfo}
                   </div>
                 )}
-                <div>
-                  <label
-                    htmlFor="auth-forgot-whatsapp"
-                    className="block text-xs font-medium text-zinc-700"
-                  >
-                    WhatsApp da conta
-                  </label>
-                  <input
-                    id="auth-forgot-whatsapp"
-                    type="tel"
-                    value={forgotWhatsapp}
-                    onChange={(e) => setForgotWhatsapp(e.target.value)}
-                    required
-                    placeholder="Ex.: 351954785654 ou 55999867458"
-                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
+                <LoginWhatsappFields
+                  idPrefix="auth-forgot"
+                  value={forgotWhatsapp}
+                  onChange={setForgotWhatsapp}
+                  disabled={forgotLoading}
+                  label="WhatsApp da conta"
+                />
                 <button
                   type="submit"
                   disabled={forgotLoading}
@@ -1270,9 +1390,6 @@ export default function DashboardLayout({
                     {resetInfo}
                   </div>
                 )}
-                <p className="text-xs text-zinc-600">
-                  Introduza o código que enviámos para o seu WhatsApp e defina a sua nova senha de acesso.
-                </p>
                 <div className="space-y-3">
                   <div>
                     <label
@@ -1313,27 +1430,15 @@ export default function DashboardLayout({
                   <button
                     type="button"
                     disabled={resetLoading}
-                    onClick={async () => {
+                    onClick={() => {
                       setResetError('');
                       setResetInfo('');
-                      if (!resetWhatsapp) {
-                        setResetError(
-                          'WhatsApp para recuperação não encontrado. Volte a solicitar a recuperação de senha.',
-                        );
-                        return;
-                      }
-                      try {
-                        await api.auth.forgotPassword(resetWhatsapp);
-                        setResetInfo(
-                          'Novo código enviado para o seu WhatsApp.',
-                        );
-                      } catch (err) {
-                        setResetError(
-                          err instanceof Error
-                            ? err.message
-                            : 'Erro ao reenviar o código. Tente novamente.',
-                        );
-                      }
+                      setResetCode('');
+                      setResetPassword('');
+                      setForgotError('');
+                      setForgotInfo('');
+                      setForgotWhatsapp(resetWhatsapp);
+                      setAuthMode('forgot');
                     }}
                     className="cursor-pointer text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline disabled:opacity-50"
                   >

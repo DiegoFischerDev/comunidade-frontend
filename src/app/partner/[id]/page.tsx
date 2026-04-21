@@ -30,6 +30,15 @@ type PartnerPublic = {
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3001';
 
+function absoluteOgImage(url: string | null | undefined): string | undefined {
+  if (!url?.trim()) return undefined;
+  const u = url.trim();
+  if (u.startsWith('http://') || u.startsWith('https://')) return u;
+  const base = API_URL.replace(/\/$/, '');
+  if (u.startsWith('/uploads/')) return `${base}${u}`;
+  return undefined;
+}
+
 async function fetchPartner(id: string): Promise<PartnerPublic> {
   const res = await fetch(`${API_URL}/partners/${id}/public`, {
     // Não cachear: alterações devem refletir imediatamente
@@ -75,9 +84,16 @@ export async function generateMetadata({ params }: PageProps) {
 
   const url = `/partner/${id}`;
 
+  const ogUrl = absoluteOgImage(partner.logoUrl);
+  const ogImages = ogUrl
+    ? [{ url: ogUrl, width: 1200, height: 630, alt: partner.name }]
+    : [];
+
   return {
     title,
     description,
+    keywords: [partner.name, categoryName, 'Portugal', 'Comunidade RPM', 'imigração'],
+    robots: { index: true, follow: true },
     alternates: {
       canonical: url,
     },
@@ -86,11 +102,15 @@ export async function generateMetadata({ params }: PageProps) {
       description,
       url,
       type: 'website',
+      locale: 'pt_PT',
+      siteName: 'Comunidade RPM',
+      images: ogImages,
     },
     twitter: {
-      card: 'summary_large_image',
+      card: ogImages.length > 0 ? 'summary_large_image' : 'summary',
       title,
       description,
+      images: ogImages.length > 0 ? [ogImages[0].url] : [],
     },
   };
 }
