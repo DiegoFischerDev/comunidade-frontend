@@ -1047,6 +1047,7 @@ export const api = {
           partner: {
             id: string;
             name: string;
+            whatsapp: string;
             logoUrl: string | null;
             shortDescription: string | null;
           };

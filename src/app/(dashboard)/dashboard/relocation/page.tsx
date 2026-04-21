@@ -62,6 +62,33 @@ function formatRelocationFeeEur(raw: string): string {
   return `${t} €`;
 }
 
+/** Mensagem alinhada à página pública do imóvel / contacto WhatsApp. */
+function buildRelocationWhatsAppText(h: HouseRow): string {
+  const cityLabel = CITY_LABELS[h.city] ?? h.city;
+  const typologyLabel = TYPOLOGY_LABELS[h.typology] ?? h.typology;
+  const mobilado = h.furnished ? "mobilado" : "não mobilado";
+  return `Olá, gostaria de mais informações sobre o imóvel ${typologyLabel} (${mobilado}) por ${h.priceEur} em ${cityLabel} com título ${h.title}.`;
+}
+
+async function openRelocationPartnerWhatsApp(h: HouseRow): Promise<void> {
+  const digits = (h.partner.whatsapp ?? "").replace(/\D/g, "");
+  if (!digits) {
+    window.alert("Não foi possível obter o WhatsApp deste parceiro.");
+    return;
+  }
+  try {
+    await api.marketplace.registerLead(h.partnerId);
+  } catch {
+    /* não bloqueia o contacto */
+  }
+  const text = buildRelocationWhatsAppText(h);
+  window.open(
+    `https://wa.me/${digits}?text=${encodeURIComponent(text)}`,
+    "_blank",
+    "noopener,noreferrer",
+  );
+}
+
 /**
  * Compara só a data (YYYY-MM-DD do ISO) para evitar desvios de timezone.
  * Se a data de disponibilidade é hoje ou passada → "Atualmente disponível".
@@ -250,7 +277,8 @@ export default function RelocationHousesPage() {
             >
               <span aria-hidden>×</span>
             </button>
-            <div className="relative aspect-[4/3] w-full shrink-0 bg-zinc-100">
+            {/* Altura limitada para o vídeo/imagem não ocupar o ecrã inteiro e esconder detalhes + rodapé */}
+            <div className="relative mx-auto h-[min(36vh,260px)] w-full shrink-0 overflow-hidden bg-zinc-100 sm:h-[min(40vh,300px)]">
               {modalVideoSrc ? (
                 <video
                   src={modalVideoSrc}
@@ -303,7 +331,7 @@ export default function RelocationHousesPage() {
                   ) : null}
                 </>
               ) : (
-                <div className="flex h-full min-h-[200px] items-center justify-center text-sm text-zinc-400">
+                <div className="flex h-full min-h-[140px] items-center justify-center text-sm text-zinc-400">
                   Sem fotos nem vídeo
                 </div>
               )}
@@ -354,12 +382,13 @@ export default function RelocationHousesPage() {
                     >
                       Ver anúncio
                     </Link>
-                    <Link
-                      href={`/casas/${encodeURIComponent(modalHouse.id)}`}
-                      className="inline-flex rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-semibold text-white shadow-sm"
+                    <button
+                      type="button"
+                      onClick={() => void openRelocationPartnerWhatsApp(modalHouse)}
+                      className="inline-flex rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-105"
                     >
                       Contactar relocation
-                    </Link>
+                    </button>
                   </>
                 ) : (
                   <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-600">

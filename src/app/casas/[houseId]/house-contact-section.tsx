@@ -65,6 +65,7 @@ export function HouseContactSection({
   const { user, loading } = useAuth();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const nextPath = `/casas/${houseId}`;
   const loginHref = `/login?next=${encodeURIComponent(nextPath)}`;
@@ -129,44 +130,74 @@ export function HouseContactSection({
     return <p className="text-sm text-zinc-600">A carregar sessão…</p>;
   }
 
-  if (!user) {
-    return (
-      <div className="rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-5 sm:px-6">
-        <h2 className="text-sm font-semibold text-zinc-900">Contactar o parceiro</h2>
-        <p className="mt-1 text-sm text-zinc-700">
-          Inicia sessão na Comunidade RPM para confirmarmos que o imóvel ainda está disponível e abrir o WhatsApp do
-          parceiro com uma mensagem já preenchida.
-        </p>
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <Link
-            href={loginHref}
-            className="inline-flex flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-3 text-center text-sm font-semibold text-white shadow-sm"
-          >
-            Iniciar sessão
-          </Link>
-          <Link
-            href={registroHref}
-            className="inline-flex flex-1 items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-3 text-center text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
-          >
-            Criar conta
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-3">
       <button
         type="button"
-        disabled={busy}
-        onClick={() => void openWhatsApp()}
+        disabled={busy || loading}
+        onClick={() => {
+          if (!user) {
+            setAuthModalOpen(true);
+            return;
+          }
+          void openWhatsApp();
+        }}
         className="inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-5 py-3.5 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
         {busy ? "A abrir…" : "Contactar no WhatsApp"}
       </button>
       {error ? (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+      ) : null}
+
+      {authModalOpen ? (
+        <div
+          className="fixed inset-0 z-[200] flex items-end justify-center p-4 sm:items-center"
+          role="dialog"
+          aria-modal
+          aria-labelledby="house-auth-modal-title"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50"
+            aria-label="Fechar"
+            onClick={() => setAuthModalOpen(false)}
+          />
+          <div className="relative z-10 w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl sm:p-6">
+            <div className="flex items-start justify-between gap-3">
+              <h2 id="house-auth-modal-title" className="text-lg font-semibold text-zinc-900">
+                Criar conta
+              </h2>
+              <button
+                type="button"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg leading-none text-zinc-600 hover:bg-zinc-100"
+                onClick={() => setAuthModalOpen(false)}
+                aria-label="Fechar"
+              >
+                <span aria-hidden>×</span>
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-zinc-600">
+              Precisas de uma conta na Comunidade RPM para contactares o parceiro no WhatsApp.
+            </p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:gap-3">
+              <Link
+                href={registroHref}
+                className="inline-flex flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-3 text-center text-sm font-semibold text-white shadow-sm"
+                onClick={() => setAuthModalOpen(false)}
+              >
+                Criar conta
+              </Link>
+              <Link
+                href={loginHref}
+                className="inline-flex flex-1 items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-3 text-center text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+                onClick={() => setAuthModalOpen(false)}
+              >
+                Já tenho conta
+              </Link>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );
