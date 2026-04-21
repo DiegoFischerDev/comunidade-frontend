@@ -295,17 +295,17 @@ export default function RelocationHousesPage() {
               </p>
               <div className="mt-4 flex flex-wrap gap-2 border-t border-zinc-100 pt-4">
                 <Link
-                  href={`/dashboard/partner/${modalHouse.partner.id}`}
+                  href={`/partner/${modalHouse.partner.id}`}
                   className="inline-flex rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
                 >
                   Ver parceiro
                 </Link>
                 {modalHouse.status === "AVAILABLE" ? (
                   <Link
-                    href={`/casas/interesse?houseId=${encodeURIComponent(modalHouse.id)}&partnerId=${encodeURIComponent(modalHouse.partnerId)}&title=${encodeURIComponent(modalHouse.title)}&city=${encodeURIComponent(modalHouse.city)}&typology=${encodeURIComponent(modalHouse.typology)}&price=${encodeURIComponent(modalHouse.priceEur)}`}
+                    href={`/casas/${encodeURIComponent(modalHouse.id)}`}
                     className="inline-flex rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-semibold text-white"
                   >
-                    Tenho interesse
+                    Ver anúncio e contacto
                   </Link>
                 ) : (
                   <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-600">

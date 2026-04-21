@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,12 +44,11 @@ function buildLeadMessageFromFields(f: ListingFields) {
 }
 
 function CasasInteresseContent() {
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const [redirecting, setRedirecting] = useState(false);
-  const [checkingAvailability, setCheckingAvailability] = useState(false);
-  const [unavailable, setUnavailable] = useState(false);
   const [error, setError] = useState("");
   const didAttemptWaRedirect = useRef(false);
 
@@ -59,6 +58,12 @@ function CasasInteresseContent() {
   const city = (searchParams.get("city") ?? "").trim();
   const typology = (searchParams.get("typology") ?? "").trim();
   const price = (searchParams.get("price") ?? "").trim();
+
+  useEffect(() => {
+    if (houseId) {
+      router.replace(`/casas/${houseId}`);
+    }
+  }, [houseId, router]);
 
   const nextTarget = useMemo(() => {
     const q = searchParams.toString();
@@ -108,52 +113,26 @@ function CasasInteresseContent() {
   }, [paramsOk, partnerId, title, city, typology, price]);
 
   useEffect(() => {
+    if (houseId) return;
     if (authLoading || !paramsOk) return;
     if (!user) return;
     if (didAttemptWaRedirect.current) return;
 
     const run = async () => {
-      let verified: ListingFields | undefined;
-
-      if (houseId) {
-        setCheckingAvailability(true);
-        try {
-          const data = await api.marketplace.houseContact(houseId);
-          if (data.partnerId !== partnerId) {
-            setError("Este link não corresponde ao anúncio.");
-            setCheckingAvailability(false);
-            return;
-          }
-          if (data.status !== "AVAILABLE") {
-            setUnavailable(true);
-            setCheckingAvailability(false);
-            return;
-          }
-          verified = {
-            partnerId: data.partnerId,
-            title: data.title,
-            city: data.city,
-            typology: data.typology,
-            price: data.priceEur,
-          };
-        } catch (err) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Não foi possível verificar se o imóvel ainda está disponível.",
-          );
-          setCheckingAvailability(false);
-          return;
-        }
-        setCheckingAvailability(false);
-      }
-
       didAttemptWaRedirect.current = true;
-      await openWhatsAppForPartner(verified);
+      await openWhatsAppForPartner();
     };
 
     void run();
-  }, [authLoading, user, paramsOk, houseId, partnerId, openWhatsAppForPartner]);
+  }, [authLoading, user, paramsOk, houseId, openWhatsAppForPartner]);
+
+  if (houseId) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center text-sm text-zinc-600">
+        A abrir o anúncio…
+      </div>
+    );
+  }
 
   if (!paramsOk) {
     return (
@@ -200,40 +179,6 @@ function CasasInteresseContent() {
     );
   }
 
-  if (unavailable) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-16">
-        <h1 className="text-xl font-semibold text-zinc-900">Imóvel já não disponível</h1>
-        <p className="mt-2 text-sm text-zinc-600">
-          Este anúncio foi marcado como indisponível. Podes voltar ao grupo de casas para ver outras
-          publicações ou explorar os parceiros na comunidade.
-        </p>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Link
-            href="/"
-            className="inline-flex flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-3 text-center text-sm font-semibold text-white shadow-sm"
-          >
-            Ir à comunidade
-          </Link>
-          <Link
-            href="/dashboard/partners"
-            className="inline-flex flex-1 items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-3 text-center text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
-          >
-            Ver parceiros
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (checkingAvailability) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-16 text-center text-sm text-zinc-600">
-        A confirmar se o imóvel ainda está disponível…
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto max-w-lg px-4 py-16 text-center">
       <h1 className="text-xl font-semibold text-zinc-900">A abrir o WhatsApp…</h1>
@@ -249,39 +194,6 @@ function CasasInteresseContent() {
           onClick={() => {
             void (async () => {
               didAttemptWaRedirect.current = false;
-              if (houseId) {
-                setCheckingAvailability(true);
-                setError("");
-                try {
-                  const data = await api.marketplace.houseContact(houseId);
-                  if (data.partnerId !== partnerId) {
-                    setError("Este link não corresponde ao anúncio.");
-                    setCheckingAvailability(false);
-                    return;
-                  }
-                  if (data.status !== "AVAILABLE") {
-                    setUnavailable(true);
-                    setCheckingAvailability(false);
-                    return;
-                  }
-                  await openWhatsAppForPartner({
-                    partnerId: data.partnerId,
-                    title: data.title,
-                    city: data.city,
-                    typology: data.typology,
-                    price: data.priceEur,
-                  });
-                } catch (err) {
-                  setError(
-                    err instanceof Error
-                      ? err.message
-                      : "Não foi possível verificar se o imóvel ainda está disponível.",
-                  );
-                } finally {
-                  setCheckingAvailability(false);
-                }
-                return;
-              }
               await openWhatsAppForPartner();
             })();
           }}

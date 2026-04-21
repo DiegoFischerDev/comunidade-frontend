@@ -1006,6 +1006,12 @@ export const api = {
         typology: string;
         priceEur: string;
       }>(`/partners/houses/${encodeURIComponent(houseId)}/contact`, { method: 'GET' }),
+    /** Página pública do anúncio (sem auth). */
+    housePublic: (houseId: string) =>
+      request<import('@/lib/house-public-server').PublicHousePageData>(
+        `/partners/houses/${encodeURIComponent(houseId)}/public`,
+        { method: 'GET' },
+      ),
     relocationHouses: () =>
       request<
         {
