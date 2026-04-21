@@ -16,6 +16,8 @@ import {
   setDeviceSessionToken,
   getDeviceSessionToken,
   clearDeviceSessionToken,
+  AUTH_TOKEN_STORAGE_KEY,
+  AUTH_DEVICE_SESSION_STORAGE_KEY,
 } from '@/lib/api';
 
 type User = {
@@ -80,7 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  useEffect(() => {
+  /** Lê JWT + backup de impersonação no `localStorage` (igual em todas as abas do mesmo origem). */
+  const applySessionFromStorage = useCallback(async () => {
     let t = getAuthToken();
     if (!t) {
       const device = getDeviceSessionToken();
@@ -90,17 +93,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     if (typeof window !== 'undefined') {
-      const backup = window.localStorage.getItem(ADMIN_BACKUP_TOKEN_KEY);
-      if (backup) {
-        setIsImpersonating(true);
-      }
+      setIsImpersonating(
+        Boolean(window.localStorage.getItem(ADMIN_BACKUP_TOKEN_KEY)),
+      );
     }
     if (t) {
-      loadUser(t).finally(() => setLoading(false));
+      await loadUser(t);
     } else {
-      setLoading(false);
+      setUser(null);
+      setTokenState(null);
     }
   }, [loadUser]);
+
+  useEffect(() => {
+    void applySessionFromStorage().finally(() => setLoading(false));
+  }, [applySessionFromStorage]);
+
+  // Outras abas: `localStorage` já está sincronizado; o evento `storage` avisa esta aba para atualizar o React.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let debounceId: ReturnType<typeof setTimeout> | undefined;
+    const syncFromOtherTab = () => {
+      if (debounceId !== undefined) clearTimeout(debounceId);
+      debounceId = setTimeout(() => {
+        debounceId = undefined;
+        void applySessionFromStorage();
+      }, 0);
+    };
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.storageArea !== localStorage) return;
+      const relevant =
+        e.key === null ||
+        e.key === AUTH_TOKEN_STORAGE_KEY ||
+        e.key === AUTH_DEVICE_SESSION_STORAGE_KEY ||
+        e.key === ADMIN_BACKUP_TOKEN_KEY;
+      if (!relevant) return;
+      syncFromOtherTab();
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      if (debounceId !== undefined) clearTimeout(debounceId);
+    };
+  }, [applySessionFromStorage]);
 
   const login = useCallback(
     async (whatsapp: string, password: string) => {

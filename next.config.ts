@@ -24,6 +24,11 @@ const nextConfig: NextConfig = {
         hostname: "api.rafaapelomundo.com",
         pathname: "/uploads/**",
       },
+      {
+        protocol: "https",
+        hostname: "api-comunidade.rafaapelomundo.com",
+        pathname: "/uploads/**",
+      },
       ...extraImageHosts,
     ],
   },
