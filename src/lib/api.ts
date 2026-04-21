@@ -17,6 +17,29 @@ export const clearAuthToken = () => {
   }
 };
 
+/**
+ * Cópia do JWT para "manter sessão neste dispositivo" após logout + refresh.
+ * Não substitui boas práticas em computadores partilhados (limpar dados do site remove).
+ */
+const DEVICE_SESSION_KEY = 'comunidade_device_session_token';
+
+export function setDeviceSessionToken(token: string) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(DEVICE_SESSION_KEY, token);
+  }
+}
+
+export function getDeviceSessionToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(DEVICE_SESSION_KEY);
+}
+
+export function clearDeviceSessionToken() {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(DEVICE_SESSION_KEY);
+  }
+}
+
 export const getAuthToken = getToken;
 
 function fallbackHttpErrorMessage(status: number): string {

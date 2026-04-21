@@ -721,7 +721,7 @@ export default function DashboardLayout({
             {user ? (
               <button
                 type="button"
-                onClick={logout}
+                onClick={() => logout()}
                 className="cursor-pointer text-xs font-medium text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
               >
                 Sair

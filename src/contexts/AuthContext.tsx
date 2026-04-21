@@ -8,7 +8,15 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { api, setAuthToken, clearAuthToken, getAuthToken } from '@/lib/api';
+import {
+  api,
+  setAuthToken,
+  clearAuthToken,
+  getAuthToken,
+  setDeviceSessionToken,
+  getDeviceSessionToken,
+  clearDeviceSessionToken,
+} from '@/lib/api';
 
 type User = {
   id: string;
@@ -42,6 +50,7 @@ type AuthContextValue = {
     whatsappOpenUrl?: string;
     whatsappBrowserSessionToken?: string;
   }>;
+  /** Termina a sessão atual; mantém token neste dispositivo para voltar a entrar após refresh. */
   logout: () => void;
   refreshUser: () => Promise<void>;
   impersonateAsUser: (userId: string) => Promise<void>;
@@ -65,13 +74,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTokenState(t);
     } catch {
       clearAuthToken();
+      clearDeviceSessionToken();
       setUser(null);
       setTokenState(null);
     }
   }, []);
 
   useEffect(() => {
-    const t = getAuthToken();
+    let t = getAuthToken();
+    if (!t) {
+      const device = getDeviceSessionToken();
+      if (device) {
+        setAuthToken(device);
+        t = device;
+      }
+    }
     if (typeof window !== 'undefined') {
       const backup = window.localStorage.getItem(ADMIN_BACKUP_TOKEN_KEY);
       if (backup) {
@@ -89,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (whatsapp: string, password: string) => {
       const { token: t } = await api.auth.login(whatsapp, password);
       setAuthToken(t);
+      setDeviceSessionToken(t);
       await loadUser(t);
       // não alteramos a rota: o utilizador permanece na página atual
     },
@@ -98,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithToken = useCallback(
     async (t: string) => {
       setAuthToken(t);
+      setDeviceSessionToken(t);
       await loadUser(t);
     },
     [loadUser],
