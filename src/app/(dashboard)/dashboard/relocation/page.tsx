@@ -139,7 +139,7 @@ export default function RelocationHousesPage() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((h) => {
             const videoSrc = h.videoUrl ? resolveMediaUrl(h.videoUrl) : null;
-            const thumb = h.imageUrls[0] ? resolveMediaUrl(h.imageUrls[0]) : null;
+            const cardImages = (h.imageUrls ?? []).slice(0, 4).map((u) => resolveMediaUrl(u));
             const cityLabel = CITY_LABELS[h.city] ?? h.city;
             const typoLabel = TYPOLOGY_LABELS[h.typology] ?? h.typology;
             const isUnavailable = h.status === "UNAVAILABLE";
@@ -148,7 +148,7 @@ export default function RelocationHousesPage() {
                 key={h.id}
                 type="button"
                 onClick={() => setModalHouse(h)}
-                className={`group flex w-full flex-col overflow-hidden rounded-2xl border text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                className={`group flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                   isUnavailable
                     ? "border-zinc-200 bg-zinc-50 opacity-90 hover:border-zinc-300"
                     : "border-zinc-200 bg-white hover:border-amber-200"
@@ -163,15 +163,35 @@ export default function RelocationHousesPage() {
                       playsInline
                       preload="metadata"
                     />
-                  ) : thumb ? (
+                  ) : cardImages.length === 1 ? (
                     <Image
-                      src={thumb}
+                      src={cardImages[0]}
                       alt=""
                       fill
                       className="object-cover transition group-hover:scale-[1.02]"
                       sizes="(max-width: 640px) 100vw, 33vw"
-                      unoptimized={nextImageUnoptimized(thumb)}
+                      unoptimized={nextImageUnoptimized(cardImages[0])}
                     />
+                  ) : cardImages.length >= 2 ? (
+                    <div className="grid h-full w-full grid-cols-2 grid-rows-2 gap-px bg-zinc-300 p-px">
+                      {[0, 1, 2, 3].map((i) => {
+                        const src = cardImages[i];
+                        return (
+                          <div key={i} className="relative min-h-0 bg-zinc-100">
+                            {src ? (
+                              <Image
+                                src={src}
+                                alt=""
+                                fill
+                                className="object-cover transition group-hover:scale-[1.02]"
+                                sizes="(max-width: 640px) 50vw, 17vw"
+                                unoptimized={nextImageUnoptimized(src)}
+                              />
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
                   ) : (
                     <div className="flex h-full items-center justify-center text-sm text-zinc-400">
                       Sem média
@@ -195,12 +215,12 @@ export default function RelocationHousesPage() {
                   </p>
                   <p className="text-sm font-semibold text-[#086601]">{formatRentPerMonth(h.priceEur)}</p>
                   <p className="text-xs text-zinc-600">{availabilityLabel(h.availableFrom)}</p>
-                  <p className="line-clamp-2 text-xs leading-snug text-zinc-600">
-                    <span className="font-medium text-zinc-700">Entrada: </span>
+                  <p className="line-clamp-3 text-xs leading-snug text-zinc-600">
+                    <span className="font-medium text-zinc-700">
+                      Entrada (taxa relocation, cauções e rendas antecipadas):{" "}
+                    </span>
+                    Taxa relocation {formatRelocationFeeEur(h.relocationFeeEur)} ·{" "}
                     {formatHouseEntradaShort(h.caucoesCount, h.rendasEntradaCount)}
-                  </p>
-                  <p className="text-xs text-zinc-500">
-                    Taxa relocation: {formatRelocationFeeEur(h.relocationFeeEur)}
                   </p>
                   <p className="text-xs text-zinc-500">{h.partner.name}</p>
                 </div>
@@ -219,9 +239,17 @@ export default function RelocationHousesPage() {
           onClick={closeModal}
         >
           <div
-            className="flex max-h-[100dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:max-h-[90vh] sm:rounded-2xl"
+            className="relative flex max-h-[100dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:max-h-[90vh] sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              type="button"
+              className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-lg leading-none text-zinc-700 shadow-md ring-1 ring-black/5 hover:bg-white"
+              onClick={closeModal}
+              aria-label="Fechar"
+            >
+              <span aria-hidden>×</span>
+            </button>
             <div className="relative aspect-[4/3] w-full shrink-0 bg-zinc-100">
               {modalVideoSrc ? (
                 <video
@@ -289,43 +317,50 @@ export default function RelocationHousesPage() {
                 {TYPOLOGY_LABELS[modalHouse.typology] ?? modalHouse.typology} ·{" "}
                 {CITY_LABELS[modalHouse.city] ?? modalHouse.city}
               </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                Mobilado: {modalHouse.furnished ? "sim" : "não"}
+              </p>
               <p className="mt-2 text-sm text-zinc-700">{availabilityLabel(modalHouse.availableFrom)}</p>
               <p className="mt-2 text-lg font-semibold text-[#086601]">
                 {formatRentPerMonth(modalHouse.priceEur)}
               </p>
-              <div className="mt-3 space-y-2 rounded-lg bg-zinc-50 px-3 py-2 text-sm text-zinc-800">
-                <p>
-                  <span className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                    Entrada (cauções e rendas antecipadas)
-                  </span>
-                  <br />
-                  {formatHouseEntradaShort(modalHouse.caucoesCount, modalHouse.rendasEntradaCount)}
+              <div className="mt-3 rounded-lg bg-zinc-50 px-3 py-2 text-sm text-zinc-800">
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Entrada (taxa relocation, cauções e rendas antecipadas)
                 </p>
-                <p>
-                  <span className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                    Taxa de relocation
+                <p className="mt-1.5 space-y-1">
+                  <span>
+                    Taxa relocation: {formatRelocationFeeEur(modalHouse.relocationFeeEur)}
                   </span>
                   <br />
-                  {formatRelocationFeeEur(modalHouse.relocationFeeEur)}
+                  <span>
+                    Cauções e rendas:{" "}
+                    {formatHouseEntradaShort(modalHouse.caucoesCount, modalHouse.rendasEntradaCount)}
+                  </span>
                 </p>
               </div>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">
                 {modalHouse.description}
               </p>
-              <div className="mt-4 flex flex-wrap gap-2 border-t border-zinc-100 pt-4">
-                <Link
-                  href={`/partner/${modalHouse.partner.id}`}
-                  className="inline-flex rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
-                >
-                  Ver parceiro
-                </Link>
+            </div>
+
+            <div className="shrink-0 border-t border-zinc-100 bg-white">
+              <div className="flex flex-wrap justify-end gap-2 px-4 py-3">
                 {modalHouse.status === "AVAILABLE" ? (
-                  <Link
-                    href={`/casas/${encodeURIComponent(modalHouse.id)}`}
-                    className="inline-flex rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-semibold text-white"
-                  >
-                    Ver anúncio e contacto
-                  </Link>
+                  <>
+                    <Link
+                      href={`/casas/${encodeURIComponent(modalHouse.id)}`}
+                      className="inline-flex rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50"
+                    >
+                      Ver anúncio
+                    </Link>
+                    <Link
+                      href={`/casas/${encodeURIComponent(modalHouse.id)}`}
+                      className="inline-flex rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-semibold text-white shadow-sm"
+                    >
+                      Contactar relocation
+                    </Link>
+                  </>
                 ) : (
                   <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-600">
                     Anúncio indisponível — contacto não disponível
@@ -333,14 +368,6 @@ export default function RelocationHousesPage() {
                 )}
               </div>
             </div>
-
-            <button
-              type="button"
-              className="border-t border-zinc-100 py-3 text-sm font-medium text-zinc-600 hover:bg-zinc-50"
-              onClick={closeModal}
-            >
-              Fechar
-            </button>
           </div>
         </div>
       ) : null}

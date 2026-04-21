@@ -91,6 +91,7 @@ export default function PartnerHousesPage() {
         String(r.caucoesCount),
         String(r.rendasEntradaCount),
         formatHouseEntradaShort(r.caucoesCount, r.rendasEntradaCount),
+        r.furnished ? "mobilado sim" : "mobilado não",
         r.status,
       ]
         .join(" ")
@@ -198,9 +199,12 @@ export default function PartnerHousesPage() {
                   <th className="px-4 py-3 text-left font-medium">Título</th>
                   <th className="px-4 py-3 text-left font-medium">Cidade</th>
                   <th className="px-4 py-3 text-left font-medium">Tipologia</th>
+                  <th className="px-4 py-3 text-left font-medium">Mobilado</th>
                   <th className="px-4 py-3 text-left font-medium">Disponível em</th>
                   <th className="px-4 py-3 text-left font-medium">Preço</th>
-                  <th className="px-4 py-3 text-left font-medium">Entrada / Relocation</th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    Entrada (taxa relocation, cauções e rendas)
+                  </th>
                   <th className="px-4 py-3 text-left font-medium">Status</th>
                 </tr>
               </thead>
@@ -227,11 +231,12 @@ export default function PartnerHousesPage() {
                     <td className="px-4 py-3 text-zinc-700">
                       {TYPOLOGY_LABELS[r.typology] ?? r.typology}
                     </td>
+                    <td className="px-4 py-3 text-zinc-700">{r.furnished ? "Sim" : "Não"}</td>
                     <td className="px-4 py-3 text-zinc-700">{formatDatePt(r.availableFrom)}</td>
                     <td className="px-4 py-3 text-zinc-700">{r.priceEur}</td>
                     <td className="px-4 py-3 text-zinc-700">
+                      <div className="text-xs text-zinc-500">Taxa: {r.relocationFeeEur} €</div>
                       <div>{formatHouseEntradaShort(r.caucoesCount, r.rendasEntradaCount)}</div>
-                      <div className="text-xs text-zinc-500">Taxa rel.: {r.relocationFeeEur} €</div>
                     </td>
                     <td className="px-4 py-3">
                       <select

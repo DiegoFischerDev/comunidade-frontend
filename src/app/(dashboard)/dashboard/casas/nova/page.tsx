@@ -46,6 +46,7 @@ export default function NewHousePostPage() {
   const [relocationFeeEur, setRelocationFeeEur] = useState("");
   const [caucoesCount, setCaucoesCount] = useState("0");
   const [rendasEntradaCount, setRendasEntradaCount] = useState("0");
+  const [furnished, setFurnished] = useState(false);
   const [mediaMode, setMediaMode] = useState<"images" | "video">("images");
   const [images, setImages] = useState<File[]>([]);
   const [video, setVideo] = useState<File | null>(null);
@@ -178,6 +179,7 @@ export default function NewHousePostPage() {
         relocationFeeEur: cleanRelocation,
         caucoesCount,
         rendasEntradaCount,
+        furnished,
       });
       router.push("/dashboard/casas?sent=1");
     } catch (err) {
@@ -323,6 +325,30 @@ export default function NewHousePostPage() {
             placeholder="Ex.: T2 mobilado perto do metro"
             className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
+        </div>
+
+        <div>
+          <span className="block text-xs font-medium text-zinc-700">Mobilado?</span>
+          <div className="mt-2 flex flex-wrap gap-4">
+            <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
+              <input
+                type="radio"
+                name="house-furnished"
+                checked={furnished === true}
+                onChange={() => setFurnished(true)}
+              />
+              Sim
+            </label>
+            <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
+              <input
+                type="radio"
+                name="house-furnished"
+                checked={furnished === false}
+                onChange={() => setFurnished(false)}
+              />
+              Não
+            </label>
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

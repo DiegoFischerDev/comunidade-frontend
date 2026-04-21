@@ -91,26 +91,29 @@ export function HousePublicView({ house, apiBaseUrl }: Props) {
     <div className="min-h-screen bg-gradient-to-b from-zinc-100 to-zinc-50">
       <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/85 shadow-sm backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
-          <Link href="/" className="group flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#910001] to-[#5f0001] text-xs font-bold text-white shadow-sm">
-              RPM
-            </span>
-            <span className="text-sm font-semibold tracking-tight text-zinc-900 group-hover:text-amber-900">
-              Comunidade Rafa pelo mundo
+          <Link
+            href="/"
+            className="inline-flex min-w-0 flex-1 items-center gap-2 pr-3 sm:gap-3 sm:pr-4"
+            aria-label="Comunidade RPM — início"
+          >
+            <Image
+              src="/logo_comunidade.png"
+              alt=""
+              width={140}
+              height={32}
+              priority
+              className="h-8 w-auto shrink-0"
+            />
+            <span className="min-w-0 text-[10px] font-semibold uppercase leading-snug tracking-wide text-zinc-900 sm:text-xs md:text-sm">
+              COMUNIDADE RAFA PELO MUNDO - RELOCATION PORTUGAL
             </span>
           </Link>
-          <nav className="flex items-center gap-2 sm:gap-3">
+          <nav className="shrink-0">
             <Link
               href="/dashboard/relocation"
-              className="rounded-full px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-amber-50 hover:text-amber-950 sm:text-sm"
+              className="inline-flex rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 sm:px-4 sm:text-sm"
             >
-              Imóveis relocation
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-1.5 text-xs font-semibold text-white shadow-sm sm:px-4 sm:text-sm"
-            >
-              Entrar
+              Catálogo de imóveis
             </Link>
           </nav>
         </div>
@@ -158,28 +161,31 @@ export function HousePublicView({ house, apiBaseUrl }: Props) {
               <p className="text-sm text-zinc-600">
                 {typoLabel} · {availabilityLabel(house.availableFrom)}
               </p>
+              <p className="text-sm text-zinc-600">
+                Mobilado: <span className="font-medium text-zinc-800">{house.furnished ? "Sim" : "Não"}</span>
+              </p>
             </header>
 
             <dl className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3">
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 sm:col-span-2">
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-emerald-900/70">
                   Renda mensal
                 </dt>
                 <dd className="mt-1 text-lg font-semibold text-emerald-950">{formatRentPerMonth(house.priceEur)}</dd>
               </div>
-              <div className="rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3">
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-900/80">
-                  Taxa de relocation
-                </dt>
-                <dd className="mt-1 text-lg font-semibold text-amber-950">
-                  {formatRelocationFeeEur(house.relocationFeeEur)}
-                </dd>
-              </div>
               <div className="rounded-2xl border border-zinc-200 bg-zinc-50/90 px-4 py-3 sm:col-span-2">
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-zinc-600">
-                  Entrada (cauções e rendas antecipadas)
+                  Entrada (taxa relocation, cauções e rendas antecipadas)
                 </dt>
-                <dd className="mt-1 text-base font-medium text-zinc-900">{entrada}</dd>
+                <dd className="mt-2 space-y-1.5 text-base text-zinc-900">
+                  <p>
+                    <span className="font-medium text-zinc-800">Taxa relocation:</span>{" "}
+                    {formatRelocationFeeEur(house.relocationFeeEur)}
+                  </p>
+                  <p>
+                    <span className="font-medium text-zinc-800">Cauções e rendas:</span> {entrada}
+                  </p>
+                </dd>
               </div>
             </dl>
 
@@ -215,6 +221,7 @@ export function HousePublicView({ house, apiBaseUrl }: Props) {
               city={house.city}
               typology={house.typology}
               priceEur={house.priceEur}
+              furnished={house.furnished}
               status={house.status}
             />
           </div>

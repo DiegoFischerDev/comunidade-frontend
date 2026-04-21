@@ -841,6 +841,7 @@ export const api = {
             relocationFeeEur: string;
             caucoesCount: number;
             rendasEntradaCount: number;
+            furnished: boolean;
             status: 'AVAILABLE' | 'UNAVAILABLE';
             whatsappSentAt: string | null;
             whatsappError: string | null;
@@ -862,6 +863,7 @@ export const api = {
         relocationFeeEur: string;
         caucoesCount: string;
         rendasEntradaCount: string;
+        furnished: boolean;
       }) => {
         const fd = new FormData();
         if (input.video) {
@@ -878,6 +880,7 @@ export const api = {
         fd.append('relocationFeeEur', input.relocationFeeEur.trim());
         fd.append('caucoesCount', input.caucoesCount);
         fd.append('rendasEntradaCount', input.rendasEntradaCount);
+        fd.append('furnished', input.furnished ? 'true' : 'false');
         return requestFormData<{
           id: string;
           title: string;
@@ -889,6 +892,7 @@ export const api = {
           relocationFeeEur: string;
           caucoesCount: number;
           rendasEntradaCount: number;
+          furnished: boolean;
           status: 'AVAILABLE' | 'UNAVAILABLE';
           whatsappSentAt: string | null;
           whatsappError: string | null;
@@ -1007,6 +1011,7 @@ export const api = {
         city: string;
         typology: string;
         priceEur: string;
+        furnished: boolean;
       }>(`/partners/houses/${encodeURIComponent(houseId)}/contact`, { method: 'GET' }),
     /** Página pública do anúncio (sem auth). */
     housePublic: (houseId: string) =>
@@ -1027,6 +1032,7 @@ export const api = {
           relocationFeeEur: string;
           caucoesCount: number;
           rendasEntradaCount: number;
+          furnished: boolean;
           imageUrls: string[];
           videoUrl: string | null;
           partnerId: string;

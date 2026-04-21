@@ -26,6 +26,7 @@ export type PublicHousePageData = {
   relocationFeeEur: string;
   caucoesCount: number;
   rendasEntradaCount: number;
+  furnished: boolean;
   imageUrls: string[];
   videoUrl: string | null;
   status: "AVAILABLE" | "UNAVAILABLE";

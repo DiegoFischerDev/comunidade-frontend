@@ -13,6 +13,7 @@ type Props = {
   city: string;
   typology: string;
   priceEur: string;
+  furnished: boolean;
   status: "AVAILABLE" | "UNAVAILABLE";
 };
 
@@ -43,10 +44,12 @@ function buildLeadMessage(f: {
   city: string;
   typology: string;
   price: string;
+  furnished: boolean;
 }) {
   const cityLabel = CITY_LABELS[f.city] ?? f.city;
   const typologyLabel = TYPOLOGY_LABELS[f.typology] ?? f.typology;
-  return `Olá, gostaria de mais informações sobre o imóvel ${typologyLabel} por ${f.price} em ${cityLabel} com título ${f.title}.`;
+  const mobilado = f.furnished ? "mobilado" : "não mobilado";
+  return `Olá, gostaria de mais informações sobre o imóvel ${typologyLabel} (${mobilado}) por ${f.price} em ${cityLabel} com título ${f.title}.`;
 }
 
 export function HouseContactSection({
@@ -56,6 +59,7 @@ export function HouseContactSection({
   city,
   typology,
   priceEur,
+  furnished,
   status,
 }: Props) {
   const { user, loading } = useAuth();
@@ -98,6 +102,7 @@ export function HouseContactSection({
         city: data.city,
         typology: data.typology,
         price: data.priceEur,
+        furnished: data.furnished,
       });
       window.location.assign(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`);
     } catch (err) {
@@ -156,7 +161,7 @@ export function HouseContactSection({
         type="button"
         disabled={busy}
         onClick={() => void openWhatsApp()}
-        className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-5 py-3.5 text-sm font-semibold text-white shadow-sm disabled:opacity-60 sm:w-auto"
+        className="inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-5 py-3.5 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
         {busy ? "A abrir…" : "Contactar no WhatsApp"}
       </button>
