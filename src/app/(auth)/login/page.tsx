@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LoginWhatsappFields } from "@/components/auth/LoginWhatsappFields";
 import { useAuth } from "@/contexts/AuthContext";
+import { LOGIN_PASSWORD_STORAGE_KEY } from "@/lib/login-phone-storage";
 
 function isSafeInternalNextPath(value: string): boolean {
   return value.startsWith("/") && !value.startsWith("//");
@@ -18,8 +19,45 @@ function LoginForm() {
 
   const [whatsapp, setWhatsapp] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordHydrated, setPasswordHydrated] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = localStorage.getItem(LOGIN_PASSWORD_STORAGE_KEY);
+      if (saved) setPassword(saved);
+    } catch {
+      // noop
+    }
+    setPasswordHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !passwordHydrated) return;
+    try {
+      if (password) {
+        localStorage.setItem(LOGIN_PASSWORD_STORAGE_KEY, password);
+      } else {
+        localStorage.removeItem(LOGIN_PASSWORD_STORAGE_KEY);
+      }
+    } catch {
+      // noop
+    }
+  }, [passwordHydrated, password]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.storageArea !== localStorage || e.key !== LOGIN_PASSWORD_STORAGE_KEY) {
+        return;
+      }
+      setPassword(e.newValue ?? "");
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const registroHref =
     next && isSafeInternalNextPath(next)

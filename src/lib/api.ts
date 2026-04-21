@@ -1,42 +1,45 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-const getToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('comunidade_token');
-};
-
-export const setAuthToken = (token: string) => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('comunidade_token', token);
-  }
-};
-
-export const clearAuthToken = () => {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('comunidade_token');
-  }
-};
+/** JWT atual (partilhado entre abas do mesmo site via `localStorage`). */
+export const AUTH_TOKEN_STORAGE_KEY = 'comunidade_token';
 
 /**
  * Cópia do JWT para "manter sessão neste dispositivo" após logout + refresh.
  * Não substitui boas práticas em computadores partilhados (limpar dados do site remove).
  */
-const DEVICE_SESSION_KEY = 'comunidade_device_session_token';
+export const AUTH_DEVICE_SESSION_STORAGE_KEY = 'comunidade_device_session_token';
+
+const getToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+};
+
+export const setAuthToken = (token: string) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+  }
+};
+
+export const clearAuthToken = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  }
+};
 
 export function setDeviceSessionToken(token: string) {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(DEVICE_SESSION_KEY, token);
+    localStorage.setItem(AUTH_DEVICE_SESSION_STORAGE_KEY, token);
   }
 }
 
 export function getDeviceSessionToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem(DEVICE_SESSION_KEY);
+  return localStorage.getItem(AUTH_DEVICE_SESSION_STORAGE_KEY);
 }
 
 export function clearDeviceSessionToken() {
   if (typeof window !== 'undefined') {
-    localStorage.removeItem(DEVICE_SESSION_KEY);
+    localStorage.removeItem(AUTH_DEVICE_SESSION_STORAGE_KEY);
   }
 }
 

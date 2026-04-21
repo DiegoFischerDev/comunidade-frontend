@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  type ReactNode,
+} from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -12,6 +18,7 @@ import {
 } from '@/lib/whatsapp-registration-poll';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
+import { LOGIN_PASSWORD_STORAGE_KEY } from '@/lib/login-phone-storage';
 import { CardButton } from '@/components/ui/CardButton';
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
 
@@ -123,6 +130,113 @@ function formatWhatsappRegistrationDisplay(digits: string) {
   return d ? `+${d}` : '';
 }
 
+function EyeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className={className}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+      />
+    </svg>
+  );
+}
+
+function EyeSlashIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className={className}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 1 11-4.243-4.243m4.242 4.242L9.88 9.88"
+      />
+    </svg>
+  );
+}
+
+/** Campo de senha no modal de auth: ícone de olho para revelar/ocultar. */
+function AuthPasswordField({
+  id,
+  name,
+  label,
+  value,
+  onChange,
+  required,
+  minLength,
+  autoComplete,
+  disabled,
+}: {
+  id: string;
+  name?: string;
+  label: ReactNode;
+  value: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+  minLength?: number;
+  autoComplete?: string;
+  disabled?: boolean;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="block text-xs font-medium text-zinc-700"
+      >
+        {label}
+      </label>
+      <div className="relative mt-1">
+        <input
+          id={id}
+          name={name}
+          type={show ? 'text' : 'password'}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required={required}
+          minLength={minLength}
+          autoComplete={autoComplete}
+          disabled={disabled}
+          className="w-full rounded-lg border border-zinc-300 py-2 pl-3 pr-10 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+        />
+        <button
+          type="button"
+          className="absolute inset-y-0 right-0 flex items-center px-2.5 text-zinc-500 transition hover:text-zinc-800 disabled:pointer-events-none disabled:opacity-40"
+          onClick={() => setShow((s) => !s)}
+          aria-label={show ? 'Ocultar senha' : 'Mostrar senha'}
+          disabled={disabled}
+        >
+          {show ? (
+            <EyeSlashIcon className="h-5 w-5" />
+          ) : (
+            <EyeIcon className="h-5 w-5" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -156,6 +270,7 @@ export default function DashboardLayout({
   const whatsappPollStartedAtRef = useRef<number | null>(null);
   const [loginWhatsapp, setLoginWhatsapp] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [loginPasswordHydrated, setLoginPasswordHydrated] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [registerName, setRegisterName] = useState('');
@@ -188,6 +303,42 @@ export default function DashboardLayout({
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const saved = localStorage.getItem(LOGIN_PASSWORD_STORAGE_KEY);
+      if (saved) setLoginPassword(saved);
+    } catch {
+      // noop
+    }
+    setLoginPasswordHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !loginPasswordHydrated) return;
+    try {
+      if (loginPassword) {
+        localStorage.setItem(LOGIN_PASSWORD_STORAGE_KEY, loginPassword);
+      } else {
+        localStorage.removeItem(LOGIN_PASSWORD_STORAGE_KEY);
+      }
+    } catch {
+      // noop
+    }
+  }, [loginPasswordHydrated, loginPassword]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.storageArea !== localStorage || e.key !== LOGIN_PASSWORD_STORAGE_KEY) {
+        return;
+      }
+      setLoginPassword(e.newValue ?? '');
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
   useEffect(() => {
@@ -1063,24 +1214,16 @@ export default function DashboardLayout({
                   onChange={setLoginWhatsapp}
                   disabled={loginLoading}
                 />
-                <div>
-                  <label
-                    htmlFor="auth-password"
-                    className="block text-xs font-medium text-zinc-700"
-                  >
-                    Senha
-                  </label>
-                  <input
-                    id="auth-password"
-                    name="password"
-                    type="password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
+                <AuthPasswordField
+                  id="auth-password"
+                  name="password"
+                  label="Senha"
+                  value={loginPassword}
+                  onChange={setLoginPassword}
+                  required
+                  autoComplete="current-password"
+                  disabled={loginLoading}
+                />
                 <div className="flex items-center justify-end">
                   <button
                     type="button"
@@ -1090,7 +1233,7 @@ export default function DashboardLayout({
                       setForgotWhatsapp(loginWhatsapp);
                       setAuthMode('forgot');
                     }}
-                    className="cursor-pointer text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
+                    className="cursor-pointer text-sm font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
                   >
                     Esqueci a senha
                   </button>
@@ -1176,7 +1319,7 @@ export default function DashboardLayout({
                       htmlFor="auth-name"
                       className="block text-xs font-medium text-zinc-700"
                     >
-                      Nome
+                      Seu nome
                     </label>
                     <input
                       id="auth-name"
@@ -1187,42 +1330,26 @@ export default function DashboardLayout({
                       className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </div>
-                  <div>
-                    <label
-                      htmlFor="auth-password-register"
-                      className="block text-xs font-medium text-zinc-700"
-                    >
-                      Senha (mín. 6 caracteres)
-                    </label>
-                    <input
-                      id="auth-password-register"
-                      type="password"
-                      value={registerPassword}
-                      onChange={(e) => setRegisterPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="auth-password-register-2"
-                      className="block text-xs font-medium text-zinc-700"
-                    >
-                      Confirmar senha
-                    </label>
-                    <input
-                      id="auth-password-register-2"
-                      type="password"
-                      value={registerPasswordConfirm}
-                      onChange={(e) =>
-                        setRegisterPasswordConfirm(e.target.value)
-                      }
-                      required
-                      minLength={6}
-                      className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
+                  <AuthPasswordField
+                    id="auth-password-register"
+                    label="Senha (mín. 6 caracteres)"
+                    value={registerPassword}
+                    onChange={setRegisterPassword}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    disabled={registerLoading}
+                  />
+                  <AuthPasswordField
+                    id="auth-password-register-2"
+                    label="Confirmar senha"
+                    value={registerPasswordConfirm}
+                    onChange={setRegisterPasswordConfirm}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    disabled={registerLoading}
+                  />
                 </div>
                 {/* Ativação passa a ser sempre via WhatsApp */}
                 <button
@@ -1408,23 +1535,16 @@ export default function DashboardLayout({
                       className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </div>
-                  <div>
-                    <label
-                      htmlFor="auth-reset-password"
-                      className="block text-xs font-medium text-zinc-700"
-                    >
-                      Nova senha (mín. 6 caracteres)
-                    </label>
-                    <input
-                      id="auth-reset-password"
-                      type="password"
-                      value={resetPassword}
-                      onChange={(e) => setResetPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
+                  <AuthPasswordField
+                    id="auth-reset-password"
+                    label="Nova senha (mín. 6 caracteres)"
+                    value={resetPassword}
+                    onChange={setResetPassword}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    disabled={resetLoading}
+                  />
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-3">
                   <button

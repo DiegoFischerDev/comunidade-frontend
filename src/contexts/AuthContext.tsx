@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -16,6 +17,8 @@ import {
   setDeviceSessionToken,
   getDeviceSessionToken,
   clearDeviceSessionToken,
+  AUTH_TOKEN_STORAGE_KEY,
+  AUTH_DEVICE_SESSION_STORAGE_KEY,
 } from '@/lib/api';
 
 type User = {
@@ -50,7 +53,7 @@ type AuthContextValue = {
     whatsappOpenUrl?: string;
     whatsappBrowserSessionToken?: string;
   }>;
-  /** Termina a sessão atual; mantém token neste dispositivo para voltar a entrar após refresh. */
+  /** Termina a sessão neste browser (tokens em localStorage são limpos). */
   logout: () => void;
   refreshUser: () => Promise<void>;
   impersonateAsUser: (userId: string) => Promise<void>;
@@ -80,27 +83,95 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const loadUserRef = useRef(loadUser);
+  loadUserRef.current = loadUser;
+
+  /**
+   * Só na montagem inicial do provider (equivale ao primeiro load / refresh da página).
+   * Depende de `[]` para não voltar a correr se as referências de callbacks mudarem — caso contrário,
+   * após “Sair” (só `comunidade_token` apagado) o efeito podia repetir-se e copiar de novo o JWT
+   * de `comunidade_device_session_token` para `comunidade_token`.
+   */
   useEffect(() => {
-    let t = getAuthToken();
-    if (!t) {
-      const device = getDeviceSessionToken();
-      if (device) {
-        setAuthToken(device);
-        t = device;
+    let cancelled = false;
+    void (async () => {
+      let t = getAuthToken();
+      if (!t) {
+        const device = getDeviceSessionToken();
+        if (device) {
+          setAuthToken(device);
+          t = device;
+        }
       }
-    }
+      if (typeof window !== 'undefined') {
+        setIsImpersonating(
+          Boolean(window.localStorage.getItem(ADMIN_BACKUP_TOKEN_KEY)),
+        );
+      }
+      if (cancelled) return;
+      if (t) {
+        await loadUserRef.current(t);
+      } else {
+        setUser(null);
+        setTokenState(null);
+      }
+    })().finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intencional: apenas hidratação inicial
+  }, []);
+
+  /**
+   * Outras abas (evento `storage`): atualiza React a partir do JWT já em `localStorage`.
+   * Não promove token de dispositivo → senão, ao “Sair”, outra aba ou o mesmo fluxo relogava no mesmo segundo.
+   */
+  const syncAuthStateFromStorageEvent = useCallback(async () => {
+    const t = getAuthToken();
     if (typeof window !== 'undefined') {
-      const backup = window.localStorage.getItem(ADMIN_BACKUP_TOKEN_KEY);
-      if (backup) {
-        setIsImpersonating(true);
-      }
+      setIsImpersonating(
+        Boolean(window.localStorage.getItem(ADMIN_BACKUP_TOKEN_KEY)),
+      );
     }
     if (t) {
-      loadUser(t).finally(() => setLoading(false));
+      await loadUser(t);
     } else {
-      setLoading(false);
+      setUser(null);
+      setTokenState(null);
     }
   }, [loadUser]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let debounceId: ReturnType<typeof setTimeout> | undefined;
+    const syncFromOtherTab = () => {
+      if (debounceId !== undefined) clearTimeout(debounceId);
+      debounceId = setTimeout(() => {
+        debounceId = undefined;
+        void syncAuthStateFromStorageEvent();
+      }, 0);
+    };
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.storageArea !== localStorage) return;
+      const relevant =
+        e.key === null ||
+        e.key === AUTH_TOKEN_STORAGE_KEY ||
+        e.key === AUTH_DEVICE_SESSION_STORAGE_KEY ||
+        e.key === ADMIN_BACKUP_TOKEN_KEY;
+      if (!relevant) return;
+      syncFromOtherTab();
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      if (debounceId !== undefined) clearTimeout(debounceId);
+    };
+  }, [syncAuthStateFromStorageEvent]);
 
   const login = useCallback(
     async (whatsapp: string, password: string) => {
@@ -138,6 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.localStorage.removeItem(ADMIN_BACKUP_TOKEN_KEY);
     }
     clearAuthToken();
+    clearDeviceSessionToken();
     setUser(null);
     setTokenState(null);
     setIsImpersonating(false);
