@@ -861,14 +861,6 @@ const SECTIONS: Array<{
   },
 ];
 
-function pctDone(data: ChecklistData): number {
-  const checks = data.checks ?? {};
-  const allIds = SECTIONS.flatMap((s) => s.items.map((i) => i.id));
-  if (!allIds.length) return 0;
-  const done = allIds.filter((id) => checks[id]).length;
-  return Math.round((done / allIds.length) * 100);
-}
-
 function phaseProgress(
   data: ChecklistData,
   phase: "BRASIL" | "PORTUGAL",
@@ -877,6 +869,28 @@ function phaseProgress(
   const ids = SECTIONS.filter((s) => s.phase === phase).flatMap((s) => s.items.map((i) => i.id));
   const total = ids.length;
   const done = ids.filter((id) => checks[id]).length;
+  return { pct: total ? Math.round((done / total) * 100) : 0, done, total };
+}
+
+/**
+ * Progresso do painel «Meu plano»: respostas preenchidas no formulário (meta), não os checklists das fases.
+ */
+function planFormProgress(meta: ChecklistData["meta"] | undefined): { pct: number; done: number; total: number } {
+  const m = meta ?? {};
+  const filled: boolean[] = [
+    !!m.visaType,
+    !!m.cidade,
+    !!m.cidadePlanoB,
+    !!m.agregadoFamiliar,
+    !!m.numQuartos,
+    Array.isArray(m.profissoesPossiveis) && m.profissoesPossiveis.length > 0,
+    m.precisaCarro !== undefined,
+    Boolean(m.dataViagem && String(m.dataViagem).trim() !== ""),
+    Boolean(m.dataAima && String(m.dataAima).trim() !== ""),
+    Boolean(m.notas && String(m.notas).trim() !== ""),
+  ];
+  const total = filled.length;
+  const done = filled.filter(Boolean).length;
   return { pct: total ? Math.round((done / total) * 100) : 0, done, total };
 }
 
@@ -895,40 +909,15 @@ export default function ChecklistPage() {
   const [saveError, setSaveError] = useState("");
   const [saveOk, setSaveOk] = useState("");
   const [openDetails, setOpenDetails] = useState<Record<string, boolean>>({});
-  const [activePhase, setActivePhase] = useState<"BRASIL" | "PORTUGAL">("BRASIL");
-  const [isDesktop, setIsDesktop] = useState(false);
-  const [planOpen, setPlanOpen] = useState(false);
+  const [activePanel, setActivePanel] = useState<"plan" | "brasil" | "portugal">("plan");
 
   const dirtyRef = useRef(false);
   const saveTimer = useRef<number | null>(null);
-  const planToggledByUserRef = useRef(false);
 
-  const progress = useMemo(() => pctDone(data), [data]);
   const phase1 = useMemo(() => phaseProgress(data, "BRASIL"), [data]);
   const phase2 = useMemo(() => phaseProgress(data, "PORTUGAL"), [data]);
+  const meuPlano = useMemo(() => planFormProgress(data.meta), [data.meta]);
   const reserva = useMemo(() => estimateReserva(data.meta), [data.meta]);
-
-  // No desktop, "Teu plano" fica aberto; no mobile, começa fechado (dropdown).
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const apply = () => {
-      const d = Boolean(mq.matches);
-      setIsDesktop(d);
-      // Só ajusta automaticamente se o utilizador ainda não mexeu no dropdown.
-      if (!planToggledByUserRef.current) setPlanOpen(d);
-    };
-    apply();
-    // Safari < 14 não suporta addEventListener em MediaQueryList
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mql: any = mq;
-    if (mql.addEventListener) mql.addEventListener("change", apply);
-    else mql.addListener(apply);
-    return () => {
-      if (mql.removeEventListener) mql.removeEventListener("change", apply);
-      else mql.removeListener(apply);
-    };
-  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -963,25 +952,35 @@ export default function ChecklistPage() {
   }, [user?.id]);
 
   // Mobile browsers (especialmente iOS) podem falhar/ignorar `window.print()` quando chamado direto no onClick.
-  // Estratégia: navegar para `?print=1` e disparar o print no efeito.
+  // Estratégia: navegar para `?print=1&panel=…` e disparar o print no efeito (panel garante a vista certa após reload).
   useEffect(() => {
     if (!user) return;
     if (typeof window === "undefined") return;
     if (searchParams.get("print") !== "1") return;
+    const raw = searchParams.get("panel");
+    const panel =
+      raw === "brasil" || raw === "portugal" || raw === "plan" ? raw : "plan";
+    setActivePanel(panel);
     const t = window.setTimeout(() => {
+      document.body.dataset.printScope = panel;
+      const onAfterPrint = () => {
+        delete document.body.dataset.printScope;
+        window.removeEventListener("afterprint", onAfterPrint);
+      };
+      window.addEventListener("afterprint", onAfterPrint);
       try {
         window.print();
       } finally {
-        // remove o parâmetro para não re-imprimir ao voltar/atualizar
         try {
           const url = new URL(window.location.href);
           url.searchParams.delete("print");
+          url.searchParams.delete("panel");
           window.history.replaceState({}, "", url.toString());
         } catch {
           // noop
         }
       }
-    }, 250);
+    }, 320);
     return () => window.clearTimeout(t);
   }, [searchParams, user]);
 
@@ -1108,96 +1107,151 @@ export default function ChecklistPage() {
     setOpenDetails((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
-  function printPlan() {
+  /**
+   * Desktop: define `body[data-print-scope]` para o CSS ocultar o que não deve sair na folha.
+   * Mobile: recarrega com ?print=1&panel=… (o efeito aplica o mesmo scope antes do print).
+   */
+  function triggerPrint(forPanel: "plan" | "brasil" | "portugal" = "plan") {
     if (!requireLogin()) return;
     if (typeof window === "undefined") return;
     const isMobile = window.matchMedia ? window.matchMedia("(max-width: 1023px)").matches : window.innerWidth < 1024;
     if (isMobile) {
       const url = new URL(window.location.href);
       url.searchParams.set("print", "1");
+      url.searchParams.set("panel", forPanel);
       window.location.assign(url.toString());
       return;
     }
+    document.body.dataset.printScope = forPanel;
+    const onAfterPrint = () => {
+      delete document.body.dataset.printScope;
+      window.removeEventListener("afterprint", onAfterPrint);
+    };
+    window.addEventListener("afterprint", onAfterPrint);
     window.print();
   }
 
   return (
     <div className="mx-auto w-full max-w-[980px] space-y-6 overflow-x-hidden">
       <div className="p-1">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          data-print-section="page-intro"
+          className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+        >
           <div>
             <h1 className="text-2xl font-semibold text-zinc-900">Meu Plano de Imigração</h1>
             <p className="mt-1 text-sm text-zinc-600">
               Organize teu plano e acompanhe as etapas do processo até se regularizar em Portugal.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-xl bg-white px-3 py-3 text-center shadow-sm ring-1 ring-zinc-200">
-                <p className="text-[11px] font-medium text-zinc-500">Fase 1 🇧🇷</p>
-                <p className="text-lg font-extrabold text-zinc-900">{phase1.pct}%</p>
-                <p className="mt-0.5 text-[11px] text-zinc-500">
+          <div
+            className="flex w-full max-w-xl flex-col gap-2 sm:max-w-none print:hidden"
+            role="tablist"
+            aria-label="Secções do plano de imigração"
+          >
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activePanel === "plan"}
+                onClick={() => setActivePanel("plan")}
+                className={`cursor-pointer rounded-xl px-2 py-3 text-center shadow-sm ring-1 transition sm:px-3 ${
+                  activePanel === "plan"
+                    ? "bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white ring-amber-300/60"
+                    : "bg-white text-zinc-900 ring-zinc-200 hover:bg-zinc-50"
+                }`}
+              >
+                <p
+                  className={`text-[10px] font-medium leading-tight sm:text-[11px] ${
+                    activePanel === "plan" ? "text-white/90" : "text-zinc-500"
+                  }`}
+                >
+                  Meu plano 🧩
+                </p>
+                <p className="text-base font-extrabold tabular-nums sm:text-lg">{meuPlano.pct}%</p>
+                <p
+                  className={`mt-0.5 text-[10px] tabular-nums sm:text-[11px] ${
+                    activePanel === "plan" ? "text-white/85" : "text-zinc-500"
+                  }`}
+                >
+                  {meuPlano.done}/{meuPlano.total}
+                </p>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activePanel === "brasil"}
+                onClick={() => setActivePanel("brasil")}
+                className={`cursor-pointer rounded-xl px-2 py-3 text-center shadow-sm ring-1 transition sm:px-3 ${
+                  activePanel === "brasil"
+                    ? "bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white ring-amber-300/60"
+                    : "bg-white text-zinc-900 ring-zinc-200 hover:bg-zinc-50"
+                }`}
+              >
+                <p
+                  className={`text-[10px] font-medium leading-tight sm:text-[11px] ${
+                    activePanel === "brasil" ? "text-white/90" : "text-zinc-500"
+                  }`}
+                >
+                  Fase 1 🇧🇷
+                </p>
+                <p className="text-base font-extrabold tabular-nums sm:text-lg">{phase1.pct}%</p>
+                <p
+                  className={`mt-0.5 text-[10px] tabular-nums sm:text-[11px] ${
+                    activePanel === "brasil" ? "text-white/85" : "text-zinc-500"
+                  }`}
+                >
                   {phase1.done}/{phase1.total}
                 </p>
-              </div>
-              <div className="rounded-xl bg-white px-3 py-3 text-center shadow-sm ring-1 ring-zinc-200">
-                <p className="text-[11px] font-medium text-zinc-500">Fase 2 🇵🇹</p>
-                <p className="text-lg font-extrabold text-zinc-900">{phase2.pct}%</p>
-                <p className="mt-0.5 text-[11px] text-zinc-500">
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activePanel === "portugal"}
+                onClick={() => setActivePanel("portugal")}
+                className={`cursor-pointer rounded-xl px-2 py-3 text-center shadow-sm ring-1 transition sm:px-3 ${
+                  activePanel === "portugal"
+                    ? "bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white ring-amber-300/60"
+                    : "bg-white text-zinc-900 ring-zinc-200 hover:bg-zinc-50"
+                }`}
+              >
+                <p
+                  className={`text-[10px] font-medium leading-tight sm:text-[11px] ${
+                    activePanel === "portugal" ? "text-white/90" : "text-zinc-500"
+                  }`}
+                >
+                  Fase 2 🇵🇹
+                </p>
+                <p className="text-base font-extrabold tabular-nums sm:text-lg">{phase2.pct}%</p>
+                <p
+                  className={`mt-0.5 text-[10px] tabular-nums sm:text-[11px] ${
+                    activePanel === "portugal" ? "text-white/85" : "text-zinc-500"
+                  }`}
+                >
                   {phase2.done}/{phase2.total}
                 </p>
-              </div>
+              </button>
             </div>
           </div>
         </div>
         {saveError ? (
-          <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{saveError}</div>
+          <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 print:hidden">{saveError}</div>
         ) : null}
         {saveOk ? (
-          <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{saveOk}</div>
+          <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 print:hidden">{saveOk}</div>
         ) : null}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-5">
-        <div className="lg:col-span-2 space-y-4">
+      <div className="space-y-4">
+        <section
+          data-print-section="plan"
+          className={activePanel === "plan" ? "block" : "hidden"}
+          aria-label="Meu plano"
+        >
           <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-            {/* Mobile: dropdown */}
-            <button
-              type="button"
-              onClick={() => {
-                planToggledByUserRef.current = true;
-                setPlanOpen((v) => !v);
-              }}
-              className="flex w-full cursor-pointer items-center justify-between gap-3 text-left lg:hidden"
-              aria-expanded={planOpen}
-            >
-              <h2 className="text-sm font-semibold text-zinc-900">Teu plano 🧩</h2>
-              <span
-                className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 text-zinc-700 transition ${
-                  planOpen ? "bg-zinc-100" : "bg-white"
-                }`}
-                aria-hidden
-              >
-                <svg
-                  className={`h-4 w-4 transition-transform ${planOpen ? "rotate-180" : ""}`}
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08Z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
+            <h2 className="mb-4 text-lg font-semibold text-zinc-900">Meu plano 🧩</h2>
 
-            {/* Desktop: título fixo (sem dropdown) */}
-            <h2 className="hidden text-sm font-semibold text-zinc-900 lg:block">
-              Teu plano 🧩
-            </h2>
-
-            {(isDesktop || planOpen) && <div className="mt-4 space-y-3">
+            <div className="space-y-3">
               <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -1278,9 +1332,13 @@ export default function ChecklistPage() {
 
                   {!isMember ? (
                     <div className="pointer-events-none absolute inset-x-3 bottom-3 top-9 flex items-center justify-center">
-                      <div className="rounded-full bg-zinc-900/80 px-3 py-1 text-[11px] font-semibold text-white shadow-sm">
+                      <button
+                        type="button"
+                        onClick={() => openVipModal()}
+                        className="pointer-events-auto cursor-pointer rounded-full border-0 bg-zinc-900/80 px-3 py-1 text-[11px] font-semibold text-white shadow-sm outline-none ring-offset-2 hover:bg-zinc-900 focus-visible:ring-2 focus-visible:ring-amber-400"
+                      >
                         Exclusivo para membros VIP
-                      </div>
+                      </button>
                     </div>
                   ) : null}
                 </div>
@@ -1482,76 +1540,27 @@ export default function ChecklistPage() {
                   type="button"
                   variant="primary"
                   fullWidth
-                  onClick={printPlan}
+                  onClick={() => triggerPrint("plan")}
                   className="hover:!from-[#c07c01] hover:!to-[#e7a01f]"
                 >
                   Imprimir plano
                 </CardButton>
               </div>
-            </div>}
+            </div>
           </div>
-        </div>
+        </section>
 
-        {/* Tabs (mobile): ficam após "Teu plano" */}
-        <div className="flex w-full items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm print:hidden lg:hidden">
-          <button
-            type="button"
-            onClick={() => setActivePhase("BRASIL")}
-            className={`min-w-0 flex-1 cursor-pointer rounded-xl px-3 py-2 text-left transition ${
-              activePhase === "BRASIL"
-                ? "bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white"
-                : "text-zinc-700 hover:bg-zinc-50"
-            }`}
-            aria-pressed={activePhase === "BRASIL"}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="break-words text-sm font-semibold">🇧🇷 Fase 1 — ainda no Brasil</div>
-                <div
-                  className={`mt-0.5 text-[11px] font-medium ${
-                    activePhase === "BRASIL" ? "text-white/90" : "text-zinc-600"
-                  }`}
-                >
-                  Tudo que você resolve antes de embarcar.
-                </div>
+        <div className="space-y-4">
+          {activePanel === "brasil" || activePanel === "portugal" ? (
+            loading ? (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
+                Carregando teu checklist…
               </div>
-            </div>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActivePhase("PORTUGAL")}
-            className={`min-w-0 flex-1 cursor-pointer rounded-xl px-3 py-2 text-left transition ${
-              activePhase === "PORTUGAL"
-                ? "bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white"
-                : "text-zinc-700 hover:bg-zinc-50"
-            }`}
-            aria-pressed={activePhase === "PORTUGAL"}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="break-words text-sm font-semibold">🇵🇹 Fase 2 — já em Portugal</div>
-                <div
-                  className={`mt-0.5 text-[11px] font-medium ${
-                    activePhase === "PORTUGAL" ? "text-white/90" : "text-zinc-600"
-                  }`}
-                >
-                  Documentos e etapas logo após chegar.
-                </div>
+            ) : loadError ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+                {loadError}
               </div>
-            </div>
-          </button>
-        </div>
-
-        <div className="lg:col-span-3 space-y-4">
-          {loading ? (
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
-              Carregando teu checklist…
-            </div>
-          ) : loadError ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
-              {loadError}
-            </div>
-          ) : (
+            ) : (
             (() => {
               const sectionsBrasil = SECTIONS.filter((s) => s.phase === "BRASIL");
               const sectionsPortugal = SECTIONS.filter((s) => s.phase === "PORTUGAL");
@@ -1640,73 +1649,51 @@ export default function ChecklistPage() {
               );
 
               return (
-                <div className="space-y-3">
-                  <div className="hidden w-full items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm print:hidden lg:flex">
-                    <button
-                      type="button"
-                      onClick={() => setActivePhase("BRASIL")}
-                      className={`min-w-0 flex-1 cursor-pointer rounded-xl px-3 py-2 text-left transition ${
-                        activePhase === "BRASIL"
-                          ? "bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white"
-                          : "text-zinc-700 hover:bg-zinc-50"
-                      }`}
-                      aria-pressed={activePhase === "BRASIL"}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="break-words text-sm font-semibold">🇧🇷 Fase 1 — ainda no Brasil</div>
-                          <div
-                            className={`mt-0.5 text-[11px] font-medium ${
-                              activePhase === "BRASIL" ? "text-white/90" : "text-zinc-600"
-                            }`}
-                          >
-                            Tudo que você resolve antes de embarcar.
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setActivePhase("PORTUGAL")}
-                      className={`min-w-0 flex-1 cursor-pointer rounded-xl px-3 py-2 text-left transition ${
-                        activePhase === "PORTUGAL"
-                          ? "bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white"
-                          : "text-zinc-700 hover:bg-zinc-50"
-                      }`}
-                      aria-pressed={activePhase === "PORTUGAL"}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="break-words text-sm font-semibold">🇵🇹 Fase 2 — já em Portugal</div>
-                          <div
-                            className={`mt-0.5 text-[11px] font-medium ${
-                              activePhase === "PORTUGAL" ? "text-white/90" : "text-zinc-600"
-                            }`}
-                          >
-                            Documentos e etapas logo após chegar.
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-
-                  <div className={activePhase === "BRASIL" ? "block" : "hidden print:block"}>
-                    <div className="hidden print:block pb-2 text-sm font-semibold text-zinc-900">
-                      🇧🇷 Fase 1 — ainda no Brasil
-                    </div>
+                <div className="space-y-6">
+                  <section
+                    data-print-section="checklist-brasil"
+                    className={activePanel === "brasil" ? "block" : "hidden"}
+                    aria-label="Fase 1 — checklist"
+                  >
+                    <h2 className="mb-4 text-lg font-semibold text-zinc-900">🇧🇷 Fase 1 — ainda no Brasil</h2>
                     {renderSections(sectionsBrasil)}
-                  </div>
-
-                  <div className={activePhase === "PORTUGAL" ? "block" : "hidden print:block"}>
-                    <div className="hidden print:block pb-2 text-sm font-semibold text-zinc-900">
-                      🇵🇹 Fase 2 — já em Portugal
+                    <div className="mt-6 flex w-full justify-center print:hidden">
+                      <CardButton
+                        type="button"
+                        variant="primary"
+                        fullWidth
+                        className="w-full max-w-md hover:!from-[#c07c01] hover:!to-[#e7a01f]"
+                        onClick={() => triggerPrint("brasil")}
+                      >
+                        Imprimir checklist
+                      </CardButton>
                     </div>
+                  </section>
+
+                  <section
+                    data-print-section="checklist-portugal"
+                    className={activePanel === "portugal" ? "block" : "hidden"}
+                    aria-label="Fase 2 — checklist"
+                  >
+                    <h2 className="mb-4 text-lg font-semibold text-zinc-900">🇵🇹 Fase 2 — já em Portugal</h2>
                     {renderSections(sectionsPortugal)}
-                  </div>
+                    <div className="mt-6 flex w-full justify-center print:hidden">
+                      <CardButton
+                        type="button"
+                        variant="primary"
+                        fullWidth
+                        className="w-full max-w-md hover:!from-[#c07c01] hover:!to-[#e7a01f]"
+                        onClick={() => triggerPrint("portugal")}
+                      >
+                        Imprimir checklist
+                      </CardButton>
+                    </div>
+                  </section>
                 </div>
               );
             })()
-          )}
+            )
+          ) : null}
         </div>
       </div>
     </div>
