@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
+import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 
 type HouseRow = Awaited<ReturnType<typeof api.marketplace.relocationHouses>>[number];
 
@@ -33,9 +34,7 @@ const TYPOLOGY_LABELS: Record<string, string> = {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 function resolveMediaUrl(url: string) {
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  if (url.startsWith("/uploads/")) return `${API_URL}${url}`;
-  return url;
+  return resolveUploadsUrl(url);
 }
 
 /** Domínios fora de `remotePatterns` (ex. R2): usar next/image sem otimização. */
