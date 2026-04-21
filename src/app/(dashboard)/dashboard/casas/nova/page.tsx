@@ -32,6 +32,15 @@ const TYPOLOGIES = [
 
 const ENTRADA_COUNT_OPTIONS = Array.from({ length: 13 }, (_, i) => String(i));
 
+/** Data de hoje em YYYY-MM-DD (fuso local) para `<input type="date">`. */
+function todayLocalDateInputValue(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export default function NewHousePostPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -41,7 +50,7 @@ export default function NewHousePostPage() {
   const [description, setDescription] = useState("");
   const [typology, setTypology] = useState<(typeof TYPOLOGIES)[number]["id"]>("T2");
   const [city, setCity] = useState(CITIES[0].id);
-  const [availableFrom, setAvailableFrom] = useState("");
+  const [availableFrom, setAvailableFrom] = useState(() => todayLocalDateInputValue());
   const [priceEur, setPriceEur] = useState("");
   const [relocationFeeEur, setRelocationFeeEur] = useState("");
   const [caucoesCount, setCaucoesCount] = useState("0");

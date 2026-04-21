@@ -1,4 +1,4 @@
-/** Chaves para lembrar país e dígitos (sem senha). */
+/** Chaves para lembrar país e dígitos do número local (sem senha). */
 export const LOGIN_PHONE_STORAGE_DIAL = 'comunidade_login_whatsapp_dial';
 export const LOGIN_PHONE_STORAGE_LOCAL = 'comunidade_login_whatsapp_local';
 
@@ -25,7 +25,7 @@ export function loginPhoneDigitsOnly(s: string): string {
 
 /**
  * Devolve código e resto a partir de um número só com dígitos (ex.: 351912345678).
- * Se nenhum prefixo da lista coincidir, usa `preferredDialIfNoPreset` (ex.: DDI manual guardado).
+ * Se nenhum prefixo da lista coincidir, usa `preferredDialIfNoPreset` (ex.: DDI manual).
  */
 export function parseFullDigitsToDialLocal(
   fullDigits: string,

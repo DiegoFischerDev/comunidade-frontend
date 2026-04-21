@@ -21,6 +21,7 @@ type Props = {
   label?: string;
 };
 
+/** Hidratação inicial: `value` do pai + localStorage (país e dígitos locais). */
 function readDialAndLocalFromStorageAndValue(valueProp: string): {
   dial: string;
   local: string;
@@ -58,7 +59,7 @@ export function LoginWhatsappFields({
   const dialRef = useRef(dial);
   dialRef.current = dial;
 
-  // Hidratar uma vez (localStorage + value inicial)
+  // Hidratar uma vez (localStorage + value inicial do pai)
   useEffect(() => {
     const { dial: d, local: l } = readDialAndLocalFromStorageAndValue(value);
     setDial(d);
@@ -68,8 +69,13 @@ export function LoginWhatsappFields({
   }, []);
 
   // Sincronizar só quando o `value` do pai muda — não incluir dial/local nas deps.
+  // Com lápis (DDI manual), não reinterpretar o número: senão dígitos que coincidem com 351/55
+  // passavam a mudar o país automaticamente.
   useEffect(() => {
     if (!ready) return;
+    if (!isPresetCountryDial(dialRef.current)) {
+      return;
+    }
     const v = loginPhoneDigitsOnly(value);
     if (!v) return;
     const p = parseFullDigitsToDialLocal(
@@ -126,7 +132,7 @@ export function LoginWhatsappFields({
         {label}
       </label>
       {/* Grelha: coluna fixa evita que o <select> (largura intrínseca das opções) parta o flex em mobile */}
-      <div className="grid w-full min-w-0 grid-cols-[3rem_minmax(0,1fr)] items-stretch gap-1.5 sm:grid-cols-[3.5rem_minmax(0,1fr)] sm:gap-2">
+      <div className="grid w-full min-w-0 grid-cols-[3.75rem_minmax(0,1fr)] items-stretch gap-1.5 sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:gap-2">
         <select
           id={selectId}
           disabled={disabled}
