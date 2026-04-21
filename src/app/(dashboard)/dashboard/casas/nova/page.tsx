@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,9 +30,12 @@ const TYPOLOGIES = [
   { id: "QUARTO_AP_COMPARTILHADO", label: "Quarto em Ap compartilhado" },
 ] as const;
 
+const ENTRADA_COUNT_OPTIONS = Array.from({ length: 13 }, (_, i) => String(i));
+
 export default function NewHousePostPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -41,7 +44,8 @@ export default function NewHousePostPage() {
   const [availableFrom, setAvailableFrom] = useState("");
   const [priceEur, setPriceEur] = useState("");
   const [relocationFeeEur, setRelocationFeeEur] = useState("");
-  const [requirements, setRequirements] = useState("");
+  const [caucoesCount, setCaucoesCount] = useState("0");
+  const [rendasEntradaCount, setRendasEntradaCount] = useState("0");
   const [mediaMode, setMediaMode] = useState<"images" | "video">("images");
   const [images, setImages] = useState<File[]>([]);
   const [video, setVideo] = useState<File | null>(null);
@@ -71,10 +75,16 @@ export default function NewHousePostPage() {
     };
   }, [user]);
 
-  const imagePreviews = useMemo(() => {
-    return images.map((f) => ({ file: f, url: URL.createObjectURL(f) }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [images]);
+  const imagePreviews = useMemo(
+    () => images.map((file) => ({ file, url: URL.createObjectURL(file) })),
+    [images],
+  );
+
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach((p) => URL.revokeObjectURL(p.url));
+    };
+  }, [imagePreviews]);
 
   const videoPreviewUrl = useMemo(
     () => (video ? URL.createObjectURL(video) : null),
@@ -86,6 +96,17 @@ export default function NewHousePostPage() {
       if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
     };
   }, [videoPreviewUrl]);
+
+  function addImageFiles(fileList: FileList | null) {
+    if (!fileList?.length) return;
+    const incoming = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+    if (incoming.length === 0) return;
+    setImages((prev) => [...prev, ...incoming].slice(0, 6));
+  }
+
+  function removeImageAt(index: number) {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  }
 
   if (!user) return null;
 
@@ -130,17 +151,17 @@ export default function NewHousePostPage() {
     const cleanTitle = title.trim();
     const cleanDesc = description.trim();
     const cleanPrice = priceEur.trim();
-    const cleanReq = requirements.trim();
+    const cleanRelocation = relocationFeeEur.trim().replace(/\s*€\s*$/i, "").trim();
 
     if (!cleanTitle) return setError("Preenche o título do imóvel.");
     if (!cleanDesc) return setError("Preenche a descrição.");
     if (!availableFrom) return setError('Seleciona a data em "Disponível em".');
     if (!cleanPrice) return setError("Preenche o preço do arrendamento.");
-    if (!cleanReq) return setError("Preenche as exigências (cauções e rendas).");
+    if (!cleanRelocation) return setError("Preenche a taxa de relocation (em euros).");
     if (mediaMode === "video") {
       if (!video) return setError("Seleciona um vídeo (MP4, MOV, WebM ou 3GP).");
     } else {
-      if (images.length === 0) return setError("Envia pelo menos 1 imagem.");
+      if (images.length === 0) return setError("Adiciona pelo menos 1 imagem.");
       if (images.length > 6) return setError("Podes enviar no máximo 6 imagens.");
     }
 
@@ -154,8 +175,9 @@ export default function NewHousePostPage() {
         city,
         availableFrom,
         priceEur: cleanPrice,
-        requirements: cleanReq,
-        ...(relocationFeeEur.trim() ? { relocationFeeEur: relocationFeeEur.trim() } : {}),
+        relocationFeeEur: cleanRelocation,
+        caucoesCount,
+        rendasEntradaCount,
       });
       router.push("/dashboard/casas?sent=1");
     } catch (err) {
@@ -171,8 +193,8 @@ export default function NewHousePostPage() {
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900">Publicar imóvel</h1>
           <p className="mt-2 text-sm text-zinc-600">
-            Podes enviar até 6 fotos <strong>ou</strong> um único vídeo. O sistema publica a média no grupo
-            WhatsApp e depois envia a descrição formatada.
+            Podes enviar até 6 fotos <strong>ou</strong> um único vídeo. Usa &quot;Adicionar imagens&quot; para ir
+            acrescentando fotos até ao máximo permitido.
           </p>
         </div>
         <div className="shrink-0">
@@ -217,27 +239,53 @@ export default function NewHousePostPage() {
           </div>
 
           {mediaMode === "images" ? (
-            <>
+            <div className="mt-3 space-y-3">
               <input
+                ref={imageInputRef}
                 type="file"
                 accept="image/*"
                 multiple
+                className="sr-only"
+                aria-hidden
                 onChange={(e) => {
-                  const list = Array.from(e.target.files ?? []);
-                  setImages(list.slice(0, 6));
+                  addImageFiles(e.target.files);
+                  e.target.value = "";
                 }}
-                className="mt-2 block w-full text-sm text-zinc-700 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-zinc-900 hover:file:bg-zinc-200"
               />
+              <div className="flex flex-wrap items-center gap-3">
+                <CardButton
+                  type="button"
+                  variant="secondary"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={images.length >= 6}
+                >
+                  {images.length === 0 ? "Adicionar imagens" : "Adicionar mais imagens"}
+                </CardButton>
+                <span className="text-xs text-zinc-500">
+                  {images.length}/6 imagens · podes escolher várias de uma vez ou ir adicionando
+                </span>
+              </div>
               {imagePreviews.length > 0 && (
-                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {imagePreviews.map((p) => (
-                    <div key={p.url} className="relative aspect-video overflow-hidden rounded-xl bg-zinc-100">
-                      <Image src={p.url} alt="" fill className="object-cover" />
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {imagePreviews.map((p, i) => (
+                    <div
+                      key={`${p.file.name}-${p.file.size}-${i}`}
+                      className="relative aspect-video overflow-hidden rounded-xl bg-zinc-100"
+                    >
+                      <Image src={p.url} alt="" fill className="object-cover" unoptimized />
+                      <button
+                        type="button"
+                        onClick={() => removeImageAt(i)}
+                        className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-sm font-bold text-white hover:bg-black/80"
+                        aria-label="Remover imagem"
+                      >
+                        ×
+                      </button>
                     </div>
                   ))}
                 </div>
               )}
-            </>
+            </div>
           ) : (
             <>
               <input
@@ -331,24 +379,49 @@ export default function NewHousePostPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-zinc-700">Taxa de relocation (opcional)</label>
-            <input
-              value={relocationFeeEur}
-              onChange={(e) => setRelocationFeeEur(e.target.value)}
-              placeholder="Ex.: 500"
-              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
+            <label className="block text-xs font-medium text-zinc-700">Taxa de relocation (€)</label>
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                value={relocationFeeEur}
+                onChange={(e) => setRelocationFeeEur(e.target.value)}
+                placeholder="Ex.: 500"
+                inputMode="decimal"
+                className="w-full min-w-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <span className="shrink-0 text-sm font-medium text-zinc-600">€</span>
+            </div>
           </div>
         </div>
 
-        <div>
-          <label className="block text-xs font-medium text-zinc-700">Rendas e cauções para entrada</label>
-          <input
-            value={requirements}
-            onChange={(e) => setRequirements(e.target.value)}
-            placeholder="Ex.: 2 cauções + 1 renda antecipada"
-            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-xs font-medium text-zinc-700">N.º de cauções (entrada)</label>
+            <select
+              value={caucoesCount}
+              onChange={(e) => setCaucoesCount(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+            >
+              {ENTRADA_COUNT_OPTIONS.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-700">N.º de rendas antecipadas (entrada)</label>
+            <select
+              value={rendasEntradaCount}
+              onChange={(e) => setRendasEntradaCount(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+            >
+              {ENTRADA_COUNT_OPTIONS.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div>
@@ -371,4 +444,3 @@ export default function NewHousePostPage() {
     </div>
   );
 }
-

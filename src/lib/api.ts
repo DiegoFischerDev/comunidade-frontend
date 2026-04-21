@@ -838,8 +838,9 @@ export const api = {
             city: string;
             availableFrom: string;
             priceEur: string;
-            relocationFeeEur: string | null;
-            requirements: string;
+            relocationFeeEur: string;
+            caucoesCount: number;
+            rendasEntradaCount: number;
             status: 'AVAILABLE' | 'UNAVAILABLE';
             whatsappSentAt: string | null;
             whatsappError: string | null;
@@ -858,8 +859,9 @@ export const api = {
         city: string;
         availableFrom: string;
         priceEur: string;
-        requirements: string;
-        relocationFeeEur?: string;
+        relocationFeeEur: string;
+        caucoesCount: string;
+        rendasEntradaCount: string;
       }) => {
         const fd = new FormData();
         if (input.video) {
@@ -873,10 +875,9 @@ export const api = {
         fd.append('city', input.city);
         fd.append('availableFrom', input.availableFrom);
         fd.append('priceEur', input.priceEur);
-        fd.append('requirements', input.requirements);
-        if (input.relocationFeeEur?.trim()) {
-          fd.append('relocationFeeEur', input.relocationFeeEur.trim());
-        }
+        fd.append('relocationFeeEur', input.relocationFeeEur.trim());
+        fd.append('caucoesCount', input.caucoesCount);
+        fd.append('rendasEntradaCount', input.rendasEntradaCount);
         return requestFormData<{
           id: string;
           title: string;
@@ -885,8 +886,9 @@ export const api = {
           city: string;
           availableFrom: string;
           priceEur: string;
-          relocationFeeEur: string | null;
-          requirements: string;
+          relocationFeeEur: string;
+          caucoesCount: number;
+          rendasEntradaCount: number;
           status: 'AVAILABLE' | 'UNAVAILABLE';
           whatsappSentAt: string | null;
           whatsappError: string | null;
@@ -1022,7 +1024,9 @@ export const api = {
           city: string;
           availableFrom: string;
           priceEur: string;
-          requirements: string;
+          relocationFeeEur: string;
+          caucoesCount: number;
+          rendasEntradaCount: number;
           imageUrls: string[];
           videoUrl: string | null;
           partnerId: string;

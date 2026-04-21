@@ -8,24 +8,11 @@ export type PublicHousePartner = {
   name: string;
   whatsapp: string;
   logoUrl: string | null;
-  shortDescription: string | null;
-  fullDescription: string | null;
-  backgroundImageUrl: string | null;
-  catalogImageUrls: string[];
-  instagram: string | null;
   category: {
     id: string;
     name: string;
     slug: string;
   } | null;
-  user: { email: string };
-  services: {
-    id: string;
-    title: string;
-    description: string | null;
-    price: string | null;
-    priceOnRequest: boolean;
-  }[];
 };
 
 export type PublicHousePageData = {
@@ -36,7 +23,9 @@ export type PublicHousePageData = {
   city: string;
   availableFrom: string;
   priceEur: string;
-  requirements: string;
+  relocationFeeEur: string;
+  caucoesCount: number;
+  rendasEntradaCount: number;
   imageUrls: string[];
   videoUrl: string | null;
   status: "AVAILABLE" | "UNAVAILABLE";

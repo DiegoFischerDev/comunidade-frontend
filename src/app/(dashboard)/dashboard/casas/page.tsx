@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
+import { formatHouseEntradaShort } from "@/lib/house-entrance";
 import { useAuth } from "@/contexts/AuthContext";
 import { CardLinkButton } from "@/components/ui/CardButton";
 
@@ -86,7 +87,10 @@ export default function PartnerHousesPage() {
         r.typology,
         TYPOLOGY_LABELS[r.typology] ?? "",
         r.priceEur,
-        r.requirements,
+        r.relocationFeeEur,
+        String(r.caucoesCount),
+        String(r.rendasEntradaCount),
+        formatHouseEntradaShort(r.caucoesCount, r.rendasEntradaCount),
         r.status,
       ]
         .join(" ")
@@ -196,7 +200,7 @@ export default function PartnerHousesPage() {
                   <th className="px-4 py-3 text-left font-medium">Tipologia</th>
                   <th className="px-4 py-3 text-left font-medium">Disponível em</th>
                   <th className="px-4 py-3 text-left font-medium">Preço</th>
-                  <th className="px-4 py-3 text-left font-medium">Entrada (rendas/cauções)</th>
+                  <th className="px-4 py-3 text-left font-medium">Entrada / Relocation</th>
                   <th className="px-4 py-3 text-left font-medium">Status</th>
                 </tr>
               </thead>
@@ -225,7 +229,10 @@ export default function PartnerHousesPage() {
                     </td>
                     <td className="px-4 py-3 text-zinc-700">{formatDatePt(r.availableFrom)}</td>
                     <td className="px-4 py-3 text-zinc-700">{r.priceEur}</td>
-                    <td className="px-4 py-3 text-zinc-700">{r.requirements}</td>
+                    <td className="px-4 py-3 text-zinc-700">
+                      <div>{formatHouseEntradaShort(r.caucoesCount, r.rendasEntradaCount)}</div>
+                      <div className="text-xs text-zinc-500">Taxa rel.: {r.relocationFeeEur} €</div>
+                    </td>
                     <td className="px-4 py-3">
                       <select
                         value={r.status}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
+import { formatHouseEntradaShort } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 
 type HouseRow = Awaited<ReturnType<typeof api.marketplace.relocationHouses>>[number];
@@ -54,6 +55,11 @@ function formatRentPerMonth(priceEur: string): string {
     .replace(/\s*\/\s*m[eê]s?\s*$/i, "")
     .trim();
   return `${t} € / mês`;
+}
+
+function formatRelocationFeeEur(raw: string): string {
+  const t = raw.trim().replace(/\s*€\s*$/i, "").trim();
+  return `${t} €`;
 }
 
 /**
@@ -189,9 +195,12 @@ export default function RelocationHousesPage() {
                   </p>
                   <p className="text-sm font-semibold text-[#086601]">{formatRentPerMonth(h.priceEur)}</p>
                   <p className="text-xs text-zinc-600">{availabilityLabel(h.availableFrom)}</p>
-                  <p className="line-clamp-3 text-xs leading-snug text-zinc-600">
+                  <p className="line-clamp-2 text-xs leading-snug text-zinc-600">
                     <span className="font-medium text-zinc-700">Entrada: </span>
-                    {h.requirements}
+                    {formatHouseEntradaShort(h.caucoesCount, h.rendasEntradaCount)}
+                  </p>
+                  <p className="text-xs text-zinc-500">
+                    Taxa relocation: {formatRelocationFeeEur(h.relocationFeeEur)}
                   </p>
                   <p className="text-xs text-zinc-500">{h.partner.name}</p>
                 </div>
@@ -284,11 +293,21 @@ export default function RelocationHousesPage() {
               <p className="mt-2 text-lg font-semibold text-[#086601]">
                 {formatRentPerMonth(modalHouse.priceEur)}
               </p>
-              <div className="mt-3 rounded-lg bg-zinc-50 px-3 py-2 text-sm text-zinc-800">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                  Rendas e cauções para entrada
+              <div className="mt-3 space-y-2 rounded-lg bg-zinc-50 px-3 py-2 text-sm text-zinc-800">
+                <p>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                    Entrada (cauções e rendas antecipadas)
+                  </span>
+                  <br />
+                  {formatHouseEntradaShort(modalHouse.caucoesCount, modalHouse.rendasEntradaCount)}
                 </p>
-                <p className="mt-1">{modalHouse.requirements}</p>
+                <p>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                    Taxa de relocation
+                  </span>
+                  <br />
+                  {formatRelocationFeeEur(modalHouse.relocationFeeEur)}
+                </p>
               </div>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">
                 {modalHouse.description}

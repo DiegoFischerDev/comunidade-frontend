@@ -6,10 +6,14 @@ import {
   getPublicHouse,
 } from "@/lib/house-public-server";
 
+import { HouseJsonLd } from "./house-json-ld";
 import { HousePublicView } from "./house-public-view";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "http://localhost:3001";
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://comunidade.rafaapelomundo.com";
 
 type PageProps = {
   params: Promise<{ houseId: string }>;
@@ -34,7 +38,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const title = `${house.title} | Relocation RPM`;
-  const description = clipDescription(house.description || house.requirements, 180);
+  const description = clipDescription(house.description, 180);
+
+  const cityKeyword =
+    {
+      INTERIOR: "Portugal",
+      LISBOA: "Lisboa",
+      PORTO: "Porto",
+      BRAGA: "Braga",
+      COIMBRA: "Coimbra",
+      AVEIRO: "Aveiro",
+      FARO: "Faro",
+      ALGARVE: "Algarve",
+      EVORA: "Évora",
+      VISEU: "Viseu",
+    }[house.city] ?? "Portugal";
 
   const ogFromHouse = absoluteMediaUrlForOg(house.imageUrls?.[0]);
   const ogFromPartner = absoluteMediaUrlForOg(house.partner?.logoUrl);
@@ -48,6 +66,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description,
+    keywords: [
+      "imóvel",
+      "arrendamento",
+      "relocation",
+      cityKeyword,
+      "Portugal",
+      "Comunidade RPM",
+      house.partner.name,
+    ],
+    robots: {
+      index: true,
+      follow: true,
+    },
     alternates: {
       canonical: urlPath,
     },
@@ -79,5 +110,12 @@ export default async function CasasHousePublicPage({ params }: PageProps) {
   }
   if (!house) notFound();
 
-  return <HousePublicView house={house} apiBaseUrl={API_URL.replace(/\/$/, "")} />;
+  const absolutePageUrl = `${SITE_URL.replace(/\/$/, "")}/casas/${houseId}`;
+
+  return (
+    <>
+      <HouseJsonLd house={house} pageUrl={absolutePageUrl} />
+      <HousePublicView house={house} apiBaseUrl={API_URL.replace(/\/$/, "")} />
+    </>
+  );
 }

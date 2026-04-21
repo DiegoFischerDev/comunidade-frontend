@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { CatalogCarousel } from "@/components/CatalogCarousel";
 import type { PublicHousePageData } from "@/lib/house-public-server";
+import { formatHouseEntradaShort } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 
 import { HouseContactSection } from "./house-contact-section";
@@ -36,6 +36,11 @@ function formatRentPerMonth(priceEur: string): string {
     .replace(/\s*\/\s*m[eê]s?\s*$/i, "")
     .trim();
   return `${t} € / mês`;
+}
+
+function formatRelocationFeeEur(raw: string): string {
+  const t = raw.trim().replace(/\s*€\s*$/i, "").trim();
+  return `${t} €`;
 }
 
 function availabilityLabel(availableFromIso: string): string {
@@ -72,15 +77,10 @@ export function HousePublicView({ house, apiBaseUrl }: Props) {
   const { partner } = house;
   const cityLabel = CITY_LABELS[house.city] ?? house.city;
   const typoLabel = TYPOLOGY_LABELS[house.typology] ?? house.typology;
+  const entrada = formatHouseEntradaShort(house.caucoesCount, house.rendasEntradaCount);
 
   const videoSrc = house.videoUrl ? resolveUploadsUrl(house.videoUrl) : null;
   const photos = (house.imageUrls ?? []).map(resolveUploadsUrl).filter(Boolean);
-
-  const heroBgImage =
-    partner.backgroundImageUrl &&
-    (partner.backgroundImageUrl.startsWith("/uploads/")
-      ? `${apiBaseUrl}${partner.backgroundImageUrl}`
-      : partner.backgroundImageUrl);
 
   const logoSrc =
     partner.logoUrl && partner.logoUrl.startsWith("/uploads/")
@@ -88,24 +88,37 @@ export function HousePublicView({ house, apiBaseUrl }: Props) {
       : partner.logoUrl;
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link href="/" className="text-sm font-semibold text-zinc-900">
-            Comunidade RPM
+    <div className="min-h-screen bg-gradient-to-b from-zinc-100 to-zinc-50">
+      <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/85 shadow-sm backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
+          <Link href="/" className="group flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#910001] to-[#5f0001] text-xs font-bold text-white shadow-sm">
+              RPM
+            </span>
+            <span className="text-sm font-semibold tracking-tight text-zinc-900 group-hover:text-amber-900">
+              Comunidade Rafa pelo mundo
+            </span>
           </Link>
-          <Link
-            href="/dashboard/relocation"
-            className="text-sm font-medium text-amber-800 hover:underline"
-          >
-            Imóveis relocation
-          </Link>
+          <nav className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/dashboard/relocation"
+              className="rounded-full px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-amber-50 hover:text-amber-950 sm:text-sm"
+            >
+              Imóveis relocation
+            </Link>
+            <Link
+              href="/login"
+              className="rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-1.5 text-xs font-semibold text-white shadow-sm sm:px-4 sm:text-sm"
+            >
+              Entrar
+            </Link>
+          </nav>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-10 px-4 py-8 sm:px-6 sm:py-10">
-        <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-          <div className="relative aspect-[16/10] w-full bg-zinc-100 sm:aspect-[21/9]">
+      <main className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
+        <article className="overflow-hidden rounded-3xl border border-zinc-200/90 bg-white shadow-xl shadow-zinc-200/50">
+          <div className="relative aspect-[16/10] w-full bg-zinc-100 sm:aspect-[2/1]">
             {videoSrc ? (
               <video
                 src={videoSrc}
@@ -130,51 +143,70 @@ export function HousePublicView({ house, apiBaseUrl }: Props) {
               </div>
             )}
             {house.status === "UNAVAILABLE" ? (
-              <span className="absolute left-3 top-3 rounded bg-zinc-900/85 px-2.5 py-1 text-xs font-medium text-white">
+              <span className="absolute left-3 top-3 rounded-full bg-zinc-900/90 px-3 py-1 text-xs font-semibold text-white shadow-md">
                 Indisponível
               </span>
             ) : null}
           </div>
 
-          <div className="space-y-4 p-5 sm:p-8">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-amber-800">Relocation</p>
-              <h1 className="mt-1 text-2xl font-semibold text-zinc-900 sm:text-3xl">{house.title}</h1>
-              <p className="mt-2 text-sm text-zinc-600">
-                {typoLabel} · {cityLabel}
+          <div className="space-y-6 p-5 sm:p-8">
+            <header className="space-y-2 border-b border-zinc-100 pb-6">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800/90">
+                Relocation · {cityLabel}
               </p>
-              <p className="mt-2 text-sm text-zinc-700">{availabilityLabel(house.availableFrom)}</p>
-              <p className="mt-3 text-xl font-semibold text-[#086601]">{formatRentPerMonth(house.priceEur)}</p>
-            </div>
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">{house.title}</h1>
+              <p className="text-sm text-zinc-600">
+                {typoLabel} · {availabilityLabel(house.availableFrom)}
+              </p>
+            </header>
+
+            <dl className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-emerald-900/70">
+                  Renda mensal
+                </dt>
+                <dd className="mt-1 text-lg font-semibold text-emerald-950">{formatRentPerMonth(house.priceEur)}</dd>
+              </div>
+              <div className="rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-900/80">
+                  Taxa de relocation
+                </dt>
+                <dd className="mt-1 text-lg font-semibold text-amber-950">
+                  {formatRelocationFeeEur(house.relocationFeeEur)}
+                </dd>
+              </div>
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50/90 px-4 py-3 sm:col-span-2">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-zinc-600">
+                  Entrada (cauções e rendas antecipadas)
+                </dt>
+                <dd className="mt-1 text-base font-medium text-zinc-900">{entrada}</dd>
+              </div>
+            </dl>
 
             {!videoSrc && photos.length > 1 ? (
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {photos.slice(1).map((src, i) => (
-                  <div key={i} className="relative aspect-[4/3] overflow-hidden rounded-lg bg-zinc-100">
-                    <Image
-                      src={src}
-                      alt=""
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 50vw, 200px"
-                      unoptimized={nextImageUnoptimized(src)}
-                    />
-                  </div>
-                ))}
+              <div>
+                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">Mais fotos</h2>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {photos.slice(1).map((src, i) => (
+                    <div key={i} className="relative aspect-[4/3] overflow-hidden rounded-xl bg-zinc-100 shadow-inner">
+                      <Image
+                        src={src}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 50vw, 200px"
+                        unoptimized={nextImageUnoptimized(src)}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : null}
 
-            <div className="rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-800">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                Rendas e cauções para entrada
-              </p>
-              <p className="mt-1">{house.requirements}</p>
-            </div>
-
-            <div>
+            <section>
               <h2 className="text-sm font-semibold text-zinc-900">Descrição</h2>
               <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">{house.description}</p>
-            </div>
+            </section>
 
             <HouseContactSection
               houseId={house.id}
@@ -186,83 +218,32 @@ export function HousePublicView({ house, apiBaseUrl }: Props) {
               status={house.status}
             />
           </div>
-        </section>
+        </article>
 
-        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
-          {heroBgImage && (
-            <div
-              className="absolute inset-0 bg-cover bg-center opacity-40"
-              style={{ backgroundImage: `url(${heroBgImage})` }}
-            />
-          )}
-          <div className="relative z-10 flex flex-col gap-6 px-6 py-10 sm:flex-row sm:items-center sm:px-10 sm:py-12">
+        <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
             {logoSrc ? (
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-white/90 p-2 shadow-md sm:h-24 sm:w-24">
-                <img src={logoSrc} alt={partner.name} className="max-h-full max-w-full object-contain" />
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-50 p-2 shadow-sm">
+                <img src={logoSrc} alt="" className="max-h-full max-w-full object-contain" />
               </div>
-            ) : null}
-            <div>
-              <p className="text-xs uppercase tracking-wide text-emerald-100">
-                {partner.category?.name ?? "Parceiro relocation"}
+            ) : (
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 text-xs text-zinc-400">
+                Logo
+              </div>
+            )}
+            <div className="min-w-0 flex-1 text-center sm:text-left">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+                {partner.category?.name ?? "Parceiro"}
               </p>
-              <h2 className="mt-2 text-2xl font-semibold sm:text-3xl">{partner.name}</h2>
-              {partner.shortDescription ? (
-                <p className="mt-3 max-w-2xl text-sm text-emerald-50 sm:text-base">{partner.shortDescription}</p>
-              ) : null}
-              <div className="mt-4">
-                <Link
-                  href={`/partner/${partner.id}`}
-                  className="inline-flex rounded-full border border-white/40 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur hover:bg-white/20"
-                >
-                  Ver página do parceiro
-                </Link>
-              </div>
+              <h2 className="mt-1 text-xl font-semibold text-zinc-900">{partner.name}</h2>
+              <Link
+                href={`/partner/${partner.id}`}
+                className="mt-3 inline-flex text-sm font-medium text-amber-800 underline-offset-4 hover:underline"
+              >
+                Ver perfil completo do parceiro
+              </Link>
             </div>
           </div>
-        </section>
-
-        {partner.fullDescription ? (
-          <section>
-            <h2 className="mb-3 text-sm font-semibold text-zinc-900">Sobre {partner.name}</h2>
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
-              <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-700">{partner.fullDescription}</p>
-            </div>
-          </section>
-        ) : null}
-
-        {partner.catalogImageUrls && partner.catalogImageUrls.length > 0 ? (
-          <section>
-            <h2 className="mb-3 text-sm font-semibold text-zinc-900">Galeria do parceiro</h2>
-            <CatalogCarousel images={partner.catalogImageUrls} apiBaseUrl={apiBaseUrl} />
-          </section>
-        ) : null}
-
-        <section>
-          <h2 className="mb-3 text-sm font-semibold text-zinc-900">Serviços do parceiro</h2>
-          {partner.services.length === 0 ? (
-            <p className="text-sm text-zinc-500">Este parceiro ainda não cadastrou serviços.</p>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {partner.services.map((service) => (
-                <article
-                  key={service.id}
-                  className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
-                >
-                  <h3 className="text-sm font-semibold text-zinc-900">{service.title}</h3>
-                  {service.description ? (
-                    <p className="mt-2 text-sm text-zinc-700">{service.description}</p>
-                  ) : null}
-                  <p className="mt-2 text-xs text-zinc-600">
-                    {service.priceOnRequest
-                      ? "Valor sob consulta"
-                      : service.price
-                        ? `${service.price} €`
-                        : "—"}
-                  </p>
-                </article>
-              ))}
-            </div>
-          )}
         </section>
       </main>
     </div>
