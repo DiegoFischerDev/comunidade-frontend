@@ -55,8 +55,6 @@ export default function DashboardPage() {
   const [affiliate, setAffiliate] = useState<AffiliateMe | null | undefined>(undefined);
 
   const pdfHref = isMember ? "/psp/full" : "/psp";
-  const financingWhatsAppHref =
-    "https://api.whatsapp.com/send?phone=351927398547&text=Ol%C3%A1%2C%20quero%20saber%20se%20consigo%20financiar%20uma%20casa%20em%20Portugal";
 
   const [complaintOpen, setComplaintOpen] = useState(false);
   const [complaintMsg, setComplaintMsg] = useState("");
@@ -236,41 +234,6 @@ export default function DashboardPage() {
 
       <div className="mx-auto w-full max-w-[800px]">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center">
-            <div className="relative aspect-[2/1] w-full overflow-hidden rounded-xl bg-zinc-100 md:w-80">
-              <Image
-                src="/casa.png"
-                alt="Financiar imóvel em Portugal"
-                fill
-                className="object-contain"
-                sizes="(min-width: 768px) 320px, 100vw"
-                priority
-              />
-            </div>
-
-            <div className="flex-1 space-y-3">
-              <h2 className="text-xl font-semibold text-zinc-900">
-                Financiar imovel em Portugal
-              </h2>
-              <p className="text-sm text-zinc-600">
-                Saiba se você ja tem as condições necessarias para comprar uma casa
-                financiada em Portugal.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <a
-                  href={financingWhatsAppHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-medium text-white transition hover:from-[#c07c01] hover:to-[#e7a01f]"
-                >
-                  Fazer análise gratuita
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
         <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-6 md:flex-row md:items-center">
             <div className="relative aspect-[2/1] w-full overflow-hidden rounded-xl bg-zinc-100 md:w-80">

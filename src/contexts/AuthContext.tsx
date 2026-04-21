@@ -52,7 +52,7 @@ type AuthContextValue = {
     whatsappOpenUrl?: string;
     whatsappBrowserSessionToken?: string;
   }>;
-  /** Termina a sessão atual; mantém token neste dispositivo para voltar a entrar após refresh. */
+  /** Termina a sessão atual; após refresh volta a entrar se existir token guardado neste dispositivo. */
   logout: () => void;
   refreshUser: () => Promise<void>;
   impersonateAsUser: (userId: string) => Promise<void>;
@@ -82,8 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  /** Lê JWT + backup de impersonação no `localStorage` (igual em todas as abas do mesmo origem). */
-  const applySessionFromStorage = useCallback(async () => {
+  /**
+   * Só no primeiro load / refresh da página: copia o JWT de “neste dispositivo” para `comunidade_token`
+   * quando o utilizador saiu sem refresh (logout só remove o token principal).
+   */
+  const hydrateFromStorageOnMount = useCallback(async () => {
     let t = getAuthToken();
     if (!t) {
       const device = getDeviceSessionToken();
@@ -105,11 +108,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [loadUser]);
 
-  useEffect(() => {
-    void applySessionFromStorage().finally(() => setLoading(false));
-  }, [applySessionFromStorage]);
+  /**
+   * Outras abas (evento `storage`): atualiza React a partir do JWT já em `localStorage`.
+   * Não promove token de dispositivo → senão, ao “Sair”, outra aba ou o mesmo fluxo relogava no mesmo segundo.
+   */
+  const syncAuthStateFromStorageEvent = useCallback(async () => {
+    const t = getAuthToken();
+    if (typeof window !== 'undefined') {
+      setIsImpersonating(
+        Boolean(window.localStorage.getItem(ADMIN_BACKUP_TOKEN_KEY)),
+      );
+    }
+    if (t) {
+      await loadUser(t);
+    } else {
+      setUser(null);
+      setTokenState(null);
+    }
+  }, [loadUser]);
 
-  // Outras abas: `localStorage` já está sincronizado; o evento `storage` avisa esta aba para atualizar o React.
+  useEffect(() => {
+    void hydrateFromStorageOnMount().finally(() => setLoading(false));
+  }, [hydrateFromStorageOnMount]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -118,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (debounceId !== undefined) clearTimeout(debounceId);
       debounceId = setTimeout(() => {
         debounceId = undefined;
-        void applySessionFromStorage();
+        void syncAuthStateFromStorageEvent();
       }, 0);
     };
 
@@ -138,7 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('storage', onStorage);
       if (debounceId !== undefined) clearTimeout(debounceId);
     };
-  }, [applySessionFromStorage]);
+  }, [syncAuthStateFromStorageEvent]);
 
   const login = useCallback(
     async (whatsapp: string, password: string) => {
