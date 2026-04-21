@@ -39,3 +39,32 @@ body {
 div[role='presentation'].fixed {
   margin-bottom: 0 !important;
 }
+
+/*
+ * Plano de imigração: impressão só do painel pedido (body[data-print-scope] em checklist/page).
+ * Não usar `print:block` nas secções: isso fazia todas as tabs aparecerem na folha e anulava estas regras.
+ */
+@media print {
+  body[data-print-scope="brasil"] [data-print-section="checklist-brasil"],
+  body[data-print-scope="portugal"] [data-print-section="checklist-portugal"],
+  body[data-print-scope="plan"] [data-print-section="plan"] {
+    display: block !important;
+  }
+
+  body[data-print-scope="brasil"] [data-print-section="page-intro"],
+  body[data-print-scope="brasil"] [data-print-section="plan"],
+  body[data-print-scope="brasil"] [data-print-section="checklist-portugal"] {
+    display: none !important;
+  }
+
+  body[data-print-scope="portugal"] [data-print-section="page-intro"],
+  body[data-print-scope="portugal"] [data-print-section="plan"],
+  body[data-print-scope="portugal"] [data-print-section="checklist-brasil"] {
+    display: none !important;
+  }
+
+  body[data-print-scope="plan"] [data-print-section="checklist-brasil"],
+  body[data-print-scope="plan"] [data-print-section="checklist-portugal"] {
+    display: none !important;
+  }
+}
