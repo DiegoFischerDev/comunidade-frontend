@@ -679,6 +679,7 @@ export const api = {
         billingNif?: string | null;
         billingAddress?: string | null;
         billingPostalCode?: string | null;
+        category?: { id: string; slug: string; name: string } | null;
       }>('/partners/me', { method: 'GET' }),
     updateMe: (input: {
       name?: string;
@@ -708,6 +709,7 @@ export const api = {
         billingNif?: string | null;
         billingAddress?: string | null;
         billingPostalCode?: string | null;
+        category?: { id: string; slug: string; name: string } | null;
       }>('/partners/me', {
         method: 'PATCH',
         body: JSON.stringify(input),
@@ -813,12 +815,15 @@ export const api = {
             status: 'AVAILABLE' | 'UNAVAILABLE';
             whatsappSentAt: string | null;
             whatsappError: string | null;
+            imageUrls: string[];
+            videoUrl: string | null;
             createdAt: string;
             updatedAt: string;
           }[]
         >('/partners/me/houses', { method: 'GET' }),
       create: (input: {
-        images: File[];
+        images?: File[];
+        video?: File;
         title: string;
         description: string;
         typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
@@ -828,7 +833,11 @@ export const api = {
         requirements: string;
       }) => {
         const fd = new FormData();
-        for (const file of input.images) fd.append('images', file);
+        if (input.video) {
+          fd.append('video', input.video);
+        } else if (input.images?.length) {
+          for (const file of input.images) fd.append('images', file);
+        }
         fd.append('title', input.title);
         fd.append('description', input.description);
         fd.append('typology', input.typology);
@@ -848,6 +857,8 @@ export const api = {
           status: 'AVAILABLE' | 'UNAVAILABLE';
           whatsappSentAt: string | null;
           whatsappError: string | null;
+          imageUrls: string[];
+          videoUrl: string | null;
           createdAt: string;
           updatedAt: string;
         }>('/partners/me/houses', fd, { method: 'POST' });
@@ -962,6 +973,28 @@ export const api = {
         typology: string;
         priceEur: string;
       }>(`/partners/houses/${encodeURIComponent(houseId)}/contact`, { method: 'GET' }),
+    relocationHouses: () =>
+      request<
+        {
+          id: string;
+          title: string;
+          description: string;
+          typology: string;
+          city: string;
+          availableFrom: string;
+          priceEur: string;
+          requirements: string;
+          imageUrls: string[];
+          videoUrl: string | null;
+          partnerId: string;
+          partner: {
+            id: string;
+            name: string;
+            logoUrl: string | null;
+            shortDescription: string | null;
+          };
+        }[]
+      >('/partners/relocation/houses', { method: 'GET' }),
   },
   checklist: {
     me: () =>

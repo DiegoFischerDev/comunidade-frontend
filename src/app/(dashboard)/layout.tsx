@@ -84,6 +84,7 @@ export default function DashboardLayout({
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [activeCategorySlug, setActiveCategorySlug] = useState<string | null>(null);
   const [partnerId, setPartnerId] = useState<string | null>(null);
+  const [partnerCategorySlug, setPartnerCategorySlug] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -120,15 +121,22 @@ export default function DashboardLayout({
     if (!mounted || authLoading) return;
     if (!user || user.role !== 'PARTNER') {
       setPartnerId(null);
+      setPartnerCategorySlug(null);
       return;
     }
     let cancelled = false;
     (async () => {
       try {
         const me = await api.partner.me();
-        if (!cancelled) setPartnerId(me.id);
+        if (!cancelled) {
+          setPartnerId(me.id);
+          setPartnerCategorySlug(me.category?.slug ?? null);
+        }
       } catch {
-        if (!cancelled) setPartnerId(null);
+        if (!cancelled) {
+          setPartnerId(null);
+          setPartnerCategorySlug(null);
+        }
       }
     })();
     return () => {
@@ -138,6 +146,10 @@ export default function DashboardLayout({
 
   // Sincroniza categoria ativa no menu com rota atual (categoria ou parceiro)
   useEffect(() => {
+    if (pathname === '/dashboard/relocation' || pathname.startsWith('/dashboard/relocation/')) {
+      setActiveCategorySlug('relocation');
+      return;
+    }
     // Página de listagem por categoria
     if (pathname.startsWith('/dashboard/category/')) {
       const segments = pathname.split('/');
@@ -457,16 +469,18 @@ export default function DashboardLayout({
               >
                 Meus leads
               </Link>
-              <Link
-                href="/dashboard/casas"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/casas' || pathname.startsWith('/dashboard/casas/')
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Minhas casas
-              </Link>
+              {partnerCategorySlug === 'relocation' ? (
+                <Link
+                  href="/dashboard/casas"
+                  className={`block rounded-md px-3 py-2 text-sm ${
+                    pathname === '/dashboard/casas' || pathname.startsWith('/dashboard/casas/')
+                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                      : 'text-zinc-800 hover:bg-zinc-100'
+                  }`}
+                >
+                  Minhas casas
+                </Link>
+              ) : null}
               {partnerId ? (
                 <Link
                   href={`/dashboard/partner/${partnerId}`}
@@ -615,7 +629,9 @@ export default function DashboardLayout({
             className={`block rounded-md px-3 py-2 text-sm ${
               pathname === '/dashboard/services' ||
               pathname.startsWith('/dashboard/category/') ||
-              pathname.startsWith('/dashboard/partner/')
+              pathname.startsWith('/dashboard/partner/') ||
+              pathname === '/dashboard/relocation' ||
+              pathname.startsWith('/dashboard/relocation/')
                 ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                 : 'text-zinc-800 hover:bg-zinc-100'
             }`}
@@ -625,14 +641,16 @@ export default function DashboardLayout({
           {categoriesLoaded && categories.length ? (
             <div className="mt-2 space-y-1 border-l border-zinc-200 pl-3">
               {categories.map((c) => {
-                const isActive =
-                  pathname === `/dashboard/category/${c.slug}` ||
-                  (pathname.startsWith('/dashboard/partner/') &&
-                    activeCategorySlug === c.slug);
+                const relocation = c.slug === 'relocation';
+                const catHref = relocation ? '/dashboard/relocation' : `/dashboard/category/${c.slug}`;
+                const isActive = relocation
+                  ? pathname === '/dashboard/relocation' || pathname.startsWith('/dashboard/relocation/')
+                  : pathname === `/dashboard/category/${c.slug}` ||
+                    (pathname.startsWith('/dashboard/partner/') && activeCategorySlug === c.slug);
                 return (
                   <Link
                     key={c.id}
-                    href={`/dashboard/category/${c.slug}`}
+                    href={catHref}
                     className={`relative block rounded-lg px-3 py-2 text-xs font-medium transition ${
                       isActive
                         ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white shadow-sm'

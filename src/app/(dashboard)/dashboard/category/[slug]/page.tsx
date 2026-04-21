@@ -44,6 +44,12 @@ export default function CategoryPage() {
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
   useEffect(() => {
+    if (params.slug === 'relocation') {
+      router.replace('/dashboard/relocation');
+    }
+  }, [params.slug, router]);
+
+  useEffect(() => {
     (async () => {
       try {
         const data = await api.marketplace.categoriesWithPartners();

@@ -500,7 +500,7 @@ export default function BusinessPage() {
 
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
             <h2 className="text-sm font-semibold text-zinc-900">
-              Dados de faturação (Portugal)
+              Dados de faturação (Opcional)
             </h2>
             <p className="mt-1 text-xs text-zinc-600">
               Estes dados serão usados quando você marcar &quot;Quero fatura&quot; no pagamento

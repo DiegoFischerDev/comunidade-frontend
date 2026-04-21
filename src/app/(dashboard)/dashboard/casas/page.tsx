@@ -43,23 +43,36 @@ export default function PartnerHousesPage() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("");
   const [savingById, setSavingById] = useState<Record<string, boolean>>({});
+  const [canManageHouses, setCanManageHouses] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!user) return;
     if (user.role !== "PARTNER") {
       setLoading(false);
+      setCanManageHouses(null);
       return;
     }
+    let cancelled = false;
     (async () => {
       try {
+        const me = await api.partner.me();
+        const ok = me.category?.slug === "relocation";
+        if (!cancelled) setCanManageHouses(ok);
+        if (!ok) return;
         const data = await api.partner.houses.list();
-        setRows(data);
+        if (!cancelled) setRows(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar casas.");
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Erro ao carregar casas.");
+          setCanManageHouses(false);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const filtered = useMemo(() => {
@@ -101,6 +114,27 @@ export default function PartnerHousesPage() {
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
         <p className="mt-2 text-sm text-zinc-600">Esta área é exclusiva para parceiros.</p>
+      </div>
+    );
+  }
+
+  if (loading || canManageHouses === null) {
+    return (
+      <div>
+        <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
+        <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
+      </div>
+    );
+  }
+
+  if (!canManageHouses) {
+    return (
+      <div>
+        <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
+        <p className="mt-2 max-w-lg text-sm text-zinc-600">
+          Esta área é apenas para parceiros na categoria <strong>Relocation</strong>. Se precisares de
+          alterar a tua categoria, contacta a equipa.
+        </p>
       </div>
     );
   }
@@ -170,7 +204,14 @@ export default function PartnerHousesPage() {
                 {filtered.map((r) => (
                   <tr key={r.id} className="align-top">
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-zinc-900">{r.title}</div>
+                      <div className="font-semibold text-zinc-900">
+                        {r.title}
+                        {r.videoUrl ? (
+                          <span className="ml-2 rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-medium text-zinc-700">
+                            Vídeo
+                          </span>
+                        ) : null}
+                      </div>
                       <div className="mt-1 text-xs text-zinc-500">
                         Enviado: {r.whatsappSentAt ? formatDatePt(r.whatsappSentAt) : "—"}
                         {r.whatsappError ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -41,15 +41,50 @@ export default function NewHousePostPage() {
   const [availableFrom, setAvailableFrom] = useState("");
   const [priceEur, setPriceEur] = useState("");
   const [requirements, setRequirements] = useState("");
+  const [mediaMode, setMediaMode] = useState<"images" | "video">("images");
   const [images, setImages] = useState<File[]>([]);
+  const [video, setVideo] = useState<File | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [relocationGate, setRelocationGate] = useState<"loading" | "ok" | "no">("loading");
 
-  const previews = useMemo(() => {
+  useEffect(() => {
+    if (!user || user.role !== "PARTNER") {
+      setRelocationGate("ok");
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const me = await api.partner.me();
+        if (!cancelled) {
+          setRelocationGate(me.category?.slug === "relocation" ? "ok" : "no");
+        }
+      } catch {
+        if (!cancelled) setRelocationGate("no");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const imagePreviews = useMemo(() => {
     return images.map((f) => ({ file: f, url: URL.createObjectURL(f) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [images]);
+
+  const videoPreviewUrl = useMemo(
+    () => (video ? URL.createObjectURL(video) : null),
+    [video],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+    };
+  }, [videoPreviewUrl]);
 
   if (!user) return null;
 
@@ -58,6 +93,31 @@ export default function NewHousePostPage() {
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Publicar imóvel</h1>
         <p className="mt-2 text-sm text-zinc-600">Esta área é exclusiva para parceiros.</p>
+      </div>
+    );
+  }
+
+  if (relocationGate === "loading") {
+    return (
+      <div>
+        <h1 className="text-2xl font-semibold text-zinc-900">Publicar imóvel</h1>
+        <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
+      </div>
+    );
+  }
+
+  if (relocationGate === "no") {
+    return (
+      <div>
+        <h1 className="text-2xl font-semibold text-zinc-900">Publicar imóvel</h1>
+        <p className="mt-2 max-w-lg text-sm text-zinc-600">
+          Apenas parceiros na categoria Relocation podem publicar imóveis aqui.
+        </p>
+        <div className="mt-4">
+          <CardLinkButton href="/dashboard" variant="secondary">
+            Voltar ao painel
+          </CardLinkButton>
+        </div>
       </div>
     );
   }
@@ -76,13 +136,17 @@ export default function NewHousePostPage() {
     if (!availableFrom) return setError('Seleciona a data em "Disponível em".');
     if (!cleanPrice) return setError("Preenche o preço do arrendamento.");
     if (!cleanReq) return setError("Preenche as exigências (cauções e rendas).");
-    if (images.length === 0) return setError("Envia pelo menos 1 imagem.");
-    if (images.length > 6) return setError("Podes enviar no máximo 6 imagens.");
+    if (mediaMode === "video") {
+      if (!video) return setError("Seleciona um vídeo (MP4, MOV, WebM ou 3GP).");
+    } else {
+      if (images.length === 0) return setError("Envia pelo menos 1 imagem.");
+      if (images.length > 6) return setError("Podes enviar no máximo 6 imagens.");
+    }
 
     setSaving(true);
     try {
       await api.partner.houses.create({
-        images,
+        ...(mediaMode === "video" && video ? { video } : { images }),
         title: cleanTitle,
         description: cleanDesc,
         typology,
@@ -105,7 +169,8 @@ export default function NewHousePostPage() {
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900">Publicar imóvel</h1>
           <p className="mt-2 text-sm text-zinc-600">
-            Ao enviar, o sistema publica as fotos no grupo e depois envia a descrição formatada.
+            Podes enviar até 6 fotos <strong>ou</strong> um único vídeo. O sistema publica a média no grupo
+            WhatsApp e depois envia a descrição formatada.
           </p>
         </div>
         <div className="shrink-0">
@@ -121,26 +186,82 @@ export default function NewHousePostPage() {
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-5 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div>
-          <label className="block text-xs font-medium text-zinc-700">Imagens (até 6)</label>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={(e) => {
-              const list = Array.from(e.target.files ?? []);
-              setImages(list.slice(0, 6));
-            }}
-            className="mt-1 block w-full text-sm text-zinc-700 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-zinc-900 hover:file:bg-zinc-200"
-          />
+          <span className="block text-xs font-medium text-zinc-700">Média do imóvel</span>
+          <div className="mt-2 flex flex-wrap gap-3">
+            <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
+              <input
+                type="radio"
+                name="house-media"
+                checked={mediaMode === "images"}
+                onChange={() => {
+                  setMediaMode("images");
+                  setVideo(null);
+                }}
+              />
+              Fotos (1–6)
+            </label>
+            <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
+              <input
+                type="radio"
+                name="house-media"
+                checked={mediaMode === "video"}
+                onChange={() => {
+                  setMediaMode("video");
+                  setImages([]);
+                }}
+              />
+              Um vídeo
+            </label>
+          </div>
 
-          {previews.length > 0 && (
-            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {previews.map((p) => (
-                <div key={p.url} className="relative aspect-video overflow-hidden rounded-xl bg-zinc-100">
-                  <Image src={p.url} alt="" fill className="object-cover" />
+          {mediaMode === "images" ? (
+            <>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const list = Array.from(e.target.files ?? []);
+                  setImages(list.slice(0, 6));
+                }}
+                className="mt-2 block w-full text-sm text-zinc-700 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-zinc-900 hover:file:bg-zinc-200"
+              />
+              {imagePreviews.length > 0 && (
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {imagePreviews.map((p) => (
+                    <div key={p.url} className="relative aspect-video overflow-hidden rounded-xl bg-zinc-100">
+                      <Image src={p.url} alt="" fill className="object-cover" />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
+          ) : (
+            <>
+              <input
+                type="file"
+                accept="video/mp4,video/quicktime,video/webm,video/3gpp,.mp4,.mov,.webm,.3gp"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  setVideo(f);
+                }}
+                className="mt-2 block w-full text-sm text-zinc-700 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-zinc-900 hover:file:bg-zinc-200"
+              />
+              <p className="mt-1 text-xs text-zinc-500">
+                Um ficheiro, até ~48&nbsp;MB. Formatos: MP4, MOV, WebM ou 3GP. Vídeos muito grandes podem
+                falhar no WhatsApp.
+              </p>
+              {videoPreviewUrl ? (
+                <div className="mt-3 overflow-hidden rounded-xl bg-black">
+                  <video
+                    src={videoPreviewUrl}
+                    className="max-h-64 w-full object-contain"
+                    controls
+                    playsInline
+                  />
+                </div>
+              ) : null}
+            </>
           )}
         </div>
 
