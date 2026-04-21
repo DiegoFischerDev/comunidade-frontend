@@ -568,6 +568,33 @@ export const api = {
           }[]
         >('/partners/admin/sales', { method: 'GET' }),
     },
+    houses: {
+      list: () =>
+        request<
+          {
+            id: string;
+            title: string;
+            city: string;
+            typology: string;
+            status: 'AVAILABLE' | 'UNAVAILABLE';
+            availableFrom: string;
+            priceEur: string;
+            imageUrls: string[];
+            videoUrl: string | null;
+            createdAt: string;
+            partner: {
+              id: string;
+              name: string;
+              category: { slug: string; name: string } | null;
+            };
+          }[]
+        >('/partners/admin/houses', { method: 'GET' }),
+      delete: (houseId: string) =>
+        request<{ ok: true }>(
+          `/partners/admin/houses/${encodeURIComponent(houseId)}`,
+          { method: 'DELETE' },
+        ),
+    },
     categories: {
       list: () =>
         request<
@@ -993,6 +1020,7 @@ export const api = {
           imageUrls: string[];
           videoUrl: string | null;
           partnerId: string;
+          status: 'AVAILABLE' | 'UNAVAILABLE';
           partner: {
             id: string;
             name: string;

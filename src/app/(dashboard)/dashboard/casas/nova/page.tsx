@@ -328,7 +328,6 @@ export default function NewHousePostPage() {
               placeholder="Ex.: 950"
               className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
-            <p className="mt-0.5 text-[11px] text-zinc-500">Valor mensal da renda (aparece como € / mês na listagem pública).</p>
           </div>
 
           <div>
@@ -339,9 +338,6 @@ export default function NewHousePostPage() {
               placeholder="Ex.: 500"
               className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
-            <p className="mt-0.5 text-[11px] text-zinc-500">
-              Não é mostrada na página pública Relocation; incluída no WhatsApp se preencheres.
-            </p>
           </div>
         </div>
 

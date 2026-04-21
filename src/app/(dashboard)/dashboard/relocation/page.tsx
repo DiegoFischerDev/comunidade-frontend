@@ -115,7 +115,8 @@ export default function RelocationHousesPage() {
           <p className="text-xs uppercase tracking-wide text-amber-100/90">Serviços</p>
           <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">Relocation — imóveis</h1>
           <p className="mt-3 max-w-2xl text-sm text-amber-50/90 sm:text-base">
-            Anúncios de parceiros da categoria Relocation. Abre o cartão para ver fotos, vídeo e detalhes.
+            Anúncios de parceiros da categoria Relocation. Os disponíveis aparecem primeiro; dentro desse grupo,
+            ordenamos por data de disponibilidade mais futura. Os indisponíveis ficam no fim da lista.
           </p>
         </div>
       </section>
@@ -135,12 +136,17 @@ export default function RelocationHousesPage() {
             const thumb = h.imageUrls[0] ? resolveMediaUrl(h.imageUrls[0]) : null;
             const cityLabel = CITY_LABELS[h.city] ?? h.city;
             const typoLabel = TYPOLOGY_LABELS[h.typology] ?? h.typology;
+            const isUnavailable = h.status === "UNAVAILABLE";
             return (
               <button
                 key={h.id}
                 type="button"
                 onClick={() => setModalHouse(h)}
-                className="group flex w-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:border-amber-200 hover:shadow-md"
+                className={`group flex w-full flex-col overflow-hidden rounded-2xl border text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                  isUnavailable
+                    ? "border-zinc-200 bg-zinc-50 opacity-90 hover:border-zinc-300"
+                    : "border-zinc-200 bg-white hover:border-amber-200"
+                }`}
               >
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-100">
                   {videoSrc ? (
@@ -168,6 +174,11 @@ export default function RelocationHousesPage() {
                   {videoSrc ? (
                     <span className="pointer-events-none absolute bottom-2 right-2 rounded bg-black/60 px-2 py-0.5 text-[10px] font-medium text-white">
                       Vídeo
+                    </span>
+                  ) : null}
+                  {isUnavailable ? (
+                    <span className="pointer-events-none absolute left-2 top-2 rounded bg-zinc-800/85 px-2 py-0.5 text-[10px] font-medium text-white">
+                      Indisponível
                     </span>
                   ) : null}
                 </div>
@@ -289,12 +300,18 @@ export default function RelocationHousesPage() {
                 >
                   Ver parceiro
                 </Link>
-                <Link
-                  href={`/casas/interesse?houseId=${encodeURIComponent(modalHouse.id)}&partnerId=${encodeURIComponent(modalHouse.partnerId)}&title=${encodeURIComponent(modalHouse.title)}&city=${encodeURIComponent(modalHouse.city)}&typology=${encodeURIComponent(modalHouse.typology)}&price=${encodeURIComponent(modalHouse.priceEur)}`}
-                  className="inline-flex rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Tenho interesse
-                </Link>
+                {modalHouse.status === "AVAILABLE" ? (
+                  <Link
+                    href={`/casas/interesse?houseId=${encodeURIComponent(modalHouse.id)}&partnerId=${encodeURIComponent(modalHouse.partnerId)}&title=${encodeURIComponent(modalHouse.title)}&city=${encodeURIComponent(modalHouse.city)}&typology=${encodeURIComponent(modalHouse.typology)}&price=${encodeURIComponent(modalHouse.priceEur)}`}
+                    className="inline-flex rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-semibold text-white"
+                  >
+                    Tenho interesse
+                  </Link>
+                ) : (
+                  <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-600">
+                    Anúncio indisponível — contacto não disponível
+                  </span>
+                )}
               </div>
             </div>
 
