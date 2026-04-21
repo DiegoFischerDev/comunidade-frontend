@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -52,7 +53,7 @@ type AuthContextValue = {
     whatsappOpenUrl?: string;
     whatsappBrowserSessionToken?: string;
   }>;
-  /** Termina a sessão atual; após refresh volta a entrar se existir token guardado neste dispositivo. */
+  /** Termina a sessão neste browser (tokens em localStorage são limpos). */
   logout: () => void;
   refreshUser: () => Promise<void>;
   impersonateAsUser: (userId: string) => Promise<void>;
@@ -82,31 +83,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const loadUserRef = useRef(loadUser);
+  loadUserRef.current = loadUser;
+
   /**
-   * Só no primeiro load / refresh da página: copia o JWT de “neste dispositivo” para `comunidade_token`
-   * quando o utilizador saiu sem refresh (logout só remove o token principal).
+   * Só na montagem inicial do provider (equivale ao primeiro load / refresh da página).
+   * Depende de `[]` para não voltar a correr se as referências de callbacks mudarem — caso contrário,
+   * após “Sair” (só `comunidade_token` apagado) o efeito podia repetir-se e copiar de novo o JWT
+   * de `comunidade_device_session_token` para `comunidade_token`.
    */
-  const hydrateFromStorageOnMount = useCallback(async () => {
-    let t = getAuthToken();
-    if (!t) {
-      const device = getDeviceSessionToken();
-      if (device) {
-        setAuthToken(device);
-        t = device;
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      let t = getAuthToken();
+      if (!t) {
+        const device = getDeviceSessionToken();
+        if (device) {
+          setAuthToken(device);
+          t = device;
+        }
       }
-    }
-    if (typeof window !== 'undefined') {
-      setIsImpersonating(
-        Boolean(window.localStorage.getItem(ADMIN_BACKUP_TOKEN_KEY)),
-      );
-    }
-    if (t) {
-      await loadUser(t);
-    } else {
-      setUser(null);
-      setTokenState(null);
-    }
-  }, [loadUser]);
+      if (typeof window !== 'undefined') {
+        setIsImpersonating(
+          Boolean(window.localStorage.getItem(ADMIN_BACKUP_TOKEN_KEY)),
+        );
+      }
+      if (cancelled) return;
+      if (t) {
+        await loadUserRef.current(t);
+      } else {
+        setUser(null);
+        setTokenState(null);
+      }
+    })().finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intencional: apenas hidratação inicial
+  }, []);
 
   /**
    * Outras abas (evento `storage`): atualiza React a partir do JWT já em `localStorage`.
@@ -126,10 +142,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTokenState(null);
     }
   }, [loadUser]);
-
-  useEffect(() => {
-    void hydrateFromStorageOnMount().finally(() => setLoading(false));
-  }, [hydrateFromStorageOnMount]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -197,6 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.localStorage.removeItem(ADMIN_BACKUP_TOKEN_KEY);
     }
     clearAuthToken();
+    clearDeviceSessionToken();
     setUser(null);
     setTokenState(null);
     setIsImpersonating(false);

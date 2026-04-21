@@ -18,6 +18,7 @@ import {
 } from '@/lib/whatsapp-registration-poll';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
+import { LOGIN_PASSWORD_STORAGE_KEY } from '@/lib/login-phone-storage';
 import { CardButton } from '@/components/ui/CardButton';
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
 
@@ -269,6 +270,7 @@ export default function DashboardLayout({
   const whatsappPollStartedAtRef = useRef<number | null>(null);
   const [loginWhatsapp, setLoginWhatsapp] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [loginPasswordHydrated, setLoginPasswordHydrated] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [registerName, setRegisterName] = useState('');
@@ -301,6 +303,42 @@ export default function DashboardLayout({
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const saved = localStorage.getItem(LOGIN_PASSWORD_STORAGE_KEY);
+      if (saved) setLoginPassword(saved);
+    } catch {
+      // noop
+    }
+    setLoginPasswordHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !loginPasswordHydrated) return;
+    try {
+      if (loginPassword) {
+        localStorage.setItem(LOGIN_PASSWORD_STORAGE_KEY, loginPassword);
+      } else {
+        localStorage.removeItem(LOGIN_PASSWORD_STORAGE_KEY);
+      }
+    } catch {
+      // noop
+    }
+  }, [loginPasswordHydrated, loginPassword]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.storageArea !== localStorage || e.key !== LOGIN_PASSWORD_STORAGE_KEY) {
+        return;
+      }
+      setLoginPassword(e.newValue ?? '');
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
   useEffect(() => {

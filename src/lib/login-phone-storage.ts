@@ -3,6 +3,12 @@ export const LOGIN_PHONE_STORAGE_DIAL = 'comunidade_login_whatsapp_dial';
 export const LOGIN_PHONE_STORAGE_LOCAL = 'comunidade_login_whatsapp_local';
 
 /**
+ * Lembrar senha do formulário de login (localStorage, partilhado entre abas do mesmo site).
+ * Mesmo padrão que o número; quem partilha o dispositivo deve usar perfil de browser ou não gravar.
+ */
+export const LOGIN_PASSWORD_STORAGE_KEY = 'comunidade_login_password';
+
+/**
  * Valor do `<select>` para DDI manual (não colidir com códigos numéricos).
  */
 export const LOGIN_COUNTRY_CUSTOM_SELECT = '__other__';
