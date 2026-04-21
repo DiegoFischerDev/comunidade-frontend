@@ -811,6 +811,7 @@ export const api = {
             city: string;
             availableFrom: string;
             priceEur: string;
+            relocationFeeEur: string | null;
             requirements: string;
             status: 'AVAILABLE' | 'UNAVAILABLE';
             whatsappSentAt: string | null;
@@ -831,6 +832,7 @@ export const api = {
         availableFrom: string;
         priceEur: string;
         requirements: string;
+        relocationFeeEur?: string;
       }) => {
         const fd = new FormData();
         if (input.video) {
@@ -845,6 +847,9 @@ export const api = {
         fd.append('availableFrom', input.availableFrom);
         fd.append('priceEur', input.priceEur);
         fd.append('requirements', input.requirements);
+        if (input.relocationFeeEur?.trim()) {
+          fd.append('relocationFeeEur', input.relocationFeeEur.trim());
+        }
         return requestFormData<{
           id: string;
           title: string;
@@ -853,6 +858,7 @@ export const api = {
           city: string;
           availableFrom: string;
           priceEur: string;
+          relocationFeeEur: string | null;
           requirements: string;
           status: 'AVAILABLE' | 'UNAVAILABLE';
           whatsappSentAt: string | null;

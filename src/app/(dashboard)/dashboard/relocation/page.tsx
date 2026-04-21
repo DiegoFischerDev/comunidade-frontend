@@ -31,8 +31,6 @@ const TYPOLOGY_LABELS: Record<string, string> = {
   QUARTO_AP_COMPARTILHADO: "Quarto em Ap compartilhado",
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-
 function resolveMediaUrl(url: string) {
   return resolveUploadsUrl(url);
 }
@@ -48,10 +46,33 @@ function nextImageUnoptimized(resolvedUrl: string) {
   }
 }
 
-function formatDatePt(value: string) {
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("pt-PT");
+/** Renda: mostrar valor + "€ / mês" (evita duplicar € se já vier no texto). */
+function formatRentPerMonth(priceEur: string): string {
+  const t = priceEur
+    .trim()
+    .replace(/\s*€\s*$/i, "")
+    .replace(/\s*\/\s*m[eê]s?\s*$/i, "")
+    .trim();
+  return `${t} € / mês`;
+}
+
+/**
+ * Compara só a data (YYYY-MM-DD do ISO) para evitar desvios de timezone.
+ * Se a data de disponibilidade é hoje ou passada → "Atualmente disponível".
+ */
+function availabilityLabel(availableFromIso: string): string {
+  const day = availableFromIso.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) {
+    const d = new Date(availableFromIso);
+    if (Number.isNaN(d.getTime())) return "Data indisponível";
+    return `Disponível a partir de ${d.toLocaleDateString("pt-PT")}`;
+  }
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  if (day <= todayStr) return "Atualmente disponível";
+  const [y, m, dd] = day.split("-").map(Number);
+  const d = new Date(y, m - 1, dd);
+  return `Disponível a partir de ${d.toLocaleDateString("pt-PT")}`;
 }
 
 export default function RelocationHousesPage() {
@@ -155,7 +176,12 @@ export default function RelocationHousesPage() {
                   <p className="text-xs text-zinc-500">
                     {typoLabel} · {cityLabel}
                   </p>
-                  <p className="text-sm font-semibold text-[#086601]">{h.priceEur} €</p>
+                  <p className="text-sm font-semibold text-[#086601]">{formatRentPerMonth(h.priceEur)}</p>
+                  <p className="text-xs text-zinc-600">{availabilityLabel(h.availableFrom)}</p>
+                  <p className="line-clamp-3 text-xs leading-snug text-zinc-600">
+                    <span className="font-medium text-zinc-700">Entrada: </span>
+                    {h.requirements}
+                  </p>
                   <p className="text-xs text-zinc-500">{h.partner.name}</p>
                 </div>
               </button>
@@ -241,16 +267,20 @@ export default function RelocationHousesPage() {
               </h2>
               <p className="mt-1 text-xs text-zinc-500">
                 {TYPOLOGY_LABELS[modalHouse.typology] ?? modalHouse.typology} ·{" "}
-                {CITY_LABELS[modalHouse.city] ?? modalHouse.city} · Disponível{" "}
-                {formatDatePt(modalHouse.availableFrom)}
+                {CITY_LABELS[modalHouse.city] ?? modalHouse.city}
               </p>
-              <p className="mt-2 text-lg font-semibold text-[#086601]">{modalHouse.priceEur} €</p>
+              <p className="mt-2 text-sm text-zinc-700">{availabilityLabel(modalHouse.availableFrom)}</p>
+              <p className="mt-2 text-lg font-semibold text-[#086601]">
+                {formatRentPerMonth(modalHouse.priceEur)}
+              </p>
+              <div className="mt-3 rounded-lg bg-zinc-50 px-3 py-2 text-sm text-zinc-800">
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Rendas e cauções para entrada
+                </p>
+                <p className="mt-1">{modalHouse.requirements}</p>
+              </div>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">
                 {modalHouse.description}
-              </p>
-              <p className="mt-3 text-sm text-zinc-700">
-                <span className="font-medium">Requisitos: </span>
-                {modalHouse.requirements}
               </p>
               <div className="mt-4 flex flex-wrap gap-2 border-t border-zinc-100 pt-4">
                 <Link

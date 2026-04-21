@@ -196,7 +196,7 @@ export default function PartnerHousesPage() {
                   <th className="px-4 py-3 text-left font-medium">Tipologia</th>
                   <th className="px-4 py-3 text-left font-medium">Disponível em</th>
                   <th className="px-4 py-3 text-left font-medium">Preço</th>
-                  <th className="px-4 py-3 text-left font-medium">Exigências</th>
+                  <th className="px-4 py-3 text-left font-medium">Entrada (rendas/cauções)</th>
                   <th className="px-4 py-3 text-left font-medium">Status</th>
                 </tr>
               </thead>
