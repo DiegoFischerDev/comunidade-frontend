@@ -195,8 +195,8 @@ export default function NewHousePostPage() {
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900">Publicar imóvel</h1>
           <p className="mt-2 text-sm text-zinc-600">
-            Podes enviar até 6 fotos <strong>ou</strong> um único vídeo. Usa &quot;Adicionar imagens&quot; para ir
-            acrescentando fotos até ao máximo permitido.
+            Aqui podes enviar imóveis para o nosso grupo no WhatsApp e publicá-los também na plataforma. Deste modo,
+            atrais mais leads interessados.
           </p>
         </div>
         <div className="shrink-0">
@@ -205,10 +205,6 @@ export default function NewHousePostPage() {
           </CardLinkButton>
         </div>
       </div>
-
-      {error && (
-        <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
-      )}
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-5 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div>
@@ -396,16 +392,20 @@ export default function NewHousePostPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-xs font-medium text-zinc-700">Renda mensal</label>
-            <input
-              value={priceEur}
-              onChange={(e) => setPriceEur(e.target.value)}
-              placeholder="Ex.: 950"
-              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                value={priceEur}
+                onChange={(e) => setPriceEur(e.target.value)}
+                placeholder="Ex.: 950"
+                inputMode="decimal"
+                className="w-full min-w-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <span className="shrink-0 text-sm font-medium text-zinc-600">€</span>
+            </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-zinc-700">Taxa de relocation (€)</label>
+            <label className="block text-xs font-medium text-zinc-700">Taxa de relocation</label>
             <div className="mt-1 flex items-center gap-2">
               <input
                 value={relocationFeeEur}
@@ -461,10 +461,17 @@ export default function NewHousePostPage() {
           />
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-          <CardButton type="submit" variant="primary" disabled={saving}>
-            {saving ? "Enviando…" : "Enviar para o grupo"}
-          </CardButton>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="min-w-0 flex-1 sm:pr-2">
+            {error ? (
+              <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 justify-end">
+            <CardButton type="submit" variant="primary" disabled={saving}>
+              {saving ? "Enviando…" : "Enviar para o grupo"}
+            </CardButton>
+          </div>
         </div>
       </form>
     </div>

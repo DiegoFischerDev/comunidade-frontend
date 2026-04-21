@@ -19,6 +19,10 @@ export const clearAuthToken = () => {
 
 export const getAuthToken = getToken;
 
+function fallbackHttpErrorMessage(status: number): string {
+  return `Não foi possível concluir o pedido (código ${status}).`;
+}
+
 type RequestOptions = RequestInit & { token?: string | null };
 
 /** Mensagem antiga da API que não queremos mostrar ao utilizador (ex.: stage ainda no deploy anterior). */
@@ -44,7 +48,9 @@ async function request<T>(
   const res = await fetch(`${API_URL}${path}`, { ...init, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    let msg = Array.isArray(data.message) ? data.message[0] : data.message || data.error || `Erro ${res.status}`;
+    let msg = Array.isArray(data.message)
+      ? data.message[0]
+      : data.message || data.error || fallbackHttpErrorMessage(res.status);
     msg = typeof msg === 'string' ? msg : String(msg);
     if (shouldHideApiMessage(msg)) {
       throw new Error('');
@@ -75,8 +81,9 @@ async function requestFormData<T>(
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    let msg =
-      Array.isArray((data as any).message) ? (data as any).message[0] : (data as any).message || (data as any).error || `Erro ${res.status}`;
+    let msg = Array.isArray((data as any).message)
+      ? (data as any).message[0]
+      : (data as any).message || (data as any).error || fallbackHttpErrorMessage(res.status);
     msg = typeof msg === 'string' ? msg : String(msg);
     if (shouldHideApiMessage(msg)) {
       throw new Error('');
@@ -1191,7 +1198,7 @@ export const api = {
         if (!res.ok) {
           const msg = Array.isArray(data.message)
             ? data.message[0]
-            : data.message || data.error || `Erro ${res.status}`;
+            : data.message || data.error || fallbackHttpErrorMessage(res.status);
           throw new Error(msg);
         }
         return data as { paidCount: number; paymentProofUrl: string };
