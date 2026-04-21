@@ -125,7 +125,8 @@ export function LoginWhatsappFields({
       <label htmlFor={selectId} className="block text-sm font-medium text-zinc-700">
         {label}
       </label>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+      {/* Grelha: coluna fixa evita que o <select> (largura intrínseca das opções) parta o flex em mobile */}
+      <div className="grid w-full min-w-0 grid-cols-[3rem_minmax(0,1fr)] items-stretch gap-1.5 sm:grid-cols-[3.5rem_minmax(0,1fr)] sm:gap-2">
         <select
           id={selectId}
           disabled={disabled}
@@ -133,12 +134,12 @@ export function LoginWhatsappFields({
           onChange={(e) => handleCountrySelect(e.target.value)}
           aria-label={`País do telefone: ${selectedMeta.label}`}
           title={selectedMeta.label}
-          className="shrink-0 cursor-pointer appearance-none rounded-lg border border-zinc-300 bg-white py-2 pl-3 pr-8 text-center text-2xl leading-none focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:w-[4.25rem]"
+          className="box-border h-full min-h-[2.5rem] w-full min-w-0 max-w-full cursor-pointer appearance-none rounded-lg border border-zinc-300 bg-white py-1.5 pl-1 pr-5 text-center text-lg leading-none focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:min-h-0 sm:py-2 sm:pl-1.5 sm:pr-7 sm:text-2xl"
           style={{
             backgroundImage: chevronBg,
             backgroundRepeat: "no-repeat",
-            backgroundPosition: "right 0.35rem center",
-            backgroundSize: "1rem",
+            backgroundPosition: "right 0.2rem center",
+            backgroundSize: "0.875rem",
           }}
           autoComplete="country"
         >

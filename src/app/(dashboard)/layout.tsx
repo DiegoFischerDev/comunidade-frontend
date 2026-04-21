@@ -732,6 +732,7 @@ export default function DashboardLayout({
                 onClick={() => {
                   setAuthMode('login');
                   setIsAuthModalOpen(true);
+                  setIsMenuOpen(false);
                 }}
                 className="cursor-pointer text-xs font-medium text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
               >
@@ -1197,8 +1198,12 @@ export default function DashboardLayout({
                     setResetCode('');
                     setResetPassword('');
                     setResetError('');
+                    const waDisplay =
+                      formatWhatsappRegistrationDisplay(forgotWhatsapp) ||
+                      forgotWhatsapp.replace(/\D/g, '') ||
+                      forgotWhatsapp.trim();
                     setResetInfo(
-                      'Enviámos um código de recuperação para o WhatsApp informado.',
+                      `Enviámos um código de recuperação para o WhatsApp ${waDisplay}.`,
                     );
                   } catch (err) {
                     setForgotError(
@@ -1280,9 +1285,6 @@ export default function DashboardLayout({
                     {resetInfo}
                   </div>
                 )}
-                <p className="text-xs text-zinc-600">
-                  Introduza o código que enviámos para o seu WhatsApp e defina a sua nova senha de acesso.
-                </p>
                 <div className="space-y-3">
                   <div>
                     <label
@@ -1323,27 +1325,15 @@ export default function DashboardLayout({
                   <button
                     type="button"
                     disabled={resetLoading}
-                    onClick={async () => {
+                    onClick={() => {
                       setResetError('');
                       setResetInfo('');
-                      if (!resetWhatsapp) {
-                        setResetError(
-                          'WhatsApp para recuperação não encontrado. Volte a solicitar a recuperação de senha.',
-                        );
-                        return;
-                      }
-                      try {
-                        await api.auth.forgotPassword(resetWhatsapp);
-                        setResetInfo(
-                          'Novo código enviado para o seu WhatsApp.',
-                        );
-                      } catch (err) {
-                        setResetError(
-                          err instanceof Error
-                            ? err.message
-                            : 'Erro ao reenviar o código. Tente novamente.',
-                        );
-                      }
+                      setResetCode('');
+                      setResetPassword('');
+                      setForgotError('');
+                      setForgotInfo('');
+                      setForgotWhatsapp(resetWhatsapp);
+                      setAuthMode('forgot');
                     }}
                     className="cursor-pointer text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline disabled:opacity-50"
                   >
