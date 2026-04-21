@@ -881,6 +881,27 @@ export const api = {
             updatedAt: string;
           }[]
         >('/partners/me/houses', { method: 'GET' }),
+      get: (id: string) =>
+        request<{
+          id: string;
+          title: string;
+          description: string;
+          typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          city: string;
+          availableFrom: string;
+          priceEur: string;
+          relocationFeeEur: string;
+          caucoesCount: number;
+          rendasEntradaCount: number;
+          furnished: boolean;
+          status: 'AVAILABLE' | 'UNAVAILABLE';
+          whatsappSentAt: string | null;
+          whatsappError: string | null;
+          imageUrls: string[];
+          videoUrl: string | null;
+          createdAt: string;
+          updatedAt: string;
+        }>(`/partners/me/houses/${encodeURIComponent(id)}`, { method: 'GET' }),
       create: (input: {
         images?: File[];
         video?: File;
@@ -898,7 +919,8 @@ export const api = {
         const fd = new FormData();
         if (input.video) {
           fd.append('video', input.video);
-        } else if (input.images?.length) {
+        }
+        if (input.images?.length) {
           for (const file of input.images) fd.append('images', file);
         }
         fd.append('title', input.title);
@@ -931,6 +953,65 @@ export const api = {
           createdAt: string;
           updatedAt: string;
         }>('/partners/me/houses', fd, { method: 'POST' });
+      },
+      update: (
+        id: string,
+        input: {
+          images?: File[];
+          video?: File;
+          removeVideo?: boolean;
+          keepImageUrls?: string[];
+          title?: string;
+          description?: string;
+          typology?: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          city?: string;
+          availableFrom?: string;
+          priceEur?: string;
+          relocationFeeEur?: string;
+          caucoesCount?: string;
+          rendasEntradaCount?: string;
+          furnished?: boolean;
+        },
+      ) => {
+        const fd = new FormData();
+        if (input.video) fd.append('video', input.video);
+        if (input.images?.length) {
+          for (const file of input.images) fd.append('images', file);
+        }
+        if (input.keepImageUrls != null) {
+          fd.append('keepImageUrls', JSON.stringify(input.keepImageUrls));
+        }
+        if (input.removeVideo) fd.append('removeVideo', 'true');
+        if (input.title != null) fd.append('title', input.title);
+        if (input.description != null) fd.append('description', input.description);
+        if (input.typology != null) fd.append('typology', input.typology);
+        if (input.city != null) fd.append('city', input.city);
+        if (input.availableFrom != null) fd.append('availableFrom', input.availableFrom);
+        if (input.priceEur != null) fd.append('priceEur', input.priceEur);
+        if (input.relocationFeeEur != null) fd.append('relocationFeeEur', input.relocationFeeEur.trim());
+        if (input.caucoesCount != null) fd.append('caucoesCount', input.caucoesCount);
+        if (input.rendasEntradaCount != null) fd.append('rendasEntradaCount', input.rendasEntradaCount);
+        if (input.furnished != null) fd.append('furnished', input.furnished ? 'true' : 'false');
+        return requestFormData<{
+          id: string;
+          title: string;
+          description: string;
+          typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          city: string;
+          availableFrom: string;
+          priceEur: string;
+          relocationFeeEur: string;
+          caucoesCount: number;
+          rendasEntradaCount: number;
+          furnished: boolean;
+          status: 'AVAILABLE' | 'UNAVAILABLE';
+          whatsappSentAt: string | null;
+          whatsappError: string | null;
+          imageUrls: string[];
+          videoUrl: string | null;
+          createdAt: string;
+          updatedAt: string;
+        }>(`/partners/me/houses/${encodeURIComponent(id)}`, fd, { method: 'PATCH' });
       },
       updateStatus: (id: string, status: 'AVAILABLE' | 'UNAVAILABLE') =>
         request<{

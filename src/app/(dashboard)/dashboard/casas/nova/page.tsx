@@ -56,7 +56,6 @@ export default function NewHousePostPage() {
   const [caucoesCount, setCaucoesCount] = useState("0");
   const [rendasEntradaCount, setRendasEntradaCount] = useState("0");
   const [furnished, setFurnished] = useState(false);
-  const [mediaMode, setMediaMode] = useState<"images" | "video">("images");
   const [images, setImages] = useState<File[]>([]);
   const [video, setVideo] = useState<File | null>(null);
 
@@ -168,17 +167,16 @@ export default function NewHousePostPage() {
     if (!availableFrom) return setError('Seleciona a data em "Disponível em".');
     if (!cleanPrice) return setError("Preenche o preço do arrendamento.");
     if (!cleanRelocation) return setError("Preenche a taxa de relocation (em euros).");
-    if (mediaMode === "video") {
-      if (!video) return setError("Seleciona um vídeo (MP4, MOV, WebM ou 3GP).");
-    } else {
-      if (images.length === 0) return setError("Adiciona pelo menos 1 imagem.");
-      if (images.length > 6) return setError("Podes enviar no máximo 6 imagens.");
+    if (images.length === 0 && !video) {
+      return setError("Adiciona pelo menos 1 imagem ou 1 vídeo.");
     }
+    if (images.length > 6) return setError("Podes enviar no máximo 6 imagens.");
 
     setSaving(true);
     try {
       await api.partner.houses.create({
-        ...(mediaMode === "video" && video ? { video } : { images }),
+        ...(images.length ? { images } : {}),
+        ...(video ? { video } : {}),
         title: cleanTitle,
         description: cleanDesc,
         typology,
@@ -204,8 +202,10 @@ export default function NewHousePostPage() {
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900">Publicar imóvel</h1>
           <p className="mt-2 text-sm text-zinc-600">
-            Aqui podes enviar imóveis para o nosso grupo no WhatsApp e publicá-los também na plataforma. Deste modo,
-            atrais mais leads interessados.
+            O anúncio fica na plataforma com as fotos e o vídeo que enviares. No grupo WhatsApp da comunidade enviamos
+            <strong className="font-semibold"> uma única vez </strong>
+            por imóvel, com <strong className="font-semibold">só as imagens</strong> e o texto — o vídeo fica na página
+            pública do anúncio.
           </p>
         </div>
         <div className="shrink-0">
@@ -217,109 +217,78 @@ export default function NewHousePostPage() {
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-5 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div>
-          <span className="block text-xs font-medium text-zinc-700">Média do imóvel</span>
-          <div className="mt-2 flex flex-wrap gap-3">
-            <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
-              <input
-                type="radio"
-                name="house-media"
-                checked={mediaMode === "images"}
-                onChange={() => {
-                  setMediaMode("images");
-                  setVideo(null);
-                }}
-              />
-              Fotos (1–6)
-            </label>
-            <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
-              <input
-                type="radio"
-                name="house-media"
-                checked={mediaMode === "video"}
-                onChange={() => {
-                  setMediaMode("video");
-                  setImages([]);
-                }}
-              />
-              Um vídeo
-            </label>
+          <span className="block text-xs font-medium text-zinc-700">Fotos (opcional até 6)</span>
+          <div className="mt-3 space-y-3">
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="sr-only"
+              aria-hidden
+              onChange={(e) => {
+                addImageFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <div className="flex flex-wrap items-center gap-3">
+              <CardButton
+                type="button"
+                variant="secondary"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={images.length >= 6}
+              >
+                {images.length === 0 ? "Adicionar imagens" : "Adicionar mais imagens"}
+              </CardButton>
+              <span className="text-xs text-zinc-500">
+                {images.length}/6 · usadas no WhatsApp e na página
+              </span>
+            </div>
+            {imagePreviews.length > 0 && (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {imagePreviews.map((p, i) => (
+                  <div
+                    key={`${p.file.name}-${p.file.size}-${i}`}
+                    className="relative aspect-video overflow-hidden rounded-xl bg-zinc-100"
+                  >
+                    <Image src={p.url} alt="" fill className="object-cover" unoptimized />
+                    <button
+                      type="button"
+                      onClick={() => removeImageAt(i)}
+                      className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-sm font-bold text-white hover:bg-black/80"
+                      aria-label="Remover imagem"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {mediaMode === "images" ? (
-            <div className="mt-3 space-y-3">
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="sr-only"
-                aria-hidden
-                onChange={(e) => {
-                  addImageFiles(e.target.files);
-                  e.target.value = "";
-                }}
+          <span className="mt-6 block text-xs font-medium text-zinc-700">Vídeo (opcional — só na página do imóvel)</span>
+          <input
+            type="file"
+            accept="video/mp4,video/quicktime,video/webm,video/3gpp,.mp4,.mov,.webm,.3gp"
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              setVideo(f);
+            }}
+            className="mt-2 block w-full text-sm text-zinc-700 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-zinc-900 hover:file:bg-zinc-200"
+          />
+          <p className="mt-1 text-xs text-zinc-500">
+            MP4, MOV, WebM ou 3GP. Não é enviado ao grupo WhatsApp.
+          </p>
+          {videoPreviewUrl ? (
+            <div className="mt-3 overflow-hidden rounded-xl bg-black">
+              <video
+                src={videoPreviewUrl}
+                className="max-h-64 w-full object-contain"
+                controls
+                playsInline
               />
-              <div className="flex flex-wrap items-center gap-3">
-                <CardButton
-                  type="button"
-                  variant="secondary"
-                  onClick={() => imageInputRef.current?.click()}
-                  disabled={images.length >= 6}
-                >
-                  {images.length === 0 ? "Adicionar imagens" : "Adicionar mais imagens"}
-                </CardButton>
-                <span className="text-xs text-zinc-500">
-                  {images.length}/6 imagens · podes escolher várias de uma vez ou ir adicionando
-                </span>
-              </div>
-              {imagePreviews.length > 0 && (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {imagePreviews.map((p, i) => (
-                    <div
-                      key={`${p.file.name}-${p.file.size}-${i}`}
-                      className="relative aspect-video overflow-hidden rounded-xl bg-zinc-100"
-                    >
-                      <Image src={p.url} alt="" fill className="object-cover" unoptimized />
-                      <button
-                        type="button"
-                        onClick={() => removeImageAt(i)}
-                        className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-sm font-bold text-white hover:bg-black/80"
-                        aria-label="Remover imagem"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
-          ) : (
-            <>
-              <input
-                type="file"
-                accept="video/mp4,video/quicktime,video/webm,video/3gpp,.mp4,.mov,.webm,.3gp"
-                onChange={(e) => {
-                  const f = e.target.files?.[0] ?? null;
-                  setVideo(f);
-                }}
-                className="mt-2 block w-full text-sm text-zinc-700 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-zinc-900 hover:file:bg-zinc-200"
-              />
-              <p className="mt-1 text-xs text-zinc-500">
-                Um ficheiro, até ~48&nbsp;MB. Formatos: MP4, MOV, WebM ou 3GP. Vídeos muito grandes podem
-                falhar no WhatsApp.
-              </p>
-              {videoPreviewUrl ? (
-                <div className="mt-3 overflow-hidden rounded-xl bg-black">
-                  <video
-                    src={videoPreviewUrl}
-                    className="max-h-64 w-full object-contain"
-                    controls
-                    playsInline
-                  />
-                </div>
-              ) : null}
-            </>
-          )}
+          ) : null}
         </div>
 
         <div>
@@ -478,7 +447,7 @@ export default function NewHousePostPage() {
           </div>
           <div className="flex shrink-0 justify-end">
             <CardButton type="submit" variant="primary" disabled={saving}>
-              {saving ? "Enviando…" : "Enviar para o grupo"}
+              {saving ? "A publicar…" : "Publicar imóvel"}
             </CardButton>
           </div>
         </div>

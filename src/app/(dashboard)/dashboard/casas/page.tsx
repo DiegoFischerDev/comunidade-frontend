@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { formatHouseEntradaShort } from "@/lib/house-entrance";
@@ -39,12 +40,22 @@ function formatDatePt(value: string) {
 
 export default function PartnerHousesPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [rows, setRows] = useState<HouseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("");
   const [savingById, setSavingById] = useState<Record<string, boolean>>({});
   const [canManageHouses, setCanManageHouses] = useState<boolean | null>(null);
+  const [showUpdatedBanner, setShowUpdatedBanner] = useState(false);
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("updated") === "1") {
+      setShowUpdatedBanner(true);
+      router.replace("/dashboard/casas", { scroll: false });
+    }
+  }, [router]);
 
   useEffect(() => {
     if (!user) return;
@@ -160,6 +171,12 @@ export default function PartnerHousesPage() {
         </div>
       </div>
 
+      {showUpdatedBanner && (
+        <div className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          Imóvel atualizado. A mensagem no WhatsApp não foi reenviada.
+        </div>
+      )}
+
       {error && (
         <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
       )}
@@ -206,6 +223,7 @@ export default function PartnerHousesPage() {
                     Entrada (taxa relocation, cauções e rendas)
                   </th>
                   <th className="px-4 py-3 text-left font-medium">Status</th>
+                  <th className="px-4 py-3 text-left font-medium">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
@@ -250,6 +268,14 @@ export default function PartnerHousesPage() {
                         <option value="AVAILABLE">Disponível</option>
                         <option value="UNAVAILABLE">Indisponível</option>
                       </select>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/dashboard/casas/${r.id}/edit`}
+                        className="text-sm font-medium text-blue-700 underline-offset-2 hover:underline"
+                      >
+                        Editar
+                      </Link>
                     </td>
                   </tr>
                 ))}
