@@ -80,7 +80,13 @@ export function HousePublicView({ house, apiBaseUrl }: Props) {
   const entrada = formatHouseEntradaShort(house.caucoesCount, house.rendasEntradaCount);
 
   const videoSrc = house.videoUrl ? resolveUploadsUrl(house.videoUrl) : null;
-  const photos = (house.imageUrls ?? []).map(resolveUploadsUrl).filter(Boolean);
+  const rawUrls = house.imageUrls ?? [];
+  const rawCover =
+    house.coverImageUrl && rawUrls.includes(house.coverImageUrl)
+      ? house.coverImageUrl
+      : rawUrls[0] ?? null;
+  const photos = rawUrls.map(resolveUploadsUrl).filter(Boolean);
+  const heroImageSrc = rawCover ? resolveUploadsUrl(rawCover) : null;
 
   const logoSrc =
     partner.logoUrl && partner.logoUrl.startsWith("/uploads/")
@@ -121,24 +127,30 @@ export function HousePublicView({ house, apiBaseUrl }: Props) {
 
       <main className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
         <article className="overflow-hidden rounded-3xl border border-zinc-200/90 bg-white shadow-xl shadow-zinc-200/50">
-          <div className="relative aspect-[16/10] w-full bg-zinc-100 sm:aspect-[2/1]">
-            {videoSrc ? (
+          <div
+            className={`relative w-full bg-zinc-100 ${
+              !heroImageSrc && videoSrc
+                ? "flex min-h-[min(50vh,420px)] items-center justify-center bg-black"
+                : "aspect-[16/10] sm:aspect-[2/1]"
+            }`}
+          >
+            {!heroImageSrc && videoSrc ? (
               <video
                 src={videoSrc}
-                className="h-full w-full object-cover"
+                className="max-h-[min(85vh,920px)] w-auto max-w-full object-contain"
                 controls
                 playsInline
                 preload="metadata"
               />
-            ) : photos[0] ? (
+            ) : heroImageSrc ? (
               <Image
-                src={photos[0]}
+                src={heroImageSrc}
                 alt=""
                 fill
                 className="object-cover"
                 sizes="100vw"
                 priority
-                unoptimized={nextImageUnoptimized(photos[0])}
+                unoptimized={nextImageUnoptimized(heroImageSrc)}
               />
             ) : (
               <div className="flex h-full min-h-[200px] items-center justify-center text-sm text-zinc-500">
@@ -151,6 +163,21 @@ export function HousePublicView({ house, apiBaseUrl }: Props) {
               </span>
             ) : null}
           </div>
+
+          {heroImageSrc && videoSrc ? (
+            <div className="flex flex-col border-t border-zinc-100 bg-black px-4 py-4 sm:px-6">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Vídeo</p>
+              <div className="flex w-full justify-center">
+                <video
+                  src={videoSrc}
+                  className="max-h-[min(85vh,920px)] w-auto max-w-full rounded-xl object-contain"
+                  controls
+                  playsInline
+                  preload="metadata"
+                />
+              </div>
+            </div>
+          ) : null}
 
           <div className="space-y-6 p-5 sm:p-8">
             <header className="space-y-2 border-b border-zinc-100 pb-6">
@@ -174,27 +201,29 @@ export function HousePublicView({ house, apiBaseUrl }: Props) {
                 <dd className="mt-1 text-lg font-semibold text-emerald-950">{formatRentPerMonth(house.priceEur)}</dd>
               </div>
               <div className="rounded-2xl border border-zinc-200 bg-zinc-50/90 px-4 py-3 sm:col-span-2">
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-zinc-600">
-                  Entrada (taxa relocation, cauções e rendas antecipadas)
-                </dt>
-                <dd className="mt-2 space-y-1.5 text-base text-zinc-900">
+                <div className="space-y-1.5 text-base text-zinc-900">
                   <p>
                     <span className="font-medium text-zinc-800">Taxa relocation:</span>{" "}
                     {formatRelocationFeeEur(house.relocationFeeEur)}
                   </p>
                   <p>
-                    <span className="font-medium text-zinc-800">Cauções e rendas:</span> {entrada}
+                    <span className="font-medium text-zinc-800">Entrada:</span> {entrada}
                   </p>
-                </dd>
+                </div>
               </div>
             </dl>
 
-            {!videoSrc && photos.length > 1 ? (
+            {photos.length > 0 ? (
               <div>
-                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">Mais fotos</h2>
+                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  {photos.length === 1 ? "Fotografia" : "Fotografias"}
+                </h2>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {photos.slice(1).map((src, i) => (
-                    <div key={i} className="relative aspect-[4/3] overflow-hidden rounded-xl bg-zinc-100 shadow-inner">
+                  {photos.map((src, i) => (
+                    <div
+                      key={`${src}-${i}`}
+                      className="relative aspect-[4/3] overflow-hidden rounded-xl bg-zinc-100 shadow-inner"
+                    >
                       <Image
                         src={src}
                         alt=""

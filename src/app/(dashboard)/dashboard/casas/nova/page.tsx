@@ -57,6 +57,7 @@ export default function NewHousePostPage() {
   const [rendasEntradaCount, setRendasEntradaCount] = useState("0");
   const [furnished, setFurnished] = useState(false);
   const [images, setImages] = useState<File[]>([]);
+  const [coverImageIndex, setCoverImageIndex] = useState(0);
   const [video, setVideo] = useState<File | null>(null);
 
   const [saving, setSaving] = useState(false);
@@ -105,6 +106,11 @@ export default function NewHousePostPage() {
       if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
     };
   }, [videoPreviewUrl]);
+
+  useEffect(() => {
+    if (images.length === 0) return;
+    setCoverImageIndex((i) => Math.min(i, images.length - 1));
+  }, [images.length]);
 
   function addImageFiles(fileList: FileList | null) {
     if (!fileList?.length) return;
@@ -187,6 +193,7 @@ export default function NewHousePostPage() {
         caucoesCount,
         rendasEntradaCount,
         furnished,
+        ...(images.length ? { coverImageIndex } : {}),
       });
       router.push("/dashboard/casas?sent=1");
     } catch (err) {
@@ -204,8 +211,8 @@ export default function NewHousePostPage() {
           <p className="mt-2 text-sm text-zinc-600">
             O anúncio fica na plataforma com as fotos e o vídeo que enviares. No grupo WhatsApp da comunidade enviamos
             <strong className="font-semibold"> uma única vez </strong>
-            por imóvel, com <strong className="font-semibold">só as imagens</strong> e o texto — o vídeo fica na página
-            pública do anúncio.
+            por imóvel, <strong className="font-semibold">só uma mensagem de texto</strong> com o resumo e o link da
+            página — sem fotos nem vídeo no grupo.
           </p>
         </div>
         <div className="shrink-0">
@@ -240,18 +247,28 @@ export default function NewHousePostPage() {
               >
                 {images.length === 0 ? "Adicionar imagens" : "Adicionar mais imagens"}
               </CardButton>
-              <span className="text-xs text-zinc-500">
-                {images.length}/6 · usadas no WhatsApp e na página
-              </span>
+              <span className="text-xs text-zinc-500">{images.length}/6 · na página do anúncio</span>
             </div>
             {imagePreviews.length > 0 && (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {imagePreviews.map((p, i) => (
                   <div
                     key={`${p.file.name}-${p.file.size}-${i}`}
-                    className="relative aspect-video overflow-hidden rounded-xl bg-zinc-100"
+                    className={`relative aspect-video overflow-hidden rounded-xl border bg-zinc-100 ${
+                      coverImageIndex === i ? "border-amber-500 ring-2 ring-amber-400/50" : "border-transparent"
+                    }`}
                   >
                     <Image src={p.url} alt="" fill className="object-cover" unoptimized />
+                    <label className="absolute bottom-1.5 left-1.5 flex cursor-pointer items-center gap-1 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                      <input
+                        type="radio"
+                        name="cover-nova"
+                        className="accent-amber-400"
+                        checked={coverImageIndex === i}
+                        onChange={() => setCoverImageIndex(i)}
+                      />
+                      Principal
+                    </label>
                     <button
                       type="button"
                       onClick={() => removeImageAt(i)}
@@ -264,6 +281,11 @@ export default function NewHousePostPage() {
                 ))}
               </div>
             )}
+            {imagePreviews.length > 0 ? (
+              <p className="text-xs text-zinc-500">
+                A foto marcada como principal é usada na pré-visualização ao partilhar o link do anúncio.
+              </p>
+            ) : null}
           </div>
 
           <span className="mt-6 block text-xs font-medium text-zinc-700">Vídeo (opcional — só na página do imóvel)</span>

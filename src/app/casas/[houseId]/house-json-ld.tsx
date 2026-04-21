@@ -1,4 +1,5 @@
 import type { PublicHousePageData } from "@/lib/house-public-server";
+import { absoluteMediaUrlForOg } from "@/lib/house-public-server";
 
 type Props = {
   house: PublicHousePageData;
@@ -23,12 +24,15 @@ export function HouseJsonLd({ house, pageUrl }: Props) {
   const tMatch = /^T([1-5])$/.exec(house.typology);
   const roomCount = tMatch ? Number(tMatch[1]) : undefined;
 
+  const primaryImage = absoluteMediaUrlForOg(house.coverImageUrl ?? house.imageUrls?.[0]);
+
   const payload = {
     "@context": "https://schema.org",
     "@type": "Apartment",
     name: house.title,
     description: house.description.slice(0, 8000),
     url: pageUrl,
+    ...(primaryImage ? { image: primaryImage } : {}),
     ...(roomCount != null ? { numberOfRooms: roomCount } : {}),
     address: {
       "@type": "PostalAddress",

@@ -28,6 +28,8 @@ export type PublicHousePageData = {
   rendasEntradaCount: number;
   furnished: boolean;
   imageUrls: string[];
+  /** Foto principal (OG / destaque); fallback: primeira de imageUrls */
+  coverImageUrl: string | null;
   videoUrl: string | null;
   status: "AVAILABLE" | "UNAVAILABLE";
   partnerId: string;

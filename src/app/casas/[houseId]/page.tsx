@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       VISEU: "Viseu",
     }[house.city] ?? "Portugal";
 
-  const ogFromHouse = absoluteMediaUrlForOg(house.imageUrls?.[0]);
+  const ogFromHouse = absoluteMediaUrlForOg(house.coverImageUrl ?? house.imageUrls?.[0]);
   const ogFromPartner = absoluteMediaUrlForOg(house.partner?.logoUrl);
   const ogUrl = ogFromHouse ?? ogFromPartner;
   const ogImages = ogUrl

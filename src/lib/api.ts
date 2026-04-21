@@ -876,6 +876,7 @@ export const api = {
             whatsappSentAt: string | null;
             whatsappError: string | null;
             imageUrls: string[];
+            coverImageUrl: string | null;
             videoUrl: string | null;
             createdAt: string;
             updatedAt: string;
@@ -898,6 +899,7 @@ export const api = {
           whatsappSentAt: string | null;
           whatsappError: string | null;
           imageUrls: string[];
+          coverImageUrl: string | null;
           videoUrl: string | null;
           createdAt: string;
           updatedAt: string;
@@ -915,6 +917,7 @@ export const api = {
         caucoesCount: string;
         rendasEntradaCount: string;
         furnished: boolean;
+        coverImageIndex?: number;
       }) => {
         const fd = new FormData();
         if (input.video) {
@@ -922,6 +925,9 @@ export const api = {
         }
         if (input.images?.length) {
           for (const file of input.images) fd.append('images', file);
+        }
+        if (input.images?.length && input.coverImageIndex != null) {
+          fd.append('coverImageIndex', String(input.coverImageIndex));
         }
         fd.append('title', input.title);
         fd.append('description', input.description);
@@ -949,6 +955,7 @@ export const api = {
           whatsappSentAt: string | null;
           whatsappError: string | null;
           imageUrls: string[];
+          coverImageUrl: string | null;
           videoUrl: string | null;
           createdAt: string;
           updatedAt: string;
@@ -971,6 +978,7 @@ export const api = {
           caucoesCount?: string;
           rendasEntradaCount?: string;
           furnished?: boolean;
+          coverImageIndex?: number;
         },
       ) => {
         const fd = new FormData();
@@ -992,6 +1000,7 @@ export const api = {
         if (input.caucoesCount != null) fd.append('caucoesCount', input.caucoesCount);
         if (input.rendasEntradaCount != null) fd.append('rendasEntradaCount', input.rendasEntradaCount);
         if (input.furnished != null) fd.append('furnished', input.furnished ? 'true' : 'false');
+        if (input.coverImageIndex != null) fd.append('coverImageIndex', String(input.coverImageIndex));
         return requestFormData<{
           id: string;
           title: string;
@@ -1008,6 +1017,7 @@ export const api = {
           whatsappSentAt: string | null;
           whatsappError: string | null;
           imageUrls: string[];
+          coverImageUrl: string | null;
           videoUrl: string | null;
           createdAt: string;
           updatedAt: string;
@@ -1145,6 +1155,7 @@ export const api = {
           rendasEntradaCount: number;
           furnished: boolean;
           imageUrls: string[];
+          coverImageUrl: string | null;
           videoUrl: string | null;
           partnerId: string;
           status: 'AVAILABLE' | 'UNAVAILABLE';

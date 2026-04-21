@@ -66,6 +66,8 @@ export default function EditHousePage() {
 
   const [retainedImageUrls, setRetainedImageUrls] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<File[]>([]);
+  /** Índice na ordem [retidas…, novas…] — alinhado ao backend. */
+  const [coverImageIndex, setCoverImageIndex] = useState(0);
   const [video, setVideo] = useState<File | null>(null);
   const [removeVideo, setRemoveVideo] = useState(false);
   const [existingVideoUrl, setExistingVideoUrl] = useState<string | null>(null);
@@ -132,7 +134,17 @@ export default function EditHousePage() {
         setCaucoesCount(String(h.caucoesCount));
         setRendasEntradaCount(String(h.rendasEntradaCount));
         setFurnished(h.furnished);
-        setRetainedImageUrls([...h.imageUrls]);
+        const urls = [...h.imageUrls];
+        setRetainedImageUrls(urls);
+        if (urls.length > 0) {
+          const ci =
+            h.coverImageUrl && urls.includes(h.coverImageUrl)
+              ? urls.indexOf(h.coverImageUrl)
+              : 0;
+          setCoverImageIndex(Math.min(Math.max(0, ci), urls.length - 1));
+        } else {
+          setCoverImageIndex(0);
+        }
         setExistingVideoUrl(h.videoUrl);
         setRemoveVideo(false);
         setVideo(null);
@@ -147,6 +159,12 @@ export default function EditHousePage() {
       cancelled = true;
     };
   }, [houseId, user, relocationGate]);
+
+  const totalImageCount = retainedImageUrls.length + newImages.length;
+  useEffect(() => {
+    if (totalImageCount === 0) return;
+    setCoverImageIndex((i) => Math.min(i, totalImageCount - 1));
+  }, [totalImageCount]);
 
   function addImageFiles(fileList: FileList | null) {
     if (!fileList?.length) return;
@@ -202,6 +220,7 @@ export default function EditHousePage() {
         images: newImages.length ? newImages : undefined,
         video: video ?? undefined,
         removeVideo: removeVideo && !video ? true : undefined,
+        coverImageIndex: totalImages > 0 ? coverImageIndex : undefined,
       });
       router.push("/dashboard/casas?updated=1");
     } catch (err) {
@@ -279,31 +298,11 @@ export default function EditHousePage() {
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-5 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div>
-          <span className="block text-xs font-medium text-zinc-700">Fotos atuais</span>
-          <p className="mt-1 text-xs text-zinc-500">Remove as que não quiseres; podes adicionar novas (máx. 6 no total).</p>
-          <div className="mt-3 flex flex-wrap gap-3">
-            {retainedImageUrls.map((url) => (
-              <div
-                key={url}
-                className="relative h-24 w-32 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100"
-              >
-                <img
-                  src={resolveMediaUrl(url)}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeRetainedAt(url)}
-                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs text-white"
-                  aria-label="Remover"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-
+          <span className="block text-xs font-medium text-zinc-700">Fotos</span>
+          <p className="mt-1 text-xs text-zinc-500">
+            Remove ou adiciona (máx. 6). Escolhe a <strong className="font-semibold">foto principal</strong> para
+            pré-visualização ao partilhar o link (WhatsApp, etc.).
+          </p>
           <div className="mt-4 space-y-3">
             <input
               ref={imageInputRef}
@@ -320,26 +319,72 @@ export default function EditHousePage() {
               type="button"
               variant="secondary"
               onClick={() => imageInputRef.current?.click()}
-              disabled={retainedImageUrls.length + newImages.length >= 6}
+              disabled={totalImageCount >= 6}
             >
               Adicionar imagens
             </CardButton>
-            {newImagePreviews.length > 0 && (
+            {totalImageCount > 0 ? (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {newImagePreviews.map((p, i) => (
-                  <div key={`${p.file.name}-${i}`} className="relative aspect-video overflow-hidden rounded-xl bg-zinc-100">
-                    <img src={p.url} alt="" className="h-full w-full object-cover" />
+                {retainedImageUrls.map((url, i) => (
+                  <div
+                    key={url}
+                    className={`relative aspect-video overflow-hidden rounded-xl border bg-zinc-100 ${
+                      coverImageIndex === i ? "border-amber-500 ring-2 ring-amber-400/50" : "border-zinc-200"
+                    }`}
+                  >
+                    <img src={resolveMediaUrl(url)} alt="" className="h-full w-full object-cover" />
+                    <label className="absolute bottom-1.5 left-1.5 flex cursor-pointer items-center gap-1 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                      <input
+                        type="radio"
+                        name="cover-edit"
+                        className="accent-amber-400"
+                        checked={coverImageIndex === i}
+                        onChange={() => setCoverImageIndex(i)}
+                      />
+                      Principal
+                    </label>
                     <button
                       type="button"
-                      onClick={() => removeNewImageAt(i)}
-                      className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-sm text-white"
+                      onClick={() => removeRetainedAt(url)}
+                      className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-sm text-white"
+                      aria-label="Remover"
                     >
                       ×
                     </button>
                   </div>
                 ))}
+                {newImagePreviews.map((p, i) => {
+                  const idx = retainedImageUrls.length + i;
+                  return (
+                    <div
+                      key={`${p.file.name}-${i}`}
+                      className={`relative aspect-video overflow-hidden rounded-xl border bg-zinc-100 ${
+                        coverImageIndex === idx ? "border-amber-500 ring-2 ring-amber-400/50" : "border-zinc-200"
+                      }`}
+                    >
+                      <img src={p.url} alt="" className="h-full w-full object-cover" />
+                      <label className="absolute bottom-1.5 left-1.5 flex cursor-pointer items-center gap-1 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                        <input
+                          type="radio"
+                          name="cover-edit"
+                          className="accent-amber-400"
+                          checked={coverImageIndex === idx}
+                          onChange={() => setCoverImageIndex(idx)}
+                        />
+                        Principal
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => removeNewImageAt(i)}
+                        className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-sm text-white"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 

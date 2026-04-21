@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
-import { formatHouseEntradaShort } from "@/lib/house-entrance";
+import { formatHouseEntradaShort, orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 
 type HouseRow = Awaited<ReturnType<typeof api.marketplace.relocationHouses>>[number];
@@ -138,7 +138,7 @@ export default function RelocationHousesPage() {
     ? resolveMediaUrl(modalHouse.videoUrl)
     : null;
   const photos = modalHouse?.imageUrls?.length
-    ? modalHouse.imageUrls.map(resolveMediaUrl)
+    ? orderHouseImagesWithCoverFirst(modalHouse.imageUrls, modalHouse.coverImageUrl).map(resolveMediaUrl)
     : [];
 
   return (
@@ -166,7 +166,9 @@ export default function RelocationHousesPage() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((h) => {
             const videoSrc = h.videoUrl ? resolveMediaUrl(h.videoUrl) : null;
-            const cardImages = (h.imageUrls ?? []).slice(0, 4).map((u) => resolveMediaUrl(u));
+            const cardImages = orderHouseImagesWithCoverFirst(h.imageUrls ?? [], h.coverImageUrl)
+              .slice(0, 4)
+              .map((u) => resolveMediaUrl(u));
             const cityLabel = CITY_LABELS[h.city] ?? h.city;
             const typoLabel = TYPOLOGY_LABELS[h.typology] ?? h.typology;
             const isUnavailable = h.status === "UNAVAILABLE";
@@ -182,7 +184,38 @@ export default function RelocationHousesPage() {
                 }`}
               >
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-100">
-                  {videoSrc ? (
+                  {cardImages.length > 0 ? (
+                    cardImages.length === 1 ? (
+                      <Image
+                        src={cardImages[0]}
+                        alt=""
+                        fill
+                        className="object-cover transition group-hover:scale-[1.02]"
+                        sizes="(max-width: 640px) 100vw, 33vw"
+                        unoptimized={nextImageUnoptimized(cardImages[0])}
+                      />
+                    ) : (
+                      <div className="grid h-full w-full grid-cols-2 grid-rows-2 gap-px bg-zinc-300 p-px">
+                        {[0, 1, 2, 3].map((i) => {
+                          const src = cardImages[i];
+                          return (
+                            <div key={i} className="relative min-h-0 bg-zinc-100">
+                              {src ? (
+                                <Image
+                                  src={src}
+                                  alt=""
+                                  fill
+                                  className="object-cover transition group-hover:scale-[1.02]"
+                                  sizes="(max-width: 640px) 50vw, 17vw"
+                                  unoptimized={nextImageUnoptimized(src)}
+                                />
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )
+                  ) : videoSrc ? (
                     <video
                       src={videoSrc}
                       className="h-full w-full object-cover transition group-hover:scale-[1.02]"
@@ -190,35 +223,6 @@ export default function RelocationHousesPage() {
                       playsInline
                       preload="metadata"
                     />
-                  ) : cardImages.length === 1 ? (
-                    <Image
-                      src={cardImages[0]}
-                      alt=""
-                      fill
-                      className="object-cover transition group-hover:scale-[1.02]"
-                      sizes="(max-width: 640px) 100vw, 33vw"
-                      unoptimized={nextImageUnoptimized(cardImages[0])}
-                    />
-                  ) : cardImages.length >= 2 ? (
-                    <div className="grid h-full w-full grid-cols-2 grid-rows-2 gap-px bg-zinc-300 p-px">
-                      {[0, 1, 2, 3].map((i) => {
-                        const src = cardImages[i];
-                        return (
-                          <div key={i} className="relative min-h-0 bg-zinc-100">
-                            {src ? (
-                              <Image
-                                src={src}
-                                alt=""
-                                fill
-                                className="object-cover transition group-hover:scale-[1.02]"
-                                sizes="(max-width: 640px) 50vw, 17vw"
-                                unoptimized={nextImageUnoptimized(src)}
-                              />
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                    </div>
                   ) : (
                     <div className="flex h-full items-center justify-center text-sm text-zinc-400">
                       Sem média
@@ -243,10 +247,10 @@ export default function RelocationHousesPage() {
                   <p className="text-sm font-semibold text-[#086601]">{formatRentPerMonth(h.priceEur)}</p>
                   <p className="text-xs text-zinc-600">{availabilityLabel(h.availableFrom)}</p>
                   <p className="line-clamp-3 text-xs leading-snug text-zinc-600">
-                    <span className="font-medium text-zinc-700">
-                      Entrada (taxa relocation, cauções e rendas antecipadas):{" "}
-                    </span>
-                    Taxa relocation {formatRelocationFeeEur(h.relocationFeeEur)} ·{" "}
+                    <span className="font-medium text-zinc-700">Taxa relocation:</span>{" "}
+                    {formatRelocationFeeEur(h.relocationFeeEur)}
+                    <br />
+                    <span className="font-medium text-zinc-700">Entrada:</span>{" "}
                     {formatHouseEntradaShort(h.caucoesCount, h.rendasEntradaCount)}
                   </p>
                   <p className="text-xs text-zinc-500">{h.partner.name}</p>
@@ -277,18 +281,9 @@ export default function RelocationHousesPage() {
             >
               <span aria-hidden>×</span>
             </button>
-            {/* Altura limitada para o vídeo/imagem não ocupar o ecrã inteiro e esconder detalhes + rodapé */}
-            <div className="relative mx-auto h-[min(36vh,260px)] w-full shrink-0 overflow-hidden bg-zinc-100 sm:h-[min(40vh,300px)]">
-              {modalVideoSrc ? (
-                <video
-                  src={modalVideoSrc}
-                  className="h-full w-full object-contain"
-                  controls
-                  playsInline
-                  preload="metadata"
-                />
-              ) : photos.length > 0 ? (
-                <>
+            <div className="w-full shrink-0 bg-zinc-100">
+              {photos.length > 0 ? (
+                <div className="relative mx-auto h-[min(36vh,260px)] w-full overflow-hidden sm:h-[min(40vh,300px)]">
                   <Image
                     src={photos[photoIndex]!}
                     alt=""
@@ -322,19 +317,35 @@ export default function RelocationHousesPage() {
                           <span
                             key={i}
                             className={`h-1.5 w-1.5 rounded-full ${
-                              i === photoIndex ? "bg-white" : "bg-white/50"
+                              i === photoIndex ? "bg-zinc-800" : "bg-zinc-800/35"
                             }`}
                           />
                         ))}
                       </div>
                     </>
                   ) : null}
-                </>
-              ) : (
-                <div className="flex h-full min-h-[140px] items-center justify-center text-sm text-zinc-400">
+                </div>
+              ) : null}
+              {modalVideoSrc ? (
+                <div
+                  className={`relative w-full overflow-hidden bg-black ${
+                    photos.length ? "border-t border-zinc-200" : ""
+                  }`}
+                >
+                  <video
+                    src={modalVideoSrc}
+                    className="mx-auto max-h-[min(36vh,260px)] w-full object-contain sm:max-h-[min(40vh,300px)]"
+                    controls
+                    playsInline
+                    preload="metadata"
+                  />
+                </div>
+              ) : null}
+              {!photos.length && !modalVideoSrc ? (
+                <div className="flex h-[min(28vh,200px)] min-h-[140px] items-center justify-center text-sm text-zinc-400">
                   Sem fotos nem vídeo
                 </div>
-              )}
+              ) : null}
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3">
@@ -353,18 +364,13 @@ export default function RelocationHousesPage() {
                 {formatRentPerMonth(modalHouse.priceEur)}
               </p>
               <div className="mt-3 rounded-lg bg-zinc-50 px-3 py-2 text-sm text-zinc-800">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                  Entrada (taxa relocation, cauções e rendas antecipadas)
+                <p>
+                  <span className="font-medium text-zinc-800">Taxa relocation:</span>{" "}
+                  {formatRelocationFeeEur(modalHouse.relocationFeeEur)}
                 </p>
-                <p className="mt-1.5 space-y-1">
-                  <span>
-                    Taxa relocation: {formatRelocationFeeEur(modalHouse.relocationFeeEur)}
-                  </span>
-                  <br />
-                  <span>
-                    Cauções e rendas:{" "}
-                    {formatHouseEntradaShort(modalHouse.caucoesCount, modalHouse.rendasEntradaCount)}
-                  </span>
+                <p className="mt-1">
+                  <span className="font-medium text-zinc-800">Entrada:</span>{" "}
+                  {formatHouseEntradaShort(modalHouse.caucoesCount, modalHouse.rendasEntradaCount)}
                 </p>
               </div>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">
