@@ -11,6 +11,7 @@ import {
   persistLoginPhonePartsToStorage,
   readDialAndLocalFromStorageAndValue,
 } from "@/lib/login-phone-storage";
+import { subscribeLoginFormSync } from "@/lib/login-form-broadcast";
 import { useRehydrateOnPageVisible } from "@/lib/useRehydrateOnPageVisible";
 
 type Props = {
@@ -61,6 +62,16 @@ export function LoginWhatsappFields({
 
   useRehydrateOnPageVisible(reapplyFromStorage);
 
+  useEffect(() => {
+    return subscribeLoginFormSync((msg) => {
+      if (msg.t !== "phone") return;
+      persistLoginPhonePartsToStorage(msg.dial, msg.local, "sync");
+      setDial(msg.dial);
+      setLocal(msg.local);
+      setReady(true);
+    });
+  }, []);
+
   // Sincronizar só quando o `value` do pai muda — não incluir dial/local nas deps.
   // Com lápis (DDI manual), não reinterpretar o número: senão dígitos que coincidem com 351/55
   // passavam a mudar o país automaticamente.
@@ -84,7 +95,7 @@ export function LoginWhatsappFields({
     if (!ready) return;
     const full = dial + loginPhoneDigitsOnly(local);
     onChange(full);
-    persistLoginPhonePartsToStorage(dial, local);
+    persistLoginPhonePartsToStorage(dial, local, "sync");
   }, [ready, dial, local, onChange]);
 
   const selectId = `${idPrefix}-country`;

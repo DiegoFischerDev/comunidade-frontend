@@ -21,8 +21,10 @@ import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import {
   LOGIN_PASSWORD_STORAGE_KEY,
   persistLoginPasswordToStorage,
+  persistLoginPhonePartsToStorage,
   readLoginWhatsappFullFromStorage,
 } from '@/lib/login-phone-storage';
+import { subscribeLoginFormSync } from '@/lib/login-form-broadcast';
 import { useRehydrateOnPageVisible } from '@/lib/useRehydrateOnPageVisible';
 import { CardButton } from '@/components/ui/CardButton';
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
@@ -358,6 +360,23 @@ export default function DashboardLayout({
   }, []);
 
   useRehydrateOnPageVisible(reapplyLoginFormFromStorage);
+
+  useEffect(() => {
+    return subscribeLoginFormSync((msg) => {
+      if (msg.t === 'password') {
+        setLoginPassword(msg.password);
+        return;
+      }
+      if (msg.t === 'phone') {
+        persistLoginPhonePartsToStorage(msg.dial, msg.local, 'sync');
+        setLoginWhatsapp((prev) => {
+          const next = msg.dial + msg.local;
+          if (next === prev) return prev;
+          return next;
+        });
+      }
+    });
+  }, []);
 
   useEffect(() => {
     const openLogin = () => {

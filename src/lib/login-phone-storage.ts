@@ -1,3 +1,5 @@
+import { broadcastLoginFormPassword, broadcastLoginFormPhone } from './login-form-broadcast';
+
 /** Chaves para lembrar país e dígitos do número local (sem senha). */
 export const LOGIN_PHONE_STORAGE_DIAL = 'comunidade_login_whatsapp_dial';
 export const LOGIN_PHONE_STORAGE_LOCAL = 'comunidade_login_whatsapp_local';
@@ -57,9 +59,14 @@ export function readDialAndLocalFromStorageAndValue(valueProp: string): {
  * Grava no mesmo tique do `onChange` — no Mobile Safari a aba pode ser suspensa
  * antes do `useEffect`, perdendo o último carácter.
  */
+/**
+ * @param source `user` — dispara `BroadcastChannel` (no iOS o `localStorage` entre
+ *   abas não segue a outra aba). `sync` — só repõe ficheiro local, sem reemitir.
+ */
 export function persistLoginPhonePartsToStorage(
   dial: string,
   localRaw: string,
+  source: 'user' | 'sync' = 'user',
 ): void {
   try {
     localStorage.setItem(LOGIN_PHONE_STORAGE_DIAL, dial);
@@ -70,9 +77,18 @@ export function persistLoginPhonePartsToStorage(
   } catch {
     /* ignore */
   }
+  if (source === 'user') {
+    broadcastLoginFormPhone(dial, localRaw);
+  }
 }
 
-export function persistLoginPasswordToStorage(password: string): void {
+/**
+ * @param source `user` emite no canal (outra aba no iOS). `sync` grava sem emitir.
+ */
+export function persistLoginPasswordToStorage(
+  password: string,
+  source: 'user' | 'sync' = 'user',
+): void {
   try {
     if (password) {
       localStorage.setItem(LOGIN_PASSWORD_STORAGE_KEY, password);
@@ -81,6 +97,9 @@ export function persistLoginPasswordToStorage(password: string): void {
     }
   } catch {
     /* ignore */
+  }
+  if (source === 'user') {
+    broadcastLoginFormPassword(password);
   }
 }
 

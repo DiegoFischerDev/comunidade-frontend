@@ -10,6 +10,7 @@ import {
   persistLoginPasswordToStorage,
   readLoginWhatsappFullFromStorage,
 } from "@/lib/login-phone-storage";
+import { subscribeLoginFormSync } from "@/lib/login-form-broadcast";
 import { useRehydrateOnPageVisible } from "@/lib/useRehydrateOnPageVisible";
 
 function isSafeInternalNextPath(value: string): boolean {
@@ -76,6 +77,13 @@ function LoginForm() {
   }, []);
 
   useRehydrateOnPageVisible(reapplyLoginFormFromStorage);
+
+  useEffect(() => {
+    return subscribeLoginFormSync((msg) => {
+      if (msg.t !== "password") return;
+      setPassword(msg.password);
+    });
+  }, []);
 
   const registroHref =
     next && isSafeInternalNextPath(next)
