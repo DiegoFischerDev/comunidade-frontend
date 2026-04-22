@@ -1119,19 +1119,20 @@ export const api = {
         shareCount: number;
         myReaction: 'LIKE' | 'DISLIKE' | null;
       }>(`/partners/${id}/engagement`, { method: 'GET' }),
-    partnerComments: (id: string, params?: { take?: number; before?: string }) => {
+    partnerComments: (id: string, params?: { take?: number }) => {
       const q = new URLSearchParams();
       if (params?.take != null) q.set('take', String(params.take));
-      if (params?.before) q.set('before', params.before);
       const s = q.toString();
       return request<{
         items: {
           id: string;
           body: string;
           createdAt: string;
+          parentId: string | null;
           user: { id: string; name: string };
         }[];
         hasMore: boolean;
+        total: number;
       }>(`/partners/${id}/comments${s ? `?${s}` : ''}`, { method: 'GET' });
     },
     setPartnerReaction: (id: string, body: { type: 'LIKE' | 'DISLIKE' | null }) =>
@@ -1142,13 +1143,22 @@ export const api = {
           body: JSON.stringify(body),
         },
       ),
-    createPartnerComment: (id: string, body: { body: string }) =>
+    createPartnerComment: (
+      id: string,
+      body: { body: string; parentId?: string },
+    ) =>
       request<{
         id: string;
         body: string;
         createdAt: string;
+        parentId: string | null;
         user: { id: string; name: string };
       }>(`/partners/${id}/comments`, { method: 'POST', body: JSON.stringify(body) }),
+    deletePartnerComment: (partnerId: string, commentId: string) =>
+      request<{ ok: true; partnerId: string }>(
+        `/partners/${partnerId}/comments/${commentId}`,
+        { method: 'DELETE' },
+      ),
     recordPartnerShare: (id: string) =>
       request<{ shareCount: number }>(`/partners/${id}/share`, {
         method: 'POST',

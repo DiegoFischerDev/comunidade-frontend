@@ -275,7 +275,8 @@ export default function CategoryPage() {
                     sharePageUrl={`${siteBase}/partner/${partner.id}`}
                     variant="card"
                     initial={partner.engagement}
-                    commentsLinkHref={`/partner/${partner.id}#comentarios`}
+                    partnerName={partner.name}
+                    partnerLogoUrl={typeof partnerLogo === 'string' ? partnerLogo : null}
                     className="mt-3 border-t border-zinc-100 pt-3"
                   />
                 </div>
