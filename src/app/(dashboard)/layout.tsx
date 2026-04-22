@@ -133,6 +133,134 @@ function formatWhatsappRegistrationDisplay(digits: string) {
   return d ? `+${d}` : '';
 }
 
+function RegisterWhatsappVerifyPanel({
+  pollError,
+  registrationNumber,
+  verifyCode,
+  openUrl,
+  onOpenWhatsApp,
+  onBackToRegister,
+}: {
+  pollError: string;
+  registrationNumber: string;
+  verifyCode: string;
+  openUrl: string;
+  onOpenWhatsApp: () => void;
+  onBackToRegister: () => void;
+}) {
+  const [justCopied, setJustCopied] = useState<'number' | 'code' | null>(null);
+  const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const displayNumber = formatWhatsappRegistrationDisplay(registrationNumber);
+  const digitsForCopy = registrationNumber.replace(/\D/g, '');
+  const codeForCopy = verifyCode.replace(/\s/g, '');
+
+  const flashCopied = (which: 'number' | 'code') => {
+    if (copyResetRef.current) clearTimeout(copyResetRef.current);
+    setJustCopied(which);
+    copyResetRef.current = setTimeout(() => {
+      setJustCopied(null);
+      copyResetRef.current = null;
+    }, 2000);
+  };
+
+  const copyNumber = async () => {
+    if (!digitsForCopy) return;
+    try {
+      await navigator.clipboard.writeText(digitsForCopy);
+      flashCopied('number');
+    } catch {
+      // ignore
+    }
+  };
+
+  const copyCode = async () => {
+    if (!codeForCopy) return;
+    try {
+      await navigator.clipboard.writeText(codeForCopy);
+      flashCopied('code');
+    } catch {
+      // ignore
+    }
+  };
+
+  return (
+    <div className="mt-5 space-y-4">
+      {pollError ? (
+        <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+          {pollError}
+        </div>
+      ) : null}
+      <p className="text-xs leading-relaxed text-zinc-600">
+        Para ativar a sua conta, abra o WhatsApp no número abaixo (comunidade) e envie o
+        código de verificação. Pode copiar o número e o código com os botões.
+      </p>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+          Número do WhatsApp
+        </p>
+        <div className="mt-1.5 flex flex-col gap-2 sm:flex-row sm:items-stretch">
+          <div
+            className="min-w-0 flex-1 rounded-xl border-2 border-emerald-300 bg-gradient-to-b from-emerald-50 to-white px-3 py-3 text-center shadow-sm sm:px-4 sm:py-4"
+            aria-live="polite"
+          >
+            <p className="select-all text-lg font-bold tabular-nums tracking-wide text-emerald-950 sm:text-2xl">
+              {displayNumber || '—'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={copyNumber}
+            disabled={!digitsForCopy}
+            className="shrink-0 rounded-xl border-2 border-emerald-200 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {justCopied === 'number' ? 'Número copiado' : 'Copiar número'}
+          </button>
+        </div>
+      </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+          Código de verificação
+        </p>
+        <div className="mt-1.5 flex flex-col gap-2 sm:flex-row sm:items-stretch">
+          <div
+            className="min-w-0 flex-1 rounded-xl border-2 border-zinc-300 bg-zinc-50 px-3 py-3 text-center shadow-sm sm:px-4 sm:py-4"
+            aria-live="polite"
+          >
+            <p className="select-all text-2xl font-bold tracking-[0.2em] text-zinc-900 sm:text-3xl">
+              {verifyCode}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={copyCode}
+            disabled={!codeForCopy}
+            className="shrink-0 rounded-xl border-2 border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {justCopied === 'code' ? 'Código copiado' : 'Copiar código'}
+          </button>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          if (openUrl) onOpenWhatsApp();
+        }}
+        className="flex w-full cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-medium text-white hover:from-[#c07c01] hover:to-[#e7a01f] disabled:cursor-not-allowed disabled:opacity-50"
+        disabled={!openUrl}
+      >
+        Abrir WhatsApp
+      </button>
+      <button
+        type="button"
+        onClick={onBackToRegister}
+        className="w-full cursor-pointer text-center text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
+      >
+        Voltar ao registo
+      </button>
+    </div>
+  );
+}
+
 function EyeIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -1367,60 +1495,29 @@ export default function DashboardLayout({
                 </button>
               </form>
             ) : authMode === 'registerWhatsappVerify' ? (
-              <div className="mt-5 space-y-4">
-                {whatsappPollError && (
-                  <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
-                    {whatsappPollError}
-                  </div>
-                )}
-                <p className="text-xs leading-relaxed text-zinc-700">
-                  Para ativar a sua conta, envie o código de verificação pelo WhatsApp para{' '}
-                  <span className="font-semibold text-zinc-900">
-                    {formatWhatsappRegistrationDisplay(whatsappRegistrationNumber)}
-                  </span>
-                  .
-                </p>
-                <div>
-                  <p className="text-xs font-medium text-zinc-600">
-                    Código de verificação
-                  </p>
-                  <p
-                    className="mt-1 select-all rounded-lg border border-zinc-200 bg-zinc-50 py-3 text-center text-2xl font-bold tracking-[0.2em] text-zinc-900"
-                    aria-live="polite"
-                  >
-                    {whatsappVerifyCode}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (whatsappVerifyOpenUrl) {
-                      window.open(
-                        whatsappVerifyOpenUrl,
-                        '_blank',
-                        'noopener,noreferrer',
-                      );
-                    }
-                  }}
-                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-medium text-white hover:from-[#c07c01] hover:to-[#e7a01f]"
-                >
-                  Enviar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('register');
-                    setWhatsappVerifyCode('');
-                    setWhatsappVerifyOpenUrl('');
-                    setWhatsappRegistrationNumber('');
-                    setWhatsappBrowserSessionToken('');
-                    setWhatsappPollError('');
-                  }}
-                  className="w-full cursor-pointer text-center text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
-                >
-                  Voltar ao registo
-                </button>
-              </div>
+              <RegisterWhatsappVerifyPanel
+                pollError={whatsappPollError}
+                registrationNumber={whatsappRegistrationNumber}
+                verifyCode={whatsappVerifyCode}
+                openUrl={whatsappVerifyOpenUrl}
+                onOpenWhatsApp={() => {
+                  if (whatsappVerifyOpenUrl) {
+                    window.open(
+                      whatsappVerifyOpenUrl,
+                      '_blank',
+                      'noopener,noreferrer',
+                    );
+                  }
+                }}
+                onBackToRegister={() => {
+                  setAuthMode('register');
+                  setWhatsappVerifyCode('');
+                  setWhatsappVerifyOpenUrl('');
+                  setWhatsappRegistrationNumber('');
+                  setWhatsappBrowserSessionToken('');
+                  setWhatsappPollError('');
+                }}
+              />
             ) : authMode === 'forgot' ? (
               <form
                 className="mt-5 space-y-4"
