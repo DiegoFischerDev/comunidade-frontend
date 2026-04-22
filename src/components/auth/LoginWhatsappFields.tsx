@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   LOGIN_COUNTRY_CUSTOM_SELECT,
@@ -11,8 +11,6 @@ import {
   persistLoginPhonePartsToStorage,
   readDialAndLocalFromStorageAndValue,
 } from "@/lib/login-phone-storage";
-import { subscribeLoginFormSync } from "@/lib/login-form-broadcast";
-import { useRehydrateOnPageVisible } from "@/lib/useRehydrateOnPageVisible";
 
 type Props = {
   idPrefix: string;
@@ -21,11 +19,6 @@ type Props = {
   disabled?: boolean;
   /** Por defeito: "WhatsApp". */
   label?: string;
-  /**
-   * Quando o utilizador toca no bloco, volta a ler dial/local do `localStorage`
-   * (outra aba / Safari móvel). Só activar no fluxo de login, não no “esqueci senha”.
-   */
-  syncFromStorageOnInteract?: boolean;
 };
 
 /**
@@ -37,17 +30,13 @@ export function LoginWhatsappFields({
   onChange,
   disabled,
   label = "WhatsApp",
-  syncFromStorageOnInteract = false,
 }: Props) {
   const [dial, setDial] = useState(LOGIN_COUNTRY_DIALS[0]!.dial);
   const [local, setLocal] = useState("");
   const [ready, setReady] = useState(false);
   const dialRef = useRef(dial);
   dialRef.current = dial;
-  const valueRef = useRef(value);
-  valueRef.current = value;
 
-  // Hidratar uma vez (localStorage + value inicial do pai)
   useEffect(() => {
     const { dial: d, local: l } = readDialAndLocalFromStorageAndValue(value);
     setDial(d);
@@ -56,40 +45,6 @@ export function LoginWhatsappFields({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const reapplyFromStorage = useCallback(() => {
-    if (typeof window === "undefined") return;
-    const { dial: d, local: l } = readDialAndLocalFromStorageAndValue(
-      valueRef.current,
-    );
-    setDial(d);
-    setLocal(l);
-    setReady(true);
-  }, []);
-
-  /** Só de `localStorage` (o mesmo que outra aba gravou). */
-  const pullFromStorageOnInteract = useCallback(() => {
-    if (typeof window === "undefined" || !syncFromStorageOnInteract) return;
-    const { dial: d, local: l } = readDialAndLocalFromStorageAndValue("");
-    setDial(d);
-    setLocal(l);
-    setReady(true);
-  }, [syncFromStorageOnInteract]);
-
-  useRehydrateOnPageVisible(reapplyFromStorage);
-
-  useEffect(() => {
-    return subscribeLoginFormSync((msg) => {
-      if (msg.t !== "phone") return;
-      persistLoginPhonePartsToStorage(msg.dial, msg.local, "sync");
-      setDial(msg.dial);
-      setLocal(msg.local);
-      setReady(true);
-    });
-  }, []);
-
-  // Sincronizar só quando o `value` do pai muda — não incluir dial/local nas deps.
-  // Com lápis (DDI manual), não reinterpretar o número: senão dígitos que coincidem com 351/55
-  // passavam a mudar o país automaticamente.
   useEffect(() => {
     if (!ready) return;
     if (!isPresetCountryDial(dialRef.current)) {
@@ -110,7 +65,7 @@ export function LoginWhatsappFields({
     if (!ready) return;
     const full = dial + loginPhoneDigitsOnly(local);
     onChange(full);
-    persistLoginPhonePartsToStorage(dial, local, "sync");
+    persistLoginPhonePartsToStorage(dial, local);
   }, [ready, dial, local, onChange]);
 
   const selectId = `${idPrefix}-country`;
@@ -140,16 +95,10 @@ export function LoginWhatsappFields({
   const chevronBg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`;
 
   return (
-    <div
-      className="space-y-1.5"
-      onPointerDownCapture={
-        syncFromStorageOnInteract ? pullFromStorageOnInteract : undefined
-      }
-    >
+    <div className="space-y-1.5">
       <label htmlFor={selectId} className="block text-sm font-medium text-zinc-700">
         {label}
       </label>
-      {/* Grelha: coluna fixa evita que o <select> (largura intrínseca das opções) parta o flex em mobile */}
       <div className="grid w-full min-w-0 grid-cols-[3.75rem_minmax(0,1fr)] items-stretch gap-1.5 sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:gap-2">
         <select
           id={selectId}

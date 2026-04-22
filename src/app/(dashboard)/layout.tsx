@@ -21,12 +21,7 @@ import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import {
   LOGIN_PASSWORD_STORAGE_KEY,
   persistLoginPasswordToStorage,
-  persistLoginPhonePartsToStorage,
-  readLoginPasswordFromStorage,
-  readLoginWhatsappFullFromStorage,
 } from '@/lib/login-phone-storage';
-import { subscribeLoginFormSync } from '@/lib/login-form-broadcast';
-import { useRehydrateOnPageVisible } from '@/lib/useRehydrateOnPageVisible';
 import { CardButton } from '@/components/ui/CardButton';
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
 
@@ -190,7 +185,6 @@ function AuthPasswordField({
   label,
   value,
   onChange,
-  onInputActivate,
   required,
   minLength,
   autoComplete,
@@ -201,8 +195,6 @@ function AuthPasswordField({
   label: ReactNode;
   value: string;
   onChange: (value: string) => void;
-  /** Ex.: re-ler `localStorage` — Safari móvel com outra aba. */
-  onInputActivate?: () => void;
   required?: boolean;
   minLength?: number;
   autoComplete?: string;
@@ -224,8 +216,6 @@ function AuthPasswordField({
           type={show ? 'text' : 'password'}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          onFocus={() => onInputActivate?.()}
-          onPointerDown={() => onInputActivate?.()}
           required={required}
           minLength={minLength}
           autoComplete={autoComplete}
@@ -352,36 +342,6 @@ export default function DashboardLayout({
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
-  }, []);
-
-  const reapplyLoginFormFromStorage = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      setLoginWhatsapp(readLoginWhatsappFullFromStorage());
-      const saved = localStorage.getItem(LOGIN_PASSWORD_STORAGE_KEY);
-      setLoginPassword(saved ?? '');
-    } catch {
-      // noop
-    }
-  }, []);
-
-  useRehydrateOnPageVisible(reapplyLoginFormFromStorage);
-
-  useEffect(() => {
-    return subscribeLoginFormSync((msg) => {
-      if (msg.t === 'password') {
-        setLoginPassword(msg.password);
-        return;
-      }
-      if (msg.t === 'phone') {
-        persistLoginPhonePartsToStorage(msg.dial, msg.local, 'sync');
-        setLoginWhatsapp((prev) => {
-          const next = msg.dial + msg.local;
-          if (next === prev) return prev;
-          return next;
-        });
-      }
-    });
   }, []);
 
   useEffect(() => {
@@ -1256,7 +1216,6 @@ export default function DashboardLayout({
                   value={loginWhatsapp}
                   onChange={setLoginWhatsapp}
                   disabled={loginLoading}
-                  syncFromStorageOnInteract
                 />
                 <AuthPasswordField
                   id="auth-password"
@@ -1266,9 +1225,6 @@ export default function DashboardLayout({
                   onChange={(v) => {
                     setLoginPassword(v);
                     if (loginPasswordHydrated) persistLoginPasswordToStorage(v);
-                  }}
-                  onInputActivate={() => {
-                    setLoginPassword(readLoginPasswordFromStorage());
                   }}
                   required
                   autoComplete="current-password"
