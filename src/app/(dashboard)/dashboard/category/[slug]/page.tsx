@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
+import { getPublicSiteUrl } from '@/lib/site-url';
 
 type PartnerService = {
   id: string;
@@ -49,9 +50,7 @@ export default function CategoryPage() {
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-  const siteBase = (
-    process.env.NEXT_PUBLIC_SITE_URL || 'https://comunidade.rafaapelomundo.com'
-  ).replace(/\/$/, '');
+  const siteBase = getPublicSiteUrl();
 
   useEffect(() => {
     if (params.slug === 'relocation') {

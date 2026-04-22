@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { PublicHousePageData } from "@/lib/house-public-server";
 import { formatHouseEntradaShort } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
+import { isOurImageHostname } from "@/lib/site-url";
 
 import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
 
@@ -64,7 +65,8 @@ function nextImageUnoptimized(resolvedUrl: string) {
   if (!resolvedUrl.startsWith("http")) return false;
   try {
     const h = new URL(resolvedUrl).hostname;
-    return !(h.endsWith("rafaapelomundo.com") || h === "localhost");
+    if (isOurImageHostname(h)) return false;
+    return true;
   } catch {
     return true;
   }

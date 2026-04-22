@@ -13,6 +13,7 @@ import {
   buildPartnerHeroWhatsAppUrl,
   buildWhatsAppApiSendUrl,
 } from '@/lib/partner-whatsapp';
+import { getPublicSiteUrl } from '@/lib/site-url';
 
 type PartnerDetails = {
   id: string;
@@ -50,9 +51,7 @@ export default function PartnerPage() {
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-  const siteBase = (
-    process.env.NEXT_PUBLIC_SITE_URL || 'https://comunidade.rafaapelomundo.com'
-  ).replace(/\/$/, '');
+  const siteBase = getPublicSiteUrl();
   const sharePageUrl = `${siteBase}/partner/${partner?.id ?? params.id}`;
 
   useEffect(() => {
