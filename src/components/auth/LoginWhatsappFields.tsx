@@ -21,6 +21,11 @@ type Props = {
   disabled?: boolean;
   /** Por defeito: "WhatsApp". */
   label?: string;
+  /**
+   * Quando o utilizador toca no bloco, volta a ler dial/local do `localStorage`
+   * (outra aba / Safari móvel). Só activar no fluxo de login, não no “esqueci senha”.
+   */
+  syncFromStorageOnInteract?: boolean;
 };
 
 /**
@@ -32,6 +37,7 @@ export function LoginWhatsappFields({
   onChange,
   disabled,
   label = "WhatsApp",
+  syncFromStorageOnInteract = false,
 }: Props) {
   const [dial, setDial] = useState(LOGIN_COUNTRY_DIALS[0]!.dial);
   const [local, setLocal] = useState("");
@@ -59,6 +65,15 @@ export function LoginWhatsappFields({
     setLocal(l);
     setReady(true);
   }, []);
+
+  /** Só de `localStorage` (o mesmo que outra aba gravou). */
+  const pullFromStorageOnInteract = useCallback(() => {
+    if (typeof window === "undefined" || !syncFromStorageOnInteract) return;
+    const { dial: d, local: l } = readDialAndLocalFromStorageAndValue("");
+    setDial(d);
+    setLocal(l);
+    setReady(true);
+  }, [syncFromStorageOnInteract]);
 
   useRehydrateOnPageVisible(reapplyFromStorage);
 
@@ -125,7 +140,12 @@ export function LoginWhatsappFields({
   const chevronBg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`;
 
   return (
-    <div className="space-y-1.5">
+    <div
+      className="space-y-1.5"
+      onPointerDownCapture={
+        syncFromStorageOnInteract ? pullFromStorageOnInteract : undefined
+      }
+    >
       <label htmlFor={selectId} className="block text-sm font-medium text-zinc-700">
         {label}
       </label>

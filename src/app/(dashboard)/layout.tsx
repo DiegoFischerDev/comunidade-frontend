@@ -22,6 +22,7 @@ import {
   LOGIN_PASSWORD_STORAGE_KEY,
   persistLoginPasswordToStorage,
   persistLoginPhonePartsToStorage,
+  readLoginPasswordFromStorage,
   readLoginWhatsappFullFromStorage,
 } from '@/lib/login-phone-storage';
 import { subscribeLoginFormSync } from '@/lib/login-form-broadcast';
@@ -189,6 +190,7 @@ function AuthPasswordField({
   label,
   value,
   onChange,
+  onInputActivate,
   required,
   minLength,
   autoComplete,
@@ -199,6 +201,8 @@ function AuthPasswordField({
   label: ReactNode;
   value: string;
   onChange: (value: string) => void;
+  /** Ex.: re-ler `localStorage` — Safari móvel com outra aba. */
+  onInputActivate?: () => void;
   required?: boolean;
   minLength?: number;
   autoComplete?: string;
@@ -220,6 +224,8 @@ function AuthPasswordField({
           type={show ? 'text' : 'password'}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onFocus={() => onInputActivate?.()}
+          onPointerDown={() => onInputActivate?.()}
           required={required}
           minLength={minLength}
           autoComplete={autoComplete}
@@ -1250,6 +1256,7 @@ export default function DashboardLayout({
                   value={loginWhatsapp}
                   onChange={setLoginWhatsapp}
                   disabled={loginLoading}
+                  syncFromStorageOnInteract
                 />
                 <AuthPasswordField
                   id="auth-password"
@@ -1259,6 +1266,9 @@ export default function DashboardLayout({
                   onChange={(v) => {
                     setLoginPassword(v);
                     if (loginPasswordHydrated) persistLoginPasswordToStorage(v);
+                  }}
+                  onInputActivate={() => {
+                    setLoginPassword(readLoginPasswordFromStorage());
                   }}
                   required
                   autoComplete="current-password"

@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   LOGIN_PASSWORD_STORAGE_KEY,
   persistLoginPasswordToStorage,
+  readLoginPasswordFromStorage,
   readLoginWhatsappFullFromStorage,
 } from "@/lib/login-phone-storage";
 import { subscribeLoginFormSync } from "@/lib/login-form-broadcast";
@@ -69,11 +70,15 @@ function LoginForm() {
     if (typeof window === "undefined") return;
     try {
       setWhatsapp(readLoginWhatsappFullFromStorage());
-      const saved = localStorage.getItem(LOGIN_PASSWORD_STORAGE_KEY);
-      setPassword(saved ?? "");
+      setPassword(readLoginPasswordFromStorage());
     } catch {
       // noop
     }
+  }, []);
+
+  const pullPasswordFromStorage = useCallback(() => {
+    if (typeof window === "undefined") return;
+    setPassword(readLoginPasswordFromStorage());
   }, []);
 
   useRehydrateOnPageVisible(reapplyLoginFormFromStorage);
@@ -119,6 +124,7 @@ function LoginForm() {
           value={whatsapp}
           onChange={setWhatsapp}
           disabled={loading}
+          syncFromStorageOnInteract
         />
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-zinc-700">
@@ -134,6 +140,8 @@ function LoginForm() {
               setPassword(v);
               if (passwordHydrated) persistLoginPasswordToStorage(v);
             }}
+            onFocus={pullPasswordFromStorage}
+            onPointerDown={pullPasswordFromStorage}
             required
             autoComplete="current-password"
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"

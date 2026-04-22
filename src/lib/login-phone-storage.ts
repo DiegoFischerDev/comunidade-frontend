@@ -104,6 +104,18 @@ export function persistLoginPasswordToStorage(
 }
 
 /**
+ * Lê a senha gravada no login. Chamar no foco/toque do campo ajuda o Safari móvel
+ * a alinhar com o que outra aba acabou de escrever no `localStorage`.
+ */
+export function readLoginPasswordFromStorage(): string {
+  try {
+    return localStorage.getItem(LOGIN_PASSWORD_STORAGE_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Número completo (só dígitos) a partir de dial + local gravados — para repor o estado
  * do pai ao voltar à aba no mobile (o `storage` não dispara na mesma aba).
  */
