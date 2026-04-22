@@ -81,23 +81,26 @@ function buildRelocationWhatsAppText(h: HouseRow): string {
   return `Olá, gostaria de mais informações sobre o imóvel ${typologyLabel} (${mobilado}) por ${h.priceEur} em ${cityLabel} com título ${h.title}.`;
 }
 
-async function openRelocationPartnerWhatsApp(h: HouseRow): Promise<void> {
+/**
+ * Abre o WhatsApp no mesmo tique do clique. Não pode haver `await` antes de
+ * `window.open` — no mobile o popup fica fora do “user gesture” e o Safari bloqueia.
+ * O registo de lead corre em segundo plano.
+ */
+function openRelocationPartnerWhatsApp(h: HouseRow): void {
   const digits = (h.partner.whatsapp ?? "").replace(/\D/g, "");
   if (!digits) {
     window.alert("Não foi possível obter o WhatsApp deste parceiro.");
     return;
   }
-  try {
-    await api.marketplace.registerLead(h.partnerId);
-  } catch {
+  void api.marketplace.registerLead(h.partnerId).catch(() => {
     /* não bloqueia o contacto */
-  }
+  });
   const text = buildRelocationWhatsAppText(h);
-  window.open(
-    `https://wa.me/${digits}?text=${encodeURIComponent(text)}`,
-    "_blank",
-    "noopener,noreferrer",
-  );
+  const url = `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+  const opened = window.open(url, "_blank", "noopener,noreferrer");
+  if (opened == null) {
+    window.location.assign(url);
+  }
 }
 
 /**
@@ -304,7 +307,7 @@ export default function RelocationHousesPage() {
                       </Link>
                       <button
                         type="button"
-                        onClick={() => void openRelocationPartnerWhatsApp(h)}
+                        onClick={() => openRelocationPartnerWhatsApp(h)}
                         className="inline-flex cursor-pointer flex-1 min-w-[8rem] justify-center rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 sm:flex-initial"
                       >
                         Contactar relocation

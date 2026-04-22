@@ -1102,9 +1102,68 @@ export const api = {
             logoUrl: string | null;
             backgroundImageUrl: string | null;
             shortDescription: string | null;
+            engagement: {
+              likeCount: number;
+              dislikeCount: number;
+              commentCount: number;
+              shareCount: number;
+            };
           }[];
         }[]
       >('/partners/categories-with-partners', { method: 'GET' }),
+    partnerEngagement: (id: string) =>
+      request<{
+        likeCount: number;
+        dislikeCount: number;
+        commentCount: number;
+        shareCount: number;
+        myReaction: 'LIKE' | 'DISLIKE' | null;
+      }>(`/partners/${id}/engagement`, { method: 'GET' }),
+    partnerComments: (id: string, params?: { take?: number }) => {
+      const q = new URLSearchParams();
+      if (params?.take != null) q.set('take', String(params.take));
+      const s = q.toString();
+      return request<{
+        items: {
+          id: string;
+          body: string;
+          createdAt: string;
+          parentId: string | null;
+          user: { id: string; name: string };
+        }[];
+        hasMore: boolean;
+        total: number;
+      }>(`/partners/${id}/comments${s ? `?${s}` : ''}`, { method: 'GET' });
+    },
+    setPartnerReaction: (id: string, body: { type: 'LIKE' | 'DISLIKE' | null }) =>
+      request<{ myReaction: 'LIKE' | 'DISLIKE' | null }>(
+        `/partners/${id}/engagement/reaction`,
+        {
+          method: 'PUT',
+          body: JSON.stringify(body),
+        },
+      ),
+    createPartnerComment: (
+      id: string,
+      body: { body: string; parentId?: string },
+    ) =>
+      request<{
+        id: string;
+        body: string;
+        createdAt: string;
+        parentId: string | null;
+        user: { id: string; name: string };
+      }>(`/partners/${id}/comments`, { method: 'POST', body: JSON.stringify(body) }),
+    deletePartnerComment: (partnerId: string, commentId: string) =>
+      request<{ ok: true; partnerId: string }>(
+        `/partners/${partnerId}/comments/${commentId}`,
+        { method: 'DELETE' },
+      ),
+    recordPartnerShare: (id: string) =>
+      request<{ shareCount: number }>(`/partners/${id}/share`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }),
     partnerDetails: (id: string) =>
       request<{
         id: string;

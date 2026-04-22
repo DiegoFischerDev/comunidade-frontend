@@ -18,7 +18,10 @@ import {
 } from '@/lib/whatsapp-registration-poll';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
-import { LOGIN_PASSWORD_STORAGE_KEY } from '@/lib/login-phone-storage';
+import {
+  LOGIN_PASSWORD_STORAGE_KEY,
+  persistLoginPasswordToStorage,
+} from '@/lib/login-phone-storage';
 import { CardButton } from '@/components/ui/CardButton';
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
 
@@ -128,6 +131,193 @@ function formatWhatsappRegistrationDisplay(digits: string) {
     return `+351 ${rest.slice(0, 3)} ${rest.slice(3, 6)} ${rest.slice(6)}`.trim();
   }
   return d ? `+${d}` : '';
+}
+
+function CopyIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
+  );
+}
+
+function WhatsappIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+    >
+      <path
+        fill="currentColor"
+        d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"
+      />
+    </svg>
+  );
+}
+
+function RegisterWhatsappVerifyPanel({
+  pollError,
+  registrationNumber,
+  verifyCode,
+  openUrl,
+  onOpenWhatsApp,
+  onBackToRegister,
+}: {
+  pollError: string;
+  registrationNumber: string;
+  verifyCode: string;
+  openUrl: string;
+  onOpenWhatsApp: () => void;
+  onBackToRegister: () => void;
+}) {
+  const [justCopied, setJustCopied] = useState<'number' | 'code' | null>(null);
+  const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const displayNumber = formatWhatsappRegistrationDisplay(registrationNumber);
+  const digitsForCopy = registrationNumber.replace(/\D/g, '');
+  const codeForCopy = verifyCode.replace(/\s/g, '');
+
+  const flashCopied = (which: 'number' | 'code') => {
+    if (copyResetRef.current) clearTimeout(copyResetRef.current);
+    setJustCopied(which);
+    copyResetRef.current = setTimeout(() => {
+      setJustCopied(null);
+      copyResetRef.current = null;
+    }, 2000);
+  };
+
+  const copyNumber = async () => {
+    if (!digitsForCopy) return;
+    try {
+      await navigator.clipboard.writeText(digitsForCopy);
+      flashCopied('number');
+    } catch {
+      // ignore
+    }
+  };
+
+  const copyCode = async () => {
+    if (!codeForCopy) return;
+    try {
+      await navigator.clipboard.writeText(codeForCopy);
+      flashCopied('code');
+    } catch {
+      // ignore
+    }
+  };
+
+  return (
+    <div className="mt-5 space-y-4">
+      {pollError ? (
+        <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+          {pollError}
+        </div>
+      ) : null}
+      <p className="text-xs leading-relaxed text-zinc-600">
+        Envie o código de verificação por WhatsApp para o número da comunidade abaixo.
+      </p>
+      <div>
+        <p className="text-xs font-medium text-zinc-500">Número (WhatsApp)</p>
+        <div
+          className="mt-1 flex min-h-[2.25rem] items-center"
+          aria-live="polite"
+        >
+          <WhatsappIcon className="h-4 w-4 shrink-0 text-[#25D366]" />
+          <div className="ml-1.5 flex min-w-0 flex-1 items-center sm:ml-2">
+            <span className="min-w-0 select-all text-sm font-medium tabular-nums text-zinc-800">
+              {displayNumber || '—'}
+            </span>
+            <button
+              type="button"
+              onClick={copyNumber}
+              disabled={!digitsForCopy}
+              title={justCopied === 'number' ? 'Copiado' : 'Copiar número'}
+              aria-label="Copiar número de WhatsApp"
+              className="ml-[10px] shrink-0 cursor-pointer rounded p-0.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {justCopied === 'number' ? (
+                <CheckIcon className="h-[1.15rem] w-[1.15rem] text-emerald-600" />
+              ) : (
+                <CopyIcon className="h-[1.15rem] w-[1.15rem]" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p className="text-xs font-medium text-zinc-500">Código de verificação</p>
+        <div className="mt-1 flex min-h-[3rem] items-stretch overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
+          <div
+            className="flex min-w-0 flex-1 items-center justify-center px-3 py-2 text-center text-xl font-bold tracking-[0.18em] text-zinc-900 select-all sm:text-2xl"
+            aria-live="polite"
+          >
+            {verifyCode}
+          </div>
+          <button
+            type="button"
+            onClick={copyCode}
+            disabled={!codeForCopy}
+            title={justCopied === 'code' ? 'Copiado' : 'Copiar código'}
+            aria-label="Copiar código de verificação"
+            className="shrink-0 cursor-pointer self-stretch border-l border-zinc-200 bg-white px-2.5 text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {justCopied === 'code' ? (
+              <CheckIcon className="mx-auto h-5 w-5 text-emerald-600" />
+            ) : (
+              <CopyIcon className="mx-auto h-5 w-5" />
+            )}
+          </button>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          if (openUrl) onOpenWhatsApp();
+        }}
+        className="flex w-full cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-medium text-white hover:from-[#c07c01] hover:to-[#e7a01f] disabled:cursor-not-allowed disabled:opacity-50"
+        disabled={!openUrl}
+      >
+        Abrir WhatsApp
+      </button>
+      <button
+        type="button"
+        onClick={onBackToRegister}
+        className="w-full cursor-pointer text-center text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
+      >
+        Voltar ao registo
+      </button>
+    </div>
+  );
 }
 
 function EyeIcon({ className }: { className?: string }) {
@@ -1219,7 +1409,10 @@ export default function DashboardLayout({
                   name="password"
                   label="Senha"
                   value={loginPassword}
-                  onChange={setLoginPassword}
+                  onChange={(v) => {
+                    setLoginPassword(v);
+                    if (loginPasswordHydrated) persistLoginPasswordToStorage(v);
+                  }}
                   required
                   autoComplete="current-password"
                   disabled={loginLoading}
@@ -1361,60 +1554,29 @@ export default function DashboardLayout({
                 </button>
               </form>
             ) : authMode === 'registerWhatsappVerify' ? (
-              <div className="mt-5 space-y-4">
-                {whatsappPollError && (
-                  <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
-                    {whatsappPollError}
-                  </div>
-                )}
-                <p className="text-xs leading-relaxed text-zinc-700">
-                  Para ativar a sua conta, envie o código de verificação pelo WhatsApp para{' '}
-                  <span className="font-semibold text-zinc-900">
-                    {formatWhatsappRegistrationDisplay(whatsappRegistrationNumber)}
-                  </span>
-                  .
-                </p>
-                <div>
-                  <p className="text-xs font-medium text-zinc-600">
-                    Código de verificação
-                  </p>
-                  <p
-                    className="mt-1 select-all rounded-lg border border-zinc-200 bg-zinc-50 py-3 text-center text-2xl font-bold tracking-[0.2em] text-zinc-900"
-                    aria-live="polite"
-                  >
-                    {whatsappVerifyCode}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (whatsappVerifyOpenUrl) {
-                      window.open(
-                        whatsappVerifyOpenUrl,
-                        '_blank',
-                        'noopener,noreferrer',
-                      );
-                    }
-                  }}
-                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-medium text-white hover:from-[#c07c01] hover:to-[#e7a01f]"
-                >
-                  Enviar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('register');
-                    setWhatsappVerifyCode('');
-                    setWhatsappVerifyOpenUrl('');
-                    setWhatsappRegistrationNumber('');
-                    setWhatsappBrowserSessionToken('');
-                    setWhatsappPollError('');
-                  }}
-                  className="w-full cursor-pointer text-center text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
-                >
-                  Voltar ao registo
-                </button>
-              </div>
+              <RegisterWhatsappVerifyPanel
+                pollError={whatsappPollError}
+                registrationNumber={whatsappRegistrationNumber}
+                verifyCode={whatsappVerifyCode}
+                openUrl={whatsappVerifyOpenUrl}
+                onOpenWhatsApp={() => {
+                  if (whatsappVerifyOpenUrl) {
+                    window.open(
+                      whatsappVerifyOpenUrl,
+                      '_blank',
+                      'noopener,noreferrer',
+                    );
+                  }
+                }}
+                onBackToRegister={() => {
+                  setAuthMode('register');
+                  setWhatsappVerifyCode('');
+                  setWhatsappVerifyOpenUrl('');
+                  setWhatsappRegistrationNumber('');
+                  setWhatsappBrowserSessionToken('');
+                  setWhatsappPollError('');
+                }}
+              />
             ) : authMode === 'forgot' ? (
               <form
                 className="mt-5 space-y-4"

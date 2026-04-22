@@ -30,6 +30,53 @@ export function loginPhoneDigitsOnly(s: string): string {
 }
 
 /**
+ * Hidratação: `value` (WhatsApp com dígitos) + localStorage (país e dígitos locais).
+ */
+export function readDialAndLocalFromStorageAndValue(valueProp: string): {
+  dial: string;
+  local: string;
+} {
+  const defaultDial = LOGIN_COUNTRY_DIALS[0]!.dial;
+  try {
+    const sv = loginPhoneDigitsOnly(valueProp);
+    const sd = localStorage.getItem(LOGIN_PHONE_STORAGE_DIAL) ?? defaultDial;
+    const sl = localStorage.getItem(LOGIN_PHONE_STORAGE_LOCAL) ?? '';
+    if (sv) {
+      return parseFullDigitsToDialLocal(sv, sd, sd);
+    }
+    return { dial: sd, local: loginPhoneDigitsOnly(sl) };
+  } catch {
+    const sv = loginPhoneDigitsOnly(valueProp);
+    if (sv) return parseFullDigitsToDialLocal(sv, defaultDial, defaultDial);
+    return { dial: defaultDial, local: '' };
+  }
+}
+
+export function persistLoginPhonePartsToStorage(dial: string, localRaw: string): void {
+  try {
+    localStorage.setItem(LOGIN_PHONE_STORAGE_DIAL, dial);
+    localStorage.setItem(
+      LOGIN_PHONE_STORAGE_LOCAL,
+      loginPhoneDigitsOnly(localRaw),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+export function persistLoginPasswordToStorage(password: string): void {
+  try {
+    if (password) {
+      localStorage.setItem(LOGIN_PASSWORD_STORAGE_KEY, password);
+    } else {
+      localStorage.removeItem(LOGIN_PASSWORD_STORAGE_KEY);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
  * Devolve código e resto a partir de um número só com dígitos (ex.: 351912345678).
  * Se nenhum prefixo da lista coincidir, usa `preferredDialIfNoPreset` (ex.: DDI manual).
  */

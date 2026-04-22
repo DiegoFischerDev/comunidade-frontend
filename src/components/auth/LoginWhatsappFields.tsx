@@ -5,11 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import {
   LOGIN_COUNTRY_CUSTOM_SELECT,
   LOGIN_COUNTRY_DIALS,
-  LOGIN_PHONE_STORAGE_DIAL,
-  LOGIN_PHONE_STORAGE_LOCAL,
   isPresetCountryDial,
   loginPhoneDigitsOnly,
   parseFullDigitsToDialLocal,
+  persistLoginPhonePartsToStorage,
+  readDialAndLocalFromStorageAndValue,
 } from "@/lib/login-phone-storage";
 
 type Props = {
@@ -20,28 +20,6 @@ type Props = {
   /** Por defeito: "WhatsApp". */
   label?: string;
 };
-
-/** Hidratação inicial: `value` do pai + localStorage (país e dígitos locais). */
-function readDialAndLocalFromStorageAndValue(valueProp: string): {
-  dial: string;
-  local: string;
-} {
-  const defaultDial = LOGIN_COUNTRY_DIALS[0]!.dial;
-  try {
-    const sv = loginPhoneDigitsOnly(valueProp);
-    const sd =
-      localStorage.getItem(LOGIN_PHONE_STORAGE_DIAL) ?? defaultDial;
-    const sl = localStorage.getItem(LOGIN_PHONE_STORAGE_LOCAL) ?? "";
-    if (sv) {
-      return parseFullDigitsToDialLocal(sv, sd, sd);
-    }
-    return { dial: sd, local: loginPhoneDigitsOnly(sl) };
-  } catch {
-    const sv = loginPhoneDigitsOnly(valueProp);
-    if (sv) return parseFullDigitsToDialLocal(sv, defaultDial, defaultDial);
-    return { dial: defaultDial, local: "" };
-  }
-}
 
 /**
  * País (dropdown) + número local. Lembra país e dígitos em localStorage (sem senha).
@@ -59,7 +37,6 @@ export function LoginWhatsappFields({
   const dialRef = useRef(dial);
   dialRef.current = dial;
 
-  // Hidratar uma vez (localStorage + value inicial do pai)
   useEffect(() => {
     const { dial: d, local: l } = readDialAndLocalFromStorageAndValue(value);
     setDial(d);
@@ -68,9 +45,6 @@ export function LoginWhatsappFields({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sincronizar só quando o `value` do pai muda — não incluir dial/local nas deps.
-  // Com lápis (DDI manual), não reinterpretar o número: senão dígitos que coincidem com 351/55
-  // passavam a mudar o país automaticamente.
   useEffect(() => {
     if (!ready) return;
     if (!isPresetCountryDial(dialRef.current)) {
@@ -91,15 +65,7 @@ export function LoginWhatsappFields({
     if (!ready) return;
     const full = dial + loginPhoneDigitsOnly(local);
     onChange(full);
-    try {
-      localStorage.setItem(LOGIN_PHONE_STORAGE_DIAL, dial);
-      localStorage.setItem(
-        LOGIN_PHONE_STORAGE_LOCAL,
-        loginPhoneDigitsOnly(local),
-      );
-    } catch {
-      /* ignore */
-    }
+    persistLoginPhonePartsToStorage(dial, local);
   }, [ready, dial, local, onChange]);
 
   const selectId = `${idPrefix}-country`;
@@ -119,9 +85,11 @@ export function LoginWhatsappFields({
   function handleCountrySelect(next: string) {
     if (next === LOGIN_COUNTRY_CUSTOM_SELECT) {
       setDial("");
+      persistLoginPhonePartsToStorage("", local);
       return;
     }
     setDial(next);
+    persistLoginPhonePartsToStorage(next, local);
   }
 
   const chevronBg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`;
@@ -131,7 +99,6 @@ export function LoginWhatsappFields({
       <label htmlFor={selectId} className="block text-sm font-medium text-zinc-700">
         {label}
       </label>
-      {/* Grelha: coluna fixa evita que o <select> (largura intrínseca das opções) parta o flex em mobile */}
       <div className="grid w-full min-w-0 grid-cols-[3.75rem_minmax(0,1fr)] items-stretch gap-1.5 sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:gap-2">
         <select
           id={selectId}
@@ -177,11 +144,11 @@ export function LoginWhatsappFields({
                 inputMode="numeric"
                 disabled={disabled}
                 value={dial}
-                onChange={(e) =>
-                  setDial(
-                    loginPhoneDigitsOnly(e.target.value).slice(0, 5),
-                  )
-                }
+                onChange={(e) => {
+                  const next = loginPhoneDigitsOnly(e.target.value).slice(0, 5);
+                  setDial(next);
+                  persistLoginPhonePartsToStorage(next, local);
+                }}
                 placeholder="DDI"
                 maxLength={5}
                 autoComplete="tel-country-code"
@@ -206,7 +173,11 @@ export function LoginWhatsappFields({
             autoComplete="tel-national"
             disabled={disabled}
             value={local}
-            onChange={(e) => setLocal(e.target.value)}
+            onChange={(e) => {
+              const next = e.target.value;
+              setLocal(next);
+              persistLoginPhonePartsToStorage(dial, next);
+            }}
             placeholder={
               dial === "351"
                 ? "9XX XXX XXX"

@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LoginWhatsappFields } from "@/components/auth/LoginWhatsappFields";
 import { useAuth } from "@/contexts/AuthContext";
-import { LOGIN_PASSWORD_STORAGE_KEY } from "@/lib/login-phone-storage";
+import {
+  LOGIN_PASSWORD_STORAGE_KEY,
+  persistLoginPasswordToStorage,
+} from "@/lib/login-phone-storage";
 
 function isSafeInternalNextPath(value: string): boolean {
   return value.startsWith("/") && !value.startsWith("//");
@@ -103,7 +106,11 @@ function LoginForm() {
             name="password"
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              setPassword(v);
+              if (passwordHydrated) persistLoginPasswordToStorage(v);
+            }}
             required
             autoComplete="current-password"
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
