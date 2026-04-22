@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   LOGIN_COUNTRY_CUSTOM_SELECT,
@@ -10,7 +10,9 @@ import {
   isPresetCountryDial,
   loginPhoneDigitsOnly,
   parseFullDigitsToDialLocal,
+  readDialAndLocalFromStorageAndValue,
 } from "@/lib/login-phone-storage";
+import { useRehydrateOnPageVisible } from "@/lib/useRehydrateOnPageVisible";
 
 type Props = {
   idPrefix: string;
@@ -20,28 +22,6 @@ type Props = {
   /** Por defeito: "WhatsApp". */
   label?: string;
 };
-
-/** Hidratação inicial: `value` do pai + localStorage (país e dígitos locais). */
-function readDialAndLocalFromStorageAndValue(valueProp: string): {
-  dial: string;
-  local: string;
-} {
-  const defaultDial = LOGIN_COUNTRY_DIALS[0]!.dial;
-  try {
-    const sv = loginPhoneDigitsOnly(valueProp);
-    const sd =
-      localStorage.getItem(LOGIN_PHONE_STORAGE_DIAL) ?? defaultDial;
-    const sl = localStorage.getItem(LOGIN_PHONE_STORAGE_LOCAL) ?? "";
-    if (sv) {
-      return parseFullDigitsToDialLocal(sv, sd, sd);
-    }
-    return { dial: sd, local: loginPhoneDigitsOnly(sl) };
-  } catch {
-    const sv = loginPhoneDigitsOnly(valueProp);
-    if (sv) return parseFullDigitsToDialLocal(sv, defaultDial, defaultDial);
-    return { dial: defaultDial, local: "" };
-  }
-}
 
 /**
  * País (dropdown) + número local. Lembra país e dígitos em localStorage (sem senha).
@@ -58,6 +38,8 @@ export function LoginWhatsappFields({
   const [ready, setReady] = useState(false);
   const dialRef = useRef(dial);
   dialRef.current = dial;
+  const valueRef = useRef(value);
+  valueRef.current = value;
 
   // Hidratar uma vez (localStorage + value inicial do pai)
   useEffect(() => {
@@ -67,6 +49,18 @@ export function LoginWhatsappFields({
     setReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const reapplyFromStorage = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const { dial: d, local: l } = readDialAndLocalFromStorageAndValue(
+      valueRef.current,
+    );
+    setDial(d);
+    setLocal(l);
+    setReady(true);
+  }, []);
+
+  useRehydrateOnPageVisible(reapplyFromStorage);
 
   // Sincronizar só quando o `value` do pai muda — não incluir dial/local nas deps.
   // Com lápis (DDI manual), não reinterpretar o número: senão dígitos que coincidem com 351/55

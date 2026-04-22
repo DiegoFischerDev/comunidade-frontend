@@ -33,6 +33,30 @@ export function loginPhoneDigitsOnly(s: string): string {
  * Devolve código e resto a partir de um número só com dígitos (ex.: 351912345678).
  * Se nenhum prefixo da lista coincidir, usa `preferredDialIfNoPreset` (ex.: DDI manual).
  */
+/**
+ * Hidratação: `value` (WhatsApp com dígitos) + localStorage (país e dígitos locais).
+ * Útil no mount e ao voltar à aba (mobile).
+ */
+export function readDialAndLocalFromStorageAndValue(valueProp: string): {
+  dial: string;
+  local: string;
+} {
+  const defaultDial = LOGIN_COUNTRY_DIALS[0]!.dial;
+  try {
+    const sv = loginPhoneDigitsOnly(valueProp);
+    const sd = localStorage.getItem(LOGIN_PHONE_STORAGE_DIAL) ?? defaultDial;
+    const sl = localStorage.getItem(LOGIN_PHONE_STORAGE_LOCAL) ?? '';
+    if (sv) {
+      return parseFullDigitsToDialLocal(sv, sd, sd);
+    }
+    return { dial: sd, local: loginPhoneDigitsOnly(sl) };
+  } catch {
+    const sv = loginPhoneDigitsOnly(valueProp);
+    if (sv) return parseFullDigitsToDialLocal(sv, defaultDial, defaultDial);
+    return { dial: defaultDial, local: '' };
+  }
+}
+
 export function parseFullDigitsToDialLocal(
   fullDigits: string,
   fallbackDial: string,

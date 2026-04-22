@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LoginWhatsappFields } from "@/components/auth/LoginWhatsappFields";
 import { useAuth } from "@/contexts/AuthContext";
 import { LOGIN_PASSWORD_STORAGE_KEY } from "@/lib/login-phone-storage";
+import { useRehydrateOnPageVisible } from "@/lib/useRehydrateOnPageVisible";
 
 function isSafeInternalNextPath(value: string): boolean {
   return value.startsWith("/") && !value.startsWith("//");
@@ -58,6 +59,18 @@ function LoginForm() {
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
+
+  const reapplyPasswordFromStorage = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = localStorage.getItem(LOGIN_PASSWORD_STORAGE_KEY);
+      setPassword(saved ?? "");
+    } catch {
+      // noop
+    }
+  }, []);
+
+  useRehydrateOnPageVisible(reapplyPasswordFromStorage);
 
   const registroHref =
     next && isSafeInternalNextPath(next)
