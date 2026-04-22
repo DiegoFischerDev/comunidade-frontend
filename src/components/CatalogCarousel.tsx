@@ -32,17 +32,12 @@ export function CatalogCarousel({
   const rafRef = useRef<number | null>(null);
   const pauseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pointerDownAtRef = useRef<number>(0);
-  const pointerXRef = useRef<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  /** pointerup e pointercancel podem disparar seguidos; evita avançar duas fotos. */
+  const lastEndPointerAtRef = useRef(0);
 
   const goNext = useCallback(() => {
     setIndex((i) => (i + 1) % total);
-    setProgress(0);
-    startTimeRef.current = Date.now();
-  }, [total]);
-
-  const goPrev = useCallback(() => {
-    setIndex((i) => (i - 1 + total) % total);
     setProgress(0);
     startTimeRef.current = Date.now();
   }, [total]);
@@ -71,25 +66,47 @@ export function CatalogCarousel({
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
     pointerDownAtRef.current = Date.now();
-    pointerXRef.current = e.clientX;
     setPaused(true);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      /* empty */
+    }
   }, []);
 
-  const handlePointerUp = useCallback(() => {
-    const holdDuration = Date.now() - pointerDownAtRef.current;
-    const isTap = holdDuration <= 300;
-    if (isTap && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = pointerXRef.current - rect.left;
-      if (x > rect.width / 2) goNext();
-      else goPrev();
-    }
-    pauseTimeoutRef.current = setTimeout(() => {
-      setPaused(false);
-      startTimeRef.current = Date.now();
-      setProgress(0);
-    }, 100);
-  }, [goNext, goPrev]);
+  const endPointerGesture = useCallback(
+    (e: React.PointerEvent) => {
+      const now = Date.now();
+      if (now - lastEndPointerAtRef.current < 80) {
+        return;
+      }
+      lastEndPointerAtRef.current = now;
+
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {
+        /* empty */
+      }
+
+      const holdDuration = now - pointerDownAtRef.current;
+      // Toque em qualquer zona: passa à imagem seguinte (não repõe só o temporizador
+      // da imagem actual). Largar após pausa longa: retoma a barra sem avançar.
+      const isTap = holdDuration <= 450;
+      if (isTap) {
+        goNext();
+      }
+
+      if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
+      pauseTimeoutRef.current = setTimeout(() => {
+        setPaused(false);
+        if (!isTap) {
+          startTimeRef.current = Date.now();
+          setProgress(0);
+        }
+      }, 80);
+    },
+    [goNext],
+  );
 
 
   useEffect(() => {
@@ -130,9 +147,8 @@ export function CatalogCarousel({
           className="relative w-full mx-auto rounded-2xl overflow-hidden bg-black touch-none cursor-pointer"
           style={{ maxWidth: 'min(100%, 420px)', aspectRatio: String(STORY_ASPECT) }}
           onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
-          onPointerLeave={handlePointerUp}
-          onPointerCancel={handlePointerUp}
+          onPointerUp={endPointerGesture}
+          onPointerCancel={endPointerGesture}
         >
           {/* Barras de progresso no topo (estilo Instagram) */}
           <div className="absolute top-0 left-0 right-0 z-10 flex gap-1 p-2">

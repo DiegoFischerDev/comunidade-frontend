@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { CatalogCarousel } from '@/components/CatalogCarousel';
+import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
+import { PartnerCommentsSection } from '@/components/PartnerCommentsSection';
 
 type PartnerService = {
   id: string;
@@ -29,6 +31,10 @@ type PartnerPublic = {
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3001';
+
+const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://comunidade.rafaapelomundo.com'
+).replace(/\/$/, '');
 
 function absoluteOgImage(url: string | null | undefined): string | undefined {
   if (!url?.trim()) return undefined;
@@ -133,6 +139,8 @@ export default async function PartnerPublicPage({ params }: PageProps) {
       ? `${API_URL}${partner.logoUrl}`
       : partner.logoUrl;
 
+  const sharePageUrl = `${SITE_URL}/partner/${id}`;
+
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       {/* Hero */}
@@ -167,6 +175,13 @@ export default async function PartnerPublicPage({ params }: PageProps) {
             )}
           </div>
         </div>
+        <PartnerEngagementBar
+          partnerId={partner.id}
+          sharePageUrl={sharePageUrl}
+          variant="hero"
+          commentsLinkHref="#comentarios"
+          className="relative z-10 border-t border-white/20 bg-black/15 px-6 py-3 sm:px-10"
+        />
       </section>
 
       {/* Descrição completa */}
@@ -266,6 +281,8 @@ export default async function PartnerPublicPage({ params }: PageProps) {
           </a>
         </div>
       </section>
+
+      <PartnerCommentsSection partnerId={partner.id} partnerName={partner.name} />
     </div>
   );
 }

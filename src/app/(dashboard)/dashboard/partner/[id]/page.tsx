@@ -7,6 +7,8 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CatalogCarousel } from '@/components/CatalogCarousel';
 import { CardButton } from '@/components/ui/CardButton';
+import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
+import { PartnerCommentsSection } from '@/components/PartnerCommentsSection';
 
 type PartnerDetails = {
   id: string;
@@ -44,6 +46,10 @@ export default function PartnerPage() {
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const siteBase = (
+    process.env.NEXT_PUBLIC_SITE_URL || 'https://comunidade.rafaapelomundo.com'
+  ).replace(/\/$/, '');
+  const sharePageUrl = `${siteBase}/partner/${partner?.id ?? params.id}`;
 
   useEffect(() => {
     if (!params?.id) return;
@@ -187,6 +193,13 @@ export default function PartnerPage() {
           </div>
           </div>
         </div>
+        <PartnerEngagementBar
+          partnerId={partner.id}
+          sharePageUrl={sharePageUrl}
+          variant="hero"
+          commentsLinkHref="#comentarios"
+          className="relative z-10 border-t border-white/20 bg-black/15 px-6 py-3 sm:px-10"
+        />
       </section>
 
       {/* Descrição completa */}
@@ -283,6 +296,8 @@ export default function PartnerPage() {
           </div>
         )}
       </section>
+
+      <PartnerCommentsSection partnerId={partner.id} partnerName={partner.name} />
 
       {/* Modal de contacto */}
       {showContact && (

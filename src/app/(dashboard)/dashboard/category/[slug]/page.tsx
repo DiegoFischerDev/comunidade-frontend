@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
 
 type PartnerService = {
   id: string;
@@ -27,6 +28,12 @@ type CategoryWithPartners = {
     logoUrl: string | null;
     backgroundImageUrl: string | null;
     shortDescription: string | null;
+    engagement: {
+      likeCount: number;
+      dislikeCount: number;
+      commentCount: number;
+      shareCount: number;
+    };
   }[];
 };
 
@@ -42,6 +49,9 @@ export default function CategoryPage() {
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const siteBase = (
+    process.env.NEXT_PUBLIC_SITE_URL || 'https://comunidade.rafaapelomundo.com'
+  ).replace(/\/$/, '');
 
   useEffect(() => {
     if (params.slug === 'relocation') {
@@ -198,61 +208,78 @@ export default function CategoryPage() {
                 ? `${API_URL}${partner.logoUrl}`
                 : partner.logoUrl);
             return (
-              <Link
+              <div
                 key={partner.id}
-                href={`/dashboard/partner/${partner.id}`}
                 className="group flex w-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
               >
-                <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-r from-zinc-100 to-zinc-200">
-                  {partnerBg && (
-                    <div
-                      className="absolute inset-0 bg-cover bg-center"
-                      style={{ backgroundImage: `url(${partnerBg})` }}
-                    />
-                  )}
-                  <div className="relative z-10 flex h-full flex-col justify-end gap-2 bg-gradient-to-t from-black/50 via-black/10 to-transparent px-4 pb-3">
-                    {partnerLogo ? (
-                      <div className="relative h-11 w-11 overflow-hidden rounded-xl border border-white/70 bg-white shadow-md">
-                        <Image
-                          src={partnerLogo}
-                          alt=""
-                          fill
-                          className="object-contain p-2"
-                          sizes="44px"
-                        />
+                <Link
+                  href={`/dashboard/partner/${partner.id}`}
+                  className="block"
+                >
+                  <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-r from-zinc-100 to-zinc-200">
+                    {partnerBg && (
+                      <div
+                        className="absolute inset-0 bg-cover bg-center"
+                        style={{ backgroundImage: `url(${partnerBg})` }}
+                      />
+                    )}
+                    <div className="relative z-10 flex h-full flex-col justify-end gap-2 bg-gradient-to-t from-black/50 via-black/10 to-transparent px-4 pb-3">
+                      {partnerLogo ? (
+                        <div className="relative h-11 w-11 overflow-hidden rounded-xl border border-white/70 bg-white shadow-md">
+                          <Image
+                            src={partnerLogo}
+                            alt=""
+                            fill
+                            className="object-contain p-2"
+                            sizes="44px"
+                          />
+                        </div>
+                      ) : null}
+                      <h2 className="text-sm font-semibold text-white drop-shadow">
+                        {partner.name}
+                      </h2>
+                    </div>
+                  </div>
+                </Link>
+                <div className="flex flex-1 flex-col px-4 pb-4 pt-3">
+                  <Link
+                    href={`/dashboard/partner/${partner.id}`}
+                    className="block min-h-0 flex-1"
+                  >
+                    {partner.shortDescription ? (
+                      <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-600">
+                        {partner.shortDescription}
+                      </p>
+                    ) : null}
+
+                    {partnerServicesById[partner.id]?.length ? (
+                      <div className="mt-3 space-y-1.5">
+                        {partnerServicesById[partner.id]!.map((s) => (
+                          <div
+                            key={s.id}
+                            className="flex items-start justify-between gap-3 text-xs text-zinc-700"
+                          >
+                            <span className="min-w-0 flex-1 truncate">
+                              {s.title}
+                            </span>
+                            <span className="shrink-0 font-semibold text-zinc-900">
+                              {formatServicePrice(s)}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     ) : null}
-                    <h2 className="text-sm font-semibold text-white drop-shadow">
-                      {partner.name}
-                    </h2>
-                  </div>
+                  </Link>
+                  <PartnerEngagementBar
+                    partnerId={partner.id}
+                    sharePageUrl={`${siteBase}/partner/${partner.id}`}
+                    variant="card"
+                    initial={partner.engagement}
+                    commentsLinkHref={`/partner/${partner.id}#comentarios`}
+                    className="mt-3 border-t border-zinc-100 pt-3"
+                  />
                 </div>
-                <div className="px-4 pb-4 pt-3">
-                  {partner.shortDescription ? (
-                    <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-600">
-                      {partner.shortDescription}
-                    </p>
-                  ) : null}
-
-                  {partnerServicesById[partner.id]?.length ? (
-                    <div className="mt-3 space-y-1.5">
-                      {partnerServicesById[partner.id]!.map((s) => (
-                        <div
-                          key={s.id}
-                          className="flex items-start justify-between gap-3 text-xs text-zinc-700"
-                        >
-                          <span className="min-w-0 flex-1 truncate">
-                            {s.title}
-                          </span>
-                          <span className="shrink-0 font-semibold text-zinc-900">
-                            {formatServicePrice(s)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              </Link>
+              </div>
             );
           })}
         </div>
