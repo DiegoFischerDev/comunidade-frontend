@@ -133,6 +133,43 @@ function formatWhatsappRegistrationDisplay(digits: string) {
   return d ? `+${d}` : '';
 }
 
+function CopyIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
+  );
+}
+
 function RegisterWhatsappVerifyPanel({
   pollError,
   registrationNumber,
@@ -191,52 +228,56 @@ function RegisterWhatsappVerifyPanel({
         </div>
       ) : null}
       <p className="text-xs leading-relaxed text-zinc-600">
-        Para ativar a sua conta, abra o WhatsApp no número abaixo (comunidade) e envie o
-        código de verificação. Pode copiar o número e o código com os botões.
+        Envie o código de verificação por WhatsApp para o número da comunidade abaixo. Use
+        o ícone de copiar se precisar.
       </p>
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
-          Número do WhatsApp
-        </p>
-        <div className="mt-1.5 flex flex-col gap-2 sm:flex-row sm:items-stretch">
-          <div
-            className="min-w-0 flex-1 rounded-xl border-2 border-emerald-300 bg-gradient-to-b from-emerald-50 to-white px-3 py-3 text-center shadow-sm sm:px-4 sm:py-4"
+        <p className="text-xs font-medium text-zinc-500">Número (WhatsApp)</p>
+        <div className="mt-1 flex min-h-[2.25rem] items-center gap-2">
+          <p
+            className="min-w-0 flex-1 select-all text-sm font-medium tabular-nums text-zinc-800"
             aria-live="polite"
           >
-            <p className="select-all text-lg font-bold tabular-nums tracking-wide text-emerald-950 sm:text-2xl">
-              {displayNumber || '—'}
-            </p>
-          </div>
+            {displayNumber || '—'}
+          </p>
           <button
             type="button"
             onClick={copyNumber}
             disabled={!digitsForCopy}
-            className="shrink-0 rounded-xl border-2 border-emerald-200 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+            title={justCopied === 'number' ? 'Copiado' : 'Copiar número'}
+            aria-label="Copiar número de WhatsApp"
+            className="shrink-0 rounded-md p-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {justCopied === 'number' ? 'Número copiado' : 'Copiar número'}
+            {justCopied === 'number' ? (
+              <CheckIcon className="h-[1.15rem] w-[1.15rem] text-emerald-600" />
+            ) : (
+              <CopyIcon className="h-[1.15rem] w-[1.15rem]" />
+            )}
           </button>
         </div>
       </div>
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-          Código de verificação
-        </p>
-        <div className="mt-1.5 flex flex-col gap-2 sm:flex-row sm:items-stretch">
+        <p className="text-xs font-medium text-zinc-500">Código de verificação</p>
+        <div className="mt-1 flex min-h-[3rem] items-stretch overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
           <div
-            className="min-w-0 flex-1 rounded-xl border-2 border-zinc-300 bg-zinc-50 px-3 py-3 text-center shadow-sm sm:px-4 sm:py-4"
+            className="flex min-w-0 flex-1 items-center justify-center px-3 py-2 text-center text-xl font-bold tracking-[0.18em] text-zinc-900 select-all sm:text-2xl"
             aria-live="polite"
           >
-            <p className="select-all text-2xl font-bold tracking-[0.2em] text-zinc-900 sm:text-3xl">
-              {verifyCode}
-            </p>
+            {verifyCode}
           </div>
           <button
             type="button"
             onClick={copyCode}
             disabled={!codeForCopy}
-            className="shrink-0 rounded-xl border-2 border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+            title={justCopied === 'code' ? 'Copiado' : 'Copiar código'}
+            aria-label="Copiar código de verificação"
+            className="shrink-0 self-stretch border-l border-zinc-200 bg-white px-2.5 text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {justCopied === 'code' ? 'Código copiado' : 'Copiar código'}
+            {justCopied === 'code' ? (
+              <CheckIcon className="mx-auto h-5 w-5 text-emerald-600" />
+            ) : (
+              <CopyIcon className="mx-auto h-5 w-5" />
+            )}
           </button>
         </div>
       </div>
