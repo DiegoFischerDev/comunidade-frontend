@@ -6,12 +6,12 @@ import { getPublicHouse } from "@/lib/house-public-server";
 
 import { HouseJsonLd } from "../../../../casas/[houseId]/house-json-ld";
 import { HousePublicView } from "../../../../casas/[houseId]/house-public-view";
+import { getPublicSiteUrl } from "@/lib/site-url";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "http://localhost:3001";
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://comunidade.rafaapelomundo.com";
+const SITE_URL = getPublicSiteUrl();
 
 type PageProps = {
   params: Promise<{ houseId: string }>;

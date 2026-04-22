@@ -3,9 +3,11 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# NEXT_PUBLIC_* são definidos em build time; passe no docker build (ex.: --build-arg NEXT_PUBLIC_API_URL=https://api.seudominio.com)
+# NEXT_PUBLIC_* — build time (GitHub Actions: secrets / build-args)
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 
 COPY package.json package-lock.json* ./
 RUN npm ci

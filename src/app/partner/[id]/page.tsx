@@ -4,6 +4,7 @@ import { CatalogCarousel } from '@/components/CatalogCarousel';
 import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
 import { PartnerCommentsSection } from '@/components/PartnerCommentsSection';
 import { buildPartnerHeroWhatsAppUrl } from '@/lib/partner-whatsapp';
+import { getPublicSiteUrl } from '@/lib/site-url';
 
 type PartnerService = {
   id: string;
@@ -33,9 +34,7 @@ type PartnerPublic = {
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3001';
 
-const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL || 'https://comunidade.rafaapelomundo.com'
-).replace(/\/$/, '');
+const SITE_URL = getPublicSiteUrl();
 
 function absoluteOgImage(url: string | null | undefined): string | undefined {
   if (!url?.trim()) return undefined;

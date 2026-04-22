@@ -8,6 +8,7 @@ import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
 import { api } from "@/lib/api";
 import { formatHouseEntradaShort, orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
+import { isOurImageHostname } from "@/lib/site-url";
 
 type HouseRow = Awaited<ReturnType<typeof api.marketplace.relocationHouses>>[number];
 
@@ -52,7 +53,8 @@ function nextImageUnoptimized(resolvedUrl: string) {
   if (!resolvedUrl.startsWith("http")) return false;
   try {
     const h = new URL(resolvedUrl).hostname;
-    return !(h.endsWith("rafaapelomundo.com") || h === "localhost");
+    if (isOurImageHostname(h)) return false;
+    return true;
   } catch {
     return true;
   }

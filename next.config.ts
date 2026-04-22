@@ -10,25 +10,33 @@ const extraImageHosts = (process.env.NEXT_PUBLIC_EXTRA_IMAGE_DOMAINS || "")
     pathname: "/**" as const,
   }));
 
+/** Padrão para `/uploads/**` a partir de `NEXT_PUBLIC_API_URL` (obrigatório no build de prod com imagens). */
+function apiUploadsRemotePattern(): {
+  protocol: "http" | "https";
+  hostname: string;
+  pathname: string;
+} | null {
+  const base = process.env.NEXT_PUBLIC_API_URL;
+  if (!base) return null;
+  try {
+    const u = new URL(base);
+    return {
+      protocol: u.protocol === "https:" ? "https" : "http",
+      hostname: u.hostname,
+      pathname: "/uploads/**",
+    };
+  } catch {
+    return null;
+  }
+}
+
+const apiPattern = apiUploadsRemotePattern();
+
 const nextConfig: NextConfig = {
   output: "standalone",
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "api-stage.rafaapelomundo.com",
-        pathname: "/uploads/**",
-      },
-      {
-        protocol: "https",
-        hostname: "api.rafaapelomundo.com",
-        pathname: "/uploads/**",
-      },
-      {
-        protocol: "https",
-        hostname: "api-comunidade.rafaapelomundo.com",
-        pathname: "/uploads/**",
-      },
+      ...(apiPattern ? [apiPattern] : []),
       ...extraImageHosts,
     ],
   },

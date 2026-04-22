@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import type { Viewport } from "next";
 import { Providers } from "@/components/Providers";
+import { getPublicSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://comunidade.rafaapelomundo.com";
+const siteUrl = getPublicSiteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
