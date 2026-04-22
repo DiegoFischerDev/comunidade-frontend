@@ -5,7 +5,11 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LoginWhatsappFields } from "@/components/auth/LoginWhatsappFields";
 import { useAuth } from "@/contexts/AuthContext";
-import { LOGIN_PASSWORD_STORAGE_KEY } from "@/lib/login-phone-storage";
+import {
+  LOGIN_PASSWORD_STORAGE_KEY,
+  persistLoginPasswordToStorage,
+  readLoginWhatsappFullFromStorage,
+} from "@/lib/login-phone-storage";
 import { useRehydrateOnPageVisible } from "@/lib/useRehydrateOnPageVisible";
 
 function isSafeInternalNextPath(value: string): boolean {
@@ -60,9 +64,10 @@ function LoginForm() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const reapplyPasswordFromStorage = useCallback(() => {
+  const reapplyLoginFormFromStorage = useCallback(() => {
     if (typeof window === "undefined") return;
     try {
+      setWhatsapp(readLoginWhatsappFullFromStorage());
       const saved = localStorage.getItem(LOGIN_PASSWORD_STORAGE_KEY);
       setPassword(saved ?? "");
     } catch {
@@ -70,7 +75,7 @@ function LoginForm() {
     }
   }, []);
 
-  useRehydrateOnPageVisible(reapplyPasswordFromStorage);
+  useRehydrateOnPageVisible(reapplyLoginFormFromStorage);
 
   const registroHref =
     next && isSafeInternalNextPath(next)
@@ -116,7 +121,11 @@ function LoginForm() {
             name="password"
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              setPassword(v);
+              if (passwordHydrated) persistLoginPasswordToStorage(v);
+            }}
             required
             autoComplete="current-password"
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"

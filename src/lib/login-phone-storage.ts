@@ -30,10 +30,6 @@ export function loginPhoneDigitsOnly(s: string): string {
 }
 
 /**
- * Devolve código e resto a partir de um número só com dígitos (ex.: 351912345678).
- * Se nenhum prefixo da lista coincidir, usa `preferredDialIfNoPreset` (ex.: DDI manual).
- */
-/**
  * Hidratação: `value` (WhatsApp com dígitos) + localStorage (país e dígitos locais).
  * Útil no mount e ao voltar à aba (mobile).
  */
@@ -57,6 +53,59 @@ export function readDialAndLocalFromStorageAndValue(valueProp: string): {
   }
 }
 
+/**
+ * Grava no mesmo tique do `onChange` — no Mobile Safari a aba pode ser suspensa
+ * antes do `useEffect`, perdendo o último carácter.
+ */
+export function persistLoginPhonePartsToStorage(
+  dial: string,
+  localRaw: string,
+): void {
+  try {
+    localStorage.setItem(LOGIN_PHONE_STORAGE_DIAL, dial);
+    localStorage.setItem(
+      LOGIN_PHONE_STORAGE_LOCAL,
+      loginPhoneDigitsOnly(localRaw),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+export function persistLoginPasswordToStorage(password: string): void {
+  try {
+    if (password) {
+      localStorage.setItem(LOGIN_PASSWORD_STORAGE_KEY, password);
+    } else {
+      localStorage.removeItem(LOGIN_PASSWORD_STORAGE_KEY);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Número completo (só dígitos) a partir de dial + local gravados — para repor o estado
+ * do pai ao voltar à aba no mobile (o `storage` não dispara na mesma aba).
+ */
+export function readLoginWhatsappFullFromStorage(): string {
+  try {
+    const defaultDial = LOGIN_COUNTRY_DIALS[0]!.dial;
+    const dialRaw = localStorage.getItem(LOGIN_PHONE_STORAGE_DIAL) ?? defaultDial;
+    const dial = loginPhoneDigitsOnly(dialRaw) || defaultDial;
+    const local = loginPhoneDigitsOnly(
+      localStorage.getItem(LOGIN_PHONE_STORAGE_LOCAL) ?? '',
+    );
+    return dial + local;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Devolve código e resto a partir de um número só com dígitos (ex.: 351912345678).
+ * Se nenhum prefixo da lista coincidir, usa `preferredDialIfNoPreset` (ex.: DDI manual).
+ */
 export function parseFullDigitsToDialLocal(
   fullDigits: string,
   fallbackDial: string,

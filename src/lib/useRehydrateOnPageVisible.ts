@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react';
 
 /**
- * Reexecuta a callback quando a página fica visível (outra aba ou app) ou
- * repõe a partir de bfcache (`pageshow` + `persisted`). Ajudam inputs em
- * mobile a resincronizar com `localStorage` se o motor estiver a “perder”
- * o estado do React.
+ * Reexecuta `apply` quando o separador/app volta a ficar ativo ou a página sai do bfcache.
+ * No mobile, `visibilitychange` às vezes chega cedo demais — usamos `requestAnimationFrame` x2,
+ * `setTimeout(0)` e `window.focus` (Safari/Chrome iOS).
  */
 export function useRehydrateOnPageVisible(apply: () => void) {
   const ref = useRef(apply);
@@ -21,14 +20,28 @@ export function useRehydrateOnPageVisible(apply: () => void) {
         /* ignore */
       }
     };
-    const onPageShow = (e: PageTransitionEvent) => {
-      if (e.persisted) run();
+    /** Safari iOS: o DOM/LS pode só estar coerente no frame seguinte. */
+    const schedule = () => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(run, 0);
+        });
+      });
     };
-    document.addEventListener('visibilitychange', run);
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) schedule();
+    };
+    const onVis = () => {
+      if (document.visibilityState === 'visible') schedule();
+    };
+    const onWinFocus = () => schedule();
+    document.addEventListener('visibilitychange', onVis);
     window.addEventListener('pageshow', onPageShow);
+    window.addEventListener('focus', onWinFocus);
     return () => {
-      document.removeEventListener('visibilitychange', run);
+      document.removeEventListener('visibilitychange', onVis);
       window.removeEventListener('pageshow', onPageShow);
+      window.removeEventListener('focus', onWinFocus);
     };
   }, []);
 }
