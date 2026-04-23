@@ -500,13 +500,13 @@ const THUMB_D_DOWN =
 
 function likeActiveWrap(variant: 'card' | 'hero') {
   return variant === 'card'
-    ? 'text-sky-500 drop-shadow-[0_1px_5px_rgba(14,165,233,0.4)]'
-    : 'text-amber-200 drop-shadow-[0_0_10px_rgba(253,224,71,0.35)]';
+    ? 'text-emerald-600 drop-shadow-[0_1px_5px_rgba(5,150,105,0.45)]'
+    : 'text-emerald-300 drop-shadow-[0_0_10px_rgba(52,211,153,0.45)]';
 }
 function dislikeActiveWrap(variant: 'card' | 'hero') {
   return variant === 'card'
-    ? 'text-rose-500 drop-shadow-[0_1px_5px_rgba(244,63,94,0.4)]'
-    : 'text-rose-200 drop-shadow-[0_0_10px_rgba(254,202,202,0.45)]';
+    ? 'text-red-600 drop-shadow-[0_1px_5px_rgba(220,38,38,0.45)]'
+    : 'text-red-300 drop-shadow-[0_0_10px_rgba(248,113,113,0.45)]';
 }
 
 function ThumbUpIcon({

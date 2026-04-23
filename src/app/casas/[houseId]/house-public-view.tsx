@@ -118,12 +118,12 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
               aria-label="Comunidade RPM — início"
             >
               <Image
-                src="/logo_comunidade.png"
+                src="/logo-RP.png"
                 alt=""
-                width={140}
-                height={32}
+                width={800}
+                height={192}
                 priority
-                className="h-8 w-auto shrink-0"
+                className="h-24 w-auto max-w-[22rem] shrink-0 object-contain sm:h-28 sm:max-w-[25rem]"
               />
               <span className="min-w-0 text-[10px] font-semibold uppercase leading-snug tracking-wide text-zinc-900 sm:text-xs md:text-sm">
                 COMUNIDADE RAFA PELO MUNDO - RELOCATION PORTUGAL

@@ -184,53 +184,29 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <section className="relative w-full overflow-hidden rounded-2xl bg-zinc-100">
-        <div className="relative h-80 w-full sm:h-[320px] lg:h-[530px]">
+      <section className="w-full">
+        <h1 className="sr-only">Comunidade RPM — Início</h1>
+        <div className="w-full">
           <Image
-            src="/capa_rpm.png"
+            src="/hero_mobile.png"
+            width={375}
+            height={667}
             alt="Comunidade RPM"
-            fill
-            className="object-cover opacity-50"
+            className="h-auto w-full rounded-2xl md:hidden"
+            sizes="100vw"
+            priority
+          />
+          <Image
+            src="/hero1.png"
+            width={1600}
+            height={700}
+            alt="Comunidade RPM"
+            className="hidden h-auto w-full rounded-2xl md:block"
             sizes="100vw"
             priority
           />
         </div>
-
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center -translate-y-16 sm:translate-y-0">
-          <div className="flex flex-col items-center">
-            <div className="relative h-32 w-[88vw] max-w-[880px] sm:h-40 md:h-44 lg:h-48">
-              <Image
-                src="/logo_comunidade.png"
-                alt="Comunidade RPM"
-                fill
-                className="object-contain drop-shadow-sm"
-                sizes="(min-width: 1024px) 880px, 88vw"
-              />
-            </div>
-            <p className="mt-3 text-4xl leading-none sm:mt-4 sm:text-5xl" aria-hidden>
-              🇧🇷 🇵🇹
-            </p>
-          </div>
-        </div>
-
-        <div className="absolute inset-0 hidden items-start sm:flex">
-          <div className="w-full px-5 pt-5 sm:px-7 sm:pt-7">
-            <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
-              Bem vindo!
-            </h1>
-            <p className="mt-2 max-w-[60ch] text-sm text-zinc-900 sm:text-base">
-              Aqui encontras tudo o que precisa para imigrar do brasil para portugal do jeito certo.
-            </p>
-          </div>
-        </div>
       </section>
-
-      <div className="mx-auto w-full max-w-[800px] sm:hidden">
-        <h1 className="text-2xl font-semibold text-zinc-900">Bem vindo!</h1>
-        <p className="mt-2 text-zinc-600">
-          Aqui encontras tudo o que precisa para imigrar do brasil para portugal do jeito certo.
-        </p>
-      </div>
 
       <div className="mx-auto w-full max-w-[800px]">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -248,9 +224,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex-1 space-y-3">
-              <h2 className="text-xl font-semibold text-zinc-900">
-                Plano de imigração 🇧🇷 → 🇵🇹
-              </h2>
+              <h2 className="text-xl font-semibold text-zinc-900">Plano de imigração</h2>
               <p className="text-sm text-zinc-600">
                 Organize o teu plano, acompanhe as etapas e veja uma estimativa de custos para se
                 preparar com mais segurança.

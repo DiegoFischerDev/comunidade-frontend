@@ -5,12 +5,27 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
+import { PartnerEngagementBar } from "@/components/PartnerEngagementBar";
 import { api } from "@/lib/api";
 import { formatHouseEntradaShort, orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
-import { isOurImageHostname } from "@/lib/site-url";
+import { getPublicSiteUrl, isOurImageHostname } from "@/lib/site-url";
 
 type HouseRow = Awaited<ReturnType<typeof api.marketplace.relocationHouses>>[number];
+
+type RelocationPartner = {
+  id: string;
+  name: string;
+  logoUrl: string | null;
+  backgroundImageUrl: string | null;
+  shortDescription: string | null;
+  engagement: {
+    likeCount: number;
+    dislikeCount: number;
+    commentCount: number;
+    shareCount: number;
+  };
+};
 
 const CITY_LABELS: Record<string, string> = {
   INTERIOR: "Interior",
@@ -125,10 +140,14 @@ function availabilityLabel(availableFromIso: string): string {
 }
 
 export default function RelocationHousesPage() {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  const siteBase = getPublicSiteUrl();
   const [rows, setRows] = useState<HouseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [heroCoverUrl, setHeroCoverUrl] = useState<string | null>(null);
+  const [relocationPartners, setRelocationPartners] = useState<RelocationPartner[]>([]);
+  const [partnersLoading, setPartnersLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -137,14 +156,18 @@ export default function RelocationHousesPage() {
           api.marketplace.relocationCategory().catch(() => null),
           api.marketplace.categoriesWithPartners().catch(() => []),
         ]);
+        const rel = categories.find((c) => c.slug === "relocation");
+        setRelocationPartners(rel?.partners ?? []);
         let url = categoryBackgroundImageUrl(cat?.backgroundImageUrl);
         if (!url) {
-          const fromList = categories.find((c) => c.slug === "relocation");
-          url = categoryBackgroundImageUrl(fromList?.backgroundImageUrl);
+          url = categoryBackgroundImageUrl(rel?.backgroundImageUrl);
         }
         setHeroCoverUrl(url);
       } catch {
         setHeroCoverUrl(null);
+        setRelocationPartners([]);
+      } finally {
+        setPartnersLoading(false);
       }
     })();
   }, []);
@@ -200,11 +223,90 @@ export default function RelocationHousesPage() {
         <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
       )}
 
-      {loading ? (
-        <p className="text-sm text-zinc-600">Carregando…</p>
-      ) : rows.length === 0 ? (
-        <p className="text-sm text-zinc-600">Ainda não há imóveis disponíveis nesta listagem.</p>
-      ) : (
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl">Relocations que indicamos</h2>
+        {partnersLoading ? (
+          <p className="text-sm text-zinc-600">A carregar…</p>
+        ) : relocationPartners.length === 0 ? (
+          <p className="text-sm text-zinc-600">Ainda não há indicações nesta secção.</p>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {relocationPartners.map((partner) => {
+              const partnerBg =
+                partner.backgroundImageUrl &&
+                (partner.backgroundImageUrl.startsWith("/uploads/")
+                  ? `${API_URL}${partner.backgroundImageUrl}`
+                  : partner.backgroundImageUrl);
+              const partnerLogo =
+                partner.logoUrl &&
+                (partner.logoUrl.startsWith("/uploads/")
+                  ? `${API_URL}${partner.logoUrl}`
+                  : partner.logoUrl);
+              return (
+                <div
+                  key={partner.id}
+                  className="group flex w-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
+                >
+                  <Link href={`/dashboard/partner/${partner.id}`} className="block">
+                    <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-r from-zinc-100 to-zinc-200">
+                      {partnerBg ? (
+                        <div
+                          className="absolute inset-0 bg-cover bg-center"
+                          style={{ backgroundImage: `url(${partnerBg})` }}
+                        />
+                      ) : null}
+                      <div className="relative z-10 flex h-full flex-col justify-end gap-2 bg-gradient-to-t from-black/50 via-black/10 to-transparent px-4 pb-3">
+                        {partnerLogo ? (
+                          <div className="relative h-11 w-11 overflow-hidden rounded-xl border border-white/70 bg-white shadow-md">
+                            <Image
+                              src={partnerLogo}
+                              alt=""
+                              fill
+                              className="object-contain p-2"
+                              sizes="44px"
+                              unoptimized={nextImageUnoptimized(partnerLogo)}
+                            />
+                          </div>
+                        ) : null}
+                        <h3 className="text-sm font-semibold text-white drop-shadow">{partner.name}</h3>
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="flex flex-1 flex-col px-4 pb-4 pt-3">
+                    <Link
+                      href={`/dashboard/partner/${partner.id}`}
+                      className="block min-h-0 flex-1"
+                    >
+                      {partner.shortDescription ? (
+                        <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-600">
+                          {partner.shortDescription}
+                        </p>
+                      ) : null}
+                    </Link>
+                    <PartnerEngagementBar
+                      partnerId={partner.id}
+                      sharePageUrl={`${siteBase}/partner/${partner.id}`}
+                      variant="card"
+                      initial={partner.engagement}
+                      partnerName={partner.name}
+                      partnerLogoUrl={typeof partnerLogo === "string" ? partnerLogo : null}
+                      className="mt-3 border-t border-zinc-100 pt-3"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl">Imóveis disponíveis</h2>
+        {loading ? (
+          <p className="text-sm text-zinc-600">A carregar imóveis…</p>
+        ) : rows.length === 0 ? (
+          <p className="text-sm text-zinc-600">Ainda não há imóveis disponíveis nesta listagem.</p>
+        ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((h) => {
             const videoSrc = h.videoUrl ? resolveMediaUrl(h.videoUrl) : null;
@@ -329,7 +431,8 @@ export default function RelocationHousesPage() {
             );
           })}
         </div>
-      )}
+        )}
+      </section>
     </div>
   );
 }

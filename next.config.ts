@@ -32,11 +32,32 @@ function apiUploadsRemotePattern(): {
 
 const apiPattern = apiUploadsRemotePattern();
 
+/**
+ * Uploads no mesmo domínio da API em deploys (stage/prod) quando o build
+ * usou outro `NEXT_PUBLIC_API_URL` — evita erro "hostname is not configured" no `next/image`.
+ */
+const defaultApiUploadsPatterns: {
+  protocol: "https";
+  hostname: string;
+  pathname: string;
+}[] = [
+  { protocol: "https", hostname: "api-stage.rafaapelomundo.com", pathname: "/uploads/**" },
+  { protocol: "https", hostname: "api.rafaapelomundo.com", pathname: "/uploads/**" },
+];
+
+/** `NEXT_PUBLIC_API_URL` primeiro; defaults para não duplicar o mesmo hostname. */
+const uploadPatternsFromEnv = [
+  ...(apiPattern ? [apiPattern] : []),
+  ...defaultApiUploadsPatterns.filter(
+    (d) => !apiPattern || apiPattern.hostname !== d.hostname,
+  ),
+];
+
 const nextConfig: NextConfig = {
   output: "standalone",
   images: {
     remotePatterns: [
-      ...(apiPattern ? [apiPattern] : []),
+      ...uploadPatternsFromEnv,
       ...extraImageHosts,
     ],
   },

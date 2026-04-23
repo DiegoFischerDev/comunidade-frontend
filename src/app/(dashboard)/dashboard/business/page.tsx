@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api, getAuthToken } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -270,14 +271,12 @@ export default function BusinessPage() {
       </p>
       {partnerId && (
         <div className="mt-4">
-          <a
-            href={`/partner/${partnerId}`}
-            target="_blank"
-            rel="noreferrer"
+          <Link
+            href={`/dashboard/partner/${partnerId}`}
             className="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
             Ver minha página
-          </a>
+          </Link>
         </div>
       )}
 
