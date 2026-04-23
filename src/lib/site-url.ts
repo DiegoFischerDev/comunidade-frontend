@@ -23,6 +23,30 @@ export function getPublicSiteUrl(): string {
 }
 
 /**
+ * Em `use client`, quando o build não tinha `NEXT_PUBLIC_SITE_URL`, a partilha
+ * pode vir com `http://localhost:...`. Reescreve para a origem atual se o
+ * utilizador estiver noutro host (stage, produção, preview).
+ */
+export function resolveShareUrlForBrowser(fullUrl: string): string {
+  if (typeof window === 'undefined') return fullUrl;
+  try {
+    const u = new URL(fullUrl);
+    const isPlaceholder =
+      u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+    const cur = window.location.hostname;
+    const onLocalhost = cur === 'localhost' || cur === '127.0.0.1';
+    if (isPlaceholder && !onLocalhost) {
+      u.protocol = window.location.protocol;
+      u.host = window.location.host;
+      return u.toString();
+    }
+  } catch {
+    return fullUrl;
+  }
+  return fullUrl;
+}
+
+/**
  * Usado em `generateMetadata` quando `NEXT_PUBLIC_SITE_URL` não está definida,
  * para que `og:image` e `metadataBase` usem o host real (ex. nginx) e não
  * `http://localhost:3000` (que quebra previews no WhatsApp / Facebook).
