@@ -26,15 +26,10 @@ export function CatalogCarousel({
 }: CatalogCarouselProps) {
   const [index, setIndex] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [paused, setPaused] = useState(false);
   const total = images.length;
   const startTimeRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
-  const pauseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pointerDownAtRef = useRef<number>(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-  /** pointerup e pointercancel podem disparar seguidos; evita avançar duas fotos. */
-  const lastEndPointerAtRef = useRef(0);
+  const lastClickAtRef = useRef(0);
 
   const goNext = useCallback(() => {
     setIndex((i) => (i + 1) % total);
@@ -42,13 +37,12 @@ export function CatalogCarousel({
     startTimeRef.current = Date.now();
   }, [total]);
 
-  // Auto-advance no mobile (quando paused = false)
+  // Auto-avanço contínuo; toque/click (mobile) apenas avança — sem pausa nem reset por “segurar”
   useEffect(() => {
-    if (total <= 1 || paused) return;
+    if (total <= 1) return;
     startTimeRef.current = Date.now();
 
     const tick = () => {
-      if (paused) return;
       const elapsed = Date.now() - (startTimeRef.current ?? 0);
       const p = Math.min(elapsed / AUTO_ADVANCE_MS, 1);
       setProgress(p);
@@ -61,59 +55,14 @@ export function CatalogCarousel({
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [index, paused, total, goNext]);
+  }, [index, total, goNext]);
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
-    pointerDownAtRef.current = Date.now();
-    setPaused(true);
-    try {
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    } catch {
-      /* empty */
-    }
-  }, []);
-
-  const endPointerGesture = useCallback(
-    (e: React.PointerEvent) => {
-      const now = Date.now();
-      if (now - lastEndPointerAtRef.current < 80) {
-        return;
-      }
-      lastEndPointerAtRef.current = now;
-
-      try {
-        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-      } catch {
-        /* empty */
-      }
-
-      const holdDuration = now - pointerDownAtRef.current;
-      // Toque em qualquer zona: passa à imagem seguinte (não repõe só o temporizador
-      // da imagem actual). Largar após pausa longa: retoma a barra sem avançar.
-      const isTap = holdDuration <= 450;
-      if (isTap) {
-        goNext();
-      }
-
-      if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
-      pauseTimeoutRef.current = setTimeout(() => {
-        setPaused(false);
-        if (!isTap) {
-          startTimeRef.current = Date.now();
-          setProgress(0);
-        }
-      }, 80);
-    },
-    [goNext],
-  );
-
-
-  useEffect(() => {
-    return () => {
-      if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
-    };
-  }, []);
+  const handleMobileClick = useCallback(() => {
+    const now = Date.now();
+    if (now - lastClickAtRef.current < 200) return;
+    lastClickAtRef.current = now;
+    goNext();
+  }, [goNext]);
 
   if (total === 0) return null;
 
@@ -140,18 +89,24 @@ export function CatalogCarousel({
         ))}
       </div>
 
-      {/* Mobile: carrossel estilo stories — uma imagem, auto-avanço, segurar para pausar */}
+      {/* Mobile: uma imagem, auto-avanço; toque = próximo slide (sem pausa / sem “segurar para resetar”) */}
       <div className="md:hidden">
         <div
-          ref={containerRef}
-          className="relative w-full mx-auto rounded-2xl overflow-hidden bg-black touch-none cursor-pointer"
+          role="button"
+          tabIndex={0}
+          aria-label="Ver imagem seguinte do catálogo"
+          onClick={handleMobileClick}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              goNext();
+            }
+          }}
+          className="relative w-full mx-auto rounded-2xl overflow-hidden bg-black cursor-pointer touch-manipulation"
           style={{ maxWidth: 'min(100%, 420px)', aspectRatio: String(STORY_ASPECT) }}
-          onPointerDown={handlePointerDown}
-          onPointerUp={endPointerGesture}
-          onPointerCancel={endPointerGesture}
         >
-          {/* Barras de progresso no topo (estilo Instagram) */}
-          <div className="absolute top-0 left-0 right-0 z-10 flex gap-1 p-2">
+          {/* Barras de progresso no topo (estilo stories) */}
+          <div className="absolute top-0 left-0 right-0 z-10 flex gap-1 p-2 pointer-events-none">
             {images.map((_, i) => (
               <div
                 key={i}
@@ -177,9 +132,7 @@ export function CatalogCarousel({
             alt={`Catálogo ${index + 1}`}
             className="absolute inset-0 h-full w-full object-contain bg-black"
             draggable={false}
-            style={{ touchAction: 'none' }}
           />
-
         </div>
       </div>
     </div>

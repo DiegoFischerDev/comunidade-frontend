@@ -135,12 +135,18 @@ export default function PartnerPage() {
   return (
     <div className="space-y-8">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-800 via-rose-900 to-red-950 text-white">
         {partner.backgroundImageUrl && (
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-40"
-            style={{ backgroundImage: `url(${partner.backgroundImageUrl})` }}
-          />
+          <>
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-40"
+              style={{ backgroundImage: `url(${partner.backgroundImageUrl})` }}
+            />
+            <div
+              className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-red-900/35 via-red-950/65 to-red-950/92"
+              aria-hidden
+            />
+          </>
         )}
         <div className="relative z-10 min-h-[260px] px-6 py-9 sm:min-h-[340px] sm:px-10 sm:py-12">
           <button
@@ -150,7 +156,7 @@ export default function PartnerPage() {
                 ? router.push(`/dashboard/category/${partner.category.slug}`)
                 : router.back()
             }
-              className="absolute left-4 top-4 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/95 text-emerald-700 shadow-lg ring-1 ring-[#d58901]/50 hover:bg-white sm:left-6 sm:top-6"
+              className="absolute left-4 top-4 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/95 text-red-800 shadow-lg ring-1 ring-white/30 hover:bg-white sm:left-6 sm:top-6"
             aria-label={
               partner.category
                 ? `Voltar para ${partner.category.name}`
@@ -185,14 +191,14 @@ export default function PartnerPage() {
               </div>
             )}
             <div>
-              <p className="text-xs uppercase tracking-wide text-emerald-100">
+              <p className="text-xs uppercase tracking-wide text-red-100/95">
                 {partner.category?.name ?? 'Parceiro'}
               </p>
               <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
                 {partner.name}
               </h1>
               {partner.shortDescription && (
-                <p className="mt-3 max-w-2xl text-sm text-emerald-50 sm:text-base">
+                <p className="mt-3 max-w-2xl whitespace-pre-line text-sm leading-relaxed text-white/95 sm:text-base">
                   {partner.shortDescription}
                 </p>
               )}
@@ -218,7 +224,7 @@ export default function PartnerPage() {
                         'noopener,noreferrer',
                       );
                     }}
-                    className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-emerald-800 shadow-md ring-1 ring-white/50 transition hover:bg-emerald-50"
+                    className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-red-900 shadow-md ring-1 ring-white/50 transition hover:bg-red-50"
                   >
                     <svg
                       className="h-5 w-5 shrink-0"
@@ -248,7 +254,7 @@ export default function PartnerPage() {
       {/* Descrição completa */}
       {partner.fullDescription && (
         <>
-          <h2 className="mb-3 text-sm font-semibold text-zinc-900">
+          <h2 className="mb-3 text-lg font-semibold tracking-tight text-zinc-900 sm:text-xl">
             Sobre {partner.name}
           </h2>
           <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
@@ -271,7 +277,7 @@ export default function PartnerPage() {
 
       {/* Lista de serviços */}
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-zinc-900">
+        <h2 className="text-lg font-semibold tracking-tight text-zinc-900 sm:text-xl">
           Serviços oferecidos
         </h2>
         {partner.services.length === 0 ? (
@@ -285,7 +291,7 @@ export default function PartnerPage() {
                 key={service.id}
                 className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
               >
-                <h3 className="text-sm font-semibold text-zinc-900">
+                <h3 className="text-base font-semibold tracking-tight text-zinc-900 sm:text-lg">
                   {service.title}
                 </h3>
                 {service.description && (
