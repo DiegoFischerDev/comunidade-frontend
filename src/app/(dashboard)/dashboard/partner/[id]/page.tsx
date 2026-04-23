@@ -289,7 +289,7 @@ export default function PartnerPage() {
                   {service.title}
                 </h3>
                 {service.description && (
-                  <p className="mt-2 text-sm text-zinc-700">
+                  <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-zinc-700">
                     {service.description}
                   </p>
                 )}

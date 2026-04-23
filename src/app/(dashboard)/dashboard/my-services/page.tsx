@@ -315,7 +315,7 @@ export default function MyServicesPage() {
                   <td className="px-4 py-2 align-top">{s.title}</td>
                   <td className="px-4 py-2 align-top">
                     {s.description ? (
-                      <span className="line-clamp-3 max-w-xs text-zinc-700">
+                      <span className="line-clamp-3 max-w-xs whitespace-pre-line text-zinc-700">
                         {s.description}
                       </span>
                     ) : (
