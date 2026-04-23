@@ -23,6 +23,32 @@ export function getPublicSiteUrl(): string {
 }
 
 /**
+ * Usado em `generateMetadata` quando `NEXT_PUBLIC_SITE_URL` não está definida,
+ * para que `og:image` e `metadataBase` usem o host real (ex. nginx) e não
+ * `http://localhost:3000` (que quebra previews no WhatsApp / Facebook).
+ */
+export function getPublicSiteUrlFromRequestHeaders(
+  h: Readonly<Headers>,
+): string {
+  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '');
+  if (fromEnv) {
+    return fromEnv;
+  }
+  const host =
+    h.get('x-forwarded-host')?.split(',')[0]?.trim() ||
+    h.get('host')?.trim() ||
+    '';
+  if (!host) {
+    return getPublicSiteUrl();
+  }
+  const rawProto = h.get('x-forwarded-proto')?.split(',')[0]?.trim();
+  const isLocal =
+    host.split(':')[0] === 'localhost' || host.startsWith('127.');
+  const protocol = rawProto || (isLocal ? 'http' : 'https');
+  return `${protocol}://${host}`.replace(/\/$/, '');
+}
+
+/**
  * `next/image`: o nosso site ou API = otimizar; alojamento externo (ex. R2) = unoptimized.
  */
 export function isOurImageHostname(hostname: string): boolean {

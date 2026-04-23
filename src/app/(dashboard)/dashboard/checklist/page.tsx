@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { CardButton } from "@/components/ui/CardButton";
+import { FlagBr, FlagPt } from "@/components/CountryFlags";
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/components/FloatingWhatsAppButton";
 
 type VisaType =
@@ -1189,11 +1190,16 @@ export default function ChecklistPage() {
                 }`}
               >
                 <p
-                  className={`text-[10px] font-medium leading-tight sm:text-[11px] ${
+                  className={`flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] font-medium leading-tight sm:text-[11px] ${
                     activePanel === "brasil" ? "text-white/90" : "text-zinc-500"
                   }`}
                 >
-                  Fase 1 🇧🇷
+                  <span>Fase 1</span>
+                  <FlagBr
+                    className="h-3.5 w-auto shrink-0 object-contain sm:h-4"
+                    alt=""
+                    title="Brasil"
+                  />
                 </p>
                 <p className="text-base font-extrabold tabular-nums sm:text-lg">{phase1.pct}%</p>
                 <p
@@ -1216,11 +1222,16 @@ export default function ChecklistPage() {
                 }`}
               >
                 <p
-                  className={`text-[10px] font-medium leading-tight sm:text-[11px] ${
+                  className={`flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] font-medium leading-tight sm:text-[11px] ${
                     activePanel === "portugal" ? "text-white/90" : "text-zinc-500"
                   }`}
                 >
-                  Fase 2 🇵🇹
+                  <span>Fase 2</span>
+                  <FlagPt
+                    className="h-3.5 w-auto shrink-0 object-contain sm:h-4"
+                    alt=""
+                    title="Portugal"
+                  />
                 </p>
                 <p className="text-base font-extrabold tabular-nums sm:text-lg">{phase2.pct}%</p>
                 <p
@@ -1578,7 +1589,13 @@ export default function ChecklistPage() {
                           <span className="tabular-nums">
                             {section.items.filter((i) => data.checks?.[i.id]).length}/{section.items.length}
                           </span>
-                          <span aria-hidden>{section.phase === "BRASIL" ? "🇧🇷" : "🇵🇹"}</span>
+                          <span className="inline-flex items-center" aria-hidden>
+                            {section.phase === "BRASIL" ? (
+                              <FlagBr className="h-3.5 w-auto object-contain" alt="" title="Brasil" />
+                            ) : (
+                              <FlagPt className="h-3.5 w-auto object-contain" alt="" title="Portugal" />
+                            )}
+                          </span>
                         </span>
                       </div>
 
@@ -1655,7 +1672,14 @@ export default function ChecklistPage() {
                     className={activePanel === "brasil" ? "block" : "hidden"}
                     aria-label="Fase 1 — checklist"
                   >
-                    <h2 className="mb-4 text-lg font-semibold text-zinc-900">🇧🇷 Fase 1 — ainda no Brasil</h2>
+                    <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-zinc-900">
+                      <FlagBr
+                        className="h-5 w-auto shrink-0 object-contain sm:h-6"
+                        alt=""
+                        title="Brasil"
+                      />
+                      Fase 1 — ainda no Brasil
+                    </h2>
                     {renderSections(sectionsBrasil)}
                     <div className="mt-6 flex w-full justify-center print:hidden">
                       <CardButton
@@ -1675,7 +1699,14 @@ export default function ChecklistPage() {
                     className={activePanel === "portugal" ? "block" : "hidden"}
                     aria-label="Fase 2 — checklist"
                   >
-                    <h2 className="mb-4 text-lg font-semibold text-zinc-900">🇵🇹 Fase 2 — já em Portugal</h2>
+                    <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-zinc-900">
+                      <FlagPt
+                        className="h-5 w-auto shrink-0 object-contain sm:h-6"
+                        alt=""
+                        title="Portugal"
+                      />
+                      Fase 2 — já em Portugal
+                    </h2>
                     {renderSections(sectionsPortugal)}
                     <div className="mt-6 flex w-full justify-center print:hidden">
                       <CardButton

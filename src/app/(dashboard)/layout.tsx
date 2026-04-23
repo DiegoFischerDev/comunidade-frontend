@@ -828,17 +828,14 @@ export default function DashboardLayout({
             aria-label="Ir para o início"
           >
             <Image
-              src="/logo_comunidade.png"
+              src="/logo-RP.png"
               alt="Comunidade RPM"
-              width={140}
-              height={32}
+              width={800}
+              height={192}
+              className="h-24 w-auto max-w-full object-contain sm:h-28"
               priority
             />
           </button>
-        </div>
-
-        <div className="mt-2 flex items-center justify-center text-2xl leading-none" aria-hidden>
-          🇧🇷 🇵🇹
         </div>
 
         <div className="mt-3 flex items-center justify-center gap-3">

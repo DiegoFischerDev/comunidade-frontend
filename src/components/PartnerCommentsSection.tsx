@@ -545,29 +545,22 @@ export function PartnerCommentsSection({ partnerId, partnerName }: Props) {
   }
 
   return (
-    <section
-      id="comentarios"
-      className="scroll-mt-8 overflow-hidden rounded-2xl border border-zinc-200/90 bg-white"
-    >
-      <div className="border-b border-amber-100/80 bg-gradient-to-br from-amber-50/90 via-white to-zinc-50/40 px-5 py-5 sm:px-6 sm:py-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 flex-1 items-start gap-3">
-            <Image
-              src="/group.png"
-              alt=""
-              width={40}
-              height={40}
-              className="mt-0.5 h-10 w-10 shrink-0 rounded-xl object-cover ring-1 ring-amber-200/50"
-            />
-            <div className="min-w-0">
-              <h2 className="text-base font-semibold tracking-tight text-zinc-900 sm:text-lg">
-                O que dizem de {partnerName}
-              </h2>
-              <p className="mt-1 text-sm text-zinc-500">
-                Comentários deixados por membros da Comunidade RPM.
-              </p>
-            </div>
-          </div>
+    <section id="comentarios" className="scroll-mt-8">
+      <div className="mb-4 flex items-start gap-3">
+        <Image
+          src="/group.png"
+          alt=""
+          width={40}
+          height={40}
+          className="mt-0.5 h-10 w-10 shrink-0 rounded-xl object-cover"
+        />
+        <div className="min-w-0 flex-1">
+          <h2 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+            O que dizem de {partnerName}
+          </h2>
+          <p className="mt-1 text-sm text-zinc-500">
+            Avaliações deixadas por membros da Comunidade RPM.
+          </p>
           <button
             type="button"
             onClick={() => {
@@ -577,21 +570,20 @@ export function PartnerCommentsSection({ partnerId, partnerName }: Props) {
                 }),
               );
             }}
-            className="shrink-0 cursor-pointer rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3.5 py-2 text-xs font-semibold text-white ring-1 ring-amber-300/60 sm:py-2.5 sm:text-sm"
+            className="mt-3 w-full cursor-pointer rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3.5 py-2.5 text-sm font-semibold text-white ring-1 ring-amber-300/60 sm:w-auto"
           >
-            Comentar
+            Quero avaliar
           </button>
         </div>
       </div>
 
-      <div className="px-4 py-4 sm:px-5 sm:py-5">
-        {error && !loading && (
-          <p className="text-sm text-red-600" role="status">
-            {error}
-          </p>
-        )}
+      {error && !loading && (
+        <p className="mb-3 text-sm text-red-600" role="status">
+          {error}
+        </p>
+      )}
 
-        <ul className="space-y-3">
+      <ul className="space-y-3">
           {loading && items.length === 0 && !error && (
             <>
               <CommentSkeleton />
@@ -632,7 +624,6 @@ export function PartnerCommentsSection({ partnerId, partnerName }: Props) {
             </li>
           )}
         </ul>
-      </div>
     </section>
   );
 }

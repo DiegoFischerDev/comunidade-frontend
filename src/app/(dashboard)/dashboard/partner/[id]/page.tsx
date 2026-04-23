@@ -253,16 +253,14 @@ export default function PartnerPage() {
 
       {/* Descrição completa */}
       {partner.fullDescription && (
-        <>
-          <h2 className="mb-3 text-lg font-semibold tracking-tight text-zinc-900 sm:text-xl">
+        <section>
+          <h2 className="mb-3 text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
             Sobre {partner.name}
           </h2>
-          <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
-            <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-700">
-              {partner.fullDescription}
-            </p>
-          </section>
-        </>
+          <p className="whitespace-pre-line text-base leading-relaxed text-zinc-700">
+            {partner.fullDescription}
+          </p>
+        </section>
       )}
 
       {/* Carrossel de catálogo */}
@@ -277,7 +275,7 @@ export default function PartnerPage() {
 
       {/* Lista de serviços */}
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold tracking-tight text-zinc-900 sm:text-xl">
+        <h2 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
           Serviços oferecidos
         </h2>
         {partner.services.length === 0 ? (
