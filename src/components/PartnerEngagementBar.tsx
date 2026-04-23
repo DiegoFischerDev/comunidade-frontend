@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { resolveShareUrlForBrowser } from '@/lib/site-url';
 
 export type PartnerEngagementSnapshot = {
   likeCount: number;
@@ -63,6 +64,7 @@ export function PartnerEngagementBar({
   const [err, setErr] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [copyDone, setCopyDone] = useState(false);
+  const [shareUrlToUse, setShareUrlToUse] = useState(sharePageUrl);
   const shareLogged = useRef(false);
   const [commentOpen, setCommentOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -89,6 +91,10 @@ export function PartnerEngagementBar({
     }
     load();
   }, [load]);
+
+  useLayoutEffect(() => {
+    setShareUrlToUse(resolveShareUrlForBrowser(sharePageUrl));
+  }, [sharePageUrl]);
 
   useEffect(() => {
     if (!shareOpen) return;
@@ -252,7 +258,7 @@ export function PartnerEngagementBar({
 
   const copyLink = () => {
     if (!navigator.clipboard) return;
-    void navigator.clipboard.writeText(sharePageUrl);
+    void navigator.clipboard.writeText(shareUrlToUse);
     setCopyDone(true);
     setTimeout(() => setCopyDone(false), 2000);
   };
@@ -414,7 +420,7 @@ export function PartnerEngagementBar({
               </div>
             ) : null}
             <p className="mt-3 break-all rounded-lg bg-zinc-50 px-3 py-2 text-xs text-blue-600 select-text">
-              {sharePageUrl}
+              {shareUrlToUse}
             </p>
             <div className="mt-4 flex flex-wrap justify-end">
               <button

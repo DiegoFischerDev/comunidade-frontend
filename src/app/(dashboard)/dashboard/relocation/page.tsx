@@ -224,7 +224,7 @@ export default function RelocationHousesPage() {
       )}
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl">Relocations que indicamos</h2>
+        <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl">Relocations indicados por Rafa</h2>
         {partnersLoading ? (
           <p className="text-sm text-zinc-600">A carregar…</p>
         ) : relocationPartners.length === 0 ? (
