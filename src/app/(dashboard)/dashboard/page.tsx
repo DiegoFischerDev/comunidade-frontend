@@ -188,18 +188,18 @@ export default function DashboardPage() {
         <h1 className="sr-only">Comunidade RPM — Início</h1>
         <div className="w-full">
           <Image
-            src="/hero_mobile.png"
-            width={375}
-            height={667}
+            src="/hero_mobile2.png"
+            width={1172}
+            height={2084}
             alt="Comunidade RPM"
             className="h-auto w-full rounded-2xl md:hidden"
             sizes="100vw"
             priority
           />
           <Image
-            src="/hero1.png"
-            width={1600}
-            height={700}
+            src="/hero2.png"
+            width={5000}
+            height={2188}
             alt="Comunidade RPM"
             className="hidden h-auto w-full rounded-2xl md:block"
             sizes="100vw"
