@@ -20,7 +20,6 @@ export default function PSPFullPage() {
     return t === 'MEMBER';
   }, [user?.tier]);
 
-  const [ebookOpen, setEbookOpen] = useState(false);
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [suggestMsg, setSuggestMsg] = useState('');
   const [suggestSending, setSuggestSending] = useState(false);
@@ -57,7 +56,7 @@ export default function PSPFullPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-6rem)] flex-col gap-4">
+    <div className="flex min-h-[calc(100vh-6rem)] flex-col gap-4 pb-8">
       <div className="mx-auto w-full max-w-[820px]">
         <h1 className="text-2xl font-semibold text-zinc-900">
           E-book - Portugal Sem Perrengue (PDF completo)
@@ -67,18 +66,6 @@ export default function PSPFullPage() {
           Esse Ebook foi criado com muito carinho para te ajudar nesse processo de imigração. Apesar do nosso esforço, as
           regras mudam constantemente, então contamos com a ajuda da comunidade para atualizar esse material todos os meses.
         </p>
-        {isMember ? (
-          <>
-            <p className="mt-4 text-base font-semibold text-zinc-900">
-              Tem algo desatualizado no PSP? conta pra gente
-            </p>
-            <div className="mt-3 flex justify-center">
-              <CardButton type="button" onClick={handleOpenSuggest} variant="primary">
-                Enviar sugestão
-              </CardButton>
-            </div>
-          </>
-        ) : null}
       </div>
 
       <div className="relative mx-auto flex min-h-[min(56vh,580px)] w-full max-w-[820px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 shadow-sm">
@@ -99,54 +86,37 @@ export default function PSPFullPage() {
           aria-hidden
         />
         <div className="relative z-10 mt-auto flex w-full flex-col items-center justify-center gap-4 px-4 pb-8 pt-4 text-center">
-          <div className="flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
-            <CardButton
-              type="button"
-              variant="primary"
-              onClick={() => setEbookOpen(true)}
-              className="w-full sm:w-auto"
-            >
-              Abrir Ebook
-            </CardButton>
+          <div className="flex w-full max-w-md justify-center">
             <a
               href="/psp/psp-completo.pdf"
               download
               className="w-full sm:w-auto"
             >
-              <CardButton type="button" variant="secondary" className="w-full sm:w-auto">
-                Download PDF
+              <CardButton type="button" variant="primary" className="w-full sm:w-auto">
+                Download PDF completo
               </CardButton>
             </a>
           </div>
         </div>
       </div>
 
-      {ebookOpen && (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-3 sm:p-6"
-          role="presentation"
-          onClick={() => setEbookOpen(false)}
-        >
-          <div
-            className="relative h-[92vh] w-full max-w-6xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
+      {isMember ? (
+        <div className="mx-auto w-full max-w-[820px] border-t border-zinc-200/80 pt-6 text-center sm:text-left">
+          <p className="text-sm font-normal text-zinc-500">
+            Tem algo desatualizado no PSP? Conta pra gente.
+          </p>
+          <div className="mt-2 flex justify-center sm:justify-start">
+            <CardButton
               type="button"
-              onClick={() => setEbookOpen(false)}
-              className="absolute right-3 top-3 z-[80] inline-flex items-center justify-center rounded-xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-zinc-800"
-              aria-label="Fechar ebook"
+              onClick={handleOpenSuggest}
+              variant="secondary"
+              className="text-sm font-normal"
             >
-              Fechar
-            </button>
-            <iframe
-              src="/psp/psp-completo.pdf"
-              className="h-full w-full"
-              title="E-book - Portugal Sem Perrengue"
-            />
+              Enviar sugestão
+            </CardButton>
           </div>
         </div>
-      )}
+      ) : null}
 
       {suggestOpen && (
         <div

@@ -284,7 +284,7 @@ export function PartnerEngagementBar({
         {loading && !data ? (
           <span
             className={
-              variant === 'card' ? 'text-zinc-400' : 'text-emerald-100/80'
+              variant === 'card' ? 'text-zinc-400' : 'text-red-100/80'
             }
           >
             …

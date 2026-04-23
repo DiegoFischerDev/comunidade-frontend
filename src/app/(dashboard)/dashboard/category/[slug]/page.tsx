@@ -169,10 +169,16 @@ export default function CategoryPage() {
       {/* Hero da categoria */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#910001] to-[#5f0001] text-white">
         {heroBg && (
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-40"
-            style={{ backgroundImage: `url(${heroBg})` }}
-          />
+          <>
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-40"
+              style={{ backgroundImage: `url(${heroBg})` }}
+            />
+            <div
+              className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-[#5f0001]/40 via-[#3a0000]/70 to-[#0f0000]/95"
+              aria-hidden
+            />
+          </>
         )}
         <div className="relative z-10 px-6 py-10 sm:px-10 sm:py-14">
           <p className="text-xs uppercase tracking-wide text-amber-100/90">

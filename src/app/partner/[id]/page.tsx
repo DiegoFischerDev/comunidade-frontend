@@ -150,12 +150,18 @@ export default async function PartnerPublicPage({ params }: PageProps) {
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-800 via-rose-900 to-red-950 text-white">
         {heroBgImage && (
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-40"
-            style={{ backgroundImage: `url(${heroBgImage})` }}
-          />
+          <>
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-40"
+              style={{ backgroundImage: `url(${heroBgImage})` }}
+            />
+            <div
+              className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-red-900/35 via-red-950/65 to-red-950/92"
+              aria-hidden
+            />
+          </>
         )}
         <div className="relative z-10 flex flex-col gap-6 px-6 py-10 sm:flex-row sm:items-center sm:px-10 sm:py-14">
           {logoSrc && (
@@ -168,14 +174,14 @@ export default async function PartnerPublicPage({ params }: PageProps) {
             </div>
           )}
           <div>
-            <p className="text-xs uppercase tracking-wide text-emerald-100">
+            <p className="text-xs uppercase tracking-wide text-red-100/95">
               {partner.category?.name ?? 'Parceiro'}
             </p>
             <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
               {partner.name}
             </h1>
             {partner.shortDescription && (
-              <p className="mt-3 max-w-2xl text-sm text-emerald-50 sm:text-base">
+              <p className="mt-3 max-w-2xl whitespace-pre-line text-sm leading-relaxed text-white/95 sm:text-base">
                 {partner.shortDescription}
               </p>
             )}
@@ -185,7 +191,7 @@ export default async function PartnerPublicPage({ params }: PageProps) {
                   href={heroWhatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-emerald-800 shadow-md ring-1 ring-white/50 transition hover:bg-emerald-50"
+                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-red-900 shadow-md ring-1 ring-white/50 transition hover:bg-red-50"
                 >
                   <svg
                     className="h-5 w-5 shrink-0"
@@ -214,7 +220,7 @@ export default async function PartnerPublicPage({ params }: PageProps) {
       {/* Descrição completa */}
       {partner.fullDescription && (
         <>
-          <h2 className="mb-3 text-sm font-semibold text-zinc-900">
+          <h2 className="mb-3 text-lg font-semibold tracking-tight text-zinc-900 sm:text-xl">
             Sobre {partner.name}
           </h2>
           <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
@@ -237,7 +243,7 @@ export default async function PartnerPublicPage({ params }: PageProps) {
 
       {/* Lista de serviços */}
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-zinc-900">
+        <h2 className="text-lg font-semibold tracking-tight text-zinc-900 sm:text-xl">
           Serviços oferecidos
         </h2>
         {visibleServices.length === 0 ? (
@@ -251,7 +257,7 @@ export default async function PartnerPublicPage({ params }: PageProps) {
                 key={service.id}
                 className="relative flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 pb-[50px] shadow-sm"
               >
-                <h3 className="text-sm font-semibold text-zinc-900">
+                <h3 className="text-base font-semibold tracking-tight text-zinc-900 sm:text-lg">
                   {service.title}
                 </h3>
                 {service.description && (
@@ -292,7 +298,7 @@ export default async function PartnerPublicPage({ params }: PageProps) {
 
       {/* Call to action para autenticação */}
       <section className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-5 sm:px-6">
-        <h2 className="text-sm font-semibold text-emerald-900">
+        <h2 className="text-lg font-semibold tracking-tight text-emerald-900 sm:text-xl">
           Quer falar com {partner.name}?
         </h2>
         <p className="mt-1 text-sm text-emerald-900/80">
