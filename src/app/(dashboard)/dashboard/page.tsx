@@ -56,12 +56,6 @@ export default function DashboardPage() {
 
   const pdfHref = isMember ? "/psp/full" : "/psp";
 
-  const [complaintOpen, setComplaintOpen] = useState(false);
-  const [complaintMsg, setComplaintMsg] = useState("");
-  const [complaintSending, setComplaintSending] = useState(false);
-  const [complaintSent, setComplaintSent] = useState(false);
-  const [complaintError, setComplaintError] = useState("");
-
   const [serviceCategories, setServiceCategories] = useState<
     MarketplaceCategory[] | null
   >(null);
@@ -119,39 +113,6 @@ export default function DashboardPage() {
       return;
     }
     window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
-  }
-
-  function handleOpenComplaint() {
-    if (typeof window === "undefined") return;
-    if (!user) {
-      window.dispatchEvent(new Event(OPEN_AUTH_LOGIN_EVENT));
-      return;
-    }
-    if (user.tier !== "MEMBER") {
-      window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
-      return;
-    }
-    setComplaintError("");
-    setComplaintSent(false);
-    setComplaintMsg("");
-    setComplaintOpen(true);
-  }
-
-  async function handleSendComplaint() {
-    if (!complaintMsg.trim()) {
-      setComplaintError("Escreve a tua mensagem antes de enviar.");
-      return;
-    }
-    setComplaintSending(true);
-    setComplaintError("");
-    try {
-      await api.support.createTicket(complaintMsg);
-      setComplaintSent(true);
-    } catch (err) {
-      setComplaintError(err instanceof Error ? err.message : "Não foi possível enviar.");
-    } finally {
-      setComplaintSending(false);
-    }
   }
 
   async function handleAffiliateSubmit(e: React.FormEvent) {
@@ -518,34 +479,6 @@ export default function DashboardPage() {
         )}
 
         <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50">
-                <Image
-                  src="/reclame.png"
-                  alt=""
-                  fill
-                  className="object-contain"
-                  sizes="56px"
-                />
-              </div>
-              <div className="space-y-1">
-                <h2 className="text-xl font-semibold text-zinc-900">Reclame aqui</h2>
-                <p className="text-sm text-zinc-600">
-                  Para abrir um ticket (elogio/reclamação/bug). Essa funcionalidade é exclusiva para membros da Comunidade RPM.
-                </p>
-              </div>
-            </div>
-
-            <div className="shrink-0">
-              <CardButton type="button" onClick={handleOpenComplaint} variant="primary">
-                Reclame aqui
-              </CardButton>
-            </div>
-          </div>
-        </section>
-
-        <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex items-center gap-4">
               <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50">
@@ -655,81 +588,6 @@ export default function DashboardPage() {
         onPixNameChange={setAffiliatePixName}
         onTermsAcceptedChange={setAffiliateTerms}
       />
-
-      {complaintOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
-          role="presentation"
-          onClick={() => !complaintSending && setComplaintOpen(false)}
-        >
-          <div
-            className="my-8 w-full max-w-3xl rounded-2xl bg-white p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-base font-semibold text-zinc-900">Reclame aqui</h3>
-                <p className="mt-1 text-sm text-zinc-600">
-                  Escreve a tua mensagem. Se for sobre um parceiro, diz qual parceiro.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setComplaintOpen(false)}
-                disabled={complaintSending}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50 disabled:opacity-50"
-                aria-label="Fechar"
-              >
-                ✕
-              </button>
-            </div>
-
-            {complaintError ? (
-              <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-                {complaintError}
-              </div>
-            ) : null}
-
-            {complaintSent ? (
-              <div className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-                Mensagem enviada. Obrigado por compartilhar com a gente!
-              </div>
-            ) : null}
-
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-zinc-700">Mensagem</label>
-              <textarea
-                value={complaintMsg}
-                onChange={(e) => setComplaintMsg(e.target.value)}
-                rows={7}
-                disabled={complaintSending || complaintSent}
-                className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
-                placeholder="Escreve aqui…"
-              />
-            </div>
-
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <CardButton
-                type="button"
-                variant="secondary"
-                onClick={() => setComplaintOpen(false)}
-                disabled={complaintSending}
-              >
-                Fechar
-              </CardButton>
-              <CardButton
-                type="button"
-                variant="primary"
-                onClick={handleSendComplaint}
-                loading={complaintSending}
-                disabled={complaintSent}
-              >
-                Enviar
-              </CardButton>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -546,12 +546,20 @@ export function RafaCallCard() {
               sizes="80px"
             />
           </div>
-          <div className="space-y-1">
+          <div className="w-full space-y-1">
             <p className="text-base font-semibold text-zinc-900">
               {hasBookedSlot
                 ? 'A tua chamada de vídeo com a Rafa está agendada'
-                : 'Quero agendar uma chamada de video com a Rafa'}
+                : 'Quero conversar com a Rafa'}
             </p>
+            {!hasBookedSlot ? (
+              <div className="mt-2 w-full rounded-xl border border-zinc-100 bg-zinc-50/90 px-3 py-2.5 text-left">
+                <p className="text-sm leading-relaxed text-zinc-600">
+                  Agende uma videochamada com a Rafa para esclareceres dúvidas sobre o processo de imigração, Portugal e
+                  o teu percurso.
+                </p>
+              </div>
+            ) : null}
             {hasBookedSlot && scheduleLines ? (
               <div className="mt-2 rounded-xl border border-emerald-100 bg-emerald-50/80 px-3 py-2.5 text-left">
                 <p className="text-xs font-medium uppercase tracking-wide text-emerald-800/80">
