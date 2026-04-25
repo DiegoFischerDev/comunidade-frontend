@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
+import { NewSupportTicketModal } from '@/components/support-ticket';
 import { CardButton } from '@/components/ui/CardButton';
 
 type Payload = Awaited<ReturnType<typeof api.support.myTickets>>;
@@ -70,13 +71,31 @@ export default function ReclameAquiUserPage() {
 
   const items = useMemo(() => data?.items ?? [], [data?.items]);
 
+  const handleCreateSend = useCallback(async () => {
+    if (!createMsg.trim()) {
+      setError('Escreve a tua mensagem antes de enviar.');
+      return;
+    }
+    setCreateSending(true);
+    setError('');
+    try {
+      await api.support.createTicket(createMsg);
+      setCreateMsg('');
+      setCreating(false);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Não foi possível enviar.');
+    } finally {
+      setCreateSending(false);
+    }
+  }, [createMsg, load]);
+
   if (!user) return null;
   if (!isMember) {
     return (
       <div className="mx-auto w-full max-w-[820px]">
         <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
         <p className="mt-2 text-zinc-600">Aqui podes abrir um ticket (elogio/reclamação/bug). Se tens qualquer problema, queremos te ouvir.</p>
-        <p className="mt-2 text-zinc-600">Essa funcionalidade é exclusiva para membros da Comunidade RPM.</p>
         <div className="mt-4 flex">
           <CardButton
             type="button"
@@ -95,7 +114,7 @@ export default function ReclameAquiUserPage() {
       <div className="text-center">
         <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
         <p className="mt-2 text-sm text-zinc-600">
-          Veja os teus tickets e acompanhe o status e a resposta do nosso time.
+        Queremos te ouvir e resolver o seu problema. Encontrou algum bug, teve uma experiência ruim ou quer compartilhar um elogio? Conta pra gente — estamos aqui pra ajudar.
         </p>
       </div>
 
@@ -107,9 +126,6 @@ export default function ReclameAquiUserPage() {
         <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
       ) : items.length === 0 ? (
         <div className="mt-4">
-          <p className="text-sm text-zinc-600 text-center">
-            Ainda não há tickets. Usa o card “Reclame aqui” no dashboard para abrir um.
-          </p>
           <div className="mt-3 flex justify-center">
             <CardButton
               type="button"
@@ -120,7 +136,7 @@ export default function ReclameAquiUserPage() {
               }}
               variant="primary"
             >
-              Novo ticket
+              Reclame aqui
             </CardButton>
           </div>
         </div>
@@ -356,87 +372,21 @@ export default function ReclameAquiUserPage() {
         </div>
       )}
 
-      {creating && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          role="presentation"
-          onClick={() => !createSending && setCreating(false)}
-        >
-          <div
-            className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-base font-semibold text-zinc-900">Novo ticket</h3>
-                <p className="mt-1 text-sm text-zinc-600">
-                  Escreve a tua mensagem (elogio, reclamação de parceiro ou bug do sistema).
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setCreating(false)}
-                disabled={createSending}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50 disabled:opacity-50"
-                aria-label="Fechar"
-              >
-                ✕
-              </button>
-            </div>
-
-            {error ? (
-              <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
-            ) : null}
-
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-zinc-700">Mensagem</label>
-              <textarea
-                value={createMsg}
-                onChange={(e) => setCreateMsg(e.target.value)}
-                rows={8}
-                disabled={createSending}
-                className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
-                placeholder="Escreve aqui…"
-              />
-            </div>
-
-            <div className="mt-5 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setCreating(false)}
-                disabled={createSending}
-                className="cursor-pointer rounded bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-200 disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={createSending}
-                onClick={async () => {
-                  if (!createMsg.trim()) {
-                    setError('Escreve a tua mensagem antes de enviar.');
-                    return;
-                  }
-                  setCreateSending(true);
-                  setError('');
-                  try {
-                    await api.support.createTicket(createMsg);
-                    setCreating(false);
-                    await load();
-                  } catch (e) {
-                    setError(e instanceof Error ? e.message : 'Não foi possível enviar.');
-                  } finally {
-                    setCreateSending(false);
-                  }
-                }}
-                className="cursor-pointer rounded bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
-              >
-                {createSending ? 'Enviando…' : 'Enviar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <NewSupportTicketModal
+        open={creating}
+        onClose={() => {
+          if (createSending) return;
+          setCreating(false);
+          setError('');
+          setCreateMsg('');
+        }}
+        message={createMsg}
+        onMessageChange={setCreateMsg}
+        onSend={handleCreateSend}
+        sending={createSending}
+        sent={false}
+        error={error}
+      />
     </div>
   );
 }

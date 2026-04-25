@@ -84,7 +84,7 @@ export default function ServicesDashboardPage() {
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Image src="/services.png" alt="" width={40} height={40} className="opacity-60" />
+                    <Image src="/services2.png" alt="" width={40} height={40} className="opacity-60" />
                   </div>
                 )}
               </div>

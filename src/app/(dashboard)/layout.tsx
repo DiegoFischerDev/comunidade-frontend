@@ -24,6 +24,8 @@ import {
 } from '@/lib/login-phone-storage';
 import { CardButton } from '@/components/ui/CardButton';
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
+import { SupportTicketRoot } from '@/components/support-ticket';
+import { SiteFooter } from '@/components/site/SiteFooter';
 
 /** Sub-link do menu lateral (indentado, sob “Minha empresa” / “Serviços”). */
 function SidebarNavSubLink({
@@ -1741,14 +1743,8 @@ export default function DashboardLayout({
         {children}
       </main>
 
-      <footer className="border-t border-secondary-2 bg-white px-4 py-4 text-xs text-zinc-600 md:px-6">
-        <div className="mx-auto flex w-full max-w-[1200px] flex-col items-center gap-1 text-center">
-          <p>
-            © {new Date().getFullYear()} Comunidade RPM. Todos os direitos reservados. ·{' '}
-            rafaapelomundo@gmail.com
-          </p>
-        </div>
-      </footer>
+      <SupportTicketRoot />
+      <SiteFooter />
 
       <FloatingWhatsAppButton hideFloatingButton />
 
