@@ -919,6 +919,10 @@ export default function ChecklistPage() {
   const phase2 = useMemo(() => phaseProgress(data, "PORTUGAL"), [data]);
   const meuPlano = useMemo(() => planFormProgress(data.meta), [data.meta]);
   const reserva = useMemo(() => estimateReserva(data.meta), [data.meta]);
+  /** Nenhum campo do bloco "Meu plano" (meta) preenchido ainda. */
+  const semInfoPlanoImigracao = meuPlano.done === 0;
+  const eurOuPlaceholder = (value: number) =>
+    semInfoPlanoImigracao ? "???" : formatEur(value);
 
   useEffect(() => {
     if (!user) {
@@ -1146,35 +1150,27 @@ export default function ChecklistPage() {
             </p>
           </div>
           <div
-            className="flex w-full max-w-xl flex-col gap-2 sm:max-w-none print:hidden"
+            className="w-full print:hidden sm:ml-auto sm:max-w-[32rem] sm:shrink-0"
             role="tablist"
             aria-label="Secções do plano de imigração"
           >
-            <div className="grid grid-cols-3 gap-2">
+            {/* Segmented control: faixa única, separador ativo = “pastilha” branca */}
+            <div className="flex w-full gap-0.5 rounded-2xl bg-zinc-100/95 p-1 ring-1 ring-inset ring-zinc-200/80">
               <button
                 type="button"
                 role="tab"
                 aria-selected={activePanel === "plan"}
                 onClick={() => setActivePanel("plan")}
-                className={`cursor-pointer rounded-xl px-2 py-3 text-center shadow-sm ring-1 transition sm:px-3 ${
-                  activePanel === "plan"
-                    ? "bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white ring-amber-300/60"
-                    : "bg-white text-zinc-900 ring-zinc-200 hover:bg-zinc-50"
-                }`}
+                className={
+                  "flex min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl px-1.5 py-2 text-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 sm:px-2 sm:py-2.5 " +
+                  (activePanel === "plan"
+                    ? "bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200/60"
+                    : "text-zinc-600 hover:bg-zinc-200/45 hover:text-zinc-900")
+                }
               >
-                <p
-                  className={`text-[10px] font-medium leading-tight sm:text-[11px] ${
-                    activePanel === "plan" ? "text-white/90" : "text-zinc-500"
-                  }`}
-                >
-                  Meu plano 🧩
-                </p>
-                <p className="text-base font-extrabold tabular-nums sm:text-lg">{meuPlano.pct}%</p>
-                <p
-                  className={`mt-0.5 text-[10px] tabular-nums sm:text-[11px] ${
-                    activePanel === "plan" ? "text-white/85" : "text-zinc-500"
-                  }`}
-                >
+                <p className="text-[10px] font-semibold leading-tight sm:text-[11px]">Meu plano 🧩</p>
+                <p className="text-sm font-extrabold tabular-nums sm:text-base">{meuPlano.pct}%</p>
+                <p className="text-[9px] tabular-nums text-zinc-500 sm:text-[10px]">
                   {meuPlano.done}/{meuPlano.total}
                 </p>
               </button>
@@ -1183,30 +1179,23 @@ export default function ChecklistPage() {
                 role="tab"
                 aria-selected={activePanel === "brasil"}
                 onClick={() => setActivePanel("brasil")}
-                className={`cursor-pointer rounded-xl px-2 py-3 text-center shadow-sm ring-1 transition sm:px-3 ${
-                  activePanel === "brasil"
-                    ? "bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white ring-amber-300/60"
-                    : "bg-white text-zinc-900 ring-zinc-200 hover:bg-zinc-50"
-                }`}
+                className={
+                  "flex min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl px-1.5 py-2 text-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 sm:px-2 sm:py-2.5 " +
+                  (activePanel === "brasil"
+                    ? "bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200/60"
+                    : "text-zinc-600 hover:bg-zinc-200/45 hover:text-zinc-900")
+                }
               >
-                <p
-                  className={`flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] font-medium leading-tight sm:text-[11px] ${
-                    activePanel === "brasil" ? "text-white/90" : "text-zinc-500"
-                  }`}
-                >
-                  <span>Fase 1</span>
+                <p className="flex items-center justify-center gap-1 text-[10px] font-semibold leading-tight sm:gap-1.5 sm:text-[11px]">
+                  <span className="truncate">Fase 1</span>
                   <FlagBr
                     className="h-3.5 w-auto shrink-0 object-contain sm:h-4"
                     alt=""
                     title="Brasil"
                   />
                 </p>
-                <p className="text-base font-extrabold tabular-nums sm:text-lg">{phase1.pct}%</p>
-                <p
-                  className={`mt-0.5 text-[10px] tabular-nums sm:text-[11px] ${
-                    activePanel === "brasil" ? "text-white/85" : "text-zinc-500"
-                  }`}
-                >
+                <p className="text-sm font-extrabold tabular-nums sm:text-base">{phase1.pct}%</p>
+                <p className="text-[9px] tabular-nums text-zinc-500 sm:text-[10px]">
                   {phase1.done}/{phase1.total}
                 </p>
               </button>
@@ -1215,30 +1204,23 @@ export default function ChecklistPage() {
                 role="tab"
                 aria-selected={activePanel === "portugal"}
                 onClick={() => setActivePanel("portugal")}
-                className={`cursor-pointer rounded-xl px-2 py-3 text-center shadow-sm ring-1 transition sm:px-3 ${
-                  activePanel === "portugal"
-                    ? "bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white ring-amber-300/60"
-                    : "bg-white text-zinc-900 ring-zinc-200 hover:bg-zinc-50"
-                }`}
+                className={
+                  "flex min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl px-1.5 py-2 text-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 sm:px-2 sm:py-2.5 " +
+                  (activePanel === "portugal"
+                    ? "bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200/60"
+                    : "text-zinc-600 hover:bg-zinc-200/45 hover:text-zinc-900")
+                }
               >
-                <p
-                  className={`flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] font-medium leading-tight sm:text-[11px] ${
-                    activePanel === "portugal" ? "text-white/90" : "text-zinc-500"
-                  }`}
-                >
-                  <span>Fase 2</span>
+                <p className="flex items-center justify-center gap-1 text-[10px] font-semibold leading-tight sm:gap-1.5 sm:text-[11px]">
+                  <span className="truncate">Fase 2</span>
                   <FlagPt
                     className="h-3.5 w-auto shrink-0 object-contain sm:h-4"
                     alt=""
                     title="Portugal"
                   />
                 </p>
-                <p className="text-base font-extrabold tabular-nums sm:text-lg">{phase2.pct}%</p>
-                <p
-                  className={`mt-0.5 text-[10px] tabular-nums sm:text-[11px] ${
-                    activePanel === "portugal" ? "text-white/85" : "text-zinc-500"
-                  }`}
-                >
+                <p className="text-sm font-extrabold tabular-nums sm:text-base">{phase2.pct}%</p>
+                <p className="text-[9px] tabular-nums text-zinc-500 sm:text-[10px]">
                   {phase2.done}/{phase2.total}
                 </p>
               </button>
@@ -1271,22 +1253,28 @@ export default function ChecklistPage() {
                       Valor MINIMO indicado por Rafa
                     </p>
                   </div>
-                  <p className="shrink-0 text-sm font-extrabold text-zinc-900 tabular-nums">
-                    {formatEur(reserva.reserva3m)}
+                    <p className="shrink-0 text-sm font-extrabold text-zinc-900 tabular-nums">
+                    {eurOuPlaceholder(reserva.reserva3m)}
                   </p>
                 </div>
                 <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-zinc-700">
                   <div className="rounded-xl bg-white px-3 py-2 ring-1 ring-zinc-200">
                     <p className="text-[11px] font-medium text-zinc-500">Custo fixo mensal</p>
-                    <p className="mt-0.5 font-semibold tabular-nums">{formatEur(reserva.mensal)}</p>
+                    <p className="mt-0.5 font-semibold tabular-nums">
+                      {eurOuPlaceholder(reserva.mensal)}
+                    </p>
                   </div>
                   <div className="rounded-xl bg-white px-3 py-2 ring-1 ring-zinc-200">
                     <p className="text-[11px] font-medium text-zinc-500">Relocation / documentação / cauções</p>
-                    <p className="mt-0.5 font-semibold tabular-nums">{formatEur(reserva.chegadaDocumentacaoCaucao)}</p>
+                    <p className="mt-0.5 font-semibold tabular-nums">
+                      {eurOuPlaceholder(reserva.chegadaDocumentacaoCaucao)}
+                    </p>
                   </div>
                   <div className="rounded-xl bg-white px-3 py-2 ring-1 ring-zinc-200">
                     <p className="text-[11px] font-medium text-zinc-500">Reserva para 3 meses</p>
-                    <p className="mt-0.5 font-semibold tabular-nums">{formatEur(reserva.reserva3m)}</p>
+                    <p className="mt-0.5 font-semibold tabular-nums">
+                      {eurOuPlaceholder(reserva.reserva3m)}
+                    </p>
                   </div>
                 </div>
 
@@ -1300,44 +1288,53 @@ export default function ChecklistPage() {
                     <ul className="space-y-1">
                       <li className="flex items-center justify-between gap-3">
                         <span className="text-zinc-600">Moradia (arrendamento)</span>
-                        <span className="font-semibold tabular-nums">{formatEur(reserva.renda)}</span>
+                        <span className="font-semibold tabular-nums">{eurOuPlaceholder(reserva.renda)}</span>
                       </li>
                       <li className="flex items-center justify-between gap-3">
                         <span className="text-zinc-600">Água/luz/internet</span>
-                        <span className="font-semibold tabular-nums">{formatEur(reserva.contasMensal)}</span>
+                        <span className="font-semibold tabular-nums">
+                          {eurOuPlaceholder(reserva.contasMensal)}
+                        </span>
                       </li>
                       <li className="flex items-center justify-between gap-3">
                         <span className="text-zinc-600">Mobilidade (carro/transporte)</span>
-                        <span className="font-semibold tabular-nums">{formatEur(reserva.mobilidadeMensal)}</span>
+                        <span className="font-semibold tabular-nums">
+                          {eurOuPlaceholder(reserva.mobilidadeMensal)}
+                        </span>
                       </li>
-                      {reserva.financiamentoCarroMensal > 0 ? (
+                      {semInfoPlanoImigracao || reserva.financiamentoCarroMensal > 0 ? (
                         <li className="flex items-center justify-between gap-3">
                           <span className="text-zinc-600">Financiamento do carro (mensal)</span>
                           <span className="font-semibold tabular-nums">
-                            {formatEur(reserva.financiamentoCarroMensal)}
+                            {semInfoPlanoImigracao
+                              ? "???"
+                              : formatEur(reserva.financiamentoCarroMensal)}
                           </span>
                         </li>
                       ) : null}
                       <li className="flex items-center justify-between gap-3">
                         <span className="text-zinc-600">Alimentação</span>
-                        <span className="font-semibold tabular-nums">{formatEur(reserva.alimentacaoMensal)}</span>
+                        <span className="font-semibold tabular-nums">
+                          {eurOuPlaceholder(reserva.alimentacaoMensal)}
+                        </span>
                       </li>
                       <li className="flex items-center justify-between gap-3">
                         <span className="text-zinc-600">Documentação</span>
-                        <span className="font-semibold tabular-nums">{formatEur(800)}</span>
+                        <span className="font-semibold tabular-nums">{eurOuPlaceholder(800)}</span>
                       </li>
                       <li className="flex items-center justify-between gap-3">
                         <span className="text-zinc-600">Relocation</span>
-                        <span className="font-semibold tabular-nums">{formatEur(700)}</span>
+                        <span className="font-semibold tabular-nums">{eurOuPlaceholder(700)}</span>
                       </li>
                       <li className="flex items-center justify-between gap-3">
                         <span className="text-zinc-600">3 cauções</span>
-                        <span className="font-semibold tabular-nums">{formatEur(reserva.renda * 3)}</span>
+                        <span className="font-semibold tabular-nums">{eurOuPlaceholder(reserva.renda * 3)}</span>
                       </li>
                     </ul>
                     <p className="mt-2 text-[11px] text-zinc-500">
-                      Estes valores são referências de 2026 e variam por bairro, época e perfil. Ajuste a cidade, nº de
-                      quartos e agregado familiar para refinar.
+                      {semInfoPlanoImigracao
+                        ? "Indica cidade, agregado, quartos e o resto do plano acima para veres valores calculados com base no teu perfil."
+                        : "Estes valores são referências de 2026 e variam por bairro, época e perfil. Ajuste a cidade, nº de quartos e agregado familiar para refinar."}
                     </p>
                   </div>
 

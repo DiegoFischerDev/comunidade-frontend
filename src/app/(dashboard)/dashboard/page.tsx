@@ -1,8 +1,6 @@
-/* eslint-disable react/no-array-index-key */
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
@@ -14,11 +12,7 @@ import { AffiliateEnrollModal } from "@/components/affiliate/AffiliateEnrollModa
 import { AffiliateMemberDashboardCard } from "@/components/affiliate/AffiliateMemberDashboardCard";
 import { RafaCallCard } from "@/components/RafaCallCard";
 import { CardButton, CardLinkButton } from "@/components/ui/CardButton";
-import { GROUPS as VIP_GROUPS } from "@/components/GruposVipContent";
-
 type AffiliateMe = NonNullable<Awaited<ReturnType<typeof api.affiliate.me>>>;
-type MarketplaceCategory =
-  NonNullable<Awaited<ReturnType<typeof api.marketplace.categoriesWithPartners>>>[number];
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -55,26 +49,6 @@ export default function DashboardPage() {
   const [affiliate, setAffiliate] = useState<AffiliateMe | null | undefined>(undefined);
 
   const pdfHref = isMember ? "/psp/full" : "/psp";
-
-  const [serviceCategories, setServiceCategories] = useState<
-    MarketplaceCategory[] | null
-  >(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setServiceCategories(null);
-    (async () => {
-      try {
-        const data = await api.marketplace.categoriesWithPartners();
-        if (!cancelled) setServiceCategories(data);
-      } catch {
-        if (!cancelled) setServiceCategories([]);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     setAffiliateInstagram(
@@ -235,12 +209,12 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
               <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50">
-                <Image src="/services.png" alt="" fill className="object-contain" sizes="56px" />
+                <Image src="/services2.png" alt="" fill className="object-contain" sizes="56px" />
               </div>
               <div className="space-y-1">
                 <h2 className="text-xl font-semibold text-zinc-900">Serviços</h2>
                 <p className="text-sm text-zinc-600">
-                  Encontra parceiros e serviços por categoria.
+                  Encontre parceiros de confiança indicados pela Rafa.
                 </p>
               </div>
             </div>
@@ -249,49 +223,6 @@ export default function DashboardPage() {
                 Acessar serviços
               </CardLinkButton>
             </div>
-          </div>
-
-          <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {serviceCategories === null ? (
-              <>
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-10 w-full animate-pulse rounded-xl border border-zinc-200 bg-zinc-50"
-                  />
-                ))}
-              </>
-            ) : serviceCategories.length === 0 ? (
-              <p className="text-sm text-zinc-500">
-                Ainda não há categorias disponíveis.
-              </p>
-            ) : (
-              serviceCategories.map((c) => (
-                <Link
-                  key={c.id}
-                  href={`/dashboard/category/${c.slug}`}
-                  className="group flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors hover:bg-zinc-100"
-                >
-                  <div className="flex min-w-0 items-center gap-2">
-                    <Image
-                      src="/services.png"
-                      alt=""
-                      width={18}
-                      height={18}
-                      className="h-[18px] w-[18px] object-contain"
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-zinc-900">
-                        {c.name}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="shrink-0 text-xs font-medium text-zinc-500 group-hover:text-zinc-700">
-                    Ver
-                  </span>
-                </Link>
-              ))
-            )}
           </div>
         </section>
 
@@ -320,38 +251,6 @@ export default function DashboardPage() {
                 Acessar grupos
               </CardLinkButton>
             </div>
-          </div>
-
-          <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {VIP_GROUPS.map((g) => (
-              <div
-                key={g.title}
-                className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2"
-              >
-                <div className="flex min-w-0 items-center gap-2">
-                  <Image
-                    src="/whatsapp.png"
-                    alt=""
-                    width={18}
-                    height={18}
-                    className="h-[18px] w-[18px] object-contain"
-                  />
-                  <p className="truncate text-sm font-medium text-zinc-900">{g.title}</p>
-                </div>
-                {!g.isPublic &&
-                g.id !== "rpm-alugueis" &&
-                g.id !== "rpm-compra-imoveis" &&
-                g.id !== "compra-automovel" ? (
-                  <Image
-                    src="/vip-card.png"
-                    alt="VIP"
-                    width={24}
-                    height={24}
-                    className="h-6 w-6 shrink-0 object-contain"
-                  />
-                ) : null}
-              </div>
-            ))}
           </div>
         </section>
 
