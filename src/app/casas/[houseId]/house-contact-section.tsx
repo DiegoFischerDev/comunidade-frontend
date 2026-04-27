@@ -192,7 +192,7 @@ export function HouseContactSection({
               </button>
             </div>
             <p className="mt-2 text-sm text-zinc-600">
-              Precisas de uma conta na Comunidade RPM para contactares o parceiro no WhatsApp.
+              Precisas de uma conta na Comunidade Rafa Portugal para contactares o parceiro no WhatsApp.
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:gap-3">
               <Link

@@ -119,7 +119,7 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
             <Link
               href="/"
               className="inline-flex min-w-0 flex-1 items-center gap-2 pr-3 sm:gap-3 sm:pr-4"
-              aria-label="Comunidade RPM — início"
+              aria-label="Comunidade Rafa Portugal — início"
             >
               <Image
                 src="/logo-RP.png"

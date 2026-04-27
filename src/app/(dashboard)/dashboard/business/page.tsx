@@ -75,7 +75,7 @@ export default function BusinessPage() {
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Minha empresa</h1>
         <p className="mt-2 text-sm text-zinc-600">
-          Esta área é exclusiva para parceiros da Comunidade RPM.
+          Esta área é exclusiva para parceiros da Comunidade Rafa Portugal.
         </p>
       </div>
     );
@@ -267,15 +267,17 @@ export default function BusinessPage() {
     <div>
       <h1 className="text-2xl font-semibold text-zinc-900">Minha empresa</h1>
       <p className="mt-2 text-sm text-zinc-600">
-        Ajuste as informações públicas da sua empresa dentro da Comunidade RPM.
+        Ajuste as informações públicas da sua empresa dentro da Comunidade Rafa Portugal.
       </p>
       {partnerId && (
         <div className="mt-4">
           <Link
-            href={`/dashboard/partner/${partnerId}`}
+            href={`/partner/${encodeURIComponent(partnerId)}`}
+            target="_blank"
+            rel="noreferrer"
             className="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
-            Ver minha página
+            Ver minha página no Google
           </Link>
         </div>
       )}

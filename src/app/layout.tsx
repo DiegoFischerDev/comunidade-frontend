@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       type: "website",
       locale: "pt_PT",
-      siteName: "Comunidade RPM",
+      siteName: "Comunidade Rafa Portugal",
       title: "Comunidade Rafa pelo mundo",
       description: desc,
       url: base,
@@ -37,7 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
           url: new URL("/og-comunidade.png", base).href,
           width: 1200,
           height: 630,
-          alt: "Comunidade RPM",
+          alt: "Comunidade Rafa Portugal",
         },
       ],
     },

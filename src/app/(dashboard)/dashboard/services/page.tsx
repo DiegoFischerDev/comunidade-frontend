@@ -48,7 +48,7 @@ export default function ServicesDashboardPage() {
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Serviços</h1>
         <p className="mt-2 text-sm text-zinc-600">
-          Aqui encontras os serviços que a Comunidade RPM confia e recomenda. Estamos
+          Aqui encontras os serviços que a Comunidade Rafa Portugal confia e recomenda. Estamos
           sempre à procura de novos parceiros para oferecer à nossa comunidade as
           melhores soluções, e os menores preços. Aqueles que sao membros VIP tem direito a desconto de 10€ em todos os serviços.
         </p>

@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { YOUTUBE_HIGHLIGHT_FALLBACKS } from "@/lib/youtube-highlights-defaults";
+import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/components/FloatingWhatsAppButton";
 import { OPEN_AUTH_LOGIN_EVENT } from "@/lib/auth-ui-events";
 import { AffiliatePromoCard } from "@/components/affiliate/AffiliatePromoCard";
@@ -49,6 +51,8 @@ export default function DashboardPage() {
   /** undefined = a carregar; null = sem perfil de afiliado */
   const [affiliate, setAffiliate] = useState<AffiliateMe | null | undefined>(undefined);
 
+  const [youtubeCards, setYoutubeCards] = useState(YOUTUBE_HIGHLIGHT_FALLBACKS);
+
   const pdfHref = isMember ? "/psp/full" : "/psp";
 
   useEffect(() => {
@@ -80,6 +84,33 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, [user?.id, canSeeAffiliateCard]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await api.youtubeHighlights.list();
+        if (cancelled || !data.cards?.length) return;
+        setYoutubeCards(
+          data.cards
+            .sort((a, b) => a.position - b.position)
+            .map((c) => ({
+              id: `yt-${c.position}`,
+              title: c.title,
+              href: c.videoUrl,
+              thumb: c.thumbnailUrl.startsWith("/uploads/")
+                ? resolveUploadsUrl(c.thumbnailUrl)
+                : c.thumbnailUrl,
+            })),
+        );
+      } catch {
+        /* mantém YOUTUBE_HIGHLIGHT_FALLBACKS */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function handleOpenMembershipModal() {
     if (typeof window === "undefined") return;
@@ -121,25 +152,30 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <section className="w-full">
-        <h1 className="sr-only">Comunidade RPM — Início</h1>
+        <h1 className="sr-only">Comunidade Rafa Portugal — Início</h1>
         <div className="w-full">
+          {/*
+            unoptimized: servir PNGs de /public evita stress no otimizador em heros muito largos.
+          */}
           <Image
             src="/hero_mobile2.png"
             width={1172}
             height={2084}
-            alt="Comunidade RPM"
+            alt="Comunidade Rafa Portugal"
             className="h-auto w-full rounded-2xl md:hidden"
             sizes="100vw"
             priority
+            unoptimized
           />
           <Image
-            src="/hero2.png"
+            src="/hero_pc.png"
             width={5000}
             height={2188}
-            alt="Comunidade RPM"
+            alt="Comunidade Rafa Portugal"
             className="hidden h-auto w-full rounded-2xl md:block"
             sizes="100vw"
             priority
+            unoptimized
           />
         </div>
       </section>
@@ -249,7 +285,7 @@ export default function DashboardPage() {
               <div className="relative h-20 w-20 flex-shrink-0">
                 <Image
                   src="/vip-card.png"
-                  alt="Cartão VIP Comunidade RPM"
+                  alt="Cartão VIP Comunidade Rafa Portugal"
                   fill
                   className="object-contain"
                   sizes="80px"
@@ -400,29 +436,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                id: "yt-1",
-                title:
-                  "🏡 Ep 8 | VALEU A PENA? Valor e financiamento da nossa casa numa vila no interior de Portugal 🇵🇹",
-                thumb: "/youtube_1.png",
-                href: "https://www.youtube.com/watch?v=nSuXTX0z9Vk&list=PLE6qyBhvOLI0C0Ardu5fY3z8JK3kv-OKI&index=8",
-              },
-              {
-                id: "yt-2",
-                title:
-                  "🏡 Ep 13 | Tiramos as maiores dúvidas sobre crédito habitação em Portugal 🇵🇹",
-                thumb: "/youtube_2.png",
-                href: "https://www.youtube.com/watch?v=v04RVqeT9aQ&list=PLE6qyBhvOLI0C0Ardu5fY3z8JK3kv-OKI&index=12",
-              },
-              {
-                id: "yt-3",
-                title:
-                  "🏡 Ep 6 | Primeiros dias na nossa casa na aldeia em Portugal 🇵🇹",
-                thumb: "/youtube_3.png",
-                href: "https://www.youtube.com/watch?v=Z4Dv3M2ZLOQ&list=PLE6qyBhvOLI0C0Ardu5fY3z8JK3kv-OKI",
-              },
-            ].map((v) => {
+            {youtubeCards.map((v) => {
               return (
                 <a
                   key={v.id}

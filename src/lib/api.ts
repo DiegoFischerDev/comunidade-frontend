@@ -722,6 +722,46 @@ export const api = {
           body: JSON.stringify(body),
         }),
     },
+    youtubeHighlights: {
+      update: (body: {
+        cards: {
+          position: number;
+          title: string;
+          videoUrl: string;
+          thumbnailUrl: string;
+        }[];
+      }) =>
+        request<{
+          ok: true;
+          cards: {
+            position: number;
+            title: string;
+            videoUrl: string;
+            thumbnailUrl: string;
+          }[];
+        }>('/youtube-highlights/admin', {
+          method: 'PUT',
+          body: JSON.stringify(body),
+        }),
+    },
+  },
+  youtubeHighlights: {
+    list: () =>
+      request<{
+        cards: {
+          position: number;
+          title: string;
+          videoUrl: string;
+          thumbnailUrl: string;
+        }[];
+      }>('/youtube-highlights', { method: 'GET' }),
+  },
+  uploads: {
+    post: (file: File) => {
+      const fd = new FormData();
+      fd.append('file', file);
+      return requestFormData<{ url: string }>('/uploads', fd, { method: 'POST' });
+    },
   },
   partner: {
     me: () =>

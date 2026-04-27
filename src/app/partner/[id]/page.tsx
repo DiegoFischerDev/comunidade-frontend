@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
-import Image from 'next/image';
-import Link from 'next/link';
 import { CatalogCarousel } from '@/components/CatalogCarousel';
+import { PartnerServicePriceCallout } from '@/components/PartnerServicePriceCallout';
+import { RelocationHouseCard } from '@/components/relocation/RelocationHouseCard';
+import type { RelocationHouseRow } from '@/components/relocation/relocation-house-shared';
+import { CardLinkButton } from '@/components/ui/CardButton';
 import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
 import { PartnerCommentsSection } from '@/components/PartnerCommentsSection';
 import { getPublicSiteUrl } from '@/lib/site-url';
@@ -62,6 +64,20 @@ async function fetchPartner(id: string): Promise<PartnerPublic> {
   return res.json();
 }
 
+async function fetchRelocationHousesForPartner(
+  partnerId: string,
+): Promise<RelocationHouseRow[]> {
+  const res = await fetch(
+    `${API_URL}/partners/relocation/houses?partnerId=${encodeURIComponent(partnerId)}`,
+    { cache: 'no-store' },
+  );
+  if (!res.ok) {
+    return [];
+  }
+  const data = (await res.json()) as RelocationHouseRow[];
+  return Array.isArray(data) ? data : [];
+}
+
 type PageProps = {
   params: Promise<{ id: string }>;
 };
@@ -81,7 +97,7 @@ export async function generateMetadata({ params }: PageProps) {
 
   const baseDescription =
     partner.shortDescription ??
-    `${partner.name} é parceiro da Comunidade RPM na categoria ${categoryName}.`;
+    `${partner.name} é parceiro da Comunidade Rafa Portugal na categoria ${categoryName}.`;
 
   const servicesSnippet =
     topServices.length > 0 ? ` Serviços: ${topServices}.` : '';
@@ -98,7 +114,7 @@ export async function generateMetadata({ params }: PageProps) {
   return {
     title,
     description,
-    keywords: [partner.name, categoryName, 'Portugal', 'Comunidade RPM', 'imigração'],
+    keywords: [partner.name, categoryName, 'Portugal', 'Comunidade Rafa Portugal', 'imigração'],
     robots: { index: true, follow: true },
     alternates: {
       canonical: url,
@@ -109,7 +125,7 @@ export async function generateMetadata({ params }: PageProps) {
       url,
       type: 'website',
       locale: 'pt_PT',
-      siteName: 'Comunidade RPM',
+      siteName: 'Comunidade Rafa Portugal',
       images: ogImages,
     },
     twitter: {
@@ -127,6 +143,10 @@ export default async function PartnerPublicPage({ params }: PageProps) {
   const { id } = await params;
   const partner = await fetchPartner(id);
   const visibleServices = partner.services;
+  const relocationHouses: RelocationHouseRow[] =
+    partner.category?.slug === 'relocation'
+      ? await fetchRelocationHousesForPartner(id)
+      : [];
 
   const heroBgImage =
     partner.backgroundImageUrl &&
@@ -180,12 +200,13 @@ export default async function PartnerPublicPage({ params }: PageProps) {
               </p>
             )}
             <div className="mt-5 flex justify-center sm:justify-start">
-              <Link
+              <CardLinkButton
                 href={`/dashboard/partner/${partner.id}`}
-                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-red-900 shadow-md ring-1 ring-white/50 transition hover:bg-red-50"
+                variant="secondary"
+                className="px-5 py-2.5 shadow-sm"
               >
                 Entre em contato
-              </Link>
+              </CardLinkButton>
             </div>
           </div>
         </div>
@@ -235,7 +256,7 @@ export default async function PartnerPublicPage({ params }: PageProps) {
             {visibleServices.map((service) => (
               <article
                 key={service.id}
-                className="relative flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 pb-[50px] shadow-sm"
+                className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
               >
                 <h3 className="text-base font-semibold tracking-tight text-zinc-900 sm:text-lg">
                   {service.title}
@@ -245,30 +266,18 @@ export default async function PartnerPublicPage({ params }: PageProps) {
                     {service.description}
                   </p>
                 )}
-                <div className="mt-2 rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-700">
-                  <p>
-                    Valor do serviço{' '}
-                    {service.priceOnRequest
-                      ? 'sob consulta.'
-                      : service.price
-                      ? `${service.price} €.`
-                      : 'não informado.'}
-                  </p>
-                </div>
-                <div className="absolute bottom-4 right-4 inline-flex items-center gap-2">
-                  <Image
-                    src="/euro2.png"
-                    alt="Valor do serviço"
-                    width={20}
-                    height={20}
-                  />
-                  <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'black' }}>
-                    {service.priceOnRequest
-                      ? 'Sob consulta'
-                      : service.price
-                      ? `${service.price} €`
-                      : '—'}
-                  </span>
+                <PartnerServicePriceCallout
+                  price={service.price}
+                  priceOnRequest={service.priceOnRequest}
+                />
+                <div className="mt-4 flex flex-col items-stretch gap-3 sm:items-end">
+                  <CardLinkButton
+                    href={`/dashboard/partner/${partner.id}`}
+                    variant="primary"
+                    className="w-full min-w-0 sm:w-auto"
+                  >
+                    Contactar
+                  </CardLinkButton>
                 </div>
               </article>
             ))}
@@ -276,22 +285,41 @@ export default async function PartnerPublicPage({ params }: PageProps) {
         )}
       </section>
 
-      {/* Call to action para autenticação */}
-      <section className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-5 sm:px-6">
-        <h2 className="text-lg font-semibold tracking-tight text-emerald-900 sm:text-xl">
-          Quer falar com {partner.name}?
-        </h2>
-        <div className="mt-3 flex flex-wrap gap-3">
-          <a
-            href={`/dashboard/partner/${partner.id}`}
-            className="inline-flex cursor-pointer items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-          >
-            Entrar na comunidade
-          </a>
-        </div>
-      </section>
+      {partner.category?.slug === 'relocation' && (
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+            Imóveis
+          </h2>
+          {relocationHouses.length === 0 ? (
+            <p className="text-sm text-zinc-600">
+              Ainda não há imóveis publicados por este parceiro.
+            </p>
+          ) : (
+            <>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {relocationHouses.map((h) => (
+                  <RelocationHouseCard key={h.id} house={h} showContactButton={false} />
+                ))}
+              </div>
+              <div className="flex justify-center pt-1">
+                <CardLinkButton
+                  href={`/dashboard/relocation/imoveis?parceiro=${encodeURIComponent(partner.id)}`}
+                  variant="primary"
+                  className="min-w-[14rem] shadow-sm"
+                >
+                  Ver todos os imóveis
+                </CardLinkButton>
+              </div>
+            </>
+          )}
+        </section>
+      )}
 
-      <PartnerCommentsSection partnerId={partner.id} partnerName={partner.name} />
+      <PartnerCommentsSection
+        partnerId={partner.id}
+        partnerName={partner.name}
+        readOnly
+      />
     </div>
   );
 }

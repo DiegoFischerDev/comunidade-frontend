@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { resolveShareUrlForBrowser } from '@/lib/site-url';
+import { CardButton } from '@/components/ui/CardButton';
 
 export type PartnerEngagementSnapshot = {
   likeCount: number;
@@ -440,14 +441,16 @@ export function PartnerEngagementBar({
               {shareUrlToUse}
             </p>
             <div className="mt-4 flex flex-wrap justify-end">
-              <button
+              <CardButton
                 type="button"
+                variant="primary"
+                size="sm"
                 onClick={copyLink}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-1.5 text-xs font-medium text-white shadow-sm ring-1 ring-amber-300/60 hover:opacity-95"
+                className="gap-1.5"
               >
                 <CopyIcon className="h-[1.15rem] w-[1.15rem]" />
                 {copyDone ? 'Copiado' : 'Copiar link'}
-              </button>
+              </CardButton>
             </div>
           </div>
         </div>
@@ -493,21 +496,24 @@ export function PartnerEngagementBar({
               </p>
             )}
             <div className="mt-4 flex flex-wrap justify-end gap-2">
-              <button
+              <CardButton
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={closeCommentModal}
-                className="inline-flex rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
               >
                 Cancelar
-              </button>
-              <button
+              </CardButton>
+              <CardButton
                 type="button"
+                variant="primary"
+                size="sm"
                 onClick={() => void submitComment()}
                 disabled={!commentText.trim() || commentSending}
-                className="inline-flex cursor-pointer rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-1.5 text-xs font-medium text-white shadow-sm ring-1 ring-amber-300/60 hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                loading={commentSending}
               >
                 {commentSending ? 'A enviar…' : 'Publicar'}
-              </button>
+              </CardButton>
             </div>
           </div>
         </div>

@@ -831,7 +831,7 @@ export default function DashboardLayout({
           >
             <Image
               src="/logo_principal.png"
-              alt="Comunidade RPM"
+              alt="Comunidade Rafa Portugal"
               width={800}
               height={192}
               className="h-24 w-auto max-w-full object-contain sm:h-28"
@@ -1040,6 +1040,16 @@ export default function DashboardLayout({
                 }`}
               >
                 Casas (anúncios)
+              </Link>
+              <Link
+                href="/dashboard/admin/youtube-highlights"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/admin/youtube-highlights'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Destaques YouTube
               </Link>
               <Link
                 href="/dashboard/admin/commissions"
@@ -1306,7 +1316,7 @@ export default function DashboardLayout({
                 <h2 className="text-base font-semibold text-zinc-900">
                   {authMode === 'registerWhatsappVerify'
                     ? 'Ativar conta no WhatsApp'
-                    : 'Entrar na Comunidade RPM'}
+                    : 'Entrar na Comunidade Rafa Portugal'}
                 </h2>
                 <p className="mt-1 text-xs text-zinc-500">
                   {authMode === 'registerWhatsappVerify'
@@ -1757,7 +1767,7 @@ export default function DashboardLayout({
             </h2>
             <div className="mt-3 space-y-3 text-sm text-zinc-700">
               <p>
-                A Comunidade RPM foi criada para te acompanhar em cada etapa do
+                A Comunidade Rafa Portugal foi criada para te acompanhar em cada etapa do
                 teu processo de imigração para Portugal, com informação
                 atualizada e apoio de quem já passou por aí.
               </p>
@@ -1782,7 +1792,7 @@ export default function DashboardLayout({
               <p>
                 Todos os profissionais indicados aqui são{' '}
                 <span className="font-semibold">parceiros de confiança</span> da
-                Comunidade RPM e, para além do suporte especializado, conseguimos
+                Comunidade Rafa Portugal e, para além do suporte especializado, conseguimos
                 negociar <span className="font-semibold">benefícios exclusivos</span>{' '}
                 para membros, que podem ser aproveitados diretamente pela
                 plataforma.

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
-import { CardButton } from "@/components/ui/CardButton";
+import { CardButton, CardLinkButton } from "@/components/ui/CardButton";
 import { formatHouseEntradaWithTotal } from "@/lib/house-entrance";
 
 import {
@@ -21,9 +21,11 @@ import {
 
 type Props = {
   house: RelocationHouseRow;
+  /** Quando false, oculta o botão WhatsApp "Contactar" (ex.: página pública do parceiro). */
+  showContactButton?: boolean;
 };
 
-export function RelocationHouseCard({ house: h }: Props) {
+export function RelocationHouseCard({ house: h, showContactButton = true }: Props) {
   const { videoSrc, primaryImageSrc } = getRelocationHouseMedia(h);
   const cityLabel = RELOCATION_CITY_LABELS[h.city] ?? h.city;
   const typoLabel = RELOCATION_TYPOLOGY_LABELS[h.typology] ?? h.typology;
@@ -112,20 +114,27 @@ export function RelocationHouseCard({ house: h }: Props) {
       <div className="mt-auto border-t border-zinc-100 bg-zinc-50/50 px-4 py-3">
         {h.status === "AVAILABLE" ? (
           <div className="flex flex-wrap gap-2 sm:justify-end">
-            <Link
+            <CardLinkButton
               href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
-              className="inline-flex min-w-[8rem] flex-1 justify-center rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 sm:flex-initial"
+              variant="primary"
+              className={
+                showContactButton
+                  ? "min-w-[8rem] flex-1 sm:flex-initial"
+                  : "w-full min-w-0 sm:ml-auto sm:w-auto"
+              }
             >
               Ver imóvel
-            </Link>
-            <CardButton
-              type="button"
-              variant="primary"
-              onClick={() => openRelocationPartnerWhatsApp(h)}
-              className="min-w-[8rem] flex-1 sm:flex-initial"
-            >
-              Contactar
-            </CardButton>
+            </CardLinkButton>
+            {showContactButton ? (
+              <CardButton
+                type="button"
+                variant="navGold"
+                onClick={() => openRelocationPartnerWhatsApp(h)}
+                className="min-w-[8rem] flex-1 sm:flex-initial"
+              >
+                Contactar
+              </CardButton>
+            ) : null}
           </div>
         ) : h.status === "RESERVED" ? (
           <span className="inline-flex w-full items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs text-amber-950 sm:text-sm">

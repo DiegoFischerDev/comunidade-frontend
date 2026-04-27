@@ -159,7 +159,7 @@ function CasasInteresseContent() {
         <h1 className="text-xl font-semibold text-zinc-900">Contactar o parceiro</h1>
         <p className="mt-2 text-sm text-zinc-600">
           Para confirmarmos se o imóvel ainda está disponível e abrir o WhatsApp do parceiro com a mensagem já
-          preenchida, inicia sessão na Comunidade RPM. Depois de entrares, o passo seguinte corre automaticamente.
+          preenchida, inicia sessão na Comunidade Rafa Portugal. Depois de entrares, o passo seguinte corre automaticamente.
         </p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <Link
