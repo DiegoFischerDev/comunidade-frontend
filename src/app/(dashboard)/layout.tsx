@@ -830,7 +830,7 @@ export default function DashboardLayout({
             aria-label="Ir para o início"
           >
             <Image
-              src="/logo-RP.png"
+              src="/logo_principal.png"
               alt="Comunidade RPM"
               width={800}
               height={192}

@@ -11,9 +11,12 @@ function cx(...parts: Array<string | false | null | undefined>) {
 const base =
   'inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 
+/** Cor primária padrão da app (usada por CardButton e onde se referencia o CTA verde). */
+export const cardButtonPrimaryClass =
+  'bg-gradient-to-r from-[#055700] to-[#0a7a0a] text-white hover:from-[#044400] hover:to-[#055700] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#055700]/80 focus-visible:ring-offset-2';
+
 const variantClass: Record<Variant, string> = {
-  primary:
-    'bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white hover:from-[#c07c01] hover:to-[#e7a01f]',
+  primary: cardButtonPrimaryClass,
   secondary: 'border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50',
   danger: 'bg-red-600 text-white hover:bg-red-700',
 };

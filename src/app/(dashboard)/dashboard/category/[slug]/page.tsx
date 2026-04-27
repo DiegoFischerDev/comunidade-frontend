@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
+import { CardLinkButton } from '@/components/ui/CardButton';
 import { getPublicSiteUrl } from '@/lib/site-url';
 
 type PartnerService = {
@@ -166,6 +167,19 @@ export default function CategoryPage() {
 
   return (
     <div className="space-y-8">
+      <div className="flex items-center">
+        <CardLinkButton
+          href="/dashboard/services"
+          variant="primary"
+          className="shadow-sm"
+        >
+          <span className="opacity-90" aria-hidden>
+            ←
+          </span>
+          Outros serviços
+        </CardLinkButton>
+      </div>
+
       {/* Hero da categoria */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#910001] to-[#5f0001] text-white">
         {heroBg && (

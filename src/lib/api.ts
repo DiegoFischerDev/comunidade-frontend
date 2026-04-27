@@ -1207,8 +1207,17 @@ export const api = {
         `/partners/houses/${encodeURIComponent(houseId)}/public`,
         { method: 'GET' },
       ),
-    relocationHouses: () =>
-      request<
+    relocationHouses: (query?: {
+      partnerId?: string;
+      city?: string;
+      typology?: string;
+    }) => {
+      const q = new URLSearchParams();
+      if (query?.partnerId?.trim()) q.set('partnerId', query.partnerId.trim());
+      if (query?.city?.trim()) q.set('city', query.city.trim());
+      if (query?.typology?.trim()) q.set('typology', query.typology.trim());
+      const qs = q.toString();
+      return request<
         {
           id: string;
           title: string;
@@ -1234,7 +1243,8 @@ export const api = {
             shortDescription: string | null;
           };
         }[]
-      >('/partners/relocation/houses', { method: 'GET' }),
+      >(`/partners/relocation/houses${qs ? `?${qs}` : ''}`, { method: 'GET' });
+    },
     /** Público: sem Bearer (evita 401 com JWT expirado em rotas @Public). */
     relocationCategory: () =>
       request<{

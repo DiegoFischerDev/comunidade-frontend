@@ -6,7 +6,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CatalogCarousel } from '@/components/CatalogCarousel';
-import { CardButton } from '@/components/ui/CardButton';
+import { RelocationHouseCard } from '@/components/relocation/RelocationHouseCard';
+import { type RelocationHouseRow } from '@/components/relocation/relocation-house-shared';
+import { CardButton, CardLinkButton } from '@/components/ui/CardButton';
 import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
 import { PartnerCommentsSection } from '@/components/PartnerCommentsSection';
 import {
@@ -48,6 +50,8 @@ export default function PartnerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showContact, setShowContact] = useState(false);
+  const [relocationPreview, setRelocationPreview] = useState<RelocationHouseRow[]>([]);
+  const [relocationHousesLoading, setRelocationHousesLoading] = useState(false);
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -71,6 +75,31 @@ export default function PartnerPage() {
       }
     })();
   }, [params]);
+
+  useEffect(() => {
+    if (!partner?.category || partner.category.slug !== 'relocation') {
+      setRelocationPreview([]);
+      setRelocationHousesLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setRelocationHousesLoading(true);
+    (async () => {
+      try {
+        const data = await api.marketplace.relocationHouses({
+          partnerId: partner.id,
+        });
+        if (!cancelled) setRelocationPreview(data.slice(0, 3));
+      } catch {
+        if (!cancelled) setRelocationPreview([]);
+      } finally {
+        if (!cancelled) setRelocationHousesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [partner?.id, partner?.category?.slug]);
 
   if (loading) {
     return <p className="text-sm text-zinc-600">Carregando parceiro…</p>;
@@ -343,6 +372,38 @@ export default function PartnerPage() {
           </div>
         )}
       </section>
+
+      {partner.category?.slug === 'relocation' && (
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+            Imóveis
+          </h2>
+          {relocationHousesLoading ? (
+            <p className="text-sm text-zinc-600">A carregar imóveis…</p>
+          ) : relocationPreview.length === 0 ? (
+            <p className="text-sm text-zinc-600">
+              Ainda não há imóveis publicados por este parceiro.
+            </p>
+          ) : (
+            <>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {relocationPreview.map((h) => (
+                  <RelocationHouseCard key={h.id} house={h} />
+                ))}
+              </div>
+              <div className="flex justify-center pt-1">
+                <CardLinkButton
+                  href={`/dashboard/relocation/imoveis?parceiro=${encodeURIComponent(partner.id)}`}
+                  variant="primary"
+                  className="min-w-[14rem] shadow-sm"
+                >
+                  Ver todos os imóveis
+                </CardLinkButton>
+              </div>
+            </>
+          )}
+        </section>
+      )}
 
       <PartnerCommentsSection partnerId={partner.id} partnerName={partner.name} />
 
