@@ -33,6 +33,12 @@ function statusClass(s: Payload['items'][number]['status']): string {
   return 'bg-zinc-100 text-zinc-800';
 }
 
+/** Só edita se o ticket não estiver concluído e ainda não houver resposta da equipa. */
+function canUserEditTicket(t: Payload['items'][number]): boolean {
+  if (t.status === 'DONE') return false;
+  return !((t.adminReply ?? '').trim().length > 0);
+}
+
 export default function ReclameAquiUserPage() {
   const { user } = useAuth();
   const isMember = user?.tier === 'MEMBER';
@@ -124,9 +130,9 @@ export default function ReclameAquiUserPage() {
 
       {loading ? (
         <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
-      ) : items.length === 0 ? (
-        <div className="mt-4">
-          <div className="mt-3 flex justify-center">
+      ) : (
+        <>
+          <div className="mt-4 flex justify-center">
             <CardButton
               type="button"
               onClick={() => {
@@ -139,9 +145,13 @@ export default function ReclameAquiUserPage() {
               Reclame aqui
             </CardButton>
           </div>
-        </div>
-      ) : (
-        <>
+
+          {items.length === 0 ? (
+            <p className="mt-4 text-center text-sm text-zinc-500">
+              Ainda não enviaste nenhum pedido. Usa o botão acima para o primeiro.
+            </p>
+          ) : (
+            <>
           {/* Mobile: cards */}
           <div className="mt-4 space-y-3 md:hidden">
             {items.map((t) => (
@@ -162,17 +172,19 @@ export default function ReclameAquiUserPage() {
                   </div>
                   {t.status !== 'DONE' ? (
                     <div className="flex shrink-0 items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditing(t);
-                          setEditMsg(t.message);
-                          setError('');
-                        }}
-                        className="cursor-pointer rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-200"
-                      >
-                        Editar
-                      </button>
+                      {canUserEditTicket(t) ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditing(t);
+                            setEditMsg(t.message);
+                            setError('');
+                          }}
+                          className="cursor-pointer rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-200"
+                        >
+                          Editar
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         disabled={deletingId === t.id}
@@ -250,19 +262,23 @@ export default function ReclameAquiUserPage() {
                       <div className="whitespace-pre-wrap text-zinc-700">{t.adminReply || '—'}</div>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
-                      {t.status !== 'DONE' ? (
+                      {t.status === 'DONE' ? (
+                        <span className="text-xs text-zinc-500">—</span>
+                      ) : (
                         <>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditing(t);
-                              setEditMsg(t.message);
-                              setError('');
-                            }}
-                            className="mr-2 cursor-pointer rounded bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
-                          >
-                            Editar
-                          </button>
+                          {canUserEditTicket(t) ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditing(t);
+                                setEditMsg(t.message);
+                                setError('');
+                              }}
+                              className="mr-2 cursor-pointer rounded bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
+                            >
+                              Editar
+                            </button>
+                          ) : null}
                           <button
                             type="button"
                             disabled={deletingId === t.id}
@@ -287,8 +303,6 @@ export default function ReclameAquiUserPage() {
                             {deletingId === t.id ? 'Excluindo…' : 'Excluir'}
                           </button>
                         </>
-                      ) : (
-                        <span className="text-xs text-zinc-500">—</span>
                       )}
                     </td>
                   </tr>
@@ -296,6 +310,8 @@ export default function ReclameAquiUserPage() {
               </tbody>
             </table>
           </div>
+            </>
+          )}
         </>
       )}
 

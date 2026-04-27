@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
 import { cardButtonPrimaryClass } from "@/components/ui/CardButton";
-import { formatHouseEntradaShort } from "@/lib/house-entrance";
+import { formatHouseEntradaWithTotal } from "@/lib/house-entrance";
 
 import {
   formatRelocationFeeEur,
@@ -100,7 +100,7 @@ export function RelocationHouseCard({ house: h }: Props) {
           <div className="flex items-start justify-between gap-3">
             <dt className="shrink-0 text-zinc-500">Entrada</dt>
             <dd className="text-right font-medium text-zinc-800">
-              {formatHouseEntradaShort(h.caucoesCount, h.rendasEntradaCount)}
+              {formatHouseEntradaWithTotal(h.caucoesCount, h.rendasEntradaCount, h.priceEur)}
             </dd>
           </div>
           <div className="flex items-start justify-between gap-3 border-t border-zinc-100 pt-2">
