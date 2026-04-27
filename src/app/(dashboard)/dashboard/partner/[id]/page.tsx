@@ -211,11 +211,11 @@ export default function PartnerPage() {
 
           <div className="mt-4 flex flex-col gap-6 sm:flex-row sm:items-center">
             {logoSrc && (
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/90 p-2 shadow-md sm:h-24 sm:w-24">
+              <div className="shrink-0">
                 <img
                   src={logoSrc}
                   alt={partner.name}
-                  className="max-h-full max-w-full object-contain"
+                  className="h-32 w-32 object-contain drop-shadow-lg sm:h-40 sm:w-40"
                 />
               </div>
             )}
@@ -232,7 +232,7 @@ export default function PartnerPage() {
                 </p>
               )}
               {hasHeroWhatsapp && heroContactUrl !== '#' ? (
-                <div className="mt-5">
+                <div className="mt-5 flex justify-center sm:justify-start">
                   <button
                     type="button"
                     onClick={() => {
@@ -326,25 +326,24 @@ export default function PartnerPage() {
                     {service.description}
                   </p>
                 )}
-                <div className="mt-4 inline-flex items-center gap-2">
-                  <Image
-                    src="/euro2.png"
-                    alt="Valor do serviço"
-                    width={20}
-                    height={20}
-                  />
-                  <span className="text-[0.95rem] font-semibold text-zinc-900">
-                    {service.priceOnRequest
-                      ? 'Sob consulta'
-                      : service.price
-                      ? `${service.price} €`
-                      : '—'}
-                  </span>
-                </div>
-                <div className="mt-3">
+                <div className="mt-4 flex flex-col items-end gap-3">
+                  <div className="inline-flex items-center gap-2">
+                    <Image
+                      src="/euro2.png"
+                      alt="Valor do serviço"
+                      width={20}
+                      height={20}
+                    />
+                    <span className="text-[0.95rem] font-semibold text-zinc-900">
+                      {service.priceOnRequest
+                        ? 'Sob consulta'
+                        : service.price
+                        ? `${service.price} €`
+                        : '—'}
+                    </span>
+                  </div>
                   <CardButton
                     type="button"
-                    size="sm"
                     variant="primary"
                     onClick={() => {
                       if (!user) {
@@ -364,7 +363,7 @@ export default function PartnerPage() {
                       );
                     }}
                   >
-                    Entrar em contacto
+                    Contactar
                   </CardButton>
                 </div>
               </div>
@@ -413,11 +412,11 @@ export default function PartnerPage() {
           <div className="my-8 w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center gap-3">
               {logoSrc && (
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-50 p-1">
+                <div className="h-14 w-14 shrink-0">
                   <img
                     src={logoSrc}
                     alt={partner.name}
-                    className="max-h-full max-w-full object-contain"
+                    className="h-full w-full object-contain"
                   />
                 </div>
               )}

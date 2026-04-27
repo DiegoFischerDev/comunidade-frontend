@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { CardButton } from "@/components/ui/CardButton";
 
 type Props = {
   houseId: string;
@@ -144,8 +145,9 @@ export function HouseContactSection({
 
   return (
     <div className="space-y-3">
-      <button
+      <CardButton
         type="button"
+        variant="primary"
         disabled={busy || loading}
         onClick={() => {
           if (!user) {
@@ -154,10 +156,10 @@ export function HouseContactSection({
           }
           void openWhatsApp();
         }}
-        className="inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-5 py-3.5 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        className="w-full rounded-xl px-5 py-3.5 sm:w-auto"
       >
         {busy ? "A abrir…" : "Contactar no WhatsApp"}
-      </button>
+      </CardButton>
       {error ? (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
       ) : null}

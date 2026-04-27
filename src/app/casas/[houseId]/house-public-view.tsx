@@ -187,8 +187,8 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
                 Sem fotos nem vídeo
               </div>
             )}
-            <div className="absolute left-3 top-3 z-10">
-              <HouseStatusBadge status={house.status} variant="overlay" />
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-3 sm:p-4">
+              <HouseStatusBadge status={house.status} variant="overlay" className="lg:text-3xl" />
             </div>
           </div>
 

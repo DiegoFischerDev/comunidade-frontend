@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
-import { cardButtonPrimaryClass } from "@/components/ui/CardButton";
+import { CardButton } from "@/components/ui/CardButton";
 import { formatHouseEntradaWithTotal } from "@/lib/house-entrance";
 
 import {
@@ -67,7 +67,7 @@ export function RelocationHouseCard({ house: h }: Props) {
             Vídeo
           </span>
         ) : null}
-        <div className="pointer-events-none absolute left-2 top-2 z-10">
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-2 sm:p-3">
           <HouseStatusBadge status={h.status} variant="overlay" />
         </div>
       </Link>
@@ -118,13 +118,14 @@ export function RelocationHouseCard({ house: h }: Props) {
             >
               Ver imóvel
             </Link>
-            <button
+            <CardButton
               type="button"
+              variant="primary"
               onClick={() => openRelocationPartnerWhatsApp(h)}
-              className={`inline-flex min-w-[8rem] flex-1 cursor-pointer justify-center rounded-lg px-3 py-2 text-sm font-semibold shadow-sm sm:flex-initial ${cardButtonPrimaryClass}`}
+              className="min-w-[8rem] flex-1 sm:flex-initial"
             >
-              Contactar relocation
-            </button>
+              Contactar
+            </CardButton>
           </div>
         ) : h.status === "RESERVED" ? (
           <span className="inline-flex w-full items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs text-amber-950 sm:text-sm">

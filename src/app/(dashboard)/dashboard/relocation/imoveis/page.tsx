@@ -191,8 +191,7 @@ export default function RelocationHousesListPage() {
           Todos os imóveis
         </h1>
         <p className="mt-1 text-sm text-zinc-600">
-          Filtre por parceiro, cidade ou tipologia. Pode ajustar a qualquer
-          momento.
+          Encontre o imóvel perfeito e conte com nosso suporte para fechar o contrato direto com o senhorio, sem burocracia.
         </p>
       </div>
 

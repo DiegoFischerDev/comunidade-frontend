@@ -184,13 +184,13 @@ export default function RelocationHousesPage() {
                       ) : null}
                       <div className="relative z-10 flex h-full flex-col justify-end gap-2 bg-gradient-to-t from-black/50 via-black/10 to-transparent px-4 pb-3">
                         {partnerLogo ? (
-                          <div className="relative h-11 w-11 overflow-hidden rounded-xl border border-white/70 bg-white shadow-md">
+                          <div className="relative h-20 w-20 shrink-0">
                             <Image
                               src={partnerLogo}
                               alt=""
                               fill
-                              className="object-contain p-2"
-                              sizes="44px"
+                              className="object-contain drop-shadow-lg"
+                              sizes="80px"
                               unoptimized={nextImageUnoptimized(partnerLogo)}
                             />
                           </div>

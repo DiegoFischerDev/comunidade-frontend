@@ -159,11 +159,11 @@ export default async function PartnerPublicPage({ params }: PageProps) {
         )}
         <div className="relative z-10 flex flex-col gap-6 px-6 py-10 sm:flex-row sm:items-center sm:px-10 sm:py-14">
           {logoSrc && (
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/90 p-2 shadow-md sm:h-24 sm:w-24">
+            <div className="shrink-0">
               <img
                 src={logoSrc}
                 alt={partner.name}
-                className="max-h-full max-w-full object-contain"
+                className="h-32 w-32 object-contain drop-shadow-lg sm:h-40 sm:w-40"
               />
             </div>
           )}
@@ -179,7 +179,7 @@ export default async function PartnerPublicPage({ params }: PageProps) {
                 {partner.shortDescription}
               </p>
             )}
-            <div className="mt-5">
+            <div className="mt-5 flex justify-center sm:justify-start">
               <Link
                 href={`/dashboard/partner/${partner.id}`}
                 className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-red-900 shadow-md ring-1 ring-white/50 transition hover:bg-red-50"
