@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { YOUTUBE_HIGHLIGHT_FALLBACKS } from "@/lib/youtube-highlights-defaults";
+import { youtubeThumbnailFromVideoUrl } from "@/lib/youtube-thumbnail";
 import { useAuth } from "@/contexts/AuthContext";
 import { CardButton } from "@/components/ui/CardButton";
 
@@ -16,9 +17,16 @@ type CardRow = {
   thumbnailUrl: string;
 };
 
-function thumbDisplayUrl(path: string): string {
+function legacyThumbUrl(path: string): string {
   if (path.startsWith("/uploads/")) return resolveUploadsUrl(path);
   return path;
+}
+
+function previewThumb(c: CardRow): string | null {
+  const fromUrl = youtubeThumbnailFromVideoUrl(c.videoUrl);
+  if (fromUrl) return fromUrl;
+  if (c.thumbnailUrl) return legacyThumbUrl(c.thumbnailUrl);
+  return null;
 }
 
 export default function AdminYoutubeHighlightsPage() {
@@ -28,8 +36,6 @@ export default function AdminYoutubeHighlightsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [pendingFiles, setPendingFiles] = useState<Record<number, File | null>>({});
-  const [fileObjectUrls, setFileObjectUrls] = useState<Record<number, string>>({});
 
   const load = useCallback(async () => {
     const data = await api.youtubeHighlights.list();
@@ -60,67 +66,33 @@ export default function AdminYoutubeHighlightsPage() {
     })();
   }, [user, isAdmin, load]);
 
-  const updateCard = (position: number, patch: Partial<CardRow>) => {
-    setCards((prev) =>
-      prev.map((c) => (c.position === position ? { ...c, ...patch } : c)),
-    );
+  const updateCard = (position: number, patch: Partial<Pick<CardRow, "title" | "videoUrl">>) => {
+    setCards((prev) => prev.map((c) => (c.position === position ? { ...c, ...patch } : c)));
   };
-
-  const onPickFile = (position: number, file: File | null) => {
-    setFileObjectUrls((prev) => {
-      const next = { ...prev };
-      if (next[position]) {
-        URL.revokeObjectURL(next[position]);
-        delete next[position];
-      }
-      if (file) {
-        next[position] = URL.createObjectURL(file);
-      }
-      return next;
-    });
-    setPendingFiles((prev) => ({ ...prev, [position]: file }));
-  };
-
-  useEffect(() => {
-    return () => {
-      for (const u of Object.values(fileObjectUrls)) {
-        URL.revokeObjectURL(u);
-      }
-    };
-  }, [fileObjectUrls]);
 
   const onSave = async () => {
     if (cards.length !== 3) return;
     setSaving(true);
     setError("");
     try {
-      const built: CardRow[] = [];
-      for (const c of cards.sort((a, b) => a.position - b.position)) {
-        const file = pendingFiles[c.position];
-        let thumbnailUrl = c.thumbnailUrl.trim();
-        if (file) {
-          const { url } = await api.uploads.post(file);
-          thumbnailUrl = url;
-        }
-        if (!thumbnailUrl) {
-          setError(`Indica uma miniatura para o card ${c.position} (URL ou ficheiro).`);
+      for (const c of cards) {
+        if (!youtubeThumbnailFromVideoUrl(c.videoUrl.trim())) {
+          setError(
+            `O URL do YouTube do card ${c.position} é inválido: não foi possível obter o ID do vídeo.`,
+          );
           setSaving(false);
           return;
         }
-        built.push({
+      }
+      const built = cards
+        .sort((a, b) => a.position - b.position)
+        .map((c) => ({
           position: c.position,
           title: c.title.trim(),
           videoUrl: c.videoUrl.trim(),
-          thumbnailUrl,
-        });
-      }
+        }));
       const res = await api.admin.youtubeHighlights.update({ cards: built });
       setCards(res.cards.sort((a, b) => a.position - b.position));
-      setPendingFiles({});
-      setFileObjectUrls((prev) => {
-        for (const u of Object.values(prev)) URL.revokeObjectURL(u);
-        return {};
-      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao guardar.");
     } finally {
@@ -144,8 +116,9 @@ export default function AdminYoutubeHighlightsPage() {
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Destaques YouTube (dashboard)</h1>
         <p className="mt-2 text-sm text-zinc-600">
-          Três cards no painel inicial: título, link do vídeo e imagem de miniatura. Podes carregar uma nova
-          imagem (substitui a miniatura actual) ou manter a URL indicada.
+          Três cards no painel inicial. Indica título e URL do vídeo no YouTube; a miniatura é obtida
+          automaticamente a partir do ID do vídeo (qualidade{" "}
+          <code className="rounded bg-zinc-200 px-1">hqdefault</code>).
         </p>
       </div>
 
@@ -160,8 +133,7 @@ export default function AdminYoutubeHighlightsPage() {
           {[1, 2, 3].map((position) => {
             const c = cards.find((x) => x.position === position);
             if (!c) return null;
-            const pending = pendingFiles[position];
-            const preview = fileObjectUrls[position] ?? (pending ? undefined : thumbDisplayUrl(c.thumbnailUrl));
+            const preview = previewThumb(c);
             return (
               <div
                 key={position}
@@ -187,28 +159,15 @@ export default function AdminYoutubeHighlightsPage() {
                         value={c.videoUrl}
                         onChange={(e) => updateCard(position, { videoUrl: e.target.value })}
                         className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900"
-                        placeholder="https://www.youtube.com/watch?v=..."
+                        placeholder="https://www.youtube.com/watch?v=... ou youtu.be/…"
                       />
                     </label>
-                    <label className="block text-xs font-medium text-zinc-600">
-                      URL da miniatura (se não enviares ficheiro)
-                      <input
-                        type="text"
-                        value={c.thumbnailUrl}
-                        onChange={(e) => updateCard(position, { thumbnailUrl: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900"
-                        placeholder="/uploads/… ou /youtube_1.png"
-                      />
-                    </label>
-                    <label className="block text-xs font-medium text-zinc-600">
-                      Nova imagem (opcional)
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/gif"
-                        className="mt-1 block w-full text-sm text-zinc-600 file:mr-2 file:rounded file:border-0 file:bg-zinc-200 file:px-2 file:py-1"
-                        onChange={(e) => onPickFile(position, e.target.files?.[0] ?? null)}
-                      />
-                    </label>
+                    <p className="text-xs text-zinc-500">
+                      A pré-visualização abaixo usa:{" "}
+                      <code className="break-all text-[11px] text-zinc-600">
+                        https://img.youtube.com/vi/ID/hqdefault.jpg
+                      </code>
+                    </p>
                   </div>
                   <div className="relative aspect-video w-full max-w-[200px] overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 sm:justify-self-end">
                     {preview ? (
@@ -217,10 +176,13 @@ export default function AdminYoutubeHighlightsPage() {
                         alt=""
                         fill
                         className="object-cover"
-                        unoptimized={Boolean(pending || fileObjectUrls[position])}
+                        sizes="200px"
+                        unoptimized
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center text-xs text-zinc-400">Sem imagem</div>
+                      <div className="flex h-full items-center justify-center p-2 text-center text-xs text-zinc-400">
+                        Indica um URL de vídeo válido para ver a miniatura
+                      </div>
                     )}
                   </div>
                 </div>

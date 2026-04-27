@@ -728,7 +728,8 @@ export const api = {
           position: number;
           title: string;
           videoUrl: string;
-          thumbnailUrl: string;
+          /** Ignorado pelo servidor; a miniatura é `hqdefault` a partir do URL do vídeo. */
+          thumbnailUrl?: string;
         }[];
       }) =>
         request<{
