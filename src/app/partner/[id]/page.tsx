@@ -303,7 +303,7 @@ export default async function PartnerPublicPage({ params }: PageProps) {
               </div>
               <div className="flex justify-center pt-1">
                 <CardLinkButton
-                  href={`/dashboard/relocation/imoveis?parceiro=${encodeURIComponent(partner.id)}`}
+                  href={`/relocation/imoveis?parceiro=${encodeURIComponent(partner.id)}`}
                   variant="primary"
                   className="min-w-[14rem] shadow-sm"
                 >

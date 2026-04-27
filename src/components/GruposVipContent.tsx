@@ -14,7 +14,7 @@ export type VipGroup = {
   title: string;
   /** Segunda linha, mais pequena, por baixo do título. */
   subtitle?: string;
-  /** Bandeira antes do nome ( /public/flags/*.svg ). */
+  /** Bandeira antes do nome ( /public/flags/*_round.png ). */
   titleFlag?: FlagCode;
   description: string;
   isPublic: boolean;
@@ -31,24 +31,24 @@ function VipGroupTitleFlag({ code, size = 'row' }: { code: FlagCode; size?: 'row
   if (size === 'hero') {
     return (
       <Image
-        src={code === 'pt' ? '/flags/pt.svg' : '/flags/br.svg'}
+        src={code === 'pt' ? '/flags/portugal_round.png' : '/flags/brasil_round.png'}
         alt=""
         unoptimized
         width={56}
-        height={42}
-        className="h-14 w-14 shrink-0 rounded-lg object-contain object-center"
+        height={56}
+        className="h-14 w-14 shrink-0 rounded-full object-cover object-center"
         priority={false}
       />
     );
   }
   return (
     <Image
-      src={code === 'pt' ? '/flags/pt.svg' : '/flags/br.svg'}
+      src={code === 'pt' ? '/flags/portugal_round.png' : '/flags/brasil_round.png'}
       alt=""
       unoptimized
       width={20}
-      height={15}
-      className="inline-block h-3.5 w-auto shrink-0 rounded-sm object-cover"
+      height={20}
+      className="inline-block h-3.5 w-3.5 shrink-0 rounded-full object-cover"
     />
   );
 }
@@ -198,7 +198,7 @@ export const GROUPS: VipGroup[] = [
     subtitle: 'fase 1 - Brasil',
     titleFlag: 'br',
     description:
-      'Para membros que pretendem imigrar para portugal mas ainda estao no brasil. Indicado para quem ainda esta decidindo para qual cidade imigrar, qual tipo de visto aplicar, e buscando a primeira moradia em Portugal.',
+      'Para membros que ainda estao no brasil.',
     isPublic: false,
     joinUrl: 'https://chat.whatsapp.com/KV8al94ZUzMLC8ORLKxnrq?mode=gi_t',
     memberOnlyVip: true,
@@ -209,7 +209,7 @@ export const GROUPS: VipGroup[] = [
     subtitle: 'fase 2 - Portugal',
     titleFlag: 'pt',
     description:
-      'Para membros que ja estao em Portugal, buscam trocar informaçoes sobre oportunidades de emprego, processos da AIMA, autorização de residencia, nacionalidade, escolas, etc.',
+      'Para membros que ja estao em Portugal.',
     isPublic: false,
     joinUrl: 'https://chat.whatsapp.com/E3WgVeBAUylHwLjsrILLlX?mode=gi_t',
     memberOnlyVip: true,

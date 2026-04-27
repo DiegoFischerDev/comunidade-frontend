@@ -16,7 +16,7 @@ export function AffiliatePromoCard({
 }: AffiliatePromoCardProps) {
   return (
     <section className={`${className} rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm`}>
-      <AffiliateProgramCardTop imageHeightClass="h-56" />
+      <AffiliateProgramCardTop />
       <p className="mt-2 text-sm text-zinc-600">
         Ajude a nossa comunidade a crescer e seja recompensado por isso.
       </p>

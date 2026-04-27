@@ -46,11 +46,7 @@ body {
 }
 
 .partner-logos-track {
-  animation: partner-logos-marquee 50s linear infinite;
-}
-
-.partner-logos-wrap:hover .partner-logos-track {
-  animation-play-state: paused;
+  animation: partner-logos-marquee 16s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

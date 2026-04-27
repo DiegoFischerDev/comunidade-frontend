@@ -549,7 +549,7 @@ export function RafaCallCard() {
     <>
       <div className="h-full w-full min-w-0">
         {hasBookedSlot && scheduleLines ? (
-          <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-sm">
+          <div className="relative overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 shadow-sm">
             <Image
               src="/rafa_cards/chamada_agendada2.png"
               alt="Chamada de vídeo com a Rafa agendada"
@@ -622,7 +622,7 @@ export function RafaCallCard() {
               type="button"
               onClick={() => void handleAgendar()}
               disabled={statusLoading || memberStatusLoading}
-              className="group relative w-full cursor-pointer overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 text-left shadow-sm transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-80"
+              className="group relative w-full cursor-pointer overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 text-left shadow-sm transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-80"
             >
               <Image
                 src="/rafa_cards/agendar_chamada2.png"

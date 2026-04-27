@@ -82,7 +82,7 @@ export function AffiliateMemberDashboardCard({
     <div
       className={`space-y-3 rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-700 shadow-sm ${className}`}
     >
-      <AffiliateProgramCardTop imageHeightClass="h-56" />
+      <AffiliateProgramCardTop />
       <p className="text-sm text-zinc-700">
         É um prazer ter você no time de afiliados da Comunidade Rafa Portugal! Agora é só compartilhar, com a sua
         audiência, como a comunidade te ajudou no processo de imigração e convidar outras pessoas usando o
