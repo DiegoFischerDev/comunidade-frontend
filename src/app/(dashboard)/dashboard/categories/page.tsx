@@ -521,7 +521,7 @@ export default function CategoriesPage() {
                             setEditingName('');
                             setEditingSortOrder('');
                           }}
-                          variant="secondary"
+                          variant="outline"
                           size="sm"
                         >
                           Cancelar
@@ -532,7 +532,7 @@ export default function CategoriesPage() {
                         <CardButton
                           type="button"
                           onClick={() => startEdit(c)}
-                          variant="secondary"
+                          variant="outline"
                           size="sm"
                         >
                           Editar

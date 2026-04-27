@@ -131,8 +131,8 @@ export default function PartnerPage() {
   const buildServiceWhatsAppUrl = (serviceTitle: string) => {
     const isMember = user?.tier === 'MEMBER';
     const text = isMember
-      ? `Olá, tenho interesse em saber mais informações sobre o serviço ${serviceTitle} com desconto de 10€ da Comunidade Rafa Portugal`
-      : `Olá, tenho interesse em saber mais informações sobre o serviço ${serviceTitle}`;
+      ? `Olá, tenho interesse em saber mais informações sobre o serviço ${serviceTitle} sou membro VIP da Comunidade Rafa Portugal`
+      : `Olá, tenho interesse em saber mais informações sobre o serviço ${serviceTitle} sou membro da Comunidade Rafa Portugal`;
     return buildWhatsAppApiSendUrl(waDigits, text);
   };
   const heroContactUrl = buildPartnerHeroWhatsAppUrl(partner.whatsapp);
@@ -235,7 +235,7 @@ export default function PartnerPage() {
                 <div className="mt-5 flex justify-center sm:justify-start">
                   <CardButton
                     type="button"
-                    variant="secondary"
+                    variant="outline"
                     onClick={() => {
                       if (!user) {
                         window.dispatchEvent(

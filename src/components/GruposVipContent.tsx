@@ -319,7 +319,7 @@ export function GruposVipContent() {
                 <div className="mx-auto mt-6 w-full max-w-xs">
                   <CardButton
                     type="button"
-                    variant="secondary"
+                    variant="outline"
                     fullWidth
                     className={[
                       'inline-flex !rounded-md !border-0 !px-4 !py-2.5 !font-medium !tracking-tight !text-white',

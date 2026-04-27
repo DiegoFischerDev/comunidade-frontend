@@ -107,7 +107,7 @@ export function NewSupportTicketModal({
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
           <CardButton
             type="button"
-            variant="secondary"
+            variant="outline"
             onClick={onClose}
             disabled={sending}
           >

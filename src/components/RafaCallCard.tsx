@@ -16,7 +16,9 @@ type AvailabilityPayload = Awaited<ReturnType<typeof api.rafacall.availability>>
 function formatRafacallScheduledPt(
   slotStartsAt: string | null,
   slotEndsAt: string | null,
+  timeZone: string,
 ): { main: string; sub?: string } {
+  const tz = (timeZone || 'Europe/Lisbon').trim() || 'Europe/Lisbon';
   const start = slotStartsAt
     ? new Date(slotStartsAt)
     : slotEndsAt
@@ -27,6 +29,7 @@ function formatRafacallScheduledPt(
     return { main: '—' };
   }
   const main = start.toLocaleString('pt-PT', {
+    timeZone: tz,
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -36,7 +39,11 @@ function formatRafacallScheduledPt(
   });
   let sub: string | undefined;
   if (end && !Number.isNaN(end.getTime())) {
-    sub = `Até às ${end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}`;
+    sub = `Até às ${end.toLocaleTimeString('pt-PT', {
+      timeZone: tz,
+      hour: '2-digit',
+      minute: '2-digit',
+    })}`;
   }
   return { main, sub };
 }
@@ -523,11 +530,16 @@ export function RafaCallCard() {
       rafacallStatus.schedulingUnlocked &&
       isActiveRafacallSlot(rafacallStatus.slotEndsAt),
   );
+  const scheduleTz = useMemo(
+    () => (booking?.timezone ? booking.timezone.trim() : '') || resolvedUserTz(),
+    [booking?.timezone],
+  );
   const scheduleLines =
     hasBookedSlot && rafacallStatus
       ? formatRafacallScheduledPt(
           rafacallStatus.slotStartsAt,
           rafacallStatus.slotEndsAt,
+          scheduleTz,
         )
       : null;
   const memberStatusLoading =
@@ -535,82 +547,98 @@ export function RafaCallCard() {
 
   return (
     <>
-      <div className="mb-6 flex w-full max-w-sm flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="relative h-20 w-20 flex-shrink-0">
+      <div className="h-full w-full min-w-0">
+        {hasBookedSlot && scheduleLines ? (
+          <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-sm">
             <Image
-              src="/videocall.png"
-              alt=""
-              fill
-              className="object-contain"
-              sizes="80px"
+              src="/rafa_cards/chamada_agendada2.png"
+              alt="Chamada de vídeo com a Rafa agendada"
+              width={1250}
+              height={1875}
+              className="h-auto w-full object-contain"
+              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+              priority
             />
-          </div>
-          <div className="w-full space-y-1">
-            <p className="text-base font-semibold text-zinc-900">
-              {hasBookedSlot
-                ? 'A tua chamada de vídeo com a Rafa está agendada'
-                : 'Quero conversar com a Rafa'}
-            </p>
-            {!hasBookedSlot ? (
-              <div className="mt-2 w-full rounded-xl border border-zinc-100 bg-zinc-50/90 px-3 py-2.5 text-left">
-                <p className="text-sm leading-relaxed text-zinc-600">
-                  Agende uma videochamada com a Rafa para esclareceres dúvidas sobre o processo de imigração, Portugal e
-                  o teu percurso.
-                </p>
-              </div>
-            ) : null}
-            {hasBookedSlot && scheduleLines ? (
-              <div className="mt-2 rounded-xl border border-emerald-100 bg-emerald-50/80 px-3 py-2.5 text-left">
-                <p className="text-xs font-medium uppercase tracking-wide text-emerald-800/80">
+            <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3 bg-gradient-to-t from-white from-40% via-white/95 to-transparent px-4 pb-4 pt-12 sm:px-5 sm:pb-5">
+              <div>
+                <span
+                  className="mb-1.5 inline-block rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-bold tracking-widest text-white shadow-sm ring-1 ring-emerald-500/40"
+                  aria-label="Agendamento confirmado"
+                >
+                  CONFIRMADO
+                </span>
+                <h2 className="mb-2 text-base font-semibold tracking-tight text-zinc-900 sm:text-lg">
+                  Meu agendamento com Rafa
+                </h2>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
                   Data e hora
                 </p>
-                <p className="mt-1 text-sm font-semibold capitalize text-emerald-950">
+                <p className="mt-1 text-sm font-semibold capitalize leading-snug text-zinc-900">
                   {scheduleLines.main}
                 </p>
-                {scheduleLines.sub ? (
-                  <p className="mt-0.5 text-xs text-emerald-900/80">{scheduleLines.sub}</p>
-                ) : null}
+                <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs leading-snug">
+                  {scheduleLines.sub ? (
+                    <span className="shrink-0 font-medium text-zinc-600">{scheduleLines.sub}</span>
+                  ) : null}
+                  {scheduleLines.sub ? (
+                    <span className="shrink-0 text-zinc-300" aria-hidden>
+                      ·
+                    </span>
+                  ) : null}
+                  <span className="min-w-0 text-zinc-500">
+                    Fuso de referência:{' '}
+                    <span className="font-medium text-zinc-700">
+                      {prettyTimezoneCityLabel(scheduleTz)}
+                    </span>
+                    <span className="text-zinc-400"> ({scheduleTz})</span>
+                  </span>
+                </div>
               </div>
-            ) : null}
-            {memberStatusLoading ? (
-              <p className="text-xs text-zinc-500">A carregar o teu agendamento…</p>
-            ) : null}
+              <div className="flex w-full flex-row items-stretch gap-2">
+                <CardButton
+                  type="button"
+                  onClick={() => void openScheduler()}
+                  loading={statusLoading}
+                  variant="secondary"
+                  className="min-w-0 flex-1"
+                >
+                  {statusLoading ? 'A abrir…' : 'Reagendar'}
+                </CardButton>
+                <CardButton
+                  type="button"
+                  onClick={() => void openCancelModal()}
+                  loading={statusLoading}
+                  variant="tertiary"
+                  className="min-w-0 flex-1"
+                >
+                  Cancelar
+                </CardButton>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="flex flex-col items-center gap-2">
-          {hasBookedSlot ? (
-            <>
-              <CardButton
-                type="button"
-                onClick={() => void openScheduler()}
-                loading={statusLoading}
-                variant="primary"
-                className="w-full max-w-[220px]"
-              >
-                {statusLoading ? 'A abrir…' : 'Reagendar'}
-              </CardButton>
-              <CardButton
-                type="button"
-                onClick={() => void openCancelModal()}
-                loading={statusLoading}
-                variant="secondary"
-                className="w-full max-w-[220px]"
-              >
-                Cancelar
-              </CardButton>
-            </>
-          ) : (
-            <CardButton
+        ) : (
+          <div className="relative">
+            <button
               type="button"
               onClick={() => void handleAgendar()}
-              loading={statusLoading || memberStatusLoading}
-              variant="primary"
+              disabled={statusLoading || memberStatusLoading}
+              className="group relative w-full cursor-pointer overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 text-left shadow-sm transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-80"
             >
-              {statusLoading ? 'A verificar…' : 'Agendar'}
-            </CardButton>
-          )}
-        </div>
+              <Image
+                src="/rafa_cards/agendar_chamada2.png"
+                alt="Agendar chamada de vídeo com a Rafa"
+                width={1250}
+                height={1875}
+                className="h-auto w-full object-contain"
+                sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+                priority
+              />
+            </button>
+            {memberStatusLoading ? (
+              <p className="mt-2 text-center text-xs text-zinc-500">A carregar o teu agendamento…</p>
+            ) : null}
+          </div>
+        )}
       </div>
 
       {schedOpen && (
@@ -851,7 +879,7 @@ Se você quer dar esse passo com mais clareza e confiança, essa conversa é pra
                   <CardButton
                     type="button"
                     onClick={closePayModal}
-                    variant="secondary"
+                    variant="outline"
                     fullWidth
                   >
                   Cancelar
@@ -888,7 +916,7 @@ Se você quer dar esse passo com mais clareza e confiança, essa conversa é pra
                   <CardButton
                     type="button"
                     onClick={() => setPayOptions(false)}
-                    variant="secondary"
+                    variant="outline"
                     fullWidth
                   >
                     Voltar

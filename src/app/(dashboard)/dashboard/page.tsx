@@ -14,6 +14,7 @@ import { AffiliatePromoCard } from "@/components/affiliate/AffiliatePromoCard";
 import { AffiliateEnrollModal } from "@/components/affiliate/AffiliateEnrollModal";
 import { AffiliateMemberDashboardCard } from "@/components/affiliate/AffiliateMemberDashboardCard";
 import { RafaCallCard } from "@/components/RafaCallCard";
+import { PartnerLogosMarquee } from "@/components/PartnerLogosMarquee";
 import { CardButton, CardLinkButton } from "@/components/ui/CardButton";
 type AffiliateMe = NonNullable<Awaited<ReturnType<typeof api.affiliate.me>>>;
 
@@ -180,103 +181,77 @@ export default function DashboardPage() {
         </div>
       </section>
 
+      <PartnerLogosMarquee />
+
       <div className="mx-auto w-full max-w-7xl px-1 sm:px-2">
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-[repeat(auto-fit,minmax(20rem,1fr))]">
         <section className="h-full min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
           <Link
             href="/plano-de-imigracao"
-            className="group block min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
-            aria-label="Plano de imigração — aceder"
+            className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+            aria-label="Plano de imigração"
           >
             <Image
-              src="/card_plano3.png"
-              alt="Plano de imigração — partiu Portugal, etapas e custos"
-              width={800}
-              height={1280}
+              src="/rafa_cards/plano2.png"
+              alt="Plano de imigração"
+              width={1250}
+              height={1875}
               className="h-auto w-full object-contain"
               sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
               priority
             />
           </Link>
         </section>
-        <section className="flex h-full min-w-0 flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="flex h-full min-h-0 flex-1 flex-col gap-6">
-            <div className="relative aspect-[2/1] w-full shrink-0 overflow-hidden rounded-xl bg-zinc-100">
-              <Image
-                src="/capa_psp-1000x500.png"
-                alt="Capa do guia PSP - Portugal Sem Perrengue"
-                fill
-                className="object-contain"
-                sizes="(min-width: 640px) 50vw, 100vw"
-                priority
-              />
-            </div>
-
-            <div className="min-w-0 flex-1 space-y-3">
-              <h2 className="text-xl font-semibold text-zinc-900">
-                E-book - Portugal Sem Perrengue
-              </h2>
-              <p className="text-sm text-zinc-600">
-                O guia real pra sair do Brasil e morar legalmente em Portugal. Aqui você encontra o
-                passo a passo, documentos, prazos e estratégias para fazer essa mudança com
-                segurança.
-              </p>
-
-              <div className="w-full">
-                <CardLinkButton href={pdfHref} variant="primary" fullWidth>
-                  Acessar PDF
-                </CardLinkButton>
-              </div>
-            </div>
-          </div>
+        <section className="h-full min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
+          <Link
+            href={pdfHref}
+            className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+            aria-label="E-book Portugal Sem Perrengue"
+          >
+            <Image
+              src="/rafa_cards/psp2.png"
+              alt="E-book Portugal Sem Perrengue"
+              width={1250}
+              height={1875}
+              className="h-auto w-full object-contain"
+              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+              priority
+            />
+          </Link>
+        </section>
+        <section className="h-full min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
+          <Link
+            href="/dashboard/services"
+            className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+            aria-label="Serviços"
+          >
+            <Image
+              src="/rafa_cards/services2.png"
+              alt="Serviços"
+              width={1250}
+              height={1875}
+              className="h-auto w-full object-contain"
+              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+              priority
+            />
+          </Link>
         </section>
 
-        <section className="flex h-full min-w-0 flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="flex h-full min-h-0 flex-1 flex-col gap-4">
-            <div className="flex min-w-0 items-start gap-4">
-              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-zinc-50">
-                <Image src="/services2.png" alt="" fill className="object-contain" sizes="56px" />
-              </div>
-              <div className="min-w-0 space-y-1">
-                <h2 className="text-xl font-semibold text-zinc-900">Serviços</h2>
-                <p className="text-sm text-zinc-600">
-                  Encontre parceiros de confiança indicados pela Rafa.
-                </p>
-              </div>
-            </div>
-            <div className="w-full">
-              <CardLinkButton href="/dashboard/services" variant="primary" fullWidth>
-                Acessar serviços
-              </CardLinkButton>
-            </div>
-          </div>
-        </section>
-
-        <section className="flex h-full min-w-0 flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="flex h-full min-h-0 flex-1 flex-col gap-4">
-            <div className="flex min-w-0 items-start gap-4">
-              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-zinc-50">
-                <Image
-                  src="/whatsapp.png"
-                  alt=""
-                  fill
-                  className="object-contain"
-                  sizes="56px"
-                />
-              </div>
-              <div className="min-w-0 space-y-1">
-                <h2 className="text-xl font-semibold text-zinc-900">Grupos whatsapp</h2>
-                <p className="text-sm text-zinc-600">
-                  Entra nos grupos do WhatsApp da comunidade de acordo com o teu momento.
-                </p>
-              </div>
-            </div>
-            <div className="w-full">
-              <CardLinkButton href="/grupos-vip" variant="primary" fullWidth>
-                Acessar grupos
-              </CardLinkButton>
-            </div>
-          </div>
+        <section className="h-full min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
+          <Link
+            href="/grupos-vip"
+            className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+            aria-label="Grupos WhatsApp — aceder à comunidade"
+          >
+            <Image
+              src="/rafa_cards/grupos_whatsapp.png"
+              alt="Grupos de ajuda WhatsApp"
+              width={1250}
+              height={1875}
+              className="h-auto w-full object-contain"
+              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+            />
+          </Link>
         </section>
 
         <div className="flex h-full min-w-0 flex-col">
@@ -359,9 +334,6 @@ export default function DashboardPage() {
                   <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
                     ✓
                   </span>
-                  <span>
-                    <span className="font-medium text-zinc-900">10€ de desconto</span> em cada serviço contratado com parceiros
-                  </span>
                 </li>
               </ul>
             </div>
@@ -408,7 +380,7 @@ export default function DashboardPage() {
             <div className="flex min-w-0 flex-1 flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:gap-4 sm:text-left">
               <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-zinc-50 sm:h-16 sm:w-16">
                 <Image
-                  src="/youtube.png"
+                  src="/youtube4.png"
                   alt=""
                   fill
                   className="object-contain p-0.5"
@@ -418,7 +390,7 @@ export default function DashboardPage() {
               <div className="min-w-0 max-w-xl">
                 <h2 className="text-xl font-semibold text-zinc-900">Nosso canal no Youtube</h2>
                 <p className="mt-1 text-sm text-zinc-600">
-                  Assiste os nossos episódios e conteúdos sobre a vida em Portugal.
+                  Assista os nossos episódios e conteúdos sobre a vida em Portugal.
                 </p>
               </div>
             </div>
@@ -443,7 +415,7 @@ export default function DashboardPage() {
                   href={v.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="group rounded-xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                  className="group cursor-pointer rounded-xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                 >
                   <div className="relative aspect-video w-full overflow-hidden rounded-t-xl bg-zinc-100">
                     <Image
@@ -462,7 +434,7 @@ export default function DashboardPage() {
                     <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
                       <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-1 font-medium text-zinc-700">
                         <span className="relative h-4 w-4" aria-hidden>
-                          <Image src="/youtube.png" alt="" fill className="object-contain" />
+                          <Image src="/youtube3.png" alt="" fill className="object-contain" />
                         </span>
                         YouTube
                       </span>

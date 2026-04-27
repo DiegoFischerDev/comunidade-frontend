@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1137,6 +1138,19 @@ export default function ChecklistPage() {
   }
 
   return (
+    <>
+      {/* Mobile: largura total do <main> (anula p-4); sem moldura — alinhado ao conteúdo abaixo */}
+      <div className="-mx-4 mb-5 print:hidden md:hidden">
+        <Image
+          src="/rafa_cards/plano_hero.png"
+          alt="Plano de imigração"
+          width={1250}
+          height={1875}
+          className="h-auto w-full object-contain"
+          sizes="100vw"
+          priority
+        />
+      </div>
     <div className="mx-auto w-full max-w-[980px] space-y-6 overflow-x-hidden">
       <div className="p-1">
         <div
@@ -1144,7 +1158,9 @@ export default function ChecklistPage() {
           className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">Meu Plano de Imigração</h1>
+            <h1 className="hidden text-2xl font-semibold text-zinc-900 print:block md:block">
+              Meu Plano de Imigração
+            </h1>
             <p className="mt-1 text-sm text-zinc-600">
               Organize teu plano e acompanhe as etapas do processo até se regularizar em Portugal.
             </p>
@@ -1725,6 +1741,7 @@ export default function ChecklistPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

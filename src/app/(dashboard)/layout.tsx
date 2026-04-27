@@ -832,9 +832,9 @@ export default function DashboardLayout({
             <Image
               src="/logo_principal.png"
               alt="Comunidade Rafa Portugal"
-              width={800}
-              height={192}
-              className="h-24 w-auto max-w-full object-contain sm:h-28"
+              width={740}
+              height={174}
+              className="h-14 w-auto max-w-full object-contain sm:h-28"
               priority
             />
           </button>
@@ -1164,12 +1164,38 @@ export default function DashboardLayout({
               >
                 {user ? firstName : 'Visitante'}
               </p>
-              {user && (
-                <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-                  {roleLabel}
-                  {isImpersonating && ' (modo admin)'}
-                </p>
-              )}
+              {user ? (
+                user.role === 'ADMIN' || user.role === 'PARTNER' ? (
+                  <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                    {roleLabel}
+                    {isImpersonating && ' (modo admin)'}
+                  </p>
+                ) : user.tier === 'MEMBER' ? (
+                  <div className="mt-0.5 min-w-0 space-y-0.5">
+                    <p className="text-[10px] font-medium leading-tight text-zinc-600">
+                      Membro VIP
+                      {isImpersonating && ' (modo admin)'}
+                    </p>
+                    {user.membershipExpiresAt ? (
+                      <p className="text-[10px] leading-tight text-zinc-500">
+                        Válido até{' '}
+                        <span className="font-medium text-zinc-700">
+                          {new Date(user.membershipExpiresAt).toLocaleDateString('pt-PT', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })}
+                        </span>
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                    {roleLabel}
+                    {isImpersonating && ' (modo admin)'}
+                  </p>
+                )
+              ) : null}
             </div>
           </div>
           <div>

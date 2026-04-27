@@ -81,7 +81,7 @@ export function AffiliateEnrollModal({
           <ul className="mt-2 list-disc space-y-1 pl-4">
             <li>
               A comissão é de <span className="font-semibold">€ 10</span> por cada indicado que
-              concluir o pagamento da anuidade e se tornar membro ativo.
+              concluir o pagamento da anuidade e se tornar membro VIP.
             </li>
             <li>Indicações que não concluírem o pagamento da anuidade não geram comissão.</li>
             <li>Cada usuário indicado gera comissão uma única vez.</li>
@@ -171,7 +171,7 @@ export function AffiliateEnrollModal({
               type="button"
               onClick={() => !saving && onClose()}
               disabled={saving}
-              variant="secondary"
+              variant="outline"
             >
               Cancelar
             </CardButton>

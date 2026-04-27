@@ -202,7 +202,7 @@ export default async function PartnerPublicPage({ params }: PageProps) {
             <div className="mt-5 flex justify-center sm:justify-start">
               <CardLinkButton
                 href={`/dashboard/partner/${partner.id}`}
-                variant="secondary"
+                variant="outline"
                 className="px-5 py-2.5 shadow-sm"
               >
                 Entre em contato

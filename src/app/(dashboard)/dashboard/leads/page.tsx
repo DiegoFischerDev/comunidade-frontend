@@ -180,7 +180,7 @@ export default function PartnerLeadsPage() {
     <div>
       <h1 className="text-2xl font-semibold text-zinc-900">Leads</h1>
       <p className="mt-2 text-sm text-zinc-600">
-        Veja aqui os utilizadores que demonstraram interesse em falar consigo. Aqueles que sao membros VIP tem direito a desconto de 10€ que pode ser compensado na hora do pagamento da comissão.
+        Veja aqui os utilizadores que demonstraram interesse em falar consigo.
       </p>
 
       {error && (
