@@ -151,6 +151,13 @@ export function PartnerEngagementBar({
   };
 
   const onCommentButtonClick = () => {
+    if (variant === 'hero') {
+      const el = document.getElementById('comentarios');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      return;
+    }
     if (!user) {
       openAuth();
       return;
@@ -275,8 +282,10 @@ export function PartnerEngagementBar({
   return (
     <>
       <div
-        className={`flex flex-wrap items-center gap-1.5 ${
-          variant === 'hero' ? 'text-sm' : 'text-xs'
+        className={`flex items-center ${
+          variant === 'hero'
+            ? 'w-full min-w-0 flex-nowrap justify-between gap-0.5 text-sm sm:w-auto sm:flex-wrap sm:justify-start sm:gap-1.5'
+            : 'flex-wrap gap-1.5 text-xs'
         } ${className}`.trim()}
         onClick={(e) => e.stopPropagation()}
         role="group"
@@ -339,9 +348,17 @@ export function PartnerEngagementBar({
               type="button"
               onClick={onCommentButtonClick}
               className={baseBtn}
-              title={user ? 'Comentar' : 'Entre para comentar'}
+              title={
+                variant === 'hero'
+                  ? 'Ver comentários'
+                  : user
+                    ? 'Comentar'
+                    : 'Entre para comentar'
+              }
             >
-              <span className="sr-only">Comentários</span>
+              <span className="sr-only">
+                {variant === 'hero' ? 'Ir para comentários' : 'Comentários'}
+              </span>
               <CommentIcon className={sz} />
               {data && (
                 <span className="min-w-[1.25ch] font-medium">

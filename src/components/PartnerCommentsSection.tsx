@@ -540,10 +540,6 @@ export function PartnerCommentsSection({ partnerId, partnerName }: Props) {
     }
   };
 
-  if (!loading && items.length === 0 && !error) {
-    return null;
-  }
-
   return (
     <section id="comentarios" className="scroll-mt-8">
       <div className="mb-4 flex items-start gap-3">
@@ -580,6 +576,12 @@ export function PartnerCommentsSection({ partnerId, partnerName }: Props) {
       {error && !loading && (
         <p className="mb-3 text-sm text-red-600" role="status">
           {error}
+        </p>
+      )}
+
+      {!loading && items.length === 0 && !error && (
+        <p className="mb-4 text-sm text-zinc-600">
+          Ainda não há comentários. Podes ser o primeiro a deixar a tua opinião.
         </p>
       )}
 

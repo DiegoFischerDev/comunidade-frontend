@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
+import { CardLinkButton } from '@/components/ui/CardButton';
 import { getPublicSiteUrl } from '@/lib/site-url';
 
 type PartnerService = {
@@ -166,6 +167,19 @@ export default function CategoryPage() {
 
   return (
     <div className="space-y-8">
+      <div className="flex items-center">
+        <CardLinkButton
+          href="/dashboard/services"
+          variant="primary"
+          className="shadow-sm"
+        >
+          <span className="opacity-90" aria-hidden>
+            ←
+          </span>
+          Outros serviços
+        </CardLinkButton>
+      </div>
+
       {/* Hero da categoria */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#910001] to-[#5f0001] text-white">
         {heroBg && (
@@ -230,13 +244,13 @@ export default function CategoryPage() {
                     )}
                     <div className="relative z-10 flex h-full flex-col justify-end gap-2 bg-gradient-to-t from-black/50 via-black/10 to-transparent px-4 pb-3">
                       {partnerLogo ? (
-                        <div className="relative h-11 w-11 overflow-hidden rounded-xl border border-white/70 bg-white shadow-md">
+                        <div className="relative h-20 w-20 shrink-0">
                           <Image
                             src={partnerLogo}
                             alt=""
                             fill
-                            className="object-contain p-2"
-                            sizes="44px"
+                            className="object-contain drop-shadow-lg"
+                            sizes="80px"
                           />
                         </div>
                       ) : null}

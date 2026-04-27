@@ -6,7 +6,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CatalogCarousel } from '@/components/CatalogCarousel';
-import { CardButton } from '@/components/ui/CardButton';
+import { RelocationHouseCard } from '@/components/relocation/RelocationHouseCard';
+import { type RelocationHouseRow } from '@/components/relocation/relocation-house-shared';
+import { CardButton, CardLinkButton } from '@/components/ui/CardButton';
 import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
 import { PartnerCommentsSection } from '@/components/PartnerCommentsSection';
 import {
@@ -48,6 +50,8 @@ export default function PartnerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showContact, setShowContact] = useState(false);
+  const [relocationPreview, setRelocationPreview] = useState<RelocationHouseRow[]>([]);
+  const [relocationHousesLoading, setRelocationHousesLoading] = useState(false);
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -71,6 +75,31 @@ export default function PartnerPage() {
       }
     })();
   }, [params]);
+
+  useEffect(() => {
+    if (!partner?.category || partner.category.slug !== 'relocation') {
+      setRelocationPreview([]);
+      setRelocationHousesLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setRelocationHousesLoading(true);
+    (async () => {
+      try {
+        const data = await api.marketplace.relocationHouses({
+          partnerId: partner.id,
+        });
+        if (!cancelled) setRelocationPreview(data.slice(0, 3));
+      } catch {
+        if (!cancelled) setRelocationPreview([]);
+      } finally {
+        if (!cancelled) setRelocationHousesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [partner?.id, partner?.category?.slug]);
 
   if (loading) {
     return <p className="text-sm text-zinc-600">Carregando parceiro…</p>;
@@ -182,11 +211,11 @@ export default function PartnerPage() {
 
           <div className="mt-4 flex flex-col gap-6 sm:flex-row sm:items-center">
             {logoSrc && (
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/90 p-2 shadow-md sm:h-24 sm:w-24">
+              <div className="shrink-0">
                 <img
                   src={logoSrc}
                   alt={partner.name}
-                  className="max-h-full max-w-full object-contain"
+                  className="h-32 w-32 object-contain drop-shadow-lg sm:h-40 sm:w-40"
                 />
               </div>
             )}
@@ -203,7 +232,7 @@ export default function PartnerPage() {
                 </p>
               )}
               {hasHeroWhatsapp && heroContactUrl !== '#' ? (
-                <div className="mt-5">
+                <div className="mt-5 flex justify-center sm:justify-start">
                   <button
                     type="button"
                     onClick={() => {
@@ -297,25 +326,24 @@ export default function PartnerPage() {
                     {service.description}
                   </p>
                 )}
-                <div className="mt-4 inline-flex items-center gap-2">
-                  <Image
-                    src="/euro2.png"
-                    alt="Valor do serviço"
-                    width={20}
-                    height={20}
-                  />
-                  <span className="text-[0.95rem] font-semibold text-zinc-900">
-                    {service.priceOnRequest
-                      ? 'Sob consulta'
-                      : service.price
-                      ? `${service.price} €`
-                      : '—'}
-                  </span>
-                </div>
-                <div className="mt-3">
+                <div className="mt-4 flex flex-col items-end gap-3">
+                  <div className="inline-flex items-center gap-2">
+                    <Image
+                      src="/euro2.png"
+                      alt="Valor do serviço"
+                      width={20}
+                      height={20}
+                    />
+                    <span className="text-[0.95rem] font-semibold text-zinc-900">
+                      {service.priceOnRequest
+                        ? 'Sob consulta'
+                        : service.price
+                        ? `${service.price} €`
+                        : '—'}
+                    </span>
+                  </div>
                   <CardButton
                     type="button"
-                    size="sm"
                     variant="primary"
                     onClick={() => {
                       if (!user) {
@@ -335,7 +363,7 @@ export default function PartnerPage() {
                       );
                     }}
                   >
-                    Entrar em contacto
+                    Contactar
                   </CardButton>
                 </div>
               </div>
@@ -343,6 +371,38 @@ export default function PartnerPage() {
           </div>
         )}
       </section>
+
+      {partner.category?.slug === 'relocation' && (
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+            Imóveis
+          </h2>
+          {relocationHousesLoading ? (
+            <p className="text-sm text-zinc-600">A carregar imóveis…</p>
+          ) : relocationPreview.length === 0 ? (
+            <p className="text-sm text-zinc-600">
+              Ainda não há imóveis publicados por este parceiro.
+            </p>
+          ) : (
+            <>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {relocationPreview.map((h) => (
+                  <RelocationHouseCard key={h.id} house={h} />
+                ))}
+              </div>
+              <div className="flex justify-center pt-1">
+                <CardLinkButton
+                  href={`/dashboard/relocation/imoveis?parceiro=${encodeURIComponent(partner.id)}`}
+                  variant="primary"
+                  className="min-w-[14rem] shadow-sm"
+                >
+                  Ver todos os imóveis
+                </CardLinkButton>
+              </div>
+            </>
+          )}
+        </section>
+      )}
 
       <PartnerCommentsSection partnerId={partner.id} partnerName={partner.name} />
 
@@ -352,11 +412,11 @@ export default function PartnerPage() {
           <div className="my-8 w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-center gap-3">
               {logoSrc && (
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-50 p-1">
+                <div className="h-14 w-14 shrink-0">
                   <img
                     src={logoSrc}
                     alt={partner.name}
-                    className="max-h-full max-w-full object-contain"
+                    className="h-full w-full object-contain"
                   />
                 </div>
               )}

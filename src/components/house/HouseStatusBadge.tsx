@@ -17,15 +17,17 @@ const LABEL: Record<Status, string> = {
 
 export function HouseStatusBadge({ status, variant = "default", className = "" }: Props) {
   if (variant === "overlay") {
+    const overlayBase =
+      "pointer-events-none inline-flex max-w-[min(92%,24rem)] items-center justify-center text-balance rounded-xl border border-white/15 px-2.5 py-1.5 text-lg font-extrabold leading-tight tracking-tight shadow-sm backdrop-blur-md sm:px-4 sm:py-2 sm:text-xl sm:leading-tight md:px-5 md:py-2.5 md:text-2xl md:leading-tight";
     const overlayClass =
       status === "AVAILABLE"
-        ? "bg-emerald-600/95 text-white ring-1 ring-white/20"
+        ? "bg-emerald-600/30 text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.6),0_0_24px_rgba(0,0,0,0.35)]"
         : status === "RESERVED"
-          ? "bg-amber-600/95 text-white ring-1 ring-white/25"
-          : "bg-zinc-900/90 text-white ring-1 ring-white/10";
+          ? "bg-amber-600/30 text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.6),0_0_24px_rgba(0,0,0,0.35)]"
+          : "bg-zinc-900/35 text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.65),0_0_24px_rgba(0,0,0,0.4)]";
     return (
       <span
-        className={`${base} pointer-events-none px-2.5 py-1 text-[11px] shadow-md sm:text-xs ${overlayClass} ${className}`.trim()}
+        className={`${overlayBase} ${overlayClass} ${className}`.trim()}
       >
         {LABEL[status]}
       </span>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
 import { api } from "@/lib/api";
-import { formatHouseEntradaShort } from "@/lib/house-entrance";
+import { formatHouseEntradaShort, formatHouseEntradaWithTotal } from "@/lib/house-entrance";
 import { useAuth } from "@/contexts/AuthContext";
 import { CardLinkButton } from "@/components/ui/CardButton";
 
@@ -104,6 +104,7 @@ export default function PartnerHousesPage() {
         String(r.caucoesCount),
         String(r.rendasEntradaCount),
         formatHouseEntradaShort(r.caucoesCount, r.rendasEntradaCount),
+        formatHouseEntradaWithTotal(r.caucoesCount, r.rendasEntradaCount, r.priceEur),
         r.furnished ? "mobilado sim" : "mobilado não",
         r.status,
         r.status === "AVAILABLE"
@@ -281,7 +282,7 @@ export default function PartnerHousesPage() {
                     <td className="px-4 py-3 text-zinc-700">{r.priceEur}</td>
                     <td className="px-4 py-3 text-zinc-700">
                       <div className="text-xs text-zinc-500">Taxa: {r.relocationFeeEur} €</div>
-                      <div>{formatHouseEntradaShort(r.caucoesCount, r.rendasEntradaCount)}</div>
+                      <div>{formatHouseEntradaWithTotal(r.caucoesCount, r.rendasEntradaCount, r.priceEur)}</div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-2">

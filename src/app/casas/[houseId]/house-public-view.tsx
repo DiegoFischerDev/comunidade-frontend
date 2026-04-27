@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import type { PublicHousePageData } from "@/lib/house-public-server";
-import { formatHouseEntradaShort } from "@/lib/house-entrance";
+import { formatHouseEntradaWithTotal } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { isOurImageHostname } from "@/lib/site-url";
 
@@ -83,7 +83,11 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
   const { partner } = house;
   const cityLabel = CITY_LABELS[house.city] ?? house.city;
   const typoLabel = TYPOLOGY_LABELS[house.typology] ?? house.typology;
-  const entrada = formatHouseEntradaShort(house.caucoesCount, house.rendasEntradaCount);
+  const entrada = formatHouseEntradaWithTotal(
+    house.caucoesCount,
+    house.rendasEntradaCount,
+    house.priceEur,
+  );
 
   const videoSrc = house.videoUrl ? resolveUploadsUrl(house.videoUrl) : null;
   const rawUrls = house.imageUrls ?? [];
@@ -183,8 +187,8 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
                 Sem fotos nem vídeo
               </div>
             )}
-            <div className="absolute left-3 top-3 z-10">
-              <HouseStatusBadge status={house.status} variant="overlay" />
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-3 sm:p-4">
+              <HouseStatusBadge status={house.status} variant="overlay" className="lg:text-3xl" />
             </div>
           </div>
 

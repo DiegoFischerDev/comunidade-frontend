@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
@@ -143,50 +144,39 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-[800px]">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center">
-            <div className="relative aspect-[2/1] w-full overflow-hidden rounded-xl bg-zinc-100 md:w-80">
-              <Image
-                src="/plan.png"
-                alt="Plano de imigração"
-                fill
-                className="object-contain"
-                sizes="(min-width: 768px) 320px, 100vw"
-                priority
-              />
-            </div>
-
-            <div className="flex-1 space-y-3">
-              <h2 className="text-xl font-semibold text-zinc-900">Plano de imigração</h2>
-              <p className="text-sm text-zinc-600">
-                Organize o teu plano, acompanhe as etapas e veja uma estimativa de custos para se
-                preparar com mais segurança.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <CardLinkButton href="/plano-de-imigracao" variant="primary">
-                  Acessar plano
-                </CardLinkButton>
-              </div>
-            </div>
-          </div>
+      <div className="mx-auto w-full max-w-7xl px-1 sm:px-2">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-[repeat(auto-fit,minmax(20rem,1fr))]">
+        <section className="h-full min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
+          <Link
+            href="/plano-de-imigracao"
+            className="group block min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+            aria-label="Plano de imigração — aceder"
+          >
+            <Image
+              src="/card_plano3.png"
+              alt="Plano de imigração — partiu Portugal, etapas e custos"
+              width={800}
+              height={1280}
+              className="h-auto w-full object-contain"
+              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+              priority
+            />
+          </Link>
         </section>
-        <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center">
-            <div className="relative aspect-[2/1] w-full overflow-hidden rounded-xl bg-zinc-100 md:w-80">
+        <section className="flex h-full min-w-0 flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex h-full min-h-0 flex-1 flex-col gap-6">
+            <div className="relative aspect-[2/1] w-full shrink-0 overflow-hidden rounded-xl bg-zinc-100">
               <Image
                 src="/capa_psp-1000x500.png"
                 alt="Capa do guia PSP - Portugal Sem Perrengue"
                 fill
                 className="object-contain"
-                sizes="(min-width: 768px) 320px, 100vw"
+                sizes="(min-width: 640px) 50vw, 100vw"
                 priority
               />
             </div>
 
-            <div className="flex-1 space-y-3">
+            <div className="min-w-0 flex-1 space-y-3">
               <h2 className="text-xl font-semibold text-zinc-900">
                 E-book - Portugal Sem Perrengue
               </h2>
@@ -196,8 +186,8 @@ export default function DashboardPage() {
                 segurança.
               </p>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <CardLinkButton href={pdfHref} variant="primary">
+              <div className="w-full">
+                <CardLinkButton href={pdfHref} variant="primary" fullWidth>
                   Acessar PDF
                 </CardLinkButton>
               </div>
@@ -205,31 +195,31 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50">
+        <section className="flex h-full min-w-0 flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex h-full min-h-0 flex-1 flex-col gap-4">
+            <div className="flex min-w-0 items-start gap-4">
+              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-zinc-50">
                 <Image src="/services2.png" alt="" fill className="object-contain" sizes="56px" />
               </div>
-              <div className="space-y-1">
+              <div className="min-w-0 space-y-1">
                 <h2 className="text-xl font-semibold text-zinc-900">Serviços</h2>
                 <p className="text-sm text-zinc-600">
                   Encontre parceiros de confiança indicados pela Rafa.
                 </p>
               </div>
             </div>
-            <div className="shrink-0">
-              <CardLinkButton href="/dashboard/services" variant="primary">
+            <div className="w-full">
+              <CardLinkButton href="/dashboard/services" variant="primary" fullWidth>
                 Acessar serviços
               </CardLinkButton>
             </div>
           </div>
         </section>
 
-        <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50">
+        <section className="flex h-full min-w-0 flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex h-full min-h-0 flex-1 flex-col gap-4">
+            <div className="flex min-w-0 items-start gap-4">
+              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-zinc-50">
                 <Image
                   src="/whatsapp.png"
                   alt=""
@@ -238,25 +228,24 @@ export default function DashboardPage() {
                   sizes="56px"
                 />
               </div>
-              <div className="space-y-1">
+              <div className="min-w-0 space-y-1">
                 <h2 className="text-xl font-semibold text-zinc-900">Grupos whatsapp</h2>
                 <p className="text-sm text-zinc-600">
                   Entra nos grupos do WhatsApp da comunidade de acordo com o teu momento.
                 </p>
               </div>
             </div>
-
-            <div className="shrink-0">
-              <CardLinkButton href="/grupos-vip" variant="primary">
+            <div className="w-full">
+              <CardLinkButton href="/grupos-vip" variant="primary" fullWidth>
                 Acessar grupos
               </CardLinkButton>
             </div>
           </div>
         </section>
 
-        <div className="lg:col-span-6">
-          <div className="flex w-full flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:text-left">
+        <div className="flex h-full min-w-0 flex-col">
+          <div className="flex h-full min-h-0 w-full flex-1 flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col items-center gap-3 text-center">
               <div className="relative h-20 w-20 flex-shrink-0">
                 <Image
                   src="/vip-card.png"
@@ -342,11 +331,12 @@ export default function DashboardPage() {
             </div>
 
             {!isMember && (
-              <div className="mt-3 flex flex-col items-center gap-3 text-center sm:items-start sm:text-left">
+              <div className="mt-1 flex w-full flex-col items-stretch gap-3">
                 <CardButton
                   type="button"
                   onClick={handleOpenMembershipModal}
                   variant="primary"
+                  fullWidth
                 >
                   Quero ser membro VIP
                 </CardButton>
@@ -355,12 +345,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="lg:col-span-6">
+        <div className="flex h-full min-w-0 flex-col">
           <RafaCallCard />
         </div>
 
         {canSeeAffiliateCard && affiliate !== undefined && (
-          <div className="lg:col-span-12 w-full">
+          <div className="col-span-full w-full min-w-0">
             {hasAffiliateEnrollment && affiliate ? (
               <AffiliateMemberDashboardCard
                 affiliateCode={affiliate.affiliateCode}
@@ -377,32 +367,39 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <section className="lg:col-span-12 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-50">
-                <Image src="/youtube.png" alt="" fill className="object-contain" sizes="56px" />
+        <section className="col-span-full w-full min-w-0 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+            <div className="flex min-w-0 flex-1 flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:gap-4 sm:text-left">
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-zinc-50 sm:h-16 sm:w-16">
+                <Image
+                  src="/youtube.png"
+                  alt=""
+                  fill
+                  className="object-contain p-0.5"
+                  sizes="(max-width: 639px) 80px, 64px"
+                />
               </div>
-              <div>
+              <div className="min-w-0 max-w-xl">
                 <h2 className="text-xl font-semibold text-zinc-900">Nosso canal no Youtube</h2>
                 <p className="mt-1 text-sm text-zinc-600">
                   Assiste os nossos episódios e conteúdos sobre a vida em Portugal.
                 </p>
               </div>
             </div>
-            <div className="shrink-0">
+            <div className="flex w-full shrink-0 justify-center sm:w-auto sm:justify-end sm:self-start sm:pt-0.5">
               <CardLinkButton
                 href="https://www.youtube.com/@rafaapelomundo"
                 target="_blank"
                 rel="noreferrer"
                 variant="primary"
+                className="min-w-[10.5rem] justify-center px-4 py-2.5 text-sm font-medium sm:min-w-0 sm:py-2"
               >
                 Ver canal
               </CardLinkButton>
             </div>
           </div>
 
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
                 id: "yt-1",
