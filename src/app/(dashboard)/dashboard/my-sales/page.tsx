@@ -356,7 +356,7 @@ export default function MySalesPage() {
               <div className="flex justify-end gap-3 pt-2">
                 <CardButton
                   type="button"
-                  variant="secondary"
+                  variant="outline"
                   disabled={creating}
                   onClick={() => setCreateModalOpen(false)}
                 >

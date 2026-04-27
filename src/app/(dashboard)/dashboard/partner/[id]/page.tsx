@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CatalogCarousel } from '@/components/CatalogCarousel';
@@ -44,7 +44,6 @@ type PartnerDetails = {
 
 export default function PartnerPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const { user } = useAuth();
   const [partner, setPartner] = useState<PartnerDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -131,8 +130,8 @@ export default function PartnerPage() {
   const buildServiceWhatsAppUrl = (serviceTitle: string) => {
     const isMember = user?.tier === 'MEMBER';
     const text = isMember
-      ? `Olá, tenho interesse em saber mais informações sobre o serviço ${serviceTitle} com desconto de 10€ da Comunidade Rafa Portugal`
-      : `Olá, tenho interesse em saber mais informações sobre o serviço ${serviceTitle}`;
+      ? `Olá, tenho interesse em saber mais informações sobre o serviço ${serviceTitle} sou membro VIP da Comunidade Rafa Portugal`
+      : `Olá, tenho interesse em saber mais informações sobre o serviço ${serviceTitle} sou membro da Comunidade Rafa Portugal`;
     return buildWhatsAppApiSendUrl(waDigits, text);
   };
   const heroContactUrl = buildPartnerHeroWhatsAppUrl(partner.whatsapp);
@@ -163,6 +162,19 @@ export default function PartnerPage() {
 
   return (
     <div className="space-y-8">
+      <div className="flex items-center">
+        <CardLinkButton
+          href="/dashboard/services"
+          variant="primary"
+          className="shadow-sm"
+        >
+          <span className="opacity-90" aria-hidden>
+            ←
+          </span>
+          Outros serviços
+        </CardLinkButton>
+      </div>
+
       {/* Hero */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-800 via-rose-900 to-red-950 text-white">
         {partner.backgroundImageUrl && (
@@ -178,38 +190,7 @@ export default function PartnerPage() {
           </>
         )}
         <div className="relative z-10 min-h-[260px] px-6 py-9 sm:min-h-[340px] sm:px-10 sm:py-12">
-          <button
-            type="button"
-            onClick={() =>
-              partner.category
-                ? router.push(`/dashboard/category/${partner.category.slug}`)
-                : router.back()
-            }
-              className="absolute left-4 top-4 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/95 text-red-800 shadow-lg ring-1 ring-white/30 hover:bg-white sm:left-6 sm:top-6"
-            aria-label={
-              partner.category
-                ? `Voltar para ${partner.category.name}`
-                : 'Voltar'
-            }
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              className="h-5 w-5"
-              aria-hidden="true"
-            >
-              <path
-                d="M15.75 19.5 8.25 12l7.5-7.5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-
-          <div className="mt-4 flex flex-col gap-6 sm:flex-row sm:items-center">
+          <div className="mt-0 flex flex-col gap-6 sm:flex-row sm:items-center">
             {logoSrc && (
               <div className="shrink-0">
                 <img
@@ -235,7 +216,7 @@ export default function PartnerPage() {
                 <div className="mt-5 flex justify-center sm:justify-start">
                   <CardButton
                     type="button"
-                    variant="secondary"
+                    variant="outline"
                     onClick={() => {
                       if (!user) {
                         window.dispatchEvent(
@@ -382,7 +363,7 @@ export default function PartnerPage() {
               </div>
               <div className="flex justify-center pt-1">
                 <CardLinkButton
-                  href={`/dashboard/relocation/imoveis?parceiro=${encodeURIComponent(partner.id)}`}
+                  href={`/relocation/imoveis?parceiro=${encodeURIComponent(partner.id)}`}
                   variant="primary"
                   className="min-w-[14rem] shadow-sm"
                 >

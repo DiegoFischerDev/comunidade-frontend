@@ -498,7 +498,7 @@ export function PartnerEngagementBar({
             <div className="mt-4 flex flex-wrap justify-end gap-2">
               <CardButton
                 type="button"
-                variant="secondary"
+                variant="outline"
                 size="sm"
                 onClick={closeCommentModal}
               >

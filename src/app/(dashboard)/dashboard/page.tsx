@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
@@ -10,27 +11,18 @@ import { YOUTUBE_HIGHLIGHT_FALLBACKS } from "@/lib/youtube-highlights-defaults";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/components/FloatingWhatsAppButton";
 import { OPEN_AUTH_LOGIN_EVENT } from "@/lib/auth-ui-events";
-import { AffiliatePromoCard } from "@/components/affiliate/AffiliatePromoCard";
 import { AffiliateEnrollModal } from "@/components/affiliate/AffiliateEnrollModal";
-import { AffiliateMemberDashboardCard } from "@/components/affiliate/AffiliateMemberDashboardCard";
 import { RafaCallCard } from "@/components/RafaCallCard";
-import { CardButton, CardLinkButton } from "@/components/ui/CardButton";
+import { PartnerLogosMarquee } from "@/components/PartnerLogosMarquee";
+import { CardLinkButton } from "@/components/ui/CardButton";
 type AffiliateMe = NonNullable<Awaited<ReturnType<typeof api.affiliate.me>>>;
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const isMember = user?.tier === "MEMBER";
   const canSeeAffiliateCard =
     user?.tier === "MEMBER" || user?.role === "PARTNER" || user?.role === "ADMIN";
-
-  const tierLabel =
-    user?.role === "ADMIN"
-      ? "Admin"
-      : user?.role === "PARTNER"
-        ? "Parceiro"
-        : isMember
-          ? "Membro VIP"
-          : "Visitante";
 
   const [affiliateModalOpen, setAffiliateModalOpen] = useState(false);
   const [affiliateSaving, setAffiliateSaving] = useState(false);
@@ -112,10 +104,37 @@ export default function DashboardPage() {
     };
   }, []);
 
-  function handleOpenMembershipModal() {
+  const hasAffiliateEnrollment = Boolean(affiliate?.affiliateCode?.trim());
+
+  const heroMobileSrc = hasAffiliateEnrollment
+    ? "/rafa_cards/dashboard_afiliados_mobile.png"
+    : isMember
+      ? "/rafa_cards/hero_mobile_vip.png"
+      : "/rafa_cards/hero_mobile3.png";
+
+  const heroDesktopSrc = hasAffiliateEnrollment
+    ? "/rafa_cards/dashboard_afiliados.png"
+    : isMember
+      ? "/rafa_cards/hero_pc_vip.png"
+      : "/rafa_cards/hero_pc2.png";
+
+  /**
+   * Hero: visitante → login; membro VIP → painel de indicações se já for afiliado, senão modal de
+   * inscrição; restantes (logado não-membro) → modal de adesão VIP.
+   */
+  function handleHeroClick() {
     if (typeof window === "undefined") return;
     if (!user) {
       window.dispatchEvent(new Event(OPEN_AUTH_LOGIN_EVENT));
+      return;
+    }
+    if (isMember) {
+      if (affiliate === undefined) return;
+      if (hasAffiliateEnrollment) {
+        router.push("/dashboard/my-referrals");
+        return;
+      }
+      setAffiliateModalOpen(true);
       return;
     }
     window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
@@ -147,268 +166,159 @@ export default function DashboardPage() {
     }
   }
 
-  const hasAffiliateEnrollment = Boolean(affiliate?.affiliateCode?.trim());
-
   return (
     <div className="space-y-8">
-      <section className="w-full">
+      <section className="w-full -mt-16 md:-mt-6">
         <h1 className="sr-only">Comunidade Rafa Portugal — Início</h1>
-        <div className="w-full">
+        <button
+          type="button"
+          onClick={handleHeroClick}
+          className="relative w-full cursor-pointer overflow-hidden rounded-none border-0 bg-transparent p-0 text-left shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-0"
+          aria-label={
+            hasAffiliateEnrollment
+              ? "Programa de afiliados — minhas indicações"
+              : isMember
+                ? "Programa de afiliados — participar"
+                : "Membro VIP — ver detalhes e ativar acesso"
+          }
+        >
           {/*
             unoptimized: servir PNGs de /public evita stress no otimizador em heros muito largos.
           */}
           <Image
-            src="/hero_mobile2.png"
-            width={1172}
-            height={2084}
-            alt="Comunidade Rafa Portugal"
-            className="h-auto w-full rounded-2xl md:hidden"
+            src={heroMobileSrc}
+            width={1250}
+            height={1875}
+            alt={
+              hasAffiliateEnrollment
+                ? "Programa de afiliados — é uma honra ter você na equipe"
+                : isMember
+                  ? "Programa de afiliados — Comunidade Rafa Portugal"
+                  : "Comunidade Rafa Portugal"
+            }
+            className="h-auto w-full md:hidden"
             sizes="100vw"
             priority
             unoptimized
           />
           <Image
-            src="/hero_pc.png"
+            src={heroDesktopSrc}
             width={5000}
             height={2188}
-            alt="Comunidade Rafa Portugal"
-            className="hidden h-auto w-full rounded-2xl md:block"
+            alt={
+              hasAffiliateEnrollment
+                ? "Programa de afiliados — é uma honra ter você na equipe"
+                : isMember
+                  ? "Programa de afiliados — Comunidade Rafa Portugal"
+                  : "Comunidade Rafa Portugal"
+            }
+            className="hidden h-auto w-full md:block"
             sizes="100vw"
             priority
             unoptimized
           />
-        </div>
+        </button>
       </section>
 
+      <div className="space-y-8 px-4 md:px-6">
       <div className="mx-auto w-full max-w-7xl px-1 sm:px-2">
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-[repeat(auto-fit,minmax(20rem,1fr))]">
-        <section className="h-full min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
+        <section className="h-full min-w-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
           <Link
             href="/plano-de-imigracao"
-            className="group block min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
-            aria-label="Plano de imigração — aceder"
+            className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+            aria-label="Plano de imigração"
           >
             <Image
-              src="/card_plano3.png"
-              alt="Plano de imigração — partiu Portugal, etapas e custos"
-              width={800}
-              height={1280}
+              src="/rafa_cards/plano2.png"
+              alt="Plano de imigração"
+              width={1250}
+              height={1875}
               className="h-auto w-full object-contain"
               sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
               priority
             />
           </Link>
         </section>
-        <section className="flex h-full min-w-0 flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="flex h-full min-h-0 flex-1 flex-col gap-6">
-            <div className="relative aspect-[2/1] w-full shrink-0 overflow-hidden rounded-xl bg-zinc-100">
-              <Image
-                src="/capa_psp-1000x500.png"
-                alt="Capa do guia PSP - Portugal Sem Perrengue"
-                fill
-                className="object-contain"
-                sizes="(min-width: 640px) 50vw, 100vw"
-                priority
-              />
-            </div>
-
-            <div className="min-w-0 flex-1 space-y-3">
-              <h2 className="text-xl font-semibold text-zinc-900">
-                E-book - Portugal Sem Perrengue
-              </h2>
-              <p className="text-sm text-zinc-600">
-                O guia real pra sair do Brasil e morar legalmente em Portugal. Aqui você encontra o
-                passo a passo, documentos, prazos e estratégias para fazer essa mudança com
-                segurança.
-              </p>
-
-              <div className="w-full">
-                <CardLinkButton href={pdfHref} variant="primary" fullWidth>
-                  Acessar PDF
-                </CardLinkButton>
-              </div>
-            </div>
-          </div>
+        <section className="h-full min-w-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
+          <Link
+            href={pdfHref}
+            className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+            aria-label="E-book Portugal Sem Perrengue"
+          >
+            <Image
+              src="/rafa_cards/psp2.png"
+              alt="E-book Portugal Sem Perrengue"
+              width={1250}
+              height={1875}
+              className="h-auto w-full object-contain"
+              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+              priority
+            />
+          </Link>
+        </section>
+        <section className="h-full min-w-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
+          <Link
+            href="/dashboard/services"
+            className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+            aria-label="Serviços"
+          >
+            <Image
+              src="/rafa_cards/services2.png"
+              alt="Serviços"
+              width={1250}
+              height={1875}
+              className="h-auto w-full object-contain"
+              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+              priority
+            />
+          </Link>
         </section>
 
-        <section className="flex h-full min-w-0 flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="flex h-full min-h-0 flex-1 flex-col gap-4">
-            <div className="flex min-w-0 items-start gap-4">
-              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-zinc-50">
-                <Image src="/services2.png" alt="" fill className="object-contain" sizes="56px" />
-              </div>
-              <div className="min-w-0 space-y-1">
-                <h2 className="text-xl font-semibold text-zinc-900">Serviços</h2>
-                <p className="text-sm text-zinc-600">
-                  Encontre parceiros de confiança indicados pela Rafa.
-                </p>
-              </div>
-            </div>
-            <div className="w-full">
-              <CardLinkButton href="/dashboard/services" variant="primary" fullWidth>
-                Acessar serviços
-              </CardLinkButton>
-            </div>
-          </div>
+        <section className="h-full min-w-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
+          <Link
+            href="/grupos-vip"
+            className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+            aria-label="Grupos WhatsApp — aceder à comunidade"
+          >
+            <Image
+              src="/rafa_cards/grupos_whatsapp.png"
+              alt="Grupos de ajuda WhatsApp"
+              width={1250}
+              height={1875}
+              className="h-auto w-full object-contain"
+              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+            />
+          </Link>
         </section>
-
-        <section className="flex h-full min-w-0 flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="flex h-full min-h-0 flex-1 flex-col gap-4">
-            <div className="flex min-w-0 items-start gap-4">
-              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-zinc-50">
-                <Image
-                  src="/whatsapp.png"
-                  alt=""
-                  fill
-                  className="object-contain"
-                  sizes="56px"
-                />
-              </div>
-              <div className="min-w-0 space-y-1">
-                <h2 className="text-xl font-semibold text-zinc-900">Grupos whatsapp</h2>
-                <p className="text-sm text-zinc-600">
-                  Entra nos grupos do WhatsApp da comunidade de acordo com o teu momento.
-                </p>
-              </div>
-            </div>
-            <div className="w-full">
-              <CardLinkButton href="/grupos-vip" variant="primary" fullWidth>
-                Acessar grupos
-              </CardLinkButton>
-            </div>
-          </div>
-        </section>
-
-        <div className="flex h-full min-w-0 flex-col">
-          <div className="flex h-full min-h-0 w-full flex-1 flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <div className="relative h-20 w-20 flex-shrink-0">
-                <Image
-                  src="/vip-card.png"
-                  alt="Cartão VIP Comunidade Rafa Portugal"
-                  fill
-                  className="object-contain"
-                  sizes="80px"
-                />
-              </div>
-              <div className="space-y-1">
-                <p className="text-base font-semibold text-zinc-900">
-                  {user?.name || "Visitante"}
-                </p>
-                <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-                  Plano atual:{" "}
-                  <span className="font-semibold text-zinc-800">{tierLabel}</span>
-                </p>
-                {isMember && user?.membershipExpiresAt && (
-                  <p className="mt-0.5 text-xs text-zinc-500">
-                    Válido até{" "}
-                    <span className="font-medium text-zinc-800">
-                      {new Date(user.membershipExpiresAt).toLocaleDateString("pt-PT")}
-                    </span>
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {!isMember && (
-              <div className="max-w-xl text-sm text-zinc-700">
-                  <p className="font-semibold text-zinc-900">
-                    Torne-se membro da Comunidade Rafa Pelo Mundo
-                  </p>
-              </div>
-            )}
-
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                Vantagens VIP
-              </p>
-              <ul className="mt-2 space-y-1.5 text-sm text-zinc-700">
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                    ✓
-                  </span>
-                  <span>
-                    <span className="font-medium text-zinc-900">Acesso completo ao plano de imigração</span>
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                    ✓
-                  </span>
-                  <span>
-                    <span className="font-medium text-zinc-900">E-book PSP completo</span> com atualizações
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                    ✓
-                  </span>
-                  <span>
-                    <span className="font-medium text-zinc-900">Acesso às lives da Rafa</span> exclusivas para VIPs
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                    ✓
-                  </span>
-                  <span>
-                    <span className="font-medium text-zinc-900">Acesso a todos os grupos</span> no WhatsApp
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                    ✓
-                  </span>
-                  <span>
-                    <span className="font-medium text-zinc-900">10€ de desconto</span> em cada serviço contratado com parceiros
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            {!isMember && (
-              <div className="mt-1 flex w-full flex-col items-stretch gap-3">
-                <CardButton
-                  type="button"
-                  onClick={handleOpenMembershipModal}
-                  variant="primary"
-                  fullWidth
-                >
-                  Quero ser membro VIP
-                </CardButton>
-              </div>
-            )}
-          </div>
-        </div>
 
         <div className="flex h-full min-w-0 flex-col">
           <RafaCallCard />
         </div>
 
-        {canSeeAffiliateCard && affiliate !== undefined && (
-          <div className="col-span-full w-full min-w-0">
-            {hasAffiliateEnrollment && affiliate ? (
-              <AffiliateMemberDashboardCard
-                affiliateCode={affiliate.affiliateCode}
-                inviteLink={`${typeof window !== "undefined" ? window.location.origin : ""}/?aff=${affiliate.affiliateCode}`}
-                pendingTotal={affiliate.totals?.pending ?? 0}
-                paidTotal={affiliate.totals?.paid ?? 0}
-              />
-            ) : (
-              <AffiliatePromoCard
-                onAction={() => setAffiliateModalOpen(true)}
-                className="w-full"
-              />
-            )}
-          </div>
-        )}
+        <section className="h-full min-w-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
+          <Link
+            href="/relocation/imoveis"
+            className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+            aria-label="Imóveis disponíveis em Portugal — ver listagem"
+          >
+            <Image
+              src="/rafa_cards/imoveis2.png"
+              alt="Imóveis disponíveis em Portugal — alugar ou comprar"
+              width={1250}
+              height={1875}
+              className="h-auto w-full object-contain"
+              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+            />
+          </Link>
+        </section>
 
-        <section className="col-span-full w-full min-w-0 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="col-span-full w-full min-w-0 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
             <div className="flex min-w-0 flex-1 flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:gap-4 sm:text-left">
-              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-zinc-50 sm:h-16 sm:w-16">
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-zinc-50 sm:h-16 sm:w-16">
                 <Image
-                  src="/youtube.png"
+                  src="/youtube4.png"
                   alt=""
                   fill
                   className="object-contain p-0.5"
@@ -418,7 +328,7 @@ export default function DashboardPage() {
               <div className="min-w-0 max-w-xl">
                 <h2 className="text-xl font-semibold text-zinc-900">Nosso canal no Youtube</h2>
                 <p className="mt-1 text-sm text-zinc-600">
-                  Assiste os nossos episódios e conteúdos sobre a vida em Portugal.
+                  Assista os nossos episódios e conteúdos sobre a vida em Portugal.
                 </p>
               </div>
             </div>
@@ -443,9 +353,9 @@ export default function DashboardPage() {
                   href={v.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="group rounded-xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                  className="group cursor-pointer rounded-lg border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <div className="relative aspect-video w-full overflow-hidden rounded-t-xl bg-zinc-100">
+                  <div className="relative aspect-video w-full overflow-hidden rounded-t-lg bg-zinc-100">
                     <Image
                       src={v.thumb}
                       alt=""
@@ -462,7 +372,7 @@ export default function DashboardPage() {
                     <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
                       <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-1 font-medium text-zinc-700">
                         <span className="relative h-4 w-4" aria-hidden>
-                          <Image src="/youtube.png" alt="" fill className="object-contain" />
+                          <Image src="/youtube3.png" alt="" fill className="object-contain" />
                         </span>
                         YouTube
                       </span>
@@ -475,6 +385,9 @@ export default function DashboardPage() {
           </div>
         </section>
       </div>
+      </div>
+
+      <PartnerLogosMarquee />
       </div>
 
       <AffiliateEnrollModal

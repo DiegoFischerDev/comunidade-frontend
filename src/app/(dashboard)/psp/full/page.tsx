@@ -56,9 +56,21 @@ export default function PSPFullPage() {
   }
 
   return (
+    <>
+      <div className="-mx-4 mb-5 print:hidden md:hidden">
+        <Image
+          src="/rafa_cards/psp_hero.png"
+          alt="E-book Portugal Sem Perrengue"
+          width={1250}
+          height={1875}
+          className="h-auto w-full object-contain"
+          sizes="100vw"
+          priority
+        />
+      </div>
     <div className="flex min-h-[calc(100vh-6rem)] flex-col gap-4 pb-8">
       <div className="mx-auto w-full max-w-[820px]">
-        <h1 className="text-2xl font-semibold text-zinc-900">
+        <h1 className="hidden text-2xl font-semibold text-zinc-900 print:block md:block">
           E-book - Portugal Sem Perrengue (PDF completo)
         </h1>
         <p className="mt-1 text-sm text-zinc-500">Última atualização: abril/2026</p>
@@ -109,7 +121,7 @@ export default function PSPFullPage() {
             <CardButton
               type="button"
               onClick={handleOpenSuggest}
-              variant="secondary"
+              variant="outline"
               className="text-sm font-normal"
             >
               Enviar sugestão
@@ -173,7 +185,7 @@ export default function PSPFullPage() {
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
               <CardButton
                 type="button"
-                variant="secondary"
+                variant="outline"
                 onClick={() => setSuggestOpen(false)}
                 disabled={suggestSending}
               >
@@ -193,6 +205,7 @@ export default function PSPFullPage() {
         </div>
       )}
     </div>
+    </>
   );
 }
 

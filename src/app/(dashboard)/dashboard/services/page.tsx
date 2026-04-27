@@ -50,7 +50,7 @@ export default function ServicesDashboardPage() {
         <p className="mt-2 text-sm text-zinc-600">
           Aqui encontras os serviços que a Comunidade Rafa Portugal confia e recomenda. Estamos
           sempre à procura de novos parceiros para oferecer à nossa comunidade as
-          melhores soluções, e os menores preços. Aqueles que sao membros VIP tem direito a desconto de 10€ em todos os serviços.
+          melhores soluções, e os menores preços.
         </p>
       </div>
 
@@ -92,9 +92,7 @@ export default function ServicesDashboardPage() {
                 <p className="text-base font-semibold text-zinc-900">{c.name}</p>
                 {c.shortDescription ? (
                   <p className="mt-1 line-clamp-3 text-sm text-zinc-600">{c.shortDescription}</p>
-                ) : (
-                  <p className="mt-1 text-sm text-zinc-600">Ver parceiros e serviços</p>
-                )}
+                ) : null}
               </div>
             </Link>
           ))

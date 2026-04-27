@@ -243,7 +243,7 @@ export default function RelocationHousesPage() {
             {hasFullListingLink ? (
               <div className="flex justify-center pt-1">
                 <CardLinkButton
-                  href="/dashboard/relocation/imoveis"
+                  href="/relocation/imoveis"
                   variant="primary"
                   className="min-w-[14rem] shadow-sm"
                 >

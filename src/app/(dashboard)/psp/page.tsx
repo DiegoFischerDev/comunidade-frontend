@@ -40,9 +40,21 @@ export default function PSPPage() {
   }
 
   return (
+    <>
+      <div className="-mx-4 mb-5 print:hidden md:hidden">
+        <Image
+          src="/rafa_cards/psp_hero.png"
+          alt="E-book Portugal Sem Perrengue"
+          width={1250}
+          height={1875}
+          className="h-auto w-full object-contain"
+          sizes="100vw"
+          priority
+        />
+      </div>
     <div className="space-y-8">
       <div className="mx-auto w-full max-w-[820px]">
-        <h1 className="text-2xl font-semibold text-zinc-900">
+        <h1 className="hidden text-2xl font-semibold text-zinc-900 print:block md:block">
           E-book - Portugal Sem Perrengue
         </h1>
         <p className="mt-1 text-sm text-zinc-500">Última atualização: abril/2026</p>
@@ -109,6 +121,7 @@ export default function PSPPage() {
         </div>
       )}
     </div>
+    </>
   );
 }
 

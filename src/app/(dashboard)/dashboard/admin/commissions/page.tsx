@@ -173,7 +173,7 @@ export default function AdminCommissionsPage() {
                         <td className="px-4 py-2 align-top text-right">
                           <CardButton
                             type="button"
-                            variant="secondary"
+                            variant="outline"
                             loading={savingId === s.id}
                             onClick={() => handleSave(s.id)}
                           >

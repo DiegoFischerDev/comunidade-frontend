@@ -194,7 +194,7 @@ function CommentInlineForm({
         <div className="flex items-center justify-end gap-2 border-t border-zinc-200/60 bg-white/60 px-2.5 py-2">
           <CardButton
             type="button"
-            variant="secondary"
+            variant="outline"
             size="sm"
             onClick={onCancel}
             disabled={sending}

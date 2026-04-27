@@ -2,25 +2,33 @@
 
 import Image from "next/image";
 
-type AffiliateProgramCardTopProps = {
-  /** Altura da faixa de imagem (ex.: h-56 no card promocional completo) */
-  imageHeightClass?: string;
-};
+const ALT =
+  "Programa de afiliados — é uma honra ter você na equipe, vamos crescer juntos";
 
-export function AffiliateProgramCardTop({
-  imageHeightClass = "h-56",
-}: AffiliateProgramCardTopProps) {
+/**
+ * Faixa visual do programa de afiliados (my-referrals): arte distinta em mobile vs desktop.
+ */
+export function AffiliateProgramCardTop() {
   return (
     <>
-      <div
-        className={`relative mb-4 w-full overflow-hidden rounded-xl ${imageHeightClass}`}
-      >
+      <div className="relative mb-4 w-full overflow-hidden rounded-xl">
         <Image
-          src="/afiliados.png"
-          alt="Programa de afiliados"
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, 640px"
+          src="/rafa_cards/dashboard_afiliados_mobile.png"
+          alt={ALT}
+          width={1250}
+          height={1875}
+          className="h-auto w-full md:hidden"
+          sizes="100vw"
+          unoptimized
+        />
+        <Image
+          src="/rafa_cards/dashboard_afiliados.png"
+          alt={ALT}
+          width={5000}
+          height={2188}
+          className="hidden h-auto w-full md:block"
+          sizes="(max-width: 1280px) 100vw, 42rem"
+          unoptimized
         />
       </div>
       <h2 className="text-base font-semibold text-zinc-900">Programa de Afiliados</h2>

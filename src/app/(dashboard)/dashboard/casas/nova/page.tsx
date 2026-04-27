@@ -151,7 +151,7 @@ export default function NewHousePostPage() {
           Apenas parceiros na categoria Relocation podem publicar imóveis aqui.
         </p>
         <div className="mt-4">
-          <CardLinkButton href="/dashboard" variant="secondary">
+          <CardLinkButton href="/dashboard" variant="outline">
             Voltar ao painel
           </CardLinkButton>
         </div>
@@ -216,7 +216,7 @@ export default function NewHousePostPage() {
           </p>
         </div>
         <div className="shrink-0">
-          <CardLinkButton href="/dashboard/casas" variant="secondary">
+          <CardLinkButton href="/dashboard/casas" variant="outline">
             Voltar
           </CardLinkButton>
         </div>
@@ -241,7 +241,7 @@ export default function NewHousePostPage() {
             <div className="flex flex-wrap items-center gap-3">
               <CardButton
                 type="button"
-                variant="secondary"
+                variant="outline"
                 onClick={() => imageInputRef.current?.click()}
                 disabled={images.length >= 6}
               >

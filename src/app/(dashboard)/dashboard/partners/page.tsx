@@ -327,7 +327,7 @@ export default function PartnersPage() {
                           );
                         }
                       }}
-                      variant="secondary"
+                      variant="outline"
                       size="sm"
                       className="mr-2"
                     >

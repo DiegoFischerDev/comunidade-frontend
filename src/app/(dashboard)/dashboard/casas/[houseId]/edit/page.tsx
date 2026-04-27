@@ -291,7 +291,7 @@ export default function EditHousePage() {
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Editar imóvel</h1>
         <p className="mt-4 text-sm text-red-600">{loadError}</p>
-        <CardLinkButton href="/dashboard/casas" variant="secondary" className="mt-4">
+        <CardLinkButton href="/dashboard/casas" variant="outline" className="mt-4">
           Voltar
         </CardLinkButton>
       </div>
@@ -309,7 +309,7 @@ export default function EditHousePage() {
             Alterações na página pública. A mensagem no grupo WhatsApp não é reenviada.
           </p>
         </div>
-        <CardLinkButton href="/dashboard/casas" variant="secondary">
+        <CardLinkButton href="/dashboard/casas" variant="outline">
           Voltar
         </CardLinkButton>
       </div>
@@ -335,7 +335,7 @@ export default function EditHousePage() {
             />
             <CardButton
               type="button"
-              variant="secondary"
+              variant="outline"
               onClick={() => imageInputRef.current?.click()}
               disabled={totalImageCount >= 6}
             >

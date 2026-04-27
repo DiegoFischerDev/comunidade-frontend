@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
+import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
 import { NewSupportTicketModal } from '@/components/support-ticket';
 import { CardButton } from '@/components/ui/CardButton';
 
@@ -96,7 +97,23 @@ export default function ReclameAquiUserPage() {
     }
   }, [createMsg, load]);
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="mx-auto w-full max-w-[820px]">
+        <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
+        <p className="mt-2 text-zinc-600">Faça login para solicitar suporte.</p>
+        <div className="mt-4 flex">
+          <CardButton
+            type="button"
+            onClick={() => window.dispatchEvent(new Event(OPEN_AUTH_LOGIN_EVENT))}
+            variant="primary"
+          >
+            Fazer login
+          </CardButton>
+        </div>
+      </div>
+    );
+  }
   if (!isMember) {
     return (
       <div className="mx-auto w-full max-w-[820px]">

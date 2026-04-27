@@ -34,7 +34,7 @@ export async function generateMetadata(): Promise<Metadata> {
       url: base,
       images: [
         {
-          url: new URL("/og-comunidade.png", base).href,
+          url: new URL("/og_comunidade2.png", base).href,
           width: 1200,
           height: 630,
           alt: "Comunidade Rafa Portugal",
@@ -45,7 +45,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title: "Comunidade Rafa pelo mundo",
       description: desc,
-      images: [new URL("/og-comunidade.png", base).href],
+      images: [new URL("/og_comunidade2.png", base).href],
     },
   };
 }

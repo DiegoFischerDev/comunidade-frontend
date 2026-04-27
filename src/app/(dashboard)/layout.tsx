@@ -436,6 +436,8 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  /** Início do dashboard: hero em full-bleed; padding move-se para a página. */
+  const isDashboardHome = pathname === '/dashboard';
   const {
     user,
     logout,
@@ -589,7 +591,12 @@ export default function DashboardLayout({
 
   // Sincroniza categoria ativa no menu com rota atual (categoria ou parceiro)
   useEffect(() => {
-    if (pathname === '/dashboard/relocation' || pathname.startsWith('/dashboard/relocation/')) {
+    if (
+      pathname === '/dashboard/relocation' ||
+      pathname.startsWith('/dashboard/relocation/') ||
+      pathname === '/relocation/imoveis' ||
+      pathname.startsWith('/relocation/')
+    ) {
       setActiveCategorySlug('relocation');
       return;
     }
@@ -797,6 +804,8 @@ export default function DashboardLayout({
     (pathname.startsWith('/dashboard/partner/') && !partnerViewingOwnPublicPage) ||
     pathname === '/dashboard/relocation' ||
     pathname.startsWith('/dashboard/relocation/') ||
+    pathname === '/relocation/imoveis' ||
+    pathname.startsWith('/relocation/') ||
     (pathname.startsWith('/dashboard/casas/') &&
       pathname !== '/dashboard/casas/nova' &&
       !pathname.endsWith('/edit'));
@@ -830,11 +839,11 @@ export default function DashboardLayout({
             aria-label="Ir para o início"
           >
             <Image
-              src="/logo_principal.png"
+              src="/logo_principal2.png"
               alt="Comunidade Rafa Portugal"
-              width={800}
-              height={192}
-              className="h-24 w-auto max-w-full object-contain sm:h-28"
+              width={740}
+              height={174}
+              className="h-18 w-auto max-w-full object-contain sm:h-28"
               priority
             />
           </button>
@@ -917,6 +926,16 @@ export default function DashboardLayout({
             }`}
           >
             Grupos whatsapp
+          </Link>
+          <Link
+            href="/relocation/imoveis"
+            className={`block rounded-md px-3 py-2 text-sm ${
+              pathname === '/relocation/imoveis' || pathname.startsWith('/relocation/')
+                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                : 'text-zinc-800 hover:bg-zinc-100'
+            }`}
+          >
+            Imóveis
           </Link>
           {user && user.role !== 'ADMIN' ? (
             <Link
@@ -1110,6 +1129,8 @@ export default function DashboardLayout({
                   (relocation
                     ? pathname === '/dashboard/relocation' ||
                       pathname.startsWith('/dashboard/relocation/') ||
+                      pathname === '/relocation/imoveis' ||
+                      pathname.startsWith('/relocation/') ||
                       (pathname.startsWith('/dashboard/casas/') &&
                         pathname !== '/dashboard/casas/nova' &&
                         !pathname.endsWith('/edit'))
@@ -1164,12 +1185,38 @@ export default function DashboardLayout({
               >
                 {user ? firstName : 'Visitante'}
               </p>
-              {user && (
-                <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-                  {roleLabel}
-                  {isImpersonating && ' (modo admin)'}
-                </p>
-              )}
+              {user ? (
+                user.role === 'ADMIN' || user.role === 'PARTNER' ? (
+                  <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                    {roleLabel}
+                    {isImpersonating && ' (modo admin)'}
+                  </p>
+                ) : user.tier === 'MEMBER' ? (
+                  <div className="mt-0.5 min-w-0 space-y-0.5">
+                    <p className="text-[10px] font-medium leading-tight text-zinc-600">
+                      Membro VIP
+                      {isImpersonating && ' (modo admin)'}
+                    </p>
+                    {user.membershipExpiresAt ? (
+                      <p className="text-[10px] leading-tight text-zinc-500">
+                        Válido até{' '}
+                        <span className="font-medium text-zinc-700">
+                          {new Date(user.membershipExpiresAt).toLocaleDateString('pt-PT', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })}
+                        </span>
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                    {roleLabel}
+                    {isImpersonating && ' (modo admin)'}
+                  </p>
+                )
+              ) : null}
             </div>
           </div>
           <div>
@@ -1237,10 +1284,11 @@ export default function DashboardLayout({
         aria-label="Ir para o início"
       >
         <Image
-          src="/favicon-32x32.png"
+          src="/rp.png"
           alt="Ir para o início"
-          width={32}
-          height={32}
+          width={1563}
+          height={1563}
+          className="h-8 w-8 object-contain"
           priority
         />
       </button>
@@ -1249,7 +1297,7 @@ export default function DashboardLayout({
       <button
         type="button"
         onClick={() => setIsMenuOpen((open) => !open)}
-        className="fixed right-4 top-4 z-50 inline-flex h-8 w-8 items-center justify-center text-zinc-900 md:hidden"
+        className="fixed right-4 top-4 z-50 inline-flex h-8 w-8 items-center justify-center text-red-600 md:hidden"
         aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
       >
         {isMenuOpen ? (
@@ -1258,9 +1306,9 @@ export default function DashboardLayout({
           </span>
         ) : (
           <span className="flex h-3.5 w-4 flex-col justify-between" aria-hidden>
-            <span className="h-[2px] w-full rounded bg-zinc-900" />
-            <span className="h-[2px] w-full rounded bg-zinc-900" />
-            <span className="h-[2px] w-full rounded bg-zinc-900" />
+            <span className="h-[2px] w-full rounded bg-red-600" />
+            <span className="h-[2px] w-full rounded bg-red-600" />
+            <span className="h-[2px] w-full rounded bg-red-600" />
           </span>
         )}
       </button>
@@ -1749,7 +1797,13 @@ export default function DashboardLayout({
         </div>
       )}
 
-      <main className="flex-1 p-4 pt-16 text-zinc-900 md:p-6 md:pt-6">
+      <main
+        className={
+          isDashboardHome
+            ? 'flex-1 px-0 pt-16 pb-4 text-zinc-900 md:pt-6 md:pb-6'
+            : 'flex-1 p-4 pt-16 text-zinc-900 md:p-6 md:pt-6'
+        }
+      >
         {children}
       </main>
 

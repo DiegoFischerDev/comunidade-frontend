@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -20,15 +21,6 @@ function formatEur(cents: number): string {
     currency: 'EUR',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(cents / 100);
-}
-
-function formatEurNoDecimals(cents: number): string {
-  return new Intl.NumberFormat('pt-PT', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
   }).format(cents / 100);
 }
 
@@ -217,103 +209,49 @@ export function FloatingWhatsAppButton({
           role="presentation"
         >
           <div
-            className="relative my-8 w-full max-w-lg rounded-2xl bg-white p-5 pt-10 shadow-xl"
+            className="relative my-8 w-full max-w-md rounded-2xl bg-white p-0 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={closeAll}
-              className="absolute right-3 top-3 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-zinc-200 text-zinc-700 shadow-sm transition-colors hover:bg-white hover:text-zinc-900"
+              className="absolute right-2 top-2 z-20 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-black/30 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-black/45"
               aria-label="Fechar"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <>
-              <div className="-mx-5 -mt-5 mb-4 overflow-hidden rounded-t-2xl">
-                <div className="relative h-40 w-full">
-                  <img
-                    src="/comunidade_bg.svg"
-                    alt=""
-                    className="h-full w-full object-cover object-center"
-                  />
-                </div>
-                <div className="bg-white px-4 pb-3 pt-3 text-center">
-                  <h3 className="text-lg font-bold tracking-tight text-zinc-900">
-                    Junte-se à Comunidade Rafa Portugal
-                  </h3>
-                  <div className="mt-2 flex justify-center">
-                    {amountsLoading ? (
-                      <span className="inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-sm font-semibold text-zinc-600">
-                        A carregar…
-                      </span>
-                    ) : amounts ? (
-                      <span className="inline-flex items-center gap-2 rounded-xl border border-emerald-200/70 bg-gradient-to-r from-emerald-50 to-emerald-100 px-4 py-2 text-base font-extrabold text-emerald-900 shadow-sm">
-                        {formatEurNoDecimals(amounts.eurCents)}/ano
-                      </span>
-                    ) : (
-                      <span className="text-sm font-medium text-zinc-600">
-                        Acesso por 1 ano — escolha a forma de pagamento
-                      </span>
-                    )}
-                  </div>
+
+            {!showPaymentOptions ? (
+              <div className="relative overflow-hidden rounded-2xl">
+                <Image
+                  src="/rafa_cards/membro_vip_modal.png"
+                  alt="Membro VIP — oferta Comunidade Rafa Portugal"
+                  width={800}
+                  height={1200}
+                  className="h-auto w-full max-h-[min(85vh,52rem)] object-contain object-top"
+                  sizes="(max-width: 448px) 100vw, 28rem"
+                  unoptimized
+                  priority
+                />
+                <div className="absolute inset-x-0 bottom-10 z-10 flex justify-center px-4 sm:bottom-12">
+                  <CardButton
+                    type="button"
+                    onClick={handleQueroSerMembro}
+                    variant="primary"
+                    className="pointer-events-auto !w-[10.5rem] text-sm shadow-lg sm:!w-44 sm:text-base"
+                  >
+                    Ativar acesso
+                  </CardButton>
                 </div>
               </div>
-
-              {!showPaymentOptions ? (
-                <>
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                    O que inclui:
-                  </p>
-                  <ul className="mt-2 space-y-2 text-sm text-zinc-700">
-                    <li className="flex items-start gap-2">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span>
-                        Acesso completo ao <strong className="text-zinc-800">Plano de imigração</strong>.
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span>
-                        <strong className="text-zinc-800">Acesso às lives da Rafa</strong> exclusivas para membros VIP.
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span>
-                        <strong className="text-zinc-800">10 € de desconto</strong> em qualquer serviço
-                        contratado com parceiros da comunidade.
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span><strong className="text-zinc-800">Ebook Portugal Sem Perrenge</strong> completo e com atualizações.</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" aria-hidden>✓</span>
-                      <span>
-                        <strong className="text-zinc-800">Acesso aos grupos VIP no Whatsapp</strong> incluindo grupos de imóveis disponíveis.
-                      </span>
-                    </li>
-                  </ul>
-                  <div className="mt-6">
-                    <CardButton
-                      type="button"
-                      onClick={handleQueroSerMembro}
-                      variant="primary"
-                      fullWidth
-                    >
-                      Ativar acesso
-                    </CardButton>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                    Escolha a forma de pagamento
-                  </p>
-                  <div className="mt-4 flex flex-col gap-3">
+            ) : (
+              <div className="p-5 pt-10">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                  Escolha a forma de pagamento
+                </p>
+                <div className="mt-4 flex flex-col gap-3">
                     <button
                       type="button"
                       disabled={checkoutLoading}
@@ -363,9 +301,8 @@ export function FloatingWhatsAppButton({
                       {amounts && <span className="text-sm font-semibold text-emerald-700">{formatBrl(amounts.pixCentavos)}</span>}
                     </button>
                   </div>
-                </>
-              )}
-            </>
+                </div>
+            )}
           </div>
         </div>
       )}

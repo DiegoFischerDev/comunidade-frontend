@@ -35,6 +35,26 @@ body {
   overflow-x: hidden;
 }
 
+/* Marquee de logos de parceiros (dashboard) — direita → esquerda */
+@keyframes partner-logos-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.partner-logos-track {
+  animation: partner-logos-marquee 16s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .partner-logos-track {
+    animation: none;
+  }
+}
+
 /* Alguns overlays de modal usam role="presentation"; garante que não herdem margens inesperadas */
 div[role='presentation'].fixed {
   margin-bottom: 0 !important;
