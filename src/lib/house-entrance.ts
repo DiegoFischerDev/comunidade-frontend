@@ -1,7 +1,7 @@
 /** Texto curto para cartões e listagens. */
 export function formatHouseEntradaShort(caucoes: number, rendas: number): string {
   const c = caucoes === 1 ? "1 caução" : `${caucoes} cauções`;
-  const r = rendas === 1 ? "1 renda antecipada" : `${rendas} rendas antecipadas`;
+  const r = rendas === 1 ? "1 renda" : `${rendas} rendas`;
   return `${c} · ${r}`;
 }
 
@@ -35,8 +35,8 @@ export function parseHouseMonthlyRentEurNumeric(priceEur: string): number | null
 }
 
 /**
- * Entrada com total: (cauções + rendas antecipadas) × renda mensal.
- * Ex.: "2 cauções · 1 renda antecipada = Total 1.350,00 €"
+ * Entrada com total: (cauções + rendas) × renda mensal.
+ * Ex.: "2 cauções · 1 renda = Total 1.350,00 €"
  */
 export function formatHouseEntradaWithTotal(
   caucoes: number,

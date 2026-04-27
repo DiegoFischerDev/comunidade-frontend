@@ -22,7 +22,7 @@ export function AffiliatePromoCard({
       </p>
       <p className="mt-2 text-sm text-zinc-600">
         Convide pessoas com o seu link exclusivo. Quando alguém se tornar membro ativo da
-        Comunidade RPM, você recebe comissão por indicação.
+        Comunidade Rafa Portugal, você recebe comissão por indicação.
       </p>
       <div className="mt-4">
         <CardButton type="button" onClick={onAction} variant="primary">

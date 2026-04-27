@@ -87,7 +87,7 @@ export default function PSPPage() {
                   <p className="text-sm font-medium text-zinc-900">
                     O conteúdo completo do guia PSP - Portugal Sem Perrengue é{" "}
                     <span className="font-semibold">exclusivo para membros</span>{" "}
-                    da Comunidade RPM.
+                    da Comunidade Rafa Portugal.
                   </p>
                   <p className="mt-2 text-xs text-zinc-600">
                     Desbloqueie todas as páginas do ebook, suporte direto e

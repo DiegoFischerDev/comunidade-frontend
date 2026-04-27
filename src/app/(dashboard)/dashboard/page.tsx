@@ -152,25 +152,30 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <section className="w-full">
-        <h1 className="sr-only">Comunidade RPM — Início</h1>
+        <h1 className="sr-only">Comunidade Rafa Portugal — Início</h1>
         <div className="w-full">
+          {/*
+            unoptimized: servir PNGs de /public evita stress no otimizador em heros muito largos.
+          */}
           <Image
             src="/hero_mobile2.png"
             width={1172}
             height={2084}
-            alt="Comunidade RPM"
+            alt="Comunidade Rafa Portugal"
             className="h-auto w-full rounded-2xl md:hidden"
             sizes="100vw"
             priority
+            unoptimized
           />
           <Image
-            src="/hero2.png"
+            src="/hero_pc.png"
             width={5000}
             height={2188}
-            alt="Comunidade RPM"
+            alt="Comunidade Rafa Portugal"
             className="hidden h-auto w-full rounded-2xl md:block"
             sizes="100vw"
             priority
+            unoptimized
           />
         </div>
       </section>
@@ -280,7 +285,7 @@ export default function DashboardPage() {
               <div className="relative h-20 w-20 flex-shrink-0">
                 <Image
                   src="/vip-card.png"
-                  alt="Cartão VIP Comunidade RPM"
+                  alt="Cartão VIP Comunidade Rafa Portugal"
                   fill
                   className="object-contain"
                   sizes="80px"

@@ -6,7 +6,7 @@ import { api } from '@/lib/api';
 import { CardButton } from '@/components/ui/CardButton';
 
 const WHATSAPP_NUMBER = '351927398547';
-const WHATSAPP_MESSAGE = 'Ola, preciso de ajuda na comunidade RPM';
+const WHATSAPP_MESSAGE = 'Ola, preciso de ajuda na Comunidade Rafa Portugal';
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
 
 export const OPEN_MEMBERSHIP_MODAL_EVENT = 'open-membership-modal';
@@ -70,7 +70,7 @@ export function FloatingWhatsAppButton({
 
     // Trava de segurança: membros ativos não devem pagar novamente
     if (isMember) {
-      alert('Você já é membro ativo da Comunidade RPM. Não é necessário pagar novamente a anuidade.');
+      alert('Você já é membro ativo da Comunidade Rafa Portugal. Não é necessário pagar novamente a anuidade.');
       closeAll();
       return;
     }
@@ -131,7 +131,7 @@ export function FloatingWhatsAppButton({
   async function handleQueroSerMembro() {
     // Se já for membro, não abre opções de pagamento
     if (isMember) {
-      alert('Você já é membro ativo da Comunidade RPM. Se precisar de ajuda, fale com a Rafa pelo WhatsApp.');
+      alert('Você já é membro ativo da Comunidade Rafa Portugal. Se precisar de ajuda, fale com a Rafa pelo WhatsApp.');
       closeAll();
       return;
     }
@@ -241,7 +241,7 @@ export function FloatingWhatsAppButton({
                 </div>
                 <div className="bg-white px-4 pb-3 pt-3 text-center">
                   <h3 className="text-lg font-bold tracking-tight text-zinc-900">
-                    Junte-se à Comunidade RPM
+                    Junte-se à Comunidade Rafa Portugal
                   </h3>
                   <div className="mt-2 flex justify-center">
                     {amountsLoading ? (

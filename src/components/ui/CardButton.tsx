@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { forwardRef } from 'react';
 
-type Variant = 'primary' | 'secondary' | 'danger';
+type Variant = 'primary' | 'secondary' | 'danger' | 'navGold';
 type Size = 'sm' | 'md';
 
 function cx(...parts: Array<string | false | null | undefined>) {
@@ -15,10 +15,15 @@ const base =
 export const cardButtonPrimaryClass =
   'bg-gradient-to-r from-[#055700] to-[#0a7a0a] text-white font-semibold shadow-sm hover:from-[#044400] hover:to-[#055700] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#055700]/80 focus-visible:ring-offset-2';
 
+/** Dourado das secções principais do menu lateral (título em destaque, links activos com gradiente). */
+const cardButtonNavGoldClass =
+  'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-semibold text-white shadow-sm hover:from-[#c07c01] hover:to-[#e7a01f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/75 focus-visible:ring-offset-2';
+
 const variantClass: Record<Variant, string> = {
   primary: cardButtonPrimaryClass,
-  secondary: 'font-medium border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50',
+  secondary: 'font-semibold border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50',
   danger: 'font-medium bg-red-600 text-white hover:bg-red-700',
+  navGold: cardButtonNavGoldClass,
 };
 
 const sizeClass: Record<Size, string> = {

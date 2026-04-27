@@ -165,7 +165,7 @@ function RegistroPageInner() {
   return (
     <div className="rounded-xl bg-white p-8 shadow-sm ring-1 ring-zinc-200">
       <h1 className="text-2xl font-semibold text-zinc-900">Criar conta</h1>
-      <p className="mt-1 text-sm text-zinc-500">Comunidade RPM</p>
+      <p className="mt-1 text-sm text-zinc-500">Comunidade Rafa Portugal</p>
 
       {error && (
         <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">

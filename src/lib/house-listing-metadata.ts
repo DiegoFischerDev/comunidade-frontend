@@ -23,7 +23,7 @@ export async function generateHouseListingMetadata(
     return { title: "Anúncio não encontrado" };
   }
 
-  const title = `${house.title} | Relocation RPM`;
+  const title = `${house.title} | Comunidade Rafa Portugal`;
   const description = clipDescription(house.description, 180);
 
   const cityKeyword =
@@ -56,7 +56,7 @@ export async function generateHouseListingMetadata(
       "relocation",
       cityKeyword,
       "Portugal",
-      "Comunidade RPM",
+      "Comunidade Rafa Portugal",
       house.partner.name,
     ],
     robots: {
@@ -72,7 +72,7 @@ export async function generateHouseListingMetadata(
       url: canonicalPath,
       type: "website",
       locale: "pt_PT",
-      siteName: "Comunidade RPM",
+      siteName: "Comunidade Rafa Portugal",
       images: ogImages,
     },
     twitter: {

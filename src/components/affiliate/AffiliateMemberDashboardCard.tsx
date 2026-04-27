@@ -84,7 +84,7 @@ export function AffiliateMemberDashboardCard({
     >
       <AffiliateProgramCardTop imageHeightClass="h-56" />
       <p className="text-sm text-zinc-700">
-        É um prazer ter você no time de afiliados da Comunidade RPM! Agora é só compartilhar, com a sua
+        É um prazer ter você no time de afiliados da Comunidade Rafa Portugal! Agora é só compartilhar, com a sua
         audiência, como a comunidade te ajudou no processo de imigração e convidar outras pessoas usando o
         seu link exclusivo.
       </p>

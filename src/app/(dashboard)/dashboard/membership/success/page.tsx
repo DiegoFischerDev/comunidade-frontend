@@ -21,7 +21,7 @@ export default function MembershipSuccessPage() {
         </div>
         <h1 className="text-xl font-bold text-zinc-900">Pagamento concluído</h1>
         <p className="mt-2 text-zinc-700">
-          Obrigado! Já és membro da Comunidade RPM. Tens acesso a todos os benefícios durante um ano.
+          Obrigado! Já és membro da Comunidade Rafa Portugal. Tens acesso a todos os benefícios durante um ano.
         </p>
         <Link
           href="/dashboard"

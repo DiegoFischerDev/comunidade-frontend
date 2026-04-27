@@ -11,6 +11,7 @@ import {
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import { CardButton } from '@/components/ui/CardButton';
 
 type Item = {
   id: string;
@@ -25,6 +26,8 @@ type TreeNode = Item & { children: TreeNode[] };
 type Props = {
   partnerId: string;
   partnerName: string;
+  /** Página pública: listagem de comentários em modo leitura (sem avaliar, responder ou eliminar). */
+  readOnly?: boolean;
 };
 
 function formatDate(iso: string) {
@@ -122,6 +125,7 @@ type ThreadProps = {
   userId: string | null | undefined;
   deletingId: string | null;
   onDelete: (id: string) => void;
+  readOnly: boolean;
   inlineReplyParentId: string | null;
   inlineReplyText: string;
   inlineReplySending: boolean;
@@ -138,6 +142,7 @@ type ReplyRowViewProps = {
   userId: string | null | undefined;
   deletingId: string | null;
   onDelete: (id: string) => void;
+  readOnly: boolean;
 };
 
 function CommentInlineForm({
@@ -187,30 +192,34 @@ function CommentInlineForm({
           </p>
         )}
         <div className="flex items-center justify-end gap-2 border-t border-zinc-200/60 bg-white/60 px-2.5 py-2">
-          <button
+          <CardButton
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={onCancel}
             disabled={sending}
-            className="rounded-full px-3 py-1.5 text-xs font-medium text-zinc-600 disabled:opacity-50"
           >
             Cancelar
-          </button>
-          <button
+          </CardButton>
+          <CardButton
             type="button"
+            variant="primary"
+            size="sm"
             onClick={onSubmit}
             disabled={!value.trim() || sending}
-            className="inline-flex cursor-pointer rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3.5 py-1.5 text-xs font-medium text-white ring-1 ring-amber-300/60 disabled:cursor-not-allowed disabled:opacity-50"
+            loading={sending}
           >
             {sending ? 'A enviar…' : 'Publicar'}
-          </button>
+          </CardButton>
         </div>
       </div>
     </div>
   );
 }
 
-function ReplyRow({ node, isAdmin, userId, deletingId, onDelete }: ReplyRowViewProps) {
-  const canDelete = isAdmin || (userId != null && userId === node.user.id);
+function ReplyRow({ node, isAdmin, userId, deletingId, onDelete, readOnly }: ReplyRowViewProps) {
+  const canDelete =
+    !readOnly && (isAdmin || (userId != null && userId === node.user.id));
   return (
     <li className="pt-1.5 first:pt-0.5">
       <div className="min-w-0">
@@ -270,6 +279,7 @@ function RootCommentThread({
   userId,
   deletingId,
   onDelete,
+  readOnly,
   inlineReplyParentId,
   inlineReplyText,
   inlineReplySending,
@@ -280,7 +290,8 @@ function RootCommentThread({
   onSubmitInlineReply,
 }: ThreadProps) {
   const replyInputRef = useRef<HTMLTextAreaElement | null>(null);
-  const canDelete = isAdmin || (userId != null && userId === node.user.id);
+  const canDelete =
+    !readOnly && (isAdmin || (userId != null && userId === node.user.id));
   const flatReplies = useMemo(
     () => flattenRepliesInThread(node),
     [node],
@@ -365,55 +376,62 @@ function RootCommentThread({
                 userId={userId}
                 deletingId={deletingId}
                 onDelete={onDelete}
+                readOnly={readOnly}
               />
             ))}
           </ul>
         )}
 
-        <div
-          className={
-            flatReplies.length > 0
-              ? 'ml-0 mt-3 sm:ml-12 sm:pl-1'
-              : 'mt-3 flex gap-3.5 sm:gap-4'
-          }
-        >
-          {flatReplies.length === 0 && (
-            <div className="h-10 w-10 shrink-0" aria-hidden />
-          )}
+        {!readOnly && (
           <div
             className={
               flatReplies.length > 0
-                ? 'border-l-2 border-amber-200/50 pl-3 sm:pl-3.5'
-                : 'min-w-0 flex-1 border-l-2 border-amber-200/50 pl-3 sm:pl-3.5'
+                ? 'ml-0 mt-3 sm:ml-12 sm:pl-1'
+                : 'mt-3 flex gap-3.5 sm:gap-4'
             }
           >
-            <button
-              type="button"
-              onClick={() => onStartInlineReply(lastInThread)}
-              className="cursor-pointer text-left text-xs font-medium text-amber-800/90"
-            >
-              {inlineOpen ? 'Fechar' : 'Responder'}
-            </button>
-            {inlineOpen && (
-              <CommentInlineForm
-                node={lastInThread}
-                value={inlineReplyText}
-                sending={inlineReplySending}
-                err={inlineReplyErr}
-                onChange={onInlineReplyText}
-                onCancel={onCancelInlineReply}
-                onSubmit={onSubmitInlineReply}
-                inputRef={replyInputRef}
-              />
+            {flatReplies.length === 0 && (
+              <div className="h-10 w-10 shrink-0" aria-hidden />
             )}
+            <div
+              className={
+                flatReplies.length > 0
+                  ? 'border-l-2 border-amber-200/50 pl-3 sm:pl-3.5'
+                  : 'min-w-0 flex-1 border-l-2 border-amber-200/50 pl-3 sm:pl-3.5'
+              }
+            >
+              <button
+                type="button"
+                onClick={() => onStartInlineReply(lastInThread)}
+                className="cursor-pointer text-left text-xs font-medium text-amber-800/90"
+              >
+                {inlineOpen ? 'Fechar' : 'Responder'}
+              </button>
+              {inlineOpen && (
+                <CommentInlineForm
+                  node={lastInThread}
+                  value={inlineReplyText}
+                  sending={inlineReplySending}
+                  err={inlineReplyErr}
+                  onChange={onInlineReplyText}
+                  onCancel={onCancelInlineReply}
+                  onSubmit={onSubmitInlineReply}
+                  inputRef={replyInputRef}
+                />
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </li>
   );
 }
 
-export function PartnerCommentsSection({ partnerId, partnerName }: Props) {
+export function PartnerCommentsSection({
+  partnerId,
+  partnerName,
+  readOnly = false,
+}: Props) {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const [items, setItems] = useState<Item[]>([]);
@@ -555,21 +573,24 @@ export function PartnerCommentsSection({ partnerId, partnerName }: Props) {
             O que dizem de {partnerName}
           </h2>
           <p className="mt-1 text-sm text-zinc-500">
-            Avaliações deixadas por membros da Comunidade RPM.
+            Avaliações deixadas por membros da Comunidade Rafa Portugal.
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              window.dispatchEvent(
-                new CustomEvent('partner-open-comment-modal', {
-                  detail: { partnerId },
-                }),
-              );
-            }}
-            className="mt-3 w-full cursor-pointer rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3.5 py-2.5 text-sm font-semibold text-white ring-1 ring-amber-300/60 sm:w-auto"
-          >
-            Quero avaliar
-          </button>
+          {!readOnly && (
+            <CardButton
+              type="button"
+              variant="primary"
+              onClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent('partner-open-comment-modal', {
+                    detail: { partnerId },
+                  }),
+                );
+              }}
+              className="mt-3 w-full sm:w-auto"
+            >
+              Quero avaliar
+            </CardButton>
+          )}
         </div>
       </div>
 
@@ -581,7 +602,9 @@ export function PartnerCommentsSection({ partnerId, partnerName }: Props) {
 
       {!loading && items.length === 0 && !error && (
         <p className="mb-4 text-sm text-zinc-600">
-          Ainda não há comentários. Podes ser o primeiro a deixar a tua opinião.
+          {readOnly
+            ? 'Ainda não há comentários publicados.'
+            : 'Ainda não há comentários. Podes ser o primeiro a deixar a tua opinião.'}
         </p>
       )}
 
@@ -601,6 +624,7 @@ export function PartnerCommentsSection({ partnerId, partnerName }: Props) {
               userId={user?.id}
               deletingId={deletingId}
               onDelete={deleteComment}
+              readOnly={readOnly}
               inlineReplyParentId={inlineReplyParentId}
               inlineReplyText={inlineReplyText}
               inlineReplySending={inlineReplySending}
