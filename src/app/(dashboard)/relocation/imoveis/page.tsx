@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { RelocationHouseCard } from "@/components/relocation/RelocationHouseCard";
 import {
+  RELOCATION_BUSINESS_TYPE_LABELS,
+  RELOCATION_BUSINESS_TYPE_OPTIONS,
   RELOCATION_CITY_LABELS,
   RELOCATION_CITY_OPTIONS,
   RELOCATION_TYPOLOGY_LABELS,
@@ -32,23 +34,27 @@ export default function RelocationHousesListPage() {
   const parceiro = searchParams.get("parceiro")?.trim() ?? "";
   const cidade = searchParams.get("cidade")?.trim() ?? "";
   const tipologia = searchParams.get("tipologia")?.trim() ?? "";
+  const finalidade = searchParams.get("finalidade")?.trim() ?? "";
 
   const setRouteFilters = useCallback(
-    (next: { parceiro?: string; cidade?: string; tipologia?: string }) => {
+    (next: { parceiro?: string; cidade?: string; tipologia?: string; finalidade?: string }) => {
       const q = new URLSearchParams(searchParams.toString());
       const p = next.parceiro !== undefined ? next.parceiro : parceiro;
       const c = next.cidade !== undefined ? next.cidade : cidade;
       const t = next.tipologia !== undefined ? next.tipologia : tipologia;
+      const f = next.finalidade !== undefined ? next.finalidade : finalidade;
       if (p) q.set("parceiro", p);
       else q.delete("parceiro");
       if (c) q.set("cidade", c);
       else q.delete("cidade");
       if (t) q.set("tipologia", t);
       else q.delete("tipologia");
+      if (f) q.set("finalidade", f);
+      else q.delete("finalidade");
       const s = q.toString();
       router.replace(`${RELOCATION_IMOVEIS_PATH}${s ? `?${s}` : ""}`);
     },
-    [searchParams, router, parceiro, cidade, tipologia],
+    [searchParams, router, parceiro, cidade, tipologia, finalidade],
   );
 
   useEffect(() => {
@@ -74,6 +80,7 @@ export default function RelocationHousesListPage() {
           partnerId: parceiro || undefined,
           city: cidade || undefined,
           typology: tipologia || undefined,
+          businessType: (finalidade as "RENT" | "SALE") || undefined,
         });
         setRows(data);
       } catch (err) {
@@ -85,7 +92,7 @@ export default function RelocationHousesListPage() {
         setLoading(false);
       }
     })();
-  }, [parceiro, cidade, tipologia]);
+  }, [parceiro, cidade, tipologia, finalidade]);
 
   const filterBar = useMemo(
     () => (
@@ -159,6 +166,29 @@ export default function RelocationHousesListPage() {
             ))}
           </select>
         </div>
+        <div className="min-w-0 flex-1">
+          <label
+            className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500"
+            htmlFor="filter-finalidade"
+          >
+            Finalidade
+          </label>
+          <select
+            id="filter-finalidade"
+            value={finalidade}
+            onChange={(e) =>
+              setRouteFilters({ parceiro, cidade, tipologia, finalidade: e.target.value })
+            }
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+          >
+            <option value="">Todas</option>
+            {RELOCATION_BUSINESS_TYPE_OPTIONS.map((key) => (
+              <option key={key} value={key}>
+                {RELOCATION_BUSINESS_TYPE_LABELS[key] ?? key}
+              </option>
+            ))}
+          </select>
+        </div>
         <button
           type="button"
           onClick={() => router.replace(RELOCATION_IMOVEIS_PATH)}
@@ -168,7 +198,7 @@ export default function RelocationHousesListPage() {
         </button>
       </div>
     ),
-    [parceiro, cidade, tipologia, partners, setRouteFilters, router],
+    [parceiro, cidade, tipologia, finalidade, partners, setRouteFilters, router],
   );
 
   return (

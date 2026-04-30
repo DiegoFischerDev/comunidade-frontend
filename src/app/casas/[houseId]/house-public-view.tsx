@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 
@@ -7,6 +9,7 @@ import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { isOurImageHostname } from "@/lib/site-url";
 
 import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { HouseContactSection } from "./house-contact-section";
 import { HousePhotoGallery } from "./house-photo-gallery";
@@ -33,13 +36,13 @@ const TYPOLOGY_LABELS: Record<string, string> = {
   QUARTO_AP_COMPARTILHADO: "Quarto em Ap compartilhado",
 };
 
-function formatRentPerMonth(priceEur: string): string {
+function formatPriceByBusinessType(priceEur: string, businessType: "RENT" | "SALE"): string {
   const t = priceEur
     .trim()
     .replace(/\s*€\s*$/i, "")
     .replace(/\s*\/\s*m[eê]s?\s*$/i, "")
     .trim();
-  return `${t} € / mês`;
+  return businessType === "SALE" ? `${t} €` : `${t} € / mês`;
 }
 
 function formatRelocationFeeEur(raw: string): string {
@@ -81,6 +84,7 @@ type Props = {
 };
 
 export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: Props) {
+  const { user } = useAuth();
   const { partner } = house;
   const cityLabel = CITY_LABELS[house.city] ?? house.city;
   const typoLabel = TYPOLOGY_LABELS[house.typology] ?? house.typology;
@@ -105,6 +109,7 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
       : partner.logoUrl;
 
   const isDashboard = variant === "dashboard";
+  const canSeePartner = user?.tier === "MEMBER";
 
   return (
     <div
@@ -228,9 +233,11 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
             <dl className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 sm:col-span-2">
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-emerald-900/70">
-                  Renda mensal
+                  {house.businessType === "SALE" ? "Preço de venda" : "Renda mensal"}
                 </dt>
-                <dd className="mt-1 text-lg font-semibold text-emerald-950">{formatRentPerMonth(house.priceEur)}</dd>
+                <dd className="mt-1 text-lg font-semibold text-emerald-950">
+                  {formatPriceByBusinessType(house.priceEur, house.businessType)}
+                </dd>
               </div>
               <div className="rounded-2xl border border-zinc-200 bg-zinc-50/90 px-4 py-3 sm:col-span-2">
                 <div className="space-y-1.5 text-base text-zinc-900">
@@ -257,6 +264,7 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
               partnerId={house.partnerId}
               title={house.title}
               city={house.city}
+              businessType={house.businessType}
               typology={house.typology}
               priceEur={house.priceEur}
               furnished={house.furnished}
@@ -265,31 +273,33 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
           </div>
         </article>
 
-        <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
-            {logoSrc ? (
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-50 p-2 shadow-sm">
-                <img src={logoSrc} alt="" className="max-h-full max-w-full object-contain" />
+        {canSeePartner ? (
+          <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
+              {logoSrc ? (
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-50 p-2 shadow-sm">
+                  <img src={logoSrc} alt="" className="max-h-full max-w-full object-contain" />
+                </div>
+              ) : (
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 text-xs text-zinc-400">
+                  Logo
+                </div>
+              )}
+              <div className="min-w-0 flex-1 text-center sm:text-left">
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+                  {partner.category?.name ?? "Parceiro"}
+                </p>
+                <h2 className="mt-1 text-xl font-semibold text-zinc-900">{partner.name}</h2>
+                <Link
+                  href={isDashboard ? `/dashboard/partner/${partner.id}` : `/partner/${partner.id}`}
+                  className="mt-3 inline-flex text-sm font-medium text-amber-800 underline-offset-4 hover:underline"
+                >
+                  Ver perfil completo do parceiro
+                </Link>
               </div>
-            ) : (
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 text-xs text-zinc-400">
-                Logo
-              </div>
-            )}
-            <div className="min-w-0 flex-1 text-center sm:text-left">
-              <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-                {partner.category?.name ?? "Parceiro"}
-              </p>
-              <h2 className="mt-1 text-xl font-semibold text-zinc-900">{partner.name}</h2>
-              <Link
-                href={isDashboard ? `/dashboard/partner/${partner.id}` : `/partner/${partner.id}`}
-                className="mt-3 inline-flex text-sm font-medium text-amber-800 underline-offset-4 hover:underline"
-              >
-                Ver perfil completo do parceiro
-              </Link>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
       </main>
     </div>
   );
