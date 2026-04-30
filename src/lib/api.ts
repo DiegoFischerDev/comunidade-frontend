@@ -611,6 +611,7 @@ export const api = {
             id: string;
             title: string;
             city: string;
+            businessType: 'RENT' | 'SALE';
             typology: string;
             status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
             availableFrom: string;
@@ -911,6 +912,7 @@ export const api = {
             id: string;
             title: string;
             description: string;
+            businessType: 'RENT' | 'SALE';
             typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
             city: string;
             availableFrom: string;
@@ -934,6 +936,7 @@ export const api = {
           id: string;
           title: string;
           description: string;
+          businessType: 'RENT' | 'SALE';
           typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
           city: string;
           availableFrom: string;
@@ -956,6 +959,7 @@ export const api = {
         video?: File;
         title: string;
         description: string;
+        businessType?: 'RENT' | 'SALE';
         typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
         city: string;
         availableFrom: string;
@@ -978,6 +982,7 @@ export const api = {
         }
         fd.append('title', input.title);
         fd.append('description', input.description);
+        if (input.businessType != null) fd.append('businessType', input.businessType);
         fd.append('typology', input.typology);
         fd.append('city', input.city);
         fd.append('availableFrom', input.availableFrom);
@@ -990,6 +995,7 @@ export const api = {
           id: string;
           title: string;
           description: string;
+          businessType: 'RENT' | 'SALE';
           typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
           city: string;
           availableFrom: string;
@@ -1018,6 +1024,7 @@ export const api = {
           title?: string;
           description?: string;
           typology?: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          businessType?: 'RENT' | 'SALE';
           city?: string;
           availableFrom?: string;
           priceEur?: string;
@@ -1040,6 +1047,7 @@ export const api = {
         if (input.title != null) fd.append('title', input.title);
         if (input.description != null) fd.append('description', input.description);
         if (input.typology != null) fd.append('typology', input.typology);
+        if (input.businessType != null) fd.append('businessType', input.businessType);
         if (input.city != null) fd.append('city', input.city);
         if (input.availableFrom != null) fd.append('availableFrom', input.availableFrom);
         if (input.priceEur != null) fd.append('priceEur', input.priceEur);
@@ -1052,6 +1060,7 @@ export const api = {
           id: string;
           title: string;
           description: string;
+          businessType: 'RENT' | 'SALE';
           typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
           city: string;
           availableFrom: string;
@@ -1241,6 +1250,7 @@ export const api = {
         partnerId: string;
         title: string;
         city: string;
+        businessType: 'RENT' | 'SALE';
         typology: string;
         priceEur: string;
         furnished: boolean;
@@ -1255,17 +1265,20 @@ export const api = {
       partnerId?: string;
       city?: string;
       typology?: string;
+      businessType?: 'RENT' | 'SALE';
     }) => {
       const q = new URLSearchParams();
       if (query?.partnerId?.trim()) q.set('partnerId', query.partnerId.trim());
       if (query?.city?.trim()) q.set('city', query.city.trim());
       if (query?.typology?.trim()) q.set('typology', query.typology.trim());
+      if (query?.businessType?.trim()) q.set('businessType', query.businessType.trim());
       const qs = q.toString();
       return request<
         {
           id: string;
           title: string;
           description: string;
+          businessType: 'RENT' | 'SALE';
           typology: string;
           city: string;
           availableFrom: string;

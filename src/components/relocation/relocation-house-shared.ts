@@ -36,6 +36,11 @@ export const RELOCATION_TYPOLOGY_OPTIONS = [
   "T5",
   "QUARTO_AP_COMPARTILHADO",
 ] as const;
+export const RELOCATION_BUSINESS_TYPE_LABELS: Record<"RENT" | "SALE", string> = {
+  RENT: "Arrendamento",
+  SALE: "Venda",
+};
+export const RELOCATION_BUSINESS_TYPE_OPTIONS = ["RENT", "SALE"] as const;
 
 export function resolveRelocationMediaUrl(url: string) {
   return resolveUploadsUrl(url);
@@ -61,6 +66,18 @@ export function formatRelocationRentPerMonth(priceEur: string): string {
   return `${t} € / mês`;
 }
 
+export function formatRelocationPriceByBusinessType(
+  priceEur: string,
+  businessType: "RENT" | "SALE",
+): string {
+  const t = priceEur
+    .trim()
+    .replace(/\s*€\s*$/i, "")
+    .replace(/\s*\/\s*m[eê]s?\s*$/i, "")
+    .trim();
+  return businessType === "SALE" ? `${t} €` : `${t} € / mês`;
+}
+
 export function formatRelocationFeeEur(raw: string): string {
   const t = raw.trim().replace(/\s*€\s*$/i, "").trim();
   return `${t} €`;
@@ -69,8 +86,9 @@ export function formatRelocationFeeEur(raw: string): string {
 function buildRelocationWhatsAppText(h: RelocationHouseRow): string {
   const cityLabel = RELOCATION_CITY_LABELS[h.city] ?? h.city;
   const typologyLabel = RELOCATION_TYPOLOGY_LABELS[h.typology] ?? h.typology;
+  const businessLabel = RELOCATION_BUSINESS_TYPE_LABELS[h.businessType] ?? "Arrendamento";
   const mobilado = h.furnished ? "mobilado" : "não mobilado";
-  return `Olá, gostaria de mais informações sobre o imóvel ${typologyLabel} (${mobilado}) por ${h.priceEur} em ${cityLabel} com título ${h.title}.`;
+  return `Olá, gostaria de mais informações sobre o imóvel ${typologyLabel} (${mobilado}), finalidade ${businessLabel}, por ${h.priceEur} em ${cityLabel} com título ${h.title}.`;
 }
 
 export function openRelocationPartnerWhatsApp(h: RelocationHouseRow): void {

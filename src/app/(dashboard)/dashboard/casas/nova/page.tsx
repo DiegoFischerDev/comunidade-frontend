@@ -29,6 +29,10 @@ const TYPOLOGIES = [
   { id: "T5", label: "T5" },
   { id: "QUARTO_AP_COMPARTILHADO", label: "Quarto em Ap compartilhado" },
 ] as const;
+const BUSINESS_TYPES = [
+  { id: "RENT", label: "Arrendamento" },
+  { id: "SALE", label: "Venda" },
+] as const;
 
 const ENTRADA_COUNT_OPTIONS = Array.from({ length: 13 }, (_, i) => String(i));
 
@@ -49,6 +53,7 @@ export default function NewHousePostPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [typology, setTypology] = useState<(typeof TYPOLOGIES)[number]["id"]>("T2");
+  const [businessType, setBusinessType] = useState<(typeof BUSINESS_TYPES)[number]["id"]>("RENT");
   const [city, setCity] = useState(CITIES[0].id);
   const [availableFrom, setAvailableFrom] = useState(() => todayLocalDateInputValue());
   const [priceEur, setPriceEur] = useState("");
@@ -171,7 +176,7 @@ export default function NewHousePostPage() {
     if (!cleanTitle) return setError("Preenche o título do imóvel.");
     if (!cleanDesc) return setError("Preenche a descrição.");
     if (!availableFrom) return setError('Seleciona a data em "Disponível em".');
-    if (!cleanPrice) return setError("Preenche o preço do arrendamento.");
+    if (!cleanPrice) return setError(businessType === "SALE" ? "Preenche o preço de venda." : "Preenche o preço do arrendamento.");
     if (!cleanRelocation) return setError("Preenche a taxa de relocation (em euros).");
     if (images.length === 0 && !video) {
       return setError("Adiciona pelo menos 1 imagem ou 1 vídeo.");
@@ -185,6 +190,7 @@ export default function NewHousePostPage() {
         ...(video ? { video } : {}),
         title: cleanTitle,
         description: cleanDesc,
+        businessType,
         typology,
         city,
         availableFrom,
@@ -347,7 +353,21 @@ export default function NewHousePostPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <label className="block text-xs font-medium text-zinc-700">Finalidade</label>
+            <select
+              value={businessType}
+              onChange={(e) => setBusinessType(e.target.value as (typeof BUSINESS_TYPES)[number]["id"])}
+              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+            >
+              {BUSINESS_TYPES.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div>
             <label className="block text-xs font-medium text-zinc-700">Cidade</label>
             <select
@@ -391,7 +411,9 @@ export default function NewHousePostPage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-medium text-zinc-700">Renda mensal</label>
+            <label className="block text-xs font-medium text-zinc-700">
+              {businessType === "SALE" ? "Preço de venda" : "Renda mensal"}
+            </label>
             <div className="mt-1 flex items-center gap-2">
               <input
                 value={priceEur}

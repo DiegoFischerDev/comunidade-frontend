@@ -12,6 +12,7 @@ type Props = {
   partnerId: string;
   title: string;
   city: string;
+  businessType: "RENT" | "SALE";
   typology: string;
   priceEur: string;
   furnished: boolean;
@@ -43,6 +44,7 @@ const TYPOLOGY_LABELS: Record<string, string> = {
 function buildLeadMessage(f: {
   title: string;
   city: string;
+  businessType: "RENT" | "SALE";
   typology: string;
   price: string;
   furnished: boolean;
@@ -50,7 +52,8 @@ function buildLeadMessage(f: {
   const cityLabel = CITY_LABELS[f.city] ?? f.city;
   const typologyLabel = TYPOLOGY_LABELS[f.typology] ?? f.typology;
   const mobilado = f.furnished ? "mobilado" : "não mobilado";
-  return `Olá, gostaria de mais informações sobre o imóvel ${typologyLabel} (${mobilado}) por ${f.price} em ${cityLabel} com título ${f.title}.`;
+  const finalidade = f.businessType === "SALE" ? "venda" : "arrendamento";
+  return `Olá, gostaria de mais informações sobre o imóvel ${typologyLabel} (${mobilado}), para ${finalidade}, por ${f.price} em ${cityLabel} com título ${f.title}.`;
 }
 
 export function HouseContactSection({
@@ -58,6 +61,7 @@ export function HouseContactSection({
   partnerId,
   title,
   city,
+  businessType,
   typology,
   priceEur,
   furnished,
@@ -97,6 +101,7 @@ export function HouseContactSection({
       const text = buildLeadMessage({
         title: data.title,
         city: data.city,
+        businessType: data.businessType,
         typology: data.typology,
         price: data.priceEur,
         furnished: data.furnished,

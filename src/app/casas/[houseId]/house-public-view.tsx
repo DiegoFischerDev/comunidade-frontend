@@ -33,13 +33,13 @@ const TYPOLOGY_LABELS: Record<string, string> = {
   QUARTO_AP_COMPARTILHADO: "Quarto em Ap compartilhado",
 };
 
-function formatRentPerMonth(priceEur: string): string {
+function formatPriceByBusinessType(priceEur: string, businessType: "RENT" | "SALE"): string {
   const t = priceEur
     .trim()
     .replace(/\s*€\s*$/i, "")
     .replace(/\s*\/\s*m[eê]s?\s*$/i, "")
     .trim();
-  return `${t} € / mês`;
+  return businessType === "SALE" ? `${t} €` : `${t} € / mês`;
 }
 
 function formatRelocationFeeEur(raw: string): string {
@@ -228,9 +228,11 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
             <dl className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 sm:col-span-2">
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-emerald-900/70">
-                  Renda mensal
+                  {house.businessType === "SALE" ? "Preço de venda" : "Renda mensal"}
                 </dt>
-                <dd className="mt-1 text-lg font-semibold text-emerald-950">{formatRentPerMonth(house.priceEur)}</dd>
+                <dd className="mt-1 text-lg font-semibold text-emerald-950">
+                  {formatPriceByBusinessType(house.priceEur, house.businessType)}
+                </dd>
               </div>
               <div className="rounded-2xl border border-zinc-200 bg-zinc-50/90 px-4 py-3 sm:col-span-2">
                 <div className="space-y-1.5 text-base text-zinc-900">
@@ -257,6 +259,7 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
               partnerId={house.partnerId}
               title={house.title}
               city={house.city}
+              businessType={house.businessType}
               typology={house.typology}
               priceEur={house.priceEur}
               furnished={house.furnished}

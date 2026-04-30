@@ -32,6 +32,10 @@ const TYPOLOGY_LABELS: Record<string, string> = {
   T5: "T5",
   QUARTO_AP_COMPARTILHADO: "Quarto em Ap compartilhado",
 };
+const BUSINESS_TYPE_LABELS: Record<"RENT" | "SALE", string> = {
+  RENT: "Arrendamento",
+  SALE: "Venda",
+};
 
 function formatDatePt(value: string) {
   const d = new Date(value);
@@ -98,6 +102,8 @@ export default function PartnerHousesPage() {
         r.city,
         CITY_LABELS[r.city] ?? "",
         r.typology,
+        r.businessType,
+        BUSINESS_TYPE_LABELS[r.businessType] ?? "",
         TYPOLOGY_LABELS[r.typology] ?? "",
         r.priceEur,
         r.relocationFeeEur,
@@ -244,6 +250,7 @@ export default function PartnerHousesPage() {
                   <th className="px-4 py-3 text-left font-medium">Título</th>
                   <th className="px-4 py-3 text-left font-medium">Cidade</th>
                   <th className="px-4 py-3 text-left font-medium">Tipologia</th>
+                  <th className="px-4 py-3 text-left font-medium">Finalidade</th>
                   <th className="px-4 py-3 text-left font-medium">Mobilado</th>
                   <th className="px-4 py-3 text-left font-medium">Disponível em</th>
                   <th className="px-4 py-3 text-left font-medium">Preço</th>
@@ -276,6 +283,9 @@ export default function PartnerHousesPage() {
                     <td className="px-4 py-3 text-zinc-700">{CITY_LABELS[r.city] ?? r.city}</td>
                     <td className="px-4 py-3 text-zinc-700">
                       {TYPOLOGY_LABELS[r.typology] ?? r.typology}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-700">
+                      {BUSINESS_TYPE_LABELS[r.businessType] ?? r.businessType}
                     </td>
                     <td className="px-4 py-3 text-zinc-700">{r.furnished ? "Sim" : "Não"}</td>
                     <td className="px-4 py-3 text-zinc-700">{formatDatePt(r.availableFrom)}</td>

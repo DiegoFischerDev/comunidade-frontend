@@ -19,6 +19,7 @@ export type PublicHousePageData = {
   id: string;
   title: string;
   description: string;
+  businessType: "RENT" | "SALE";
   typology: string;
   city: string;
   availableFrom: string;

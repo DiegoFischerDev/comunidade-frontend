@@ -28,6 +28,10 @@ const TYPOLOGIES = [
   { id: "T5", label: "T5" },
   { id: "QUARTO_AP_COMPARTILHADO", label: "Quarto em Ap compartilhado" },
 ] as const;
+const BUSINESS_TYPES = [
+  { id: "RENT", label: "Arrendamento" },
+  { id: "SALE", label: "Venda" },
+] as const;
 
 const ENTRADA_COUNT_OPTIONS = Array.from({ length: 13 }, (_, i) => String(i));
 
@@ -57,6 +61,7 @@ export default function EditHousePage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [typology, setTypology] = useState<(typeof TYPOLOGIES)[number]["id"]>("T2");
+  const [businessType, setBusinessType] = useState<(typeof BUSINESS_TYPES)[number]["id"]>("RENT");
   const [city, setCity] = useState<string>(CITIES[0].id);
   const [availableFrom, setAvailableFrom] = useState("");
   const [priceEur, setPriceEur] = useState("");
@@ -127,6 +132,7 @@ export default function EditHousePage() {
         if (cancelled) return;
         setTitle(h.title);
         setDescription(h.description);
+        setBusinessType(h.businessType);
         setTypology(h.typology);
         setCity(h.city);
         setAvailableFrom(h.availableFrom.slice(0, 10));
@@ -193,7 +199,7 @@ export default function EditHousePage() {
     if (!cleanTitle) return setError("Preenche o título do imóvel.");
     if (!cleanDesc) return setError("Preenche a descrição.");
     if (!availableFrom) return setError('Seleciona a data em "Disponível em".');
-    if (!cleanPrice) return setError("Preenche o preço do arrendamento.");
+    if (!cleanPrice) return setError(businessType === "SALE" ? "Preenche o preço de venda." : "Preenche o preço do arrendamento.");
     if (!cleanRelocation) return setError("Preenche a taxa de relocation (em euros).");
 
     const totalImages = retainedImageUrls.length + newImages.length;
@@ -209,6 +215,7 @@ export default function EditHousePage() {
       await api.partner.houses.update(houseId, {
         title: cleanTitle,
         description: cleanDesc,
+        businessType,
         typology,
         city,
         availableFrom,
@@ -475,7 +482,21 @@ export default function EditHousePage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <label className="block text-xs font-medium text-zinc-700">Finalidade</label>
+            <select
+              value={businessType}
+              onChange={(e) => setBusinessType(e.target.value as (typeof BUSINESS_TYPES)[number]["id"])}
+              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+            >
+              {BUSINESS_TYPES.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div>
             <label className="block text-xs font-medium text-zinc-700">Cidade</label>
             <select
@@ -518,7 +539,9 @@ export default function EditHousePage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-medium text-zinc-700">Renda mensal</label>
+            <label className="block text-xs font-medium text-zinc-700">
+              {businessType === "SALE" ? "Preço de venda" : "Renda mensal"}
+            </label>
             <input
               value={priceEur}
               onChange={(e) => setPriceEur(e.target.value)}

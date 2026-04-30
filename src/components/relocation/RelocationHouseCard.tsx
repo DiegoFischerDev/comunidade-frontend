@@ -11,8 +11,9 @@ import { formatHouseEntradaWithTotal } from "@/lib/house-entrance";
 
 import {
   formatRelocationFeeEur,
-  formatRelocationRentPerMonth,
+  formatRelocationPriceByBusinessType,
   getRelocationHouseMedia,
+  RELOCATION_BUSINESS_TYPE_LABELS,
   RELOCATION_CITY_LABELS,
   RELOCATION_TYPOLOGY_LABELS,
   relocationAvailabilityLabel,
@@ -32,6 +33,7 @@ export function RelocationHouseCard({ house: h, showContactButton = true }: Prop
   const { videoSrc, primaryImageSrc } = getRelocationHouseMedia(h);
   const cityLabel = RELOCATION_CITY_LABELS[h.city] ?? h.city;
   const typoLabel = RELOCATION_TYPOLOGY_LABELS[h.typology] ?? h.typology;
+  const businessTypeLabel = RELOCATION_BUSINESS_TYPE_LABELS[h.businessType] ?? "Arrendamento";
   const isListedButNotForContact = h.status !== "AVAILABLE";
 
   const handleContactClick = () => {
@@ -98,14 +100,16 @@ export function RelocationHouseCard({ house: h, showContactButton = true }: Prop
             {h.title}
           </h2>
           <p className="mt-1 text-xs text-zinc-500">
-            {typoLabel} · {cityLabel}
+            {typoLabel} · {cityLabel} · {businessTypeLabel}
           </p>
         </div>
 
         <div className="border-t border-zinc-100 pt-3">
-          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-400">Renda mensal</p>
+          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-400">
+            {h.businessType === "SALE" ? "Preço de venda" : "Renda mensal"}
+          </p>
           <p className="mt-1 text-lg font-semibold tabular-nums tracking-tight text-zinc-900">
-            {formatRelocationRentPerMonth(h.priceEur)}
+            {formatRelocationPriceByBusinessType(h.priceEur, h.businessType)}
           </p>
         </div>
 
