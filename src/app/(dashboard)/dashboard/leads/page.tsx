@@ -1,5 +1,6 @@
 'use client';
 
+import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -51,6 +52,23 @@ function formatPtDate(value: string | null): string | null {
   return date.toLocaleDateString('pt-PT');
 }
 
+/** Ex.: Contactado em 01/05/2026, 00:12:34 */
+function formatContactadoEm(iso: string): string {
+  const d = new Date(iso);
+  const dateStr = d.toLocaleDateString('pt-PT', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+  const timeStr = d.toLocaleTimeString('pt-PT', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+  return `Contactado em ${dateStr}, ${timeStr}`;
+}
+
 function formatAvgMinutesPt(m: number | null | undefined): string {
   if (m == null || !Number.isFinite(m) || m <= 0) {
     return 'Ainda sem histórico suficiente (após contactar leads, calculamos a média).';
@@ -97,6 +115,12 @@ function getPlanLines(lead: LeadRow): string[] {
   return lines;
 }
 
+function displayNameForLead(lead: LeadRow): string {
+  return lead.contactType === 'visitor'
+    ? 'Visitante'
+    : lead.user?.name || '—';
+}
+
 function leadMatchesFilter(lead: LeadRow, filter: string): boolean {
   if (!filter.trim()) return true;
   const q = filter.trim().toLowerCase();
@@ -116,6 +140,279 @@ function leadMatchesFilter(lead: LeadRow, filter: string): boolean {
     data.includes(q) ||
     planText.includes(q) ||
     interest.includes(q)
+  );
+}
+
+type PlanToggleProps = {
+  lead: LeadRow;
+  planLines: string[];
+  open: boolean;
+  onToggle: () => void;
+};
+
+function PlanImmigrationBlock({ lead, planLines, open, onToggle }: PlanToggleProps) {
+  if (!lead.immigrationPlan) {
+    return <span className="text-zinc-400">—</span>;
+  }
+  return (
+    <div className="max-w-md space-y-2">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="group inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
+        aria-expanded={open}
+        title="Abrir/fechar plano de imigração"
+      >
+        <span>Plano</span>
+        <span className={`transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden>
+          ▾
+        </span>
+      </button>
+      {open ? (
+        <div className="space-y-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2">
+          <p className="text-xs font-medium text-zinc-500">
+            Atualizado em{' '}
+            {new Date(lead.immigrationPlan.updatedAt).toLocaleString('pt-PT')}
+          </p>
+          {planLines.length ? (
+            <div className="space-y-1 text-xs text-zinc-700">
+              {planLines.map((line) => (
+                <p key={`${lead.id}-${line}`}>{line}</p>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-zinc-500">Sem respostas no plano.</p>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+type LeadBlocksProps = {
+  leads: LeadRow[];
+  openPlanByLeadId: Record<string, boolean>;
+  setOpenPlanByLeadId: Dispatch<SetStateAction<Record<string, boolean>>>;
+  contactBusyId: string | null;
+  onContact: (leadId: string) => void;
+};
+
+function LeadRowsDesktop({
+  leads,
+  openPlanByLeadId,
+  setOpenPlanByLeadId,
+  contactBusyId,
+  onContact,
+}: LeadBlocksProps) {
+  return (
+    <>
+      {leads.map((lead) => {
+        const planLines = getPlanLines(lead);
+        const name = displayNameForLead(lead);
+        return (
+          <tr key={lead.id} className="border-t border-zinc-200">
+            <td className="min-w-0 px-3 py-2.5 align-top text-sm">
+              <span className="font-medium text-zinc-900">{name}</span>
+            </td>
+            <td className="min-w-0 px-3 py-2.5 align-top text-xs leading-relaxed text-zinc-700">
+              {lead.interestComment ?? '—'}
+            </td>
+            <td className="min-w-[140px] px-3 py-2.5 align-top">
+              <PlanImmigrationBlock
+                lead={lead}
+                planLines={planLines}
+                open={Boolean(openPlanByLeadId[lead.id])}
+                onToggle={() =>
+                  setOpenPlanByLeadId((prev) => ({
+                    ...prev,
+                    [lead.id]: !prev[lead.id],
+                  }))
+                }
+              />
+            </td>
+            <td className="whitespace-nowrap px-3 py-2.5 align-top text-xs text-zinc-700">
+              {new Date(lead.createdAt).toLocaleString('pt-PT')}
+            </td>
+            <td className="min-w-0 px-3 py-2.5 align-top text-xs leading-snug text-zinc-600">
+              {lead.awaitingAttendance ? (
+                <span className="inline-block text-base font-semibold text-amber-900 motion-safe:animate-pulse">
+                  Aguarda contacto
+                </span>
+              ) : lead.attendedAt ? (
+                <span>{formatContactadoEm(lead.attendedAt)}</span>
+              ) : (
+                '—'
+              )}
+            </td>
+            <td className="px-3 py-2.5 align-top text-right">
+              <button
+                type="button"
+                disabled={contactBusyId === lead.id}
+                onClick={() => void onContact(lead.id)}
+                className="inline-flex cursor-pointer rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {contactBusyId === lead.id ? 'A abrir…' : 'Abrir chat'}
+              </button>
+            </td>
+          </tr>
+        );
+      })}
+    </>
+  );
+}
+
+function LeadCardsMobile({
+  leads,
+  openPlanByLeadId,
+  setOpenPlanByLeadId,
+  contactBusyId,
+  onContact,
+}: LeadBlocksProps) {
+  return (
+    <div className="space-y-4">
+      {leads.map((lead) => {
+        const planLines = getPlanLines(lead);
+        const name = displayNameForLead(lead);
+        return (
+          <article
+            key={lead.id}
+            className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+          >
+            <dl className="space-y-3 text-sm">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Nome
+                </dt>
+                <dd className="mt-0.5 text-zinc-900">{name}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Interesse
+                </dt>
+                <dd className="mt-0.5 whitespace-pre-wrap text-zinc-700">
+                  {lead.interestComment ?? '—'}
+                </dd>
+              </div>
+              {planLines.length > 0 ? (
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    Plano de imigração
+                  </dt>
+                  <dd className="mt-0.5">
+                    <PlanImmigrationBlock
+                      lead={lead}
+                      planLines={planLines}
+                      open={Boolean(openPlanByLeadId[lead.id])}
+                      onToggle={() =>
+                        setOpenPlanByLeadId((prev) => ({
+                          ...prev,
+                          [lead.id]: !prev[lead.id],
+                        }))
+                      }
+                    />
+                  </dd>
+                </div>
+              ) : null}
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Data do pedido
+                </dt>
+                <dd className="mt-0.5 text-zinc-700">
+                  {new Date(lead.createdAt).toLocaleString('pt-PT')}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Estado
+                </dt>
+                <dd className="mt-0.5 text-xs text-zinc-700">
+                  {lead.awaitingAttendance ? (
+                    <span className="inline-block text-lg font-semibold text-amber-900 motion-safe:animate-pulse">
+                      Aguarda contacto
+                    </span>
+                  ) : lead.attendedAt ? (
+                    <span>{formatContactadoEm(lead.attendedAt)}</span>
+                  ) : (
+                    '—'
+                  )}
+                </dd>
+              </div>
+              <div className="border-t border-zinc-100 pt-3">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  WhatsApp
+                </dt>
+                <dd className="mt-2">
+                  <button
+                    type="button"
+                    disabled={contactBusyId === lead.id}
+                    onClick={() => void onContact(lead.id)}
+                    className="w-full cursor-pointer rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {contactBusyId === lead.id ? 'A abrir…' : 'Abrir chat no WhatsApp'}
+                  </button>
+                </dd>
+              </div>
+            </dl>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function LeadTableSection({
+  title,
+  description,
+  leads,
+  openPlanByLeadId,
+  setOpenPlanByLeadId,
+  contactBusyId,
+  onContact,
+}: LeadBlocksProps & { title: string; description?: string }) {
+  if (leads.length === 0) return null;
+
+  const blocksProps: LeadBlocksProps = {
+    leads,
+    openPlanByLeadId,
+    setOpenPlanByLeadId,
+    contactBusyId,
+    onContact,
+  };
+
+  return (
+    <section className="mt-8 w-full first:mt-6">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+        <h2 className="text-lg font-semibold text-zinc-900">{title}</h2>
+        <span className="text-xs font-medium text-zinc-500">{leads.length} lead(s)</span>
+      </div>
+      {description ? (
+        <p className="mt-1 text-sm text-zinc-600">{description}</p>
+      ) : null}
+
+      {/* Mobile: cards */}
+      <div className="mt-4 md:hidden">
+        <LeadCardsMobile {...blocksProps} />
+      </div>
+
+      {/* Desktop: full-width table */}
+      <div className='mt-4 hidden w-full overflow-x-auto rounded-xl border border-zinc-200 bg-white md:block'>
+        <table className="w-full min-w-[760px] table-fixed border-collapse text-sm xl:min-w-0">
+          <thead className="bg-zinc-50 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">
+            <tr>
+              <th className="w-[16%] px-3 py-3">Nome</th>
+              <th className="w-[27%] px-3 py-3">Interesse</th>
+              <th className="w-[21%] px-3 py-3">Plano de imigração</th>
+              <th className="w-[14%] px-3 py-3">Data do pedido</th>
+              <th className="w-[11%] px-3 py-3">Estado</th>
+              <th className="w-[11%] px-3 py-3 text-right">WhatsApp</th>
+            </tr>
+          </thead>
+          <tbody className="text-zinc-800">
+            <LeadRowsDesktop {...blocksProps} />
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -171,6 +468,16 @@ export default function PartnerLeadsPage() {
     [leads, filterInput],
   );
 
+  const pendingFiltered = useMemo(
+    () => filteredLeads.filter((l) => l.awaitingAttendance),
+    [filteredLeads],
+  );
+
+  const attendedFiltered = useMemo(
+    () => filteredLeads.filter((l) => !l.awaitingAttendance),
+    [filteredLeads],
+  );
+
   async function handleContactLead(leadId: string) {
     setContactBusyId(leadId);
     setError('');
@@ -201,15 +508,14 @@ export default function PartnerLeadsPage() {
   }
 
   return (
-    <div>
+    <div className="w-full min-w-0 max-w-full">
       <h1 className="text-2xl font-semibold text-zinc-900">Leads</h1>
-      <p className="mt-2 max-w-2xl text-sm text-zinc-600">
-        Pedidos de atendimento enviados pelo WhatsApp da equipa Rafa Portugal. O número do cliente não é exibido;
-        use o botão para abrir a conversa — registamos o momento do primeiro contacto para a média de resposta.
+      <p className="mt-2 max-w-3xl text-sm text-zinc-600">
+        Pedidos de atendimento enviados pelo WhatsApp da equipa Rafa Portugal. Use o botão para abrir a conversa.
       </p>
 
       <p className="mt-4 rounded-lg border border-amber-100 bg-amber-50/90 px-4 py-3 text-sm text-amber-950">
-        <span className="font-semibold">O seu tempo médio de atendimento: </span>
+        <span className="font-semibold">O seu tempo médio de atendimento às solicitações: </span>
         {formatAvgMinutesPt(avgMinutes)}
       </p>
 
@@ -227,7 +533,7 @@ export default function PartnerLeadsPage() {
         </p>
       ) : (
         <>
-          <div className="mt-6 mx-auto w-full max-w-[960px]">
+          <div className="mt-6 w-full">
             <label className="block text-xs font-medium text-zinc-700">
               Filtrar lista
             </label>
@@ -236,126 +542,35 @@ export default function PartnerLeadsPage() {
               value={filterInput}
               onChange={(e) => setFilterInput(e.target.value)}
               placeholder="Pesquisar por nome, interesse, plano ou data…"
-              className="mt-1 w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 w-full max-w-lg rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
+
           {filteredLeads.length === 0 ? (
-            <p className="mt-4 text-sm text-zinc-500">
+            <p className="mt-6 text-sm text-zinc-500">
               Nenhum lead corresponde ao filtro.
             </p>
           ) : (
-            <div className="mt-4 mx-auto w-full max-w-[960px] overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-              <table className="min-w-full text-sm">
-                <thead className="bg-zinc-50 text-zinc-600">
-                  <tr>
-                    <th className="px-4 py-2 text-left">Nome</th>
-                    <th className="px-4 py-2 text-left">Plano atual</th>
-                    <th className="px-4 py-2 text-left">Interesse</th>
-                    <th className="px-4 py-2 text-left">Plano de imigração</th>
-                    <th className="px-4 py-2 text-left">WhatsApp</th>
-                    <th className="px-4 py-2 text-left">Pedido</th>
-                    <th className="px-4 py-2 text-left">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredLeads.map((lead) => {
-                    const planLines = getPlanLines(lead);
-                    const displayName =
-                      lead.contactType === 'visitor'
-                        ? 'Visitante (só WhatsApp)'
-                        : lead.user?.name || '—';
-
-                    return (
-                      <tr key={lead.id} className="border-t border-zinc-200">
-                        <td className="px-4 py-2 align-top">{displayName}</td>
-                        <td className="px-4 py-2 align-top">
-                          {lead.user ? (
-                            <span className="text-xs font-medium text-zinc-700">
-                              {lead.user.tier === 'MEMBER' ? 'Membro VIP' : 'Visitante'}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-zinc-500">—</span>
-                          )}
-                        </td>
-                        <td className="max-w-[220px] px-4 py-2 align-top text-xs text-zinc-700">
-                          {lead.interestComment ?? '—'}
-                        </td>
-                        <td className="px-4 py-2 align-top">
-                          {lead.immigrationPlan ? (
-                            <div className="max-w-sm space-y-2">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setOpenPlanByLeadId((prev) => ({
-                                    ...prev,
-                                    [lead.id]: !prev[lead.id],
-                                  }))
-                                }
-                                className="group inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
-                                aria-expanded={Boolean(openPlanByLeadId[lead.id])}
-                                title="Abrir/fechar plano de imigração"
-                              >
-                                <span>Plano</span>
-                                <span
-                                  className={`transition-transform ${openPlanByLeadId[lead.id] ? 'rotate-180' : ''}`}
-                                  aria-hidden="true"
-                                >
-                                  ▾
-                                </span>
-                              </button>
-
-                              {openPlanByLeadId[lead.id] ? (
-                                <div className="space-y-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2">
-                                  <p className="text-xs font-medium text-zinc-500">
-                                    Atualizado em{' '}
-                                    {new Date(lead.immigrationPlan.updatedAt).toLocaleString('pt-PT')}
-                                  </p>
-                                  {planLines.length ? (
-                                    <div className="space-y-1 text-xs text-zinc-700">
-                                      {planLines.map((line) => (
-                                        <p key={`${lead.id}-${line}`}>{line}</p>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <p className="text-xs text-zinc-500">Sem respostas no plano.</p>
-                                  )}
-                                </div>
-                              ) : null}
-                            </div>
-                          ) : (
-                            <span className="text-zinc-400">—</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-2 align-top">
-                          <button
-                            type="button"
-                            disabled={contactBusyId === lead.id}
-                            onClick={() => void handleContactLead(lead.id)}
-                            className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
-                          >
-                            {contactBusyId === lead.id ? 'A abrir…' : 'Abrir chat'}
-                          </button>
-                        </td>
-                        <td className="px-4 py-2 align-top whitespace-nowrap">
-                          {new Date(lead.createdAt).toLocaleString('pt-PT')}
-                        </td>
-                        <td className="px-4 py-2 align-top text-xs text-zinc-600">
-                          {lead.awaitingAttendance ? (
-                            <span className="font-medium text-amber-800">Aguarda contacto</span>
-                          ) : lead.attendedAt ? (
-                            <span title={new Date(lead.attendedAt).toLocaleString('pt-PT')}>
-                              Contactado
-                            </span>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <>
+              <LeadTableSection
+                title="Aguardam atendimento"
+                description="Contacte estes pedidos primeiro. O tempo até clicar em «Abrir chat» entra na sua média de resposta."
+                leads={pendingFiltered}
+                openPlanByLeadId={openPlanByLeadId}
+                setOpenPlanByLeadId={setOpenPlanByLeadId}
+                contactBusyId={contactBusyId}
+                onContact={handleContactLead}
+              />
+              <LeadTableSection
+                title="Já contactados"
+                description="Histórico de pedidos em que já abriu a conversa no WhatsApp."
+                leads={attendedFiltered}
+                openPlanByLeadId={openPlanByLeadId}
+                setOpenPlanByLeadId={setOpenPlanByLeadId}
+                contactBusyId={contactBusyId}
+                onContact={handleContactLead}
+              />
+            </>
           )}
         </>
       )}
