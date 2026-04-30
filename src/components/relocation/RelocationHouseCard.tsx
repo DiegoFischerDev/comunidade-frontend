@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/components/FloatingWhatsAppButton";
 import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
 import { CardButton, CardLinkButton } from "@/components/ui/CardButton";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,10 +42,6 @@ export function RelocationHouseCard({ house: h, showContactButton = true }: Prop
           detail: { mode: "login" },
         }),
       );
-      return;
-    }
-    if (user.tier !== "MEMBER") {
-      window.dispatchEvent(new CustomEvent(OPEN_MEMBERSHIP_MODAL_EVENT));
       return;
     }
     openRelocationPartnerWhatsApp(h);
@@ -127,6 +122,10 @@ export function RelocationHouseCard({ house: h, showContactButton = true }: Prop
             <dd className="text-right font-medium text-zinc-800">
               {formatHouseEntradaWithTotal(h.caucoesCount, h.rendasEntradaCount, h.priceEur)}
             </dd>
+          </div>
+          <div className="flex items-start justify-between gap-3">
+            <dt className="shrink-0 text-zinc-500">Anunciante</dt>
+            <dd className="text-right font-medium text-zinc-800">{h.partner.name}</dd>
           </div>
         </dl>
       </div>

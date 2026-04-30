@@ -236,7 +236,7 @@ export function FloatingWhatsAppButton({
             {!showPaymentOptions ? (
               <div className="relative overflow-hidden rounded-2xl">
                 <Image
-                  src="/rafa_cards/membro_vip_modal2.png"
+                  src="/rafa_cards/membro_vip_modal3.png"
                   alt="Membro VIP — oferta Comunidade Rafa Portugal"
                   width={800}
                   height={1200}

@@ -2,11 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { api } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
-import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
-import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
 
 type CategoryRow = {
   id: string;
@@ -14,23 +10,10 @@ type CategoryRow = {
   name: string;
   shortDescription?: string;
   fullDescription?: string;
-  backgroundImageUrl?: string;
 };
 
 export default function ServicesDashboardPage() {
-  const { user } = useAuth();
   const [categories, setCategories] = useState<CategoryRow[] | null>(null);
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
-  function handleCategoryClick(event: React.MouseEvent<HTMLAnchorElement>) {
-    if (user?.tier === 'MEMBER') return;
-    event.preventDefault();
-    if (!user) {
-      window.dispatchEvent(new Event(OPEN_AUTH_LOGIN_EVENT));
-      return;
-    }
-    window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
-  }
 
   useEffect(() => {
     void (async () => {
@@ -43,7 +26,6 @@ export default function ServicesDashboardPage() {
             name: c.name,
             shortDescription: c.shortDescription,
             fullDescription: c.fullDescription,
-            backgroundImageUrl: c.backgroundImageUrl,
           })),
         );
       } catch {
@@ -58,63 +40,55 @@ export default function ServicesDashboardPage() {
   }, [categories]);
 
   return (
-    <div className="mx-auto w-full max-w-[900px] space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Nosso time de confiança</h1>
-        <p className="mt-2 text-sm text-zinc-600">
-          Aqui encontras os serviços que a Comunidade Rafa Portugal confia e recomenda. Estamos
-          sempre à procura de novos parceiros para oferecer à nossa comunidade as
-          melhores soluções, e os menores preços.
+    <div className="mx-auto w-full max-w-[980px] space-y-6">
+      <div className="overflow-hidden rounded-3xl border border-amber-100 bg-gradient-to-br from-[#fff9ee] via-white to-white p-6 shadow-sm">
+        <div className="inline-flex items-center gap-2 rounded-full bg-amber-100/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-900">
+          Parceiros verificados
+        </div>
+        <h1 className="mt-3 text-2xl font-semibold text-zinc-900 sm:text-3xl">Serviços da comunidade</h1>
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-600 sm:text-base">
+          Aqui encontras os serviços que a Comunidade Rafa Portugal confia e recomenda. Estamos sempre à procura de
+          novos parceiros para oferecer as melhores soluções e os menores preços.
         </p>
       </div>
 
-      <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         {sorted === null ? (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm sm:col-span-2">
             A carregar categorias…
           </div>
         ) : sorted.length === 0 ? (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm sm:col-span-2">
             Ainda não há categorias disponíveis.
           </div>
         ) : (
-          sorted.map((c) => (
+          sorted.map((c, index) => (
             <Link
               key={c.id}
               href={`/dashboard/category/${c.slug}`}
-              onClick={handleCategoryClick}
-              className="group flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-md"
+              className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md"
             >
-              <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:h-18 sm:w-28">
-                {c.backgroundImageUrl ? (
-                  <div
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{
-                      backgroundImage: `url("${
-                        c.backgroundImageUrl.startsWith('/uploads/')
-                          ? `${API_URL}${c.backgroundImageUrl}`
-                          : c.backgroundImageUrl
-                      }")`,
-                    }}
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Image src="/services2.png" alt="" width={40} height={40} className="opacity-60" />
-                  </div>
-                )}
+              <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-bl-full bg-gradient-to-br from-amber-100/40 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+              <div className="relative flex min-w-0 items-start gap-3">
+                <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-xs font-semibold text-zinc-600 transition group-hover:bg-amber-100 group-hover:text-amber-900">
+                  {String(index + 1).padStart(2, '0')}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-semibold text-zinc-900">{c.name}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-600">
+                    {(c.shortDescription?.trim() || c.fullDescription?.trim() || 'Sem descrição no momento.').slice(
+                      0,
+                      220,
+                    )}
+                  </p>
+                  <span className="mt-3 inline-flex items-center text-sm font-medium text-amber-800">
+                    Ver parceiros
+                    <span className="ml-1 transition-transform group-hover:translate-x-0.5" aria-hidden>
+                      →
+                    </span>
+                  </span>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-base font-semibold text-zinc-900">{c.name}</p>
-                {c.shortDescription ? (
-                  <p className="mt-1 line-clamp-2 text-sm text-zinc-600">{c.shortDescription}</p>
-                ) : null}
-              </div>
-              <span
-                className="shrink-0 text-xl text-zinc-400 transition group-hover:text-zinc-600"
-                aria-hidden
-              >
-                ›
-              </span>
             </Link>
           ))
         )}

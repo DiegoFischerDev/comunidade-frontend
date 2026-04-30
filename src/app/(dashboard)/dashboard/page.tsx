@@ -110,13 +110,13 @@ export default function DashboardPage() {
     ? "/rafa_cards/dashboard_afiliados_mobile.png"
     : isMember
       ? "/rafa_cards/hero_mobile_vip.png"
-      : "/rafa_cards/hero_mobile5.png";
+      : "/rafa_cards/hero_mobile6.png";
 
   const heroDesktopSrc = hasAffiliateEnrollment
     ? "/rafa_cards/dashboard_afiliados.png"
     : isMember
       ? "/rafa_cards/hero_pc_vip.png"
-      : "/rafa_cards/hero_pc3.png";
+      : "/rafa_cards/hero_pc5.png";
 
   /**
    * Hero: visitante → login; membro VIP → painel de indicações se já for afiliado, senão modal de
@@ -245,11 +245,11 @@ export default function DashboardPage() {
           <Link
             href={pdfHref}
             className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
-            aria-label="E-book Portugal Sem Perrengue"
+            aria-label="Guia Portugal Sem Perrengue"
           >
             <Image
               src="/rafa_cards/psp2.png"
-              alt="E-book Portugal Sem Perrengue"
+              alt="Guia Portugal Sem Perrengue"
               width={1250}
               height={1875}
               className="h-auto w-full object-contain"

@@ -60,7 +60,7 @@ export default function PSPFullPage() {
       <div className="-mx-4 mb-5 print:hidden md:hidden">
         <Image
           src="/rafa_cards/psp_hero.png"
-          alt="E-book Portugal Sem Perrengue"
+          alt="Guia Portugal Sem Perrengue"
           width={1250}
           height={1875}
           className="h-auto w-full object-contain"
@@ -71,11 +71,11 @@ export default function PSPFullPage() {
     <div className="flex min-h-[calc(100vh-6rem)] flex-col gap-4 pb-8">
       <div className="mx-auto w-full max-w-[820px]">
         <h1 className="hidden text-2xl font-semibold text-zinc-900 print:block md:block">
-          E-book - Portugal Sem Perrengue (PDF completo)
+          Guia Portugal Sem Perrengue (PDF completo)
         </h1>
         <p className="mt-1 text-sm text-zinc-500">Última atualização: abril/2026</p>
         <p className="mt-3 text-sm text-zinc-600">
-          Esse Ebook foi criado com muito carinho para te ajudar nesse processo de imigração. Apesar do nosso esforço, as
+          Este guia foi criado com muito carinho para te ajudar nesse processo de imigração. Apesar do nosso esforço, as
           regras mudam constantemente, então contamos com a ajuda da comunidade para atualizar esse material todos os meses.
         </p>
       </div>
@@ -85,7 +85,7 @@ export default function PSPFullPage() {
           <div className="relative w-[min(82vw,280px)] sm:w-[min(82vw,320px)] aspect-[1000/1414]">
             <Image
               src={PSP_COVER_SRC}
-              alt="Capa do E-book - Portugal Sem Perrengue"
+              alt="Capa do Guia Portugal Sem Perrengue"
               fill
               className="object-contain object-top"
               sizes="(max-width: 640px) 82vw, 320px"
