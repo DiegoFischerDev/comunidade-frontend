@@ -8,19 +8,6 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { CardButton, CardLinkButton } from "@/components/ui/CardButton";
 
-const CITIES = [
-  { id: "INTERIOR", label: "Interior" },
-  { id: "LISBOA", label: "Lisboa" },
-  { id: "PORTO", label: "Porto" },
-  { id: "BRAGA", label: "Braga" },
-  { id: "COIMBRA", label: "Coimbra" },
-  { id: "AVEIRO", label: "Aveiro" },
-  { id: "FARO", label: "Faro" },
-  { id: "ALGARVE", label: "Algarve" },
-  { id: "EVORA", label: "Évora" },
-  { id: "VISEU", label: "Viseu" },
-];
-
 const TYPOLOGIES = [
   { id: "T1", label: "T1" },
   { id: "T2", label: "T2" },
@@ -54,7 +41,7 @@ export default function NewHousePostPage() {
   const [description, setDescription] = useState("");
   const [typology, setTypology] = useState<(typeof TYPOLOGIES)[number]["id"]>("T2");
   const [businessType, setBusinessType] = useState<(typeof BUSINESS_TYPES)[number]["id"]>("RENT");
-  const [city, setCity] = useState(CITIES[0].id);
+  const [city, setCity] = useState("");
   const [availableFrom, setAvailableFrom] = useState(() => todayLocalDateInputValue());
   const [priceEur, setPriceEur] = useState("");
   const [relocationFeeEur, setRelocationFeeEur] = useState("");
@@ -172,9 +159,11 @@ export default function NewHousePostPage() {
     const cleanDesc = description.trim();
     const cleanPrice = priceEur.trim();
     const cleanRelocation = relocationFeeEur.trim().replace(/\s*€\s*$/i, "").trim();
+    const cleanCity = city.trim();
 
     if (!cleanTitle) return setError("Preenche o título do imóvel.");
     if (!cleanDesc) return setError("Preenche a descrição.");
+    if (!cleanCity) return setError("Preenche a cidade.");
     if (!availableFrom) return setError('Seleciona a data em "Disponível em".');
     if (!cleanPrice) return setError(businessType === "SALE" ? "Preenche o preço de venda." : "Preenche o preço do arrendamento.");
     if (!cleanRelocation) return setError("Preenche a taxa de relocation (em euros).");
@@ -192,7 +181,7 @@ export default function NewHousePostPage() {
         description: cleanDesc,
         businessType,
         typology,
-        city,
+        city: cleanCity,
         availableFrom,
         priceEur: cleanPrice,
         relocationFeeEur: cleanRelocation,
@@ -370,17 +359,14 @@ export default function NewHousePostPage() {
           </div>
           <div>
             <label className="block text-xs font-medium text-zinc-700">Cidade</label>
-            <select
+            <input
+              type="text"
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
-            >
-              {CITIES.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
+              placeholder="Ex.: Lisboa, Matosinhos"
+              autoComplete="address-level2"
+              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
           </div>
 
           <div>
