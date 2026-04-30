@@ -95,16 +95,21 @@ export default function MySalesPage() {
     );
   }, [payingSale]);
 
+  const leadsRegistados = useMemo(
+    () => leads.filter((l) => l.user != null),
+    [leads],
+  );
+
   const filteredLeads = useMemo(() => {
     const q = leadQuery.trim().toLowerCase();
-    if (!q) return leads;
-    return leads.filter((l) => {
-      const name = (l.user.name ?? '').toLowerCase();
-      const wa = (l.user.whatsapp ?? '').toLowerCase();
-      const email = (l.user.email ?? '').toLowerCase();
-      return name.includes(q) || wa.includes(q) || email.includes(q);
+    if (!q) return leadsRegistados;
+    return leadsRegistados.filter((l) => {
+      const u = l.user!;
+      const name = (u.name ?? '').toLowerCase();
+      const email = (u.email ?? '').toLowerCase();
+      return name.includes(q) || email.includes(q);
     });
-  }, [leads, leadQuery]);
+  }, [leadsRegistados, leadQuery]);
 
   if (!user) return null;
 
@@ -294,22 +299,18 @@ export default function MySalesPage() {
                             type="button"
                             onMouseDown={(e) => {
                               e.preventDefault();
-                              setLeadUserId(l.user.id);
-                              setLeadQuery(
-                                l.user.name ??
-                                  l.user.whatsapp ??
-                                  l.user.email ??
-                                  '',
-                              );
+                              const u = l.user!;
+                              setLeadUserId(u.id);
+                              setLeadQuery(u.name ?? u.email ?? '');
                               setLeadDropdownOpen(false);
                             }}
                             className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm text-zinc-800 hover:bg-zinc-50"
                           >
                             <span className="min-w-0 truncate font-medium text-zinc-900">
-                              {l.user.name ?? '—'}
+                              {l.user!.name ?? '—'}
                             </span>
                             <span className="shrink-0 text-xs text-zinc-600">
-                              {l.user.whatsapp ?? '—'}
+                              {l.user!.email ?? '—'}
                             </span>
                           </button>
                         ))

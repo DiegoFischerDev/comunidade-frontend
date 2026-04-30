@@ -34,6 +34,11 @@ export default function PartnersPage() {
   const [creating, setCreating] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
+  const [leadModalPartner, setLeadModalPartner] = useState<PartnerRow | null>(null);
+  const [leadWa, setLeadWa] = useState('');
+  const [leadInterest, setLeadInterest] = useState('');
+  const [leadSaving, setLeadSaving] = useState(false);
+
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -315,6 +320,20 @@ export default function PartnersPage() {
                   <td className="px-4 py-2 text-right">
                     <CardButton
                       type="button"
+                      onClick={() => {
+                        setError('');
+                        setLeadWa('');
+                        setLeadInterest('');
+                        setLeadModalPartner(p);
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="mr-2"
+                    >
+                      Adicionar lead
+                    </CardButton>
+                    <CardButton
+                      type="button"
                       onClick={async () => {
                         setError('');
                         try {
@@ -378,6 +397,92 @@ export default function PartnersPage() {
           </table>
         </div>
       )}
+
+      {leadModalPartner ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="presentation"
+          onClick={() => !leadSaving && setLeadModalPartner(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-base font-semibold text-zinc-900">
+              Adicionar lead — {leadModalPartner.name}
+            </h2>
+            <p className="mt-1 text-sm text-zinc-600">
+              O número recebe a confirmação por WhatsApp e o parceiro é notificado do novo pedido.
+            </p>
+            <div className="mt-4 space-y-3">
+              <div className="space-y-1">
+                <label className="block text-xs font-medium text-zinc-700">
+                  WhatsApp do lead (com DDI, ex. 351…)
+                </label>
+                <input
+                  type="text"
+                  value={leadWa}
+                  onChange={(e) => setLeadWa(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="351912345678"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs font-medium text-zinc-700">
+                  Interesse (opcional)
+                </label>
+                <input
+                  type="text"
+                  value={leadInterest}
+                  onChange={(e) => setLeadInterest(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Ex.: Pedido manual — cliente ligou por telefone"
+                />
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <CardButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={leadSaving}
+                onClick={() => setLeadModalPartner(null)}
+              >
+                Cancelar
+              </CardButton>
+              <CardButton
+                type="button"
+                variant="primary"
+                size="sm"
+                disabled={leadSaving || !leadWa.trim()}
+                onClick={async () => {
+                  setError('');
+                  setLeadSaving(true);
+                  try {
+                    await api.admin.partners.addManualLead(leadModalPartner.id, {
+                      whatsapp: leadWa.trim(),
+                      interestComment: leadInterest.trim() || undefined,
+                    });
+                    setLeadModalPartner(null);
+                    setLeadWa('');
+                    setLeadInterest('');
+                  } catch (err) {
+                    setError(
+                      err instanceof Error
+                        ? err.message
+                        : 'Erro ao registar o lead.',
+                    );
+                  } finally {
+                    setLeadSaving(false);
+                  }
+                }}
+              >
+                {leadSaving ? 'A guardar…' : 'Registar'}
+              </CardButton>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

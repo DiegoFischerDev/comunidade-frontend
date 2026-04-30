@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { api } from "@/lib/api";
-import { useAuth } from "@/contexts/AuthContext";
+import { buildAdminWhatsAppUrl } from "@/lib/admin-contact-whatsapp";
 
 const CITY_LABELS: Record<string, string> = {
   INTERIOR: "Interior",
@@ -37,17 +36,15 @@ type ListingFields = {
   price: string;
 };
 
-function buildLeadMessageFromFields(f: ListingFields) {
+function buildLeadMessageFromFields(f: ListingFields, partnerName: string) {
   const cityLabel = CITY_LABELS[f.city] ?? f.city;
   const typologyLabel = TYPOLOGY_LABELS[f.typology] ?? f.typology;
-  return `Olá, gostaria de mais informações sobre o imóvel ${typologyLabel} por ${f.price} em ${cityLabel} com título ${f.title}.`;
+  return `Olá, gostaria de mais informações sobre o imóvel ${typologyLabel} por ${f.price} em ${cityLabel} com título ${f.title}. Atendimento com ${partnerName}.`;
 }
 
 function CasasInteresseContent() {
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, loading: authLoading } = useAuth();
   const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState("");
   const didAttemptWaRedirect = useRef(false);
@@ -65,14 +62,6 @@ function CasasInteresseContent() {
     }
   }, [houseId, router]);
 
-  const nextTarget = useMemo(() => {
-    const q = searchParams.toString();
-    return q ? `${pathname}?${q}` : pathname;
-  }, [pathname, searchParams]);
-
-  const loginHref = `/login?next=${encodeURIComponent(nextTarget)}`;
-  const registroHref = `/registro?next=${encodeURIComponent(nextTarget)}`;
-
   const paramsOk = Boolean(partnerId && title && city && typology && price);
 
   const openWhatsAppForPartner = useCallback(async (listing?: ListingFields) => {
@@ -88,20 +77,8 @@ function CasasInteresseContent() {
     setError("");
     try {
       const partner = await api.marketplace.partnerDetails(fields.partnerId);
-      const digits = partner.whatsapp.replace(/\D/g, "");
-      if (!digits) {
-        setError("Não foi possível obter o WhatsApp deste parceiro.");
-        setRedirecting(false);
-        return;
-      }
-      try {
-        await api.marketplace.registerLead(fields.partnerId);
-      } catch {
-        // não bloqueia o contacto
-      }
-      const text = buildLeadMessageFromFields(fields);
-      const url = `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
-      window.location.assign(url);
+      const text = buildLeadMessageFromFields(fields, partner.name);
+      window.location.assign(buildAdminWhatsAppUrl(text));
     } catch (err) {
       setError(
         err instanceof Error
@@ -114,8 +91,7 @@ function CasasInteresseContent() {
 
   useEffect(() => {
     if (houseId) return;
-    if (authLoading || !paramsOk) return;
-    if (!user) return;
+    if (!paramsOk) return;
     if (didAttemptWaRedirect.current) return;
 
     const run = async () => {
@@ -124,7 +100,7 @@ function CasasInteresseContent() {
     };
 
     void run();
-  }, [authLoading, user, paramsOk, houseId, openWhatsAppForPartner]);
+  }, [paramsOk, houseId, openWhatsAppForPartner]);
 
   if (houseId) {
     return (
@@ -141,40 +117,6 @@ function CasasInteresseContent() {
         <p className="mt-2 text-sm text-zinc-600">
           Faltam parâmetros neste link. Volta ao grupo e abre o link que veio na publicação do imóvel.
         </p>
-      </div>
-    );
-  }
-
-  if (authLoading) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-16 text-center text-sm text-zinc-600">
-        A carregar…
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-16">
-        <h1 className="text-xl font-semibold text-zinc-900">Contactar o parceiro</h1>
-        <p className="mt-2 text-sm text-zinc-600">
-          Para confirmarmos se o imóvel ainda está disponível e abrir o WhatsApp do parceiro com a mensagem já
-          preenchida, inicia sessão na Comunidade Rafa Portugal. Depois de entrares, o passo seguinte corre automaticamente.
-        </p>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Link
-            href={loginHref}
-            className="inline-flex flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-3 text-center text-sm font-semibold text-white shadow-sm"
-          >
-            Iniciar sessão
-          </Link>
-          <Link
-            href={registroHref}
-            className="inline-flex flex-1 items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-3 text-center text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
-          >
-            Criar conta
-          </Link>
-        </div>
       </div>
     );
   }

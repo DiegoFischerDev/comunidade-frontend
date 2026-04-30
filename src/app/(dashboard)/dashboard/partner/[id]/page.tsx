@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
 import { CatalogCarousel } from '@/components/CatalogCarousel';
 import { RelocationHouseCard } from '@/components/relocation/RelocationHouseCard';
 import { type RelocationHouseRow } from '@/components/relocation/relocation-house-shared';
@@ -11,10 +10,12 @@ import { CardButton, CardLinkButton } from '@/components/ui/CardButton';
 import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
 import { PartnerServicePriceCallout } from '@/components/PartnerServicePriceCallout';
 import { PartnerCommentsSection } from '@/components/PartnerCommentsSection';
+import { buildWhatsAppApiSendUrl } from '@/lib/partner-whatsapp';
 import {
-  buildPartnerHeroWhatsAppUrl,
-  buildWhatsAppApiSendUrl,
-} from '@/lib/partner-whatsapp';
+  buildAdminWhatsAppUrl,
+  partnerAtendimentoMessage,
+  partnerServiceInterestMessage,
+} from '@/lib/admin-contact-whatsapp';
 import { getPublicSiteUrl } from '@/lib/site-url';
 
 type PartnerDetails = {
@@ -44,7 +45,6 @@ type PartnerDetails = {
 
 export default function PartnerPage() {
   const params = useParams<{ id: string }>();
-  const { user } = useAuth();
   const [partner, setPartner] = useState<PartnerDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -135,35 +135,16 @@ export default function PartnerPage() {
 
   const waDigits = partner.whatsapp.replace(/\D/g, '');
   const whatsappUrl = buildWhatsAppApiSendUrl(waDigits, '');
-  const buildServiceWhatsAppUrl = (serviceTitle: string) => {
-    const text = `Olá, tenho interesse em saber mais informações sobre o serviço ${serviceTitle} sou membro VIP da Comunidade Rafa Portugal`;
-    return buildWhatsAppApiSendUrl(waDigits, text);
-  };
-  const heroContactUrl = buildPartnerHeroWhatsAppUrl(partner.whatsapp);
-  const hasHeroWhatsapp = partner.whatsapp.replace(/\D/g, '').length > 0;
+  const buildServiceWhatsAppUrl = (serviceTitle: string) =>
+    buildAdminWhatsAppUrl(
+      partnerServiceInterestMessage(partner.name, serviceTitle),
+    );
+  const heroContactUrl = buildAdminWhatsAppUrl(partnerAtendimentoMessage(partner.name));
+  const hasHeroContact = Boolean(partner.name?.trim());
   const logoSrc =
     partner.logoUrl && partner.logoUrl.startsWith('/uploads/')
       ? `${API_URL}${partner.logoUrl}`
       : partner.logoUrl;
-
-  async function registerLeadThenOpen(openContact: () => void) {
-    if (!user) {
-      window.dispatchEvent(
-        new CustomEvent('open-auth-modal', {
-          detail: {
-            mode: 'login',
-          },
-        }),
-      );
-      return;
-    }
-    try {
-      await api.marketplace.registerLead(partner!.id);
-    } catch {
-      // não bloqueia: abre contacto mesmo se o registo do lead falhar
-    }
-    openContact();
-  }
 
   return (
     <div className="space-y-8">
@@ -217,19 +198,17 @@ export default function PartnerPage() {
                   {partner.shortDescription}
                 </p>
               )}
-              {hasHeroWhatsapp && heroContactUrl !== '#' ? (
+              {hasHeroContact ? (
                 <div className="mt-5 flex justify-center sm:justify-start">
                   <CardButton
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      void registerLeadThenOpen(() => {
-                        window.open(
-                          heroContactUrl,
-                          '_blank',
-                          'noopener,noreferrer',
-                        );
-                      });
+                      window.open(
+                        heroContactUrl,
+                        '_blank',
+                        'noopener,noreferrer',
+                      );
                     }}
                     className="px-5 py-2.5 shadow-sm"
                   >
@@ -313,13 +292,11 @@ export default function PartnerPage() {
                     type="button"
                     variant="primary"
                     onClick={() => {
-                      void registerLeadThenOpen(() => {
-                        window.open(
-                          buildServiceWhatsAppUrl(service.title),
-                          '_blank',
-                          'noopener,noreferrer',
-                        );
-                      });
+                      window.open(
+                        buildServiceWhatsAppUrl(service.title),
+                        '_blank',
+                        'noopener,noreferrer',
+                      );
                     }}
                   >
                     Contactar

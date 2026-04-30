@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useCallback, useState } from "react";
 
 import { api } from "@/lib/api";
-import { useAuth } from "@/contexts/AuthContext";
 import { CardButton } from "@/components/ui/CardButton";
+import { buildAdminWhatsAppUrl } from "@/lib/admin-contact-whatsapp";
 
 type Props = {
   houseId: string;
@@ -41,19 +41,21 @@ const TYPOLOGY_LABELS: Record<string, string> = {
   QUARTO_AP_COMPARTILHADO: "Quarto em Ap compartilhado",
 };
 
-function buildLeadMessage(f: {
+function buildHouseLeadMessage(f: {
   title: string;
   city: string;
   businessType: "RENT" | "SALE";
   typology: string;
   price: string;
   furnished: boolean;
+  partnerName: string;
 }) {
   const cityLabel = CITY_LABELS[f.city] ?? f.city;
   const typologyLabel = TYPOLOGY_LABELS[f.typology] ?? f.typology;
   const mobilado = f.furnished ? "mobilado" : "não mobilado";
   const finalidade = f.businessType === "SALE" ? "venda" : "arrendamento";
-  return `Olá, gostaria de mais informações sobre o imóvel ${typologyLabel} (${mobilado}), para ${finalidade}, por ${f.price} em ${cityLabel} com título ${f.title}.`;
+  const propertyLine = `${typologyLabel} (${mobilado}), para ${finalidade}, por ${f.price} em ${cityLabel} com título ${f.title}.`;
+  return `Olá, gostaria de mais informações sobre o imóvel ${propertyLine} Atendimento com ${f.partnerName}.`;
 }
 
 export function HouseContactSection({
@@ -67,7 +69,6 @@ export function HouseContactSection({
   furnished,
   status,
 }: Props) {
-  const { user, loading } = useAuth();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -87,26 +88,16 @@ export function HouseContactSection({
         return;
       }
       const partner = await api.marketplace.partnerDetails(partnerId);
-      const digits = partner.whatsapp.replace(/\D/g, "");
-      if (!digits) {
-        setError("Não foi possível obter o WhatsApp deste parceiro.");
-        setBusy(false);
-        return;
-      }
-      try {
-        await api.marketplace.registerLead(partnerId);
-      } catch {
-        /* não bloqueia */
-      }
-      const text = buildLeadMessage({
+      const text = buildHouseLeadMessage({
         title: data.title,
         city: data.city,
         businessType: data.businessType,
         typology: data.typology,
         price: data.priceEur,
         furnished: data.furnished,
+        partnerName: partner.name,
       });
-      window.location.assign(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`);
+      window.location.assign(buildAdminWhatsAppUrl(text));
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Não foi possível abrir o contacto.",
@@ -139,25 +130,13 @@ export function HouseContactSection({
     );
   }
 
-  if (loading) {
-    return <p className="text-sm text-zinc-600">A carregar sessão…</p>;
-  }
-
   return (
     <div className="space-y-3">
       <CardButton
         type="button"
         variant="primary"
-        disabled={busy || loading}
+        disabled={busy}
         onClick={() => {
-          if (!user) {
-            window.dispatchEvent(
-              new CustomEvent("open-auth-modal", {
-                detail: { mode: "login" },
-              }),
-            );
-            return;
-          }
           void openWhatsApp();
         }}
         className="w-full rounded-xl px-5 py-3.5 sm:w-auto"
