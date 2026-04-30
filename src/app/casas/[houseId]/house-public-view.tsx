@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
 
@@ -9,7 +7,6 @@ import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { isOurImageHostname } from "@/lib/site-url";
 
 import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
-import { useAuth } from "@/contexts/AuthContext";
 
 import { HouseContactSection } from "./house-contact-section";
 import { HousePhotoGallery } from "./house-photo-gallery";
@@ -84,7 +81,6 @@ type Props = {
 };
 
 export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: Props) {
-  const { user } = useAuth();
   const { partner } = house;
   const cityLabel = CITY_LABELS[house.city] ?? house.city;
   const typoLabel = TYPOLOGY_LABELS[house.typology] ?? house.typology;
@@ -109,7 +105,6 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
       : partner.logoUrl;
 
   const isDashboard = variant === "dashboard";
-  const canSeePartner = user?.tier === "MEMBER";
 
   return (
     <div
@@ -273,33 +268,31 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
           </div>
         </article>
 
-        {canSeePartner ? (
-          <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
-            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
-              {logoSrc ? (
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-50 p-2 shadow-sm">
-                  <img src={logoSrc} alt="" className="max-h-full max-w-full object-contain" />
-                </div>
-              ) : (
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 text-xs text-zinc-400">
-                  Logo
-                </div>
-              )}
-              <div className="min-w-0 flex-1 text-center sm:text-left">
-                <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-                  {partner.category?.name ?? "Parceiro"}
-                </p>
-                <h2 className="mt-1 text-xl font-semibold text-zinc-900">{partner.name}</h2>
-                <Link
-                  href={isDashboard ? `/dashboard/partner/${partner.id}` : `/partner/${partner.id}`}
-                  className="mt-3 inline-flex text-sm font-medium text-amber-800 underline-offset-4 hover:underline"
-                >
-                  Ver perfil completo do parceiro
-                </Link>
+        <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
+            {logoSrc ? (
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-50 p-2 shadow-sm">
+                <img src={logoSrc} alt="" className="max-h-full max-w-full object-contain" />
               </div>
+            ) : (
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 text-xs text-zinc-400">
+                Logo
+              </div>
+            )}
+            <div className="min-w-0 flex-1 text-center sm:text-left">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+                {partner.category?.name ?? "Parceiro"}
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-zinc-900">{partner.name}</h2>
+              <Link
+                href={isDashboard ? `/dashboard/partner/${partner.id}` : `/partner/${partner.id}`}
+                className="mt-3 inline-flex text-sm font-medium text-amber-800 underline-offset-4 hover:underline"
+              >
+                Ver perfil completo do parceiro
+              </Link>
             </div>
-          </section>
-        ) : null}
+          </div>
+        </section>
       </main>
     </div>
   );

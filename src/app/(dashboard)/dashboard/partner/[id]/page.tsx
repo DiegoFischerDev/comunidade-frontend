@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CatalogCarousel } from '@/components/CatalogCarousel';
@@ -11,8 +11,6 @@ import { CardButton, CardLinkButton } from '@/components/ui/CardButton';
 import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
 import { PartnerServicePriceCallout } from '@/components/PartnerServicePriceCallout';
 import { PartnerCommentsSection } from '@/components/PartnerCommentsSection';
-import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
-import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
 import {
   buildPartnerHeroWhatsAppUrl,
   buildWhatsAppApiSendUrl,
@@ -46,8 +44,7 @@ type PartnerDetails = {
 
 export default function PartnerPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const [partner, setPartner] = useState<PartnerDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -61,34 +58,30 @@ export default function PartnerPage() {
   const sharePageUrl = `${siteBase}/partner/${partner?.id ?? params.id}`;
 
   useEffect(() => {
-    if (authLoading) return;
-    if (user?.tier === 'MEMBER') return;
-    if (!user) {
-      window.dispatchEvent(new Event(OPEN_AUTH_LOGIN_EVENT));
-    } else {
-      window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
-    }
-    router.replace('/dashboard/services');
-  }, [authLoading, user, router]);
-
-  useEffect(() => {
-    if (authLoading || user?.tier !== 'MEMBER') return;
     if (!params?.id) return;
+    let cancelled = false;
+    setLoading(true);
+    setError('');
     (async () => {
       try {
         const data = await api.marketplace.partnerDetails(params.id);
-        setPartner(data);
+        if (!cancelled) setPartner(data);
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Erro ao carregar dados do parceiro.',
-        );
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : 'Erro ao carregar dados do parceiro.',
+          );
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, [params, authLoading, user?.tier]);
+    return () => {
+      cancelled = true;
+    };
+  }, [params?.id]);
 
   useEffect(() => {
     if (!partner?.category || partner.category.slug !== 'relocation') {
@@ -115,7 +108,7 @@ export default function PartnerPage() {
     };
   }, [partner?.id, partner?.category?.slug]);
 
-  if (authLoading || loading) {
+  if (loading) {
     return <p className="text-sm text-zinc-600">Carregando parceiro…</p>;
   }
 
@@ -162,10 +155,6 @@ export default function PartnerPage() {
           },
         }),
       );
-      return;
-    }
-    if (user.tier !== 'MEMBER') {
-      window.dispatchEvent(new CustomEvent(OPEN_MEMBERSHIP_MODAL_EVENT));
       return;
     }
     try {

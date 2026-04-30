@@ -803,7 +803,7 @@ export function RafaCallCard() {
           role="presentation"
         >
           <div
-            className={`relative my-8 w-full ${payOptions ? 'max-w-lg' : 'max-w-3xl'} rounded-2xl bg-white p-5 pt-10 shadow-xl`}
+            className={`relative my-8 w-full ${payOptions ? 'max-w-lg' : 'max-w-3xl'} rounded-2xl bg-white p-5 shadow-xl`}
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -824,14 +824,15 @@ export function RafaCallCard() {
 
             {!payOptions ? (
               <>
-                <div className="-mx-5 -mt-5 mb-4 overflow-hidden rounded-t-2xl bg-zinc-50">
-                  <div className="relative mx-auto flex h-40 w-full max-w-[200px] items-center justify-center pt-4">
+                <div className="-mx-5 -mt-5 mb-4 overflow-hidden rounded-t-2xl">
+                  <div className="relative h-52 w-full sm:h-64">
                     <Image
-                      src="/videocall.png"
+                      src="/rafa_cards/modal_novo_agendamento.png"
                       alt=""
-                      width={160}
-                      height={160}
-                      className="object-contain"
+                      fill
+                      priority
+                      className="object-cover object-center"
+                      sizes="(max-width: 640px) 100vw, 560px"
                     />
                   </div>
                   <div className="bg-white px-4 pb-4 pt-2 text-center">

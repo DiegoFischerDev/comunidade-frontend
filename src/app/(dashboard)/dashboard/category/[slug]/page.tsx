@@ -9,9 +9,6 @@ import { api } from '@/lib/api';
 import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
 import { CardLinkButton } from '@/components/ui/CardButton';
 import { getPublicSiteUrl } from '@/lib/site-url';
-import { useAuth } from '@/contexts/AuthContext';
-import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
-import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
 
 type PartnerService = {
   id: string;
@@ -45,7 +42,6 @@ type CategoryWithPartners = {
 export default function CategoryPage() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
-  const { user } = useAuth();
   const [categories, setCategories] = useState<CategoryWithPartners[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -56,17 +52,6 @@ export default function CategoryPage() {
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
   const siteBase = getPublicSiteUrl();
-
-  useEffect(() => {
-    if (user?.tier === 'MEMBER') return;
-    if (!user) {
-      window.dispatchEvent(new Event(OPEN_AUTH_LOGIN_EVENT));
-      router.replace('/dashboard/services');
-      return;
-    }
-    window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
-    router.replace('/dashboard/services');
-  }, [user, router]);
 
   useEffect(() => {
     if (params.slug === 'relocation') {

@@ -44,7 +44,7 @@ export default function PSPPage() {
       <div className="-mx-4 mb-5 print:hidden md:hidden">
         <Image
           src="/rafa_cards/psp_hero.png"
-          alt="E-book Portugal Sem Perrengue"
+          alt="Guia Portugal Sem Perrengue"
           width={1250}
           height={1875}
           className="h-auto w-full object-contain"
@@ -55,11 +55,11 @@ export default function PSPPage() {
     <div className="space-y-8">
       <div className="mx-auto w-full max-w-[820px]">
         <h1 className="hidden text-2xl font-semibold text-zinc-900 print:block md:block">
-          E-book - Portugal Sem Perrengue
+          Guia Portugal Sem Perrengue
         </h1>
         <p className="mt-1 text-sm text-zinc-500">Última atualização: abril/2026</p>
         <p className="mt-4 text-sm text-zinc-600">
-          Esse Ebook foi criado com muito carinho para te ajudar nesse processo de imigração. Apesar do nosso esforço,
+          Este guia foi criado com muito carinho para te ajudar nesse processo de imigração. Apesar do nosso esforço,
           as regras mudam constantemente — o conteúdo completo é atualizado regularmente para acompanhar as mudanças.
         </p>
       </div>
@@ -73,7 +73,7 @@ export default function PSPPage() {
             >
               <Image
                 src={`/psp/PSP%20pag%20${page}.png`}
-                alt={`Página ${page} do guia PSP - Portugal Sem Perrengue`}
+                alt={`Página ${page} do Guia Portugal Sem Perrengue`}
                 width={1000}
                 height={1414}
                 className="h-auto w-full object-contain"
@@ -87,7 +87,7 @@ export default function PSPPage() {
             <div className="relative max-h-[420px] overflow-hidden bg-zinc-100">
               <Image
                 src="/psp/PSP%20pag%208.png"
-                alt="Página 8 do guia PSP - Portugal Sem Perrengue"
+                alt="Página 8 do Guia Portugal Sem Perrengue"
                 width={1000}
                 height={1414}
                 className="h-auto w-full object-contain"
@@ -97,12 +97,12 @@ export default function PSPPage() {
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-end bg-gradient-to-t from-black/70 via-black/40 to-transparent p-6">
                 <div className="pointer-events-auto max-w-xl rounded-2xl bg-white/95 p-4 text-center shadow-lg">
                   <p className="text-sm font-medium text-zinc-900">
-                    O conteúdo completo do guia PSP - Portugal Sem Perrengue é{" "}
+                    O conteúdo completo do Guia Portugal Sem Perrengue é{" "}
                     <span className="font-semibold">exclusivo para membros</span>{" "}
                     da Comunidade Rafa Portugal.
                   </p>
                   <p className="mt-2 text-xs text-zinc-600">
-                    Desbloqueie todas as páginas do ebook, suporte direto e
+                    Desbloqueie todas as páginas do guia, suporte direto e
                     benefícios exclusivos tornando-se membro.
                   </p>
                   <div className="mt-4">

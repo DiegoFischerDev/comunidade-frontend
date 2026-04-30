@@ -6,7 +6,6 @@ import { useCallback, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { CardButton } from "@/components/ui/CardButton";
-import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/components/FloatingWhatsAppButton";
 
 type Props = {
   houseId: string;
@@ -157,10 +156,6 @@ export function HouseContactSection({
                 detail: { mode: "login" },
               }),
             );
-            return;
-          }
-          if (user.tier !== "MEMBER") {
-            window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
             return;
           }
           void openWhatsApp();
