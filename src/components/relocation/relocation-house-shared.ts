@@ -2,6 +2,7 @@ import { api } from "@/lib/api";
 import { orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { isOurImageHostname } from "@/lib/site-url";
+import { buildAdminWhatsAppUrl } from "@/lib/admin-contact-whatsapp";
 
 export type RelocationHouseRow = Awaited<ReturnType<typeof api.marketplace.relocationHouses>>[number];
 
@@ -83,25 +84,18 @@ export function formatRelocationFeeEur(raw: string): string {
   return `${t} €`;
 }
 
-function buildRelocationWhatsAppText(h: RelocationHouseRow): string {
+export function buildRelocationLeadMessage(h: RelocationHouseRow): string {
   const cityLabel = RELOCATION_CITY_LABELS[h.city] ?? h.city;
   const typologyLabel = RELOCATION_TYPOLOGY_LABELS[h.typology] ?? h.typology;
   const businessLabel = RELOCATION_BUSINESS_TYPE_LABELS[h.businessType] ?? "Arrendamento";
   const mobilado = h.furnished ? "mobilado" : "não mobilado";
-  return `Olá, gostaria de mais informações sobre o imóvel ${typologyLabel} (${mobilado}), finalidade ${businessLabel}, por ${h.priceEur} em ${cityLabel} com título ${h.title}.`;
+  const propertyLine = `${typologyLabel} (${mobilado}), finalidade ${businessLabel}, por ${h.priceEur} em ${cityLabel} com título ${h.title}.`;
+  return `Olá, gostaria de mais informações sobre o imóvel ${propertyLine} Atendimento com ${h.partner.name}.`;
 }
 
 export function openRelocationPartnerWhatsApp(h: RelocationHouseRow): void {
-  const digits = (h.partner.whatsapp ?? "").replace(/\D/g, "");
-  if (!digits) {
-    window.alert("Não foi possível obter o WhatsApp deste parceiro.");
-    return;
-  }
-  void api.marketplace.registerLead(h.partnerId).catch(() => {
-    /* não bloqueia o contacto */
-  });
-  const text = buildRelocationWhatsAppText(h);
-  const url = `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+  const text = buildRelocationLeadMessage(h);
+  const url = buildAdminWhatsAppUrl(text);
   const opened = window.open(url, "_blank", "noopener,noreferrer");
   if (opened == null) {
     window.location.assign(url);

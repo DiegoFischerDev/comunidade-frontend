@@ -32,22 +32,33 @@ function SidebarNavSubLink({
   href,
   active,
   children,
+  badgeCount,
 }: {
   href: string;
   active: boolean;
   children: React.ReactNode;
+  badgeCount?: number;
 }) {
+  const showBadge = typeof badgeCount === 'number' && badgeCount > 0;
   return (
     <li>
       <Link
         href={href}
-        className={`block rounded-md py-1.5 pl-2 pr-2 text-[13px] leading-snug transition ${
+        className={`flex items-center justify-between gap-2 rounded-md py-1.5 pl-2 pr-2 text-[13px] leading-snug transition ${
           active
             ? 'bg-gradient-to-r from-[#d58901]/12 to-amber-50/90 font-medium text-zinc-900 ring-1 ring-amber-200/70'
             : 'text-zinc-600 hover:bg-zinc-100/90 hover:text-zinc-900'
         }`}
       >
-        {children}
+        <span className="min-w-0">{children}</span>
+        {showBadge ? (
+          <span
+            className="inline-flex min-w-[1.25rem] shrink-0 justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-5 text-white"
+            aria-label={`${badgeCount} pedidos em espera`}
+          >
+            {badgeCount > 99 ? '99+' : badgeCount}
+          </span>
+        ) : null}
       </Link>
     </li>
   );
@@ -494,6 +505,7 @@ export default function DashboardLayout({
   const [activeCategorySlug, setActiveCategorySlug] = useState<string | null>(null);
   const [partnerId, setPartnerId] = useState<string | null>(null);
   const [partnerCategorySlug, setPartnerCategorySlug] = useState<string | null>(null);
+  const [partnerPendingLeadsCount, setPartnerPendingLeadsCount] = useState(0);
 
   useEffect(() => {
     setMounted(true);
@@ -567,6 +579,7 @@ export default function DashboardLayout({
     if (!user || user.role !== 'PARTNER') {
       setPartnerId(null);
       setPartnerCategorySlug(null);
+      setPartnerPendingLeadsCount(0);
       return;
     }
     let cancelled = false;
@@ -576,11 +589,15 @@ export default function DashboardLayout({
         if (!cancelled) {
           setPartnerId(me.id);
           setPartnerCategorySlug(me.category?.slug ?? null);
+          setPartnerPendingLeadsCount(
+            typeof me.pendingLeadsCount === 'number' ? me.pendingLeadsCount : 0,
+          );
         }
       } catch {
         if (!cancelled) {
           setPartnerId(null);
           setPartnerCategorySlug(null);
+          setPartnerPendingLeadsCount(0);
         }
       }
     })();
@@ -588,6 +605,25 @@ export default function DashboardLayout({
       cancelled = true;
     };
   }, [mounted, authLoading, user?.role]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onPending = (event: Event) => {
+      const detail = (event as CustomEvent<{ count?: number }>).detail;
+      if (typeof detail?.count === 'number') {
+        setPartnerPendingLeadsCount(detail.count);
+      }
+    };
+    window.addEventListener(
+      'partner-pending-leads-changed',
+      onPending as EventListener,
+    );
+    return () =>
+      window.removeEventListener(
+        'partner-pending-leads-changed',
+        onPending as EventListener,
+      );
+  }, []);
 
   // Sincroniza categoria ativa no menu com rota atual (categoria ou parceiro)
   useEffect(() => {
@@ -971,7 +1007,11 @@ export default function DashboardLayout({
               titleActive={partnerCompanyTitleActive}
               sectionActive={partnerNavSectionActive}
             >
-              <SidebarNavSubLink href="/dashboard/leads" active={pathname === '/dashboard/leads'}>
+              <SidebarNavSubLink
+                href="/dashboard/leads"
+                active={pathname === '/dashboard/leads'}
+                badgeCount={partnerPendingLeadsCount}
+              >
                 Meus leads
               </SidebarNavSubLink>
               {partnerCategorySlug === 'relocation' ? (

@@ -554,6 +554,11 @@ export const api = {
           method: 'PATCH',
           body: JSON.stringify(input),
         }),
+      addManualLead: (partnerId: string, body: { whatsapp: string; interestComment?: string }) =>
+        request<{ leadId: string }>(
+          `/partners/admin/${encodeURIComponent(partnerId)}/leads/manual`,
+          { method: 'POST', body: JSON.stringify(body) },
+        ),
       listCategories: () =>
         request<
           {
@@ -843,6 +848,8 @@ export const api = {
         billingAddress?: string | null;
         billingPostalCode?: string | null;
         category?: { id: string; slug: string; name: string } | null;
+        pendingLeadsCount?: number;
+        averageResponseMinutes?: number | null;
       }>('/partners/me', { method: 'GET' }),
     updateMe: (input: {
       name?: string;
@@ -938,13 +945,16 @@ export const api = {
           {
             id: string;
             createdAt: string;
+            attendedAt: string | null;
+            interestComment: string | null;
+            awaitingAttendance: boolean;
+            contactType: 'user' | 'visitor';
             user: {
               id: string;
               name: string | null;
               email: string;
-              whatsapp: string | null;
               tier: 'VISITOR' | 'MEMBER';
-            };
+            } | null;
             immigrationPlan: {
               updatedAt: string;
               answers: {
@@ -962,6 +972,11 @@ export const api = {
             } | null;
           }[]
         >('/partners/me/leads', { method: 'GET' }),
+      openContact: (leadId: string) =>
+        request<{ waMeUrl: string }>(
+          `/partners/me/leads/${encodeURIComponent(leadId)}/contact`,
+          { method: 'POST', body: JSON.stringify({}) },
+        ),
     },
     houses: {
       list: () =>
@@ -1296,11 +1311,6 @@ export const api = {
           priceOnRequest: boolean;
         }[];
       }>(`/partners/${id}/public`, { method: 'GET' }),
-    registerLead: (partnerId: string) =>
-      request<{ id: string }>(`/partners/${partnerId}/leads`, {
-        method: 'POST',
-        body: JSON.stringify({}),
-      }),
     houseContact: (houseId: string) =>
       request<{
         id: string;
