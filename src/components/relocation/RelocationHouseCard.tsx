@@ -3,8 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/components/FloatingWhatsAppButton";
 import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
 import { CardButton, CardLinkButton } from "@/components/ui/CardButton";
+import { useAuth } from "@/contexts/AuthContext";
 import { formatHouseEntradaWithTotal } from "@/lib/house-entrance";
 
 import {
@@ -26,10 +28,27 @@ type Props = {
 };
 
 export function RelocationHouseCard({ house: h, showContactButton = true }: Props) {
+  const { user } = useAuth();
   const { videoSrc, primaryImageSrc } = getRelocationHouseMedia(h);
   const cityLabel = RELOCATION_CITY_LABELS[h.city] ?? h.city;
   const typoLabel = RELOCATION_TYPOLOGY_LABELS[h.typology] ?? h.typology;
   const isListedButNotForContact = h.status !== "AVAILABLE";
+
+  const handleContactClick = () => {
+    if (!user) {
+      window.dispatchEvent(
+        new CustomEvent("open-auth-modal", {
+          detail: { mode: "login" },
+        }),
+      );
+      return;
+    }
+    if (user.tier !== "MEMBER") {
+      window.dispatchEvent(new CustomEvent(OPEN_MEMBERSHIP_MODAL_EVENT));
+      return;
+    }
+    openRelocationPartnerWhatsApp(h);
+  };
 
   return (
     <article
@@ -129,7 +148,7 @@ export function RelocationHouseCard({ house: h, showContactButton = true }: Prop
               <CardButton
                 type="button"
                 variant="navGold"
-                onClick={() => openRelocationPartnerWhatsApp(h)}
+                onClick={handleContactClick}
                 className="min-w-[8rem] flex-1 sm:flex-initial"
               >
                 Contactar

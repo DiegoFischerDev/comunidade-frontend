@@ -31,7 +31,7 @@ function VipGroupTitleFlag({ code, size = 'row' }: { code: FlagCode; size?: 'row
   if (size === 'hero') {
     return (
       <Image
-        src={code === 'pt' ? '/flags/portugal_round.png' : '/flags/brasil_round.png'}
+        src={code === 'pt' ? '/flags/portugal_apple.png' : '/flags/brasil_apple.png'}
         alt=""
         unoptimized
         width={56}
@@ -43,7 +43,7 @@ function VipGroupTitleFlag({ code, size = 'row' }: { code: FlagCode; size?: 'row
   }
   return (
     <Image
-      src={code === 'pt' ? '/flags/portugal_round.png' : '/flags/brasil_round.png'}
+      src={code === 'pt' ? '/flags/portugal_apple.png' : '/flags/brasil_apple.png'}
       alt=""
       unoptimized
       width={20}
@@ -185,63 +185,33 @@ export function VipGroupTitle({
 export const GROUPS: VipGroup[] = [
   {
     id: 'geral',
-    title: 'Comunidade Rafa Portugal',
-    subtitle: 'Geral',
+    title: 'Gratuito - Comunidade Rafa Portugal',
+    subtitle: 'Vistos, Relocation, Empregos, etc.',
     titleFlag: 'pt',
     description: 'Grupo aberto para tratar de assuntos relacionados a imigração para Portugal.',
     isPublic: true,
-    joinUrl: 'https://chat.whatsapp.com/FOsUUXtA3z57qaLX7oBkdb?mode=gi_t',
-  },
-  {
-    id: 'rpm-brasil',
-    title: 'VIP - Rafa Portugal',
-    subtitle: 'fase 1 - Brasil',
-    titleFlag: 'br',
-    description:
-      'Para membros que ainda estao no brasil.',
-    isPublic: false,
-    joinUrl: 'https://chat.whatsapp.com/KV8al94ZUzMLC8ORLKxnrq?mode=gi_t',
-    memberOnlyVip: true,
-  },
-  {
-    id: 'rpm-portugal',
-    title: 'VIP - Rafa Portugal',
-    subtitle: 'fase 2 - Portugal',
-    titleFlag: 'pt',
-    description:
-      'Para membros que ja estao em Portugal.',
-    isPublic: false,
-    joinUrl: 'https://chat.whatsapp.com/E3WgVeBAUylHwLjsrILLlX?mode=gi_t',
-    memberOnlyVip: true,
+    joinUrl: 'https://chat.whatsapp.com/FA0bFhdIMD6BeMYRceFrCv?mode=gi_t',
   },
   {
     id: 'rpm-alugueis',
-    title: 'Casas para Relocation',
-    subtitle: 'Aluguel',
+    title: 'Gratuito - Casas disponíveis em Portugal',
+    subtitle: 'Arrendamento (Aluguel)',
     titleFlag: 'pt',
     description:
-      'Grupo onde sao postados semalmente os imoveis disponiveis para Arrendamento (aluguel) onde a maioria ainda nao foi publicado nos sites de busca.',
+      'Receba em primeira mão as principais oportunidades de aluguel de imóveis para Relocation.',
     isPublic: false,
     joinUrl: 'https://chat.whatsapp.com/Kt4ylOIU0qMBbtfHKlyvVt?mode=gi_t',
   },
   {
-    id: 'rpm-compra-imoveis',
-    title: 'Casas para Compra',
-    subtitle: 'Financiamento',
-    titleFlag: 'pt',
+    id: 'rpm-brasil',
+    title: 'VIP - Rafa Portugal',
+    subtitle: 'Vistos, Relocation, Empregos, etc.',
+    titleFlag: 'br',
     description:
-      'Grupo onde sao postados semanalmente os imoveis disponiveis para venda onde a maioria ainda nao foi publicados nos sites de busca.',
+      'Grupo VIP da Rafa, exclusivo para membros.',
     isPublic: false,
-    joinUrl: 'https://chat.whatsapp.com/L5Lo18rPzut7lF6BFO0i67?mode=gi_t',
-  },
-  {
-    id: 'compra-automovel',
-    title: 'Compra de automóveis',
-    titleFlag: 'pt',
-    description:
-      'Grupo para trocar dicas e oportunidades de compra de automóvel em Portugal, com recomendações e alertas do que evitar.',
-    isPublic: false,
-    comingSoon: true,
+    joinUrl: 'https://chat.whatsapp.com/IAcKLwrfa1Q8cvByI8KYCW?mode=gi_t',
+    memberOnlyVip: true,
   },
 ];
 
@@ -249,7 +219,7 @@ function VipCornerBadge() {
   return (
     <div className="absolute right-3 top-3">
       <Image
-        src="/vip-card.png"
+        src="/icon_vip.png"
         alt="VIP"
         width={42}
         height={42}
@@ -281,7 +251,7 @@ export function GruposVipContent() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[820px] space-y-5">
+    <div className="mx-auto w-full max-w-6xl space-y-5">
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Grupos whatsapp</h1>
         <p className="mt-2 text-sm text-zinc-600">
@@ -291,22 +261,41 @@ export function GruposVipContent() {
       </div>
 
       <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {GROUPS.map((g) => (
             <div
               key={g.id}
-              className={`relative rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm ${
-                g.id === 'geral' ? 'md:col-span-2' : ''
-              }`}
+              className="relative rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
             >
               {!g.isPublic &&
               g.id !== 'rpm-alugueis' &&
               g.id !== 'rpm-compra-imoveis' &&
+              g.id !== 'rpm-brasil' &&
               g.id !== 'compra-automovel' ? (
                 <VipCornerBadge />
               ) : null}
               <div className="flex h-full w-full min-w-0 flex-col items-center text-center">
-                {g.titleFlag ? <VipGroupTitleFlag code={g.titleFlag} size="hero" /> : null}
+                {g.id === 'rpm-brasil' ? (
+                  <Image
+                    src="/icon_vip.png"
+                    alt=""
+                    width={72}
+                    height={72}
+                    className="h-[4.5rem] w-[4.5rem] shrink-0 object-contain"
+                    priority={false}
+                  />
+                ) : g.id === 'rpm-alugueis' ? (
+                  <Image
+                    src="/casa_apple.png"
+                    alt=""
+                    width={72}
+                    height={72}
+                    className="h-[4.5rem] w-[4.5rem] shrink-0 object-contain"
+                    priority={false}
+                  />
+                ) : g.titleFlag ? (
+                  <VipGroupTitleFlag code={g.titleFlag} size="hero" />
+                ) : null}
 
                 <h2 className="mt-3 w-full min-w-0 self-stretch px-0.5 text-zinc-900">
                   <VipGroupTitle group={g} variant="card" />
@@ -316,7 +305,7 @@ export function GruposVipContent() {
 
                 {g.joinUrl && !g.memberOnlyVip ? <VipGroupLinkCopy url={g.joinUrl} /> : null}
 
-                <div className="mx-auto mt-6 w-full max-w-xs">
+                <div className="mx-auto mt-auto w-full max-w-xs pt-6">
                   <CardButton
                     type="button"
                     variant="outline"

@@ -3,11 +3,11 @@ import type { ImgHTMLAttributes } from 'react';
 type Base = Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'>;
 
 function baseProps(code: 'br' | 'pt', title: string) {
-  const src = code === 'br' ? '/flags/br.svg' : '/flags/pt.svg';
+  const src = code === 'br' ? '/flags/brasil_apple.png' : '/flags/portugal_apple.png';
   return { src, alt: title, title } as const;
 }
 
-/** Bandeiras em SVG (leves; emojis de bandeira Unicode não). */
+/** Bandeiras em PNG (ícones redondos padronizados). */
 export function FlagBr({ className, ...rest }: Base) {
   return <img {...baseProps('br', 'Brasil')} className={className} loading="eager" {...rest} />;
 }
@@ -41,12 +41,12 @@ export function BrPtFlagsRow({
       aria-label="Brasil e Portugal"
     >
       <FlagBr
-        className={`${sizeClass} shrink-0 object-contain [aspect-ratio:20/14]`}
+        className={`${sizeClass} shrink-0 object-contain [aspect-ratio:1/1]`}
         alt=""
         title="Brasil"
       />
       <FlagPt
-        className={`${sizeClass} shrink-0 object-contain [aspect-ratio:30/20]`}
+        className={`${sizeClass} shrink-0 object-contain [aspect-ratio:1/1]`}
         alt=""
         title="Portugal"
       />
@@ -59,12 +59,12 @@ export function ImmigrationRouteLabel({ className = '' }: { className?: string }
   return (
     <span className={`inline-flex flex-wrap items-center gap-1.5 ${className}`.trim()}>
       <FlagBr
-        className="h-[1.1em] w-auto shrink-0 object-contain [aspect-ratio:20/14] align-[-0.1em] sm:h-[1.15em]"
+        className="h-[1.1em] w-auto shrink-0 object-contain [aspect-ratio:1/1] align-[-0.1em] sm:h-[1.15em]"
         title="Brasil"
       />
       <span aria-hidden className="text-zinc-500">→</span>
       <FlagPt
-        className="h-[1.1em] w-auto shrink-0 object-contain [aspect-ratio:30/20] align-[-0.1em] sm:h-[1.15em]"
+        className="h-[1.1em] w-auto shrink-0 object-contain [aspect-ratio:1/1] align-[-0.1em] sm:h-[1.15em]"
         title="Portugal"
       />
     </span>

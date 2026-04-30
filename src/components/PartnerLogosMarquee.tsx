@@ -97,7 +97,7 @@ export function PartnerLogosMarquee() {
           id="dashboard-partner-logos-heading"
           className="text-center text-xs font-semibold uppercase tracking-wider text-zinc-500"
         >
-          Parceiros
+          Nosso time de confiança
         </h2>
       </div>
       <div

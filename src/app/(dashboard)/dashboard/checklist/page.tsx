@@ -41,7 +41,6 @@ type ChecklistData = {
     profissoesPossiveis?: string[];
     precisaCarro?: boolean | null;
     dataViagem?: string; // yyyy-mm-dd
-    dataAima?: string; // yyyy-mm-dd
     notas?: string;
   };
   checks?: Record<string, boolean>;
@@ -888,7 +887,6 @@ function planFormProgress(meta: ChecklistData["meta"] | undefined): { pct: numbe
     Array.isArray(m.profissoesPossiveis) && m.profissoesPossiveis.length > 0,
     m.precisaCarro !== undefined,
     Boolean(m.dataViagem && String(m.dataViagem).trim() !== ""),
-    Boolean(m.dataAima && String(m.dataAima).trim() !== ""),
     Boolean(m.notas && String(m.notas).trim() !== ""),
   ];
   const total = filled.length;
@@ -1528,17 +1526,6 @@ export default function ChecklistPage() {
                     type="date"
                     value={data.meta?.dataViagem ?? ""}
                     onChange={(e) => setMeta("dataViagem", e.target.value)}
-                    onMouseDown={guardGuestInteraction}
-                    onFocus={guardGuestInteraction}
-                    className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-zinc-600">Agendamento AIMA</label>
-                  <input
-                    type="date"
-                    value={data.meta?.dataAima ?? ""}
-                    onChange={(e) => setMeta("dataAima", e.target.value)}
                     onMouseDown={guardGuestInteraction}
                     onFocus={guardGuestInteraction}
                     className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"

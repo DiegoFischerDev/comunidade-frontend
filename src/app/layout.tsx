@@ -14,22 +14,20 @@ export async function generateMetadata(): Promise<Metadata> {
   const base = new URL(siteUrl);
   return {
     metadataBase: base,
-    title: "Comunidade Rafa pelo mundo",
+    title: "Comunidade Rafa   ",
     description: desc,
     manifest: "/site.webmanifest",
     icons: {
       icon: [
-        { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-        { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
         { url: "/favicon_novo.ico", sizes: "any", type: "image/x-icon" },
       ],
-      apple: { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      apple: { url: "/apple-touch-icon2.png", sizes: "180x180", type: "image/png" },
     },
     openGraph: {
       type: "website",
       locale: "pt_PT",
       siteName: "Comunidade Rafa Portugal",
-      title: "Comunidade Rafa pelo mundo",
+      title: "Comunidade Rafa Portugal",
       description: desc,
       url: base,
       images: [
@@ -43,7 +41,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: "Comunidade Rafa pelo mundo",
+      title: "Comunidade Rafa Portugal",
       description: desc,
       images: [new URL("/og_comunidade2.png", base).href],
     },

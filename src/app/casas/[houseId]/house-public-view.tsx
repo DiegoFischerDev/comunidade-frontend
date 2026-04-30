@@ -9,6 +9,7 @@ import { isOurImageHostname } from "@/lib/site-url";
 import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
 
 import { HouseContactSection } from "./house-contact-section";
+import { HousePhotoGallery } from "./house-photo-gallery";
 
 const CITY_LABELS: Record<string, string> = {
   INTERIOR: "Interior",
@@ -244,30 +245,7 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
               </div>
             </dl>
 
-            {photos.length > 0 ? (
-              <div>
-                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  {photos.length === 1 ? "Fotografia" : "Fotografias"}
-                </h2>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {photos.map((src, i) => (
-                    <div
-                      key={`${src}-${i}`}
-                      className="relative aspect-[4/3] overflow-hidden rounded-xl bg-zinc-100 shadow-inner"
-                    >
-                      <Image
-                        src={src}
-                        alt=""
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 640px) 50vw, 200px"
-                        unoptimized={nextImageUnoptimized(src)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
+            {photos.length > 0 ? <HousePhotoGallery photos={photos} /> : null}
 
             <section>
               <h2 className="text-sm font-semibold text-zinc-900">Descrição</h2>

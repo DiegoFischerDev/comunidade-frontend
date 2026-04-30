@@ -110,13 +110,13 @@ export default function DashboardPage() {
     ? "/rafa_cards/dashboard_afiliados_mobile.png"
     : isMember
       ? "/rafa_cards/hero_mobile_vip.png"
-      : "/rafa_cards/hero_mobile3.png";
+      : "/rafa_cards/hero_mobile5.png";
 
   const heroDesktopSrc = hasAffiliateEnrollment
     ? "/rafa_cards/dashboard_afiliados.png"
     : isMember
       ? "/rafa_cards/hero_pc_vip.png"
-      : "/rafa_cards/hero_pc2.png";
+      : "/rafa_cards/hero_pc3.png";
 
   /**
    * Hero: visitante → login; membro VIP → painel de indicações se já for afiliado, senão modal de
@@ -167,7 +167,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-0">
       <section className="w-full -mt-16 md:-mt-6">
         <h1 className="sr-only">Comunidade Rafa Portugal — Início</h1>
         <button
@@ -217,10 +217,11 @@ export default function DashboardPage() {
             priority
             unoptimized
           />
+
         </button>
       </section>
 
-      <div className="space-y-8 px-4 md:px-6">
+      <div className="mt-8 space-y-8 px-4 md:px-6">
       <div className="mx-auto w-full max-w-7xl px-1 sm:px-2">
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-[repeat(auto-fit,minmax(20rem,1fr))]">
         <section className="h-full min-w-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">

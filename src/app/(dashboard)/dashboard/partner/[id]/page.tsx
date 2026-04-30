@@ -11,6 +11,7 @@ import { CardButton, CardLinkButton } from '@/components/ui/CardButton';
 import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
 import { PartnerServicePriceCallout } from '@/components/PartnerServicePriceCallout';
 import { PartnerCommentsSection } from '@/components/PartnerCommentsSection';
+import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
 import {
   buildPartnerHeroWhatsAppUrl,
   buildWhatsAppApiSendUrl,
@@ -128,10 +129,7 @@ export default function PartnerPage() {
   const waDigits = partner.whatsapp.replace(/\D/g, '');
   const whatsappUrl = buildWhatsAppApiSendUrl(waDigits, '');
   const buildServiceWhatsAppUrl = (serviceTitle: string) => {
-    const isMember = user?.tier === 'MEMBER';
-    const text = isMember
-      ? `Olá, tenho interesse em saber mais informações sobre o serviço ${serviceTitle} sou membro VIP da Comunidade Rafa Portugal`
-      : `Olá, tenho interesse em saber mais informações sobre o serviço ${serviceTitle} sou membro da Comunidade Rafa Portugal`;
+    const text = `Olá, tenho interesse em saber mais informações sobre o serviço ${serviceTitle} sou membro VIP da Comunidade Rafa Portugal`;
     return buildWhatsAppApiSendUrl(waDigits, text);
   };
   const heroContactUrl = buildPartnerHeroWhatsAppUrl(partner.whatsapp);
@@ -150,6 +148,10 @@ export default function PartnerPage() {
           },
         }),
       );
+      return;
+    }
+    if (user.tier !== 'MEMBER') {
+      window.dispatchEvent(new CustomEvent(OPEN_MEMBERSHIP_MODAL_EVENT));
       return;
     }
     try {
@@ -218,22 +220,13 @@ export default function PartnerPage() {
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      if (!user) {
-                        window.dispatchEvent(
-                          new CustomEvent('open-auth-modal', {
-                            detail: { mode: 'login' },
-                          }),
+                      void registerLeadThenOpen(() => {
+                        window.open(
+                          heroContactUrl,
+                          '_blank',
+                          'noopener,noreferrer',
                         );
-                        return;
-                      }
-                      void api.marketplace
-                        .registerLead(partner.id)
-                        .catch(() => {});
-                      window.open(
-                        heroContactUrl,
-                        '_blank',
-                        'noopener,noreferrer',
-                      );
+                      });
                     }}
                     className="px-5 py-2.5 shadow-sm"
                   >
@@ -317,21 +310,13 @@ export default function PartnerPage() {
                     type="button"
                     variant="primary"
                     onClick={() => {
-                      if (!user) {
-                        window.dispatchEvent(
-                          new CustomEvent('open-auth-modal', {
-                            detail: { mode: 'login' },
-                          }),
+                      void registerLeadThenOpen(() => {
+                        window.open(
+                          buildServiceWhatsAppUrl(service.title),
+                          '_blank',
+                          'noopener,noreferrer',
                         );
-                        return;
-                      }
-                      // registo de lead não é obrigatório aqui, apenas contacto direto
-                      void api.marketplace.registerLead(partner.id).catch(() => {});
-                      window.open(
-                        buildServiceWhatsAppUrl(service.title),
-                        '_blank',
-                        'noopener,noreferrer',
-                      );
+                      });
                     }}
                   >
                     Contactar

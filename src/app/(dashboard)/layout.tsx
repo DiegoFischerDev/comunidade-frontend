@@ -1166,7 +1166,7 @@ export default function DashboardLayout({
           <div className="flex min-w-0 items-center gap-2">
             {user?.tier === 'MEMBER' ? (
               <Image
-                src="/vip-card.png"
+                src="/icon_vip.png"
                 alt="VIP"
                 width={32}
                 height={32}
