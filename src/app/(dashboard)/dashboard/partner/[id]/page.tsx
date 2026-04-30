@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CatalogCarousel } from '@/components/CatalogCarousel';
@@ -12,6 +12,7 @@ import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
 import { PartnerServicePriceCallout } from '@/components/PartnerServicePriceCallout';
 import { PartnerCommentsSection } from '@/components/PartnerCommentsSection';
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
+import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
 import {
   buildPartnerHeroWhatsAppUrl,
   buildWhatsAppApiSendUrl,
@@ -45,7 +46,8 @@ type PartnerDetails = {
 
 export default function PartnerPage() {
   const params = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [partner, setPartner] = useState<PartnerDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -59,6 +61,18 @@ export default function PartnerPage() {
   const sharePageUrl = `${siteBase}/partner/${partner?.id ?? params.id}`;
 
   useEffect(() => {
+    if (authLoading) return;
+    if (user?.tier === 'MEMBER') return;
+    if (!user) {
+      window.dispatchEvent(new Event(OPEN_AUTH_LOGIN_EVENT));
+    } else {
+      window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
+    }
+    router.replace('/dashboard/services');
+  }, [authLoading, user, router]);
+
+  useEffect(() => {
+    if (authLoading || user?.tier !== 'MEMBER') return;
     if (!params?.id) return;
     (async () => {
       try {
@@ -74,7 +88,7 @@ export default function PartnerPage() {
         setLoading(false);
       }
     })();
-  }, [params]);
+  }, [params, authLoading, user?.tier]);
 
   useEffect(() => {
     if (!partner?.category || partner.category.slug !== 'relocation') {
@@ -101,7 +115,7 @@ export default function PartnerPage() {
     };
   }, [partner?.id, partner?.category?.slug]);
 
-  if (loading) {
+  if (authLoading || loading) {
     return <p className="text-sm text-zinc-600">Carregando parceiro…</p>;
   }
 

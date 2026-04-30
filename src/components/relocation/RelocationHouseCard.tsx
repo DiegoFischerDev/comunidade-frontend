@@ -128,10 +128,6 @@ export function RelocationHouseCard({ house: h, showContactButton = true }: Prop
               {formatHouseEntradaWithTotal(h.caucoesCount, h.rendasEntradaCount, h.priceEur)}
             </dd>
           </div>
-          <div className="flex items-start justify-between gap-3 border-t border-zinc-100 pt-2">
-            <dt className="shrink-0 text-zinc-500">Anunciante</dt>
-            <dd className="line-clamp-2 text-right font-medium text-zinc-800">{h.partner.name}</dd>
-          </div>
         </dl>
       </div>
       <div className="mt-auto border-t border-zinc-100 bg-zinc-50/50 px-4 py-3">
