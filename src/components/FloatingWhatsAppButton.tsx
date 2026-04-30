@@ -38,13 +38,23 @@ type FloatingWhatsAppButtonProps = {
   hideFloatingButton?: boolean;
 };
 
+type MembershipAmounts = {
+  eurCents: number;
+  pixCentavos: number;
+};
+
+const DEFAULT_MEMBERSHIP_AMOUNTS: MembershipAmounts = {
+  eurCents: 2300,
+  pixCentavos: 2300,
+};
+
 export function FloatingWhatsAppButton({
   hideFloatingButton = false,
 }: FloatingWhatsAppButtonProps) {
   const [open, setOpen] = useState(false);
   const [showMembershipModal, setShowMembershipModal] = useState(false);
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
-  const [amounts, setAmounts] = useState<{ eurCents: number; pixCentavos: number } | null>(null);
+  const [amounts, setAmounts] = useState<MembershipAmounts | null>(null);
   const [amountsLoading, setAmountsLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -110,7 +120,7 @@ export function FloatingWhatsAppButton({
     api.stripe
       .getMembershipAmounts()
       .then(setAmounts)
-      .catch(() => setAmounts({ eurCents: 2300, pixCentavos: 2300 }))
+      .catch(() => setAmounts(DEFAULT_MEMBERSHIP_AMOUNTS))
       .finally(() => setAmountsLoading(false));
   }, [showMembershipModal, amounts, amountsLoading]);
 
@@ -135,7 +145,7 @@ export function FloatingWhatsAppButton({
         const data = await api.stripe.getMembershipAmounts();
         setAmounts(data);
       } catch {
-        setAmounts({ eurCents: 2300, pixCentavos: 2300 });
+        setAmounts(DEFAULT_MEMBERSHIP_AMOUNTS);
       } finally {
         setAmountsLoading(false);
       }
@@ -226,7 +236,7 @@ export function FloatingWhatsAppButton({
             {!showPaymentOptions ? (
               <div className="relative overflow-hidden rounded-2xl">
                 <Image
-                  src="/rafa_cards/membro_vip_modal.png"
+                  src="/rafa_cards/membro_vip_modal2.png"
                   alt="Membro VIP — oferta Comunidade Rafa Portugal"
                   width={800}
                   height={1200}

@@ -236,7 +236,10 @@ export const api = {
   },
   stripe: {
     getMembershipAmounts: () =>
-      request<{ eurCents: number; pixCentavos: number }>('/stripe/membership-amounts', {
+      request<{
+        eurCents: number;
+        pixCentavos: number;
+      }>('/stripe/membership-amounts', {
         method: 'GET',
       }),
     createCheckoutSession: (params: { successUrl: string; cancelUrl: string }) =>

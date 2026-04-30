@@ -238,7 +238,7 @@ export default function MyReferralsPage() {
             <div className="flex items-center gap-3">
               <div className="relative h-12 w-12 flex-shrink-0">
                 <Image
-                  src="/vip-card.png"
+                  src="/icon_vip.png"
                   alt="Tornar-se membro VIP"
                   fill
                   className="rounded-xl object-contain"

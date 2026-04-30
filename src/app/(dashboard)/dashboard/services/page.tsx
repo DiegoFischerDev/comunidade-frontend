@@ -46,7 +46,7 @@ export default function ServicesDashboardPage() {
   return (
     <div className="mx-auto w-full max-w-[900px] space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Serviços</h1>
+        <h1 className="text-2xl font-semibold text-zinc-900">Nosso time de confiança</h1>
         <p className="mt-2 text-sm text-zinc-600">
           Aqui encontras os serviços que a Comunidade Rafa Portugal confia e recomenda. Estamos
           sempre à procura de novos parceiros para oferecer à nossa comunidade as
@@ -54,13 +54,13 @@ export default function ServicesDashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-3">
         {sorted === null ? (
-          <div className="col-span-full rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
             A carregar categorias…
           </div>
         ) : sorted.length === 0 ? (
-          <div className="col-span-full rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
             Ainda não há categorias disponíveis.
           </div>
         ) : (
@@ -68,9 +68,9 @@ export default function ServicesDashboardPage() {
             <Link
               key={c.id}
               href={`/dashboard/category/${c.slug}`}
-              className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-colors hover:bg-zinc-50"
+              className="group flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-md"
             >
-              <div className="relative aspect-[16/9] w-full bg-zinc-100">
+              <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:h-18 sm:w-28">
                 {c.backgroundImageUrl ? (
                   <div
                     className="absolute inset-0 bg-cover bg-center"
@@ -88,12 +88,18 @@ export default function ServicesDashboardPage() {
                   </div>
                 )}
               </div>
-              <div className="p-5">
+              <div className="min-w-0 flex-1">
                 <p className="text-base font-semibold text-zinc-900">{c.name}</p>
                 {c.shortDescription ? (
-                  <p className="mt-1 line-clamp-3 text-sm text-zinc-600">{c.shortDescription}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-zinc-600">{c.shortDescription}</p>
                 ) : null}
               </div>
+              <span
+                className="shrink-0 text-xl text-zinc-400 transition group-hover:text-zinc-600"
+                aria-hidden
+              >
+                ›
+              </span>
             </Link>
           ))
         )}
