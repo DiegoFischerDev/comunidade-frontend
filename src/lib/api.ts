@@ -626,6 +626,64 @@ export const api = {
             };
           }[]
         >('/partners/admin/houses', { method: 'GET' }),
+      create: (input: {
+        images?: File[];
+        video?: File;
+        title: string;
+        description: string;
+        businessType?: 'RENT' | 'SALE';
+        typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+        city: string;
+        availableFrom: string;
+        priceEur: string;
+        relocationFeeEur: string;
+        caucoesCount: string;
+        rendasEntradaCount: string;
+        furnished: boolean;
+        coverImageIndex?: number;
+      }) => {
+        const fd = new FormData();
+        if (input.video) fd.append('video', input.video);
+        if (input.images?.length) {
+          for (const file of input.images) fd.append('images', file);
+        }
+        if (input.images?.length && input.coverImageIndex != null) {
+          fd.append('coverImageIndex', String(input.coverImageIndex));
+        }
+        fd.append('title', input.title);
+        fd.append('description', input.description);
+        if (input.businessType != null) fd.append('businessType', input.businessType);
+        fd.append('typology', input.typology);
+        fd.append('city', input.city);
+        fd.append('availableFrom', input.availableFrom);
+        fd.append('priceEur', input.priceEur);
+        fd.append('relocationFeeEur', input.relocationFeeEur.trim());
+        fd.append('caucoesCount', input.caucoesCount);
+        fd.append('rendasEntradaCount', input.rendasEntradaCount);
+        fd.append('furnished', input.furnished ? 'true' : 'false');
+        return requestFormData<{
+          id: string;
+          title: string;
+          description: string;
+          businessType: 'RENT' | 'SALE';
+          typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          city: string;
+          availableFrom: string;
+          priceEur: string;
+          relocationFeeEur: string;
+          caucoesCount: number;
+          rendasEntradaCount: number;
+          furnished: boolean;
+          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+          whatsappSentAt: string | null;
+          whatsappError: string | null;
+          imageUrls: string[];
+          coverImageUrl: string | null;
+          videoUrl: string | null;
+          createdAt: string;
+          updatedAt: string;
+        }>('/partners/admin/houses', fd, { method: 'POST' });
+      },
       delete: (houseId: string) =>
         request<{ ok: true }>(
           `/partners/admin/houses/${encodeURIComponent(houseId)}`,
