@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import {
+  isFrontendOnlyMarketplaceCategorySlug,
+  prependLocalMarketplaceCategories,
+} from '@/lib/marketplace-local-categories';
 
 type CategoryRow = {
   id: string;
@@ -19,24 +23,28 @@ export default function ServicesDashboardPage() {
     void (async () => {
       try {
         const data = await api.marketplace.categoriesWithPartners();
-        setCategories(
-          data.map((c) => ({
-            id: c.id,
-            slug: c.slug,
-            name: c.name,
-            shortDescription: c.shortDescription,
-            fullDescription: c.fullDescription,
-          })),
-        );
+        const mapped = data.map((c) => ({
+          id: c.id,
+          slug: c.slug,
+          name: c.name,
+          shortDescription: c.shortDescription,
+          fullDescription: c.fullDescription,
+        }));
+        setCategories(prependLocalMarketplaceCategories(mapped));
       } catch {
         setCategories([]);
       }
     })();
   }, []);
 
+  /** Categorias só-front primeiro (ordem fixa); restantes por nome. */
   const sorted = useMemo(() => {
     if (!categories) return null;
-    return [...categories].sort((a, b) => a.name.localeCompare(b.name, 'pt-PT'));
+    const locals = categories.filter((c) => isFrontendOnlyMarketplaceCategorySlug(c.slug));
+    const rest = categories
+      .filter((c) => !isFrontendOnlyMarketplaceCategorySlug(c.slug))
+      .sort((a, b) => a.name.localeCompare(b.name, 'pt-PT'));
+    return [...locals, ...rest];
   }, [categories]);
 
   return (
@@ -82,7 +90,7 @@ export default function ServicesDashboardPage() {
                     )}
                   </p>
                   <span className="mt-3 inline-flex items-center text-sm font-medium text-amber-800">
-                    Ver parceiros
+                    {isFrontendOnlyMarketplaceCategorySlug(c.slug) ? 'Saber mais' : 'Ver parceiros'}
                     <span className="ml-1 transition-transform group-hover:translate-x-0.5" aria-hidden>
                       →
                     </span>

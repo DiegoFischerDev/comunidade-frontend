@@ -6,9 +6,112 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import {
+  isFrontendOnlyMarketplaceCategorySlug,
+  mergeMarketplaceCategoriesWithPartners,
+} from '@/lib/marketplace-local-categories';
 import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
 import { CardLinkButton } from '@/components/ui/CardButton';
 import { getPublicSiteUrl } from '@/lib/site-url';
+import { useAuth } from '@/contexts/AuthContext';
+import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
+
+const WISE_INVITE_URL = 'https://wise.com/invite/ihpc/diegof949';
+const BANK_ASSIST_WHATSAPP_HREF =
+  'https://wa.me/351924214880?text=' +
+  encodeURIComponent(
+    'Olá! Venho pela Comunidade Rafa Portugal e gostaria de ajuda gratuita para abrir conta em Portugal.',
+  );
+
+function AberturaDeContaServiceCards() {
+  const { user } = useAuth();
+  const isVipMember = user?.tier === 'MEMBER';
+
+  return (
+    <div className="mx-auto grid w-full max-w-lg gap-4 sm:max-w-xl md:max-w-[42rem] md:grid-cols-2 md:gap-3">
+      <article className="flex flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition hover:border-emerald-200 hover:shadow-md md:max-w-none">
+        <div className="relative h-36 w-full bg-gradient-to-br from-[#9fe870]/35 via-white to-[#163300]/10 sm:h-40 md:h-28">
+          <Image
+            src="/card_wise.png"
+            alt="Cartão Wise"
+            fill
+            className="object-contain p-4 md:p-3"
+            sizes="(max-width: 768px) 100vw, 384px"
+          />
+        </div>
+        <div className="flex flex-1 flex-col gap-2 border-t border-zinc-100 p-3.5 md:gap-2 md:p-3">
+          <h2 className="text-base font-semibold text-zinc-900">Conta Wise</h2>
+          <p className="text-xs leading-relaxed text-zinc-600 md:text-[13px]">
+            Wise é uma das formas mais baratas de converter reais para euros.{' '}
+            <span className="font-semibold text-zinc-800">UMA DICA IMPORTANTE:</span> após abrir a conta, transforma a
+            conta Wise numa conta de investimento ativando o «Rende+». Assim, além de o saldo render todos os meses,
+            também pagas menos IOF nas conversões.
+          </p>
+          <a
+            href={WISE_INVITE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-auto inline-flex w-full items-center justify-center rounded-lg bg-[#163300] px-3 py-2 text-xs font-semibold text-[#9fe870] transition hover:bg-[#112400] md:py-2 md:text-sm"
+          >
+            Abrir conta na Wise (convite)
+          </a>
+        </div>
+      </article>
+
+      <article className="flex flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition hover:border-amber-200/80 hover:shadow-md md:max-w-none">
+        <div className="relative h-36 w-full bg-[#39ff14]/15 sm:h-40 md:h-28">
+          <Image
+            src="/iban.png"
+            alt="Conta bancária com IBAN em Portugal"
+            fill
+            className="object-contain p-4 md:p-3"
+            sizes="(max-width: 768px) 100vw, 384px"
+          />
+        </div>
+        <div className="flex flex-1 flex-col gap-2 border-t border-zinc-100 p-3.5 md:gap-2 md:p-3">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <h2 className="text-base font-semibold text-zinc-900">Banco em Portugal (IBAN)</h2>
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-950 md:text-xs">
+              <Image src="/icon_vip.png" alt="" width={16} height={16} className="h-4 w-4 object-contain" />
+              Membro VIP
+            </span>
+          </div>
+          <p className="text-xs leading-relaxed text-zinc-600 md:text-[13px]">
+            Assessoria gratuita para{' '}
+            <span className="font-medium text-zinc-800">brasileiros</span> que querem abrir conta em banco de Portugal e
+            obter IBAN.
+          </p>
+          {isVipMember ? (
+            <a
+              href={BANK_ASSIST_WHATSAPP_HREF}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-auto inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 md:text-sm"
+            >
+              Pedir ajuda no WhatsApp
+            </a>
+          ) : (
+            <div className="mt-auto space-y-2 rounded-lg border border-dashed border-amber-300 bg-amber-50/80 p-3 md:p-2.5">
+              <p className="text-xs text-amber-950 md:text-[13px]">
+                O contacto para esta assessoria gratuita está disponível apenas para{' '}
+                <span className="font-semibold">Membros VIP</span>.
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent(OPEN_MEMBERSHIP_MODAL_EVENT))
+                }
+                className="inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-2 text-xs font-semibold text-white transition hover:opacity-95 md:text-sm"
+              >
+                Tornar-me Membro VIP
+              </button>
+            </div>
+          )}
+        </div>
+      </article>
+    </div>
+  );
+}
 
 type PartnerService = {
   id: string;
@@ -63,7 +166,7 @@ export default function CategoryPage() {
     (async () => {
       try {
         const data = await api.marketplace.categoriesWithPartners();
-        setCategories(data);
+        setCategories(mergeMarketplaceCategoriesWithPartners(data));
       } catch (err) {
         setError(
           err instanceof Error
@@ -210,9 +313,26 @@ export default function CategoryPage() {
       </section>
 
       {category.partners.length === 0 ? (
-        <p className="text-sm text-zinc-500">
-          Ainda não há parceiros nesta categoria.
-        </p>
+        isFrontendOnlyMarketplaceCategorySlug(category.slug) ? (
+          category.slug === 'abertura-de-conta' ? (
+            <AberturaDeContaServiceCards />
+          ) : (
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 px-5 py-6 text-sm leading-relaxed text-zinc-800 shadow-sm">
+              <p className="font-semibold text-emerald-950">Serviço da comunidade</p>
+              <p className="mt-2">
+                {category.fullDescription ||
+                  category.shortDescription ||
+                  'Assistência gratuita para abertura de conta na Wise e conta bancária em Portugal (IBAN).'}
+              </p>
+              <p className="mt-3 text-zinc-600">
+                Este apoio não passa por parceiros na plataforma: segue as orientações partilhadas na comunidade ou
+                contacta a equipa pelo WhatsApp se precisares de ajuda.
+              </p>
+            </div>
+          )
+        ) : (
+          <p className="text-sm text-zinc-500">Ainda não há parceiros nesta categoria.</p>
+        )
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {category.partners.map((partner) => {

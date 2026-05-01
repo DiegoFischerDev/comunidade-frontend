@@ -26,6 +26,7 @@ import { CardButton } from '@/components/ui/CardButton';
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
 import { SupportTicketRoot } from '@/components/support-ticket';
 import { SiteFooter } from '@/components/site/SiteFooter';
+import { prependLocalMarketplaceCategories } from '@/lib/marketplace-local-categories';
 
 /** Sub-link do menu lateral (indentado, sob “Minha empresa” / “Serviços”). */
 function SidebarNavSubLink({
@@ -564,10 +565,12 @@ export default function DashboardLayout({
         // Menu lateral deve mostrar apenas categorias que existem e têm parceiros associados
         const data = await api.marketplace.categoriesWithPartners();
         setCategories(
-          data.map((c) => ({ id: c.id, slug: c.slug, name: c.name })),
+          prependLocalMarketplaceCategories(
+            data.map((c) => ({ id: c.id, slug: c.slug, name: c.name })),
+          ),
         );
       } catch {
-        // silencioso: menu continua sem categorias se falhar
+        setCategories(prependLocalMarketplaceCategories([]));
       } finally {
         setCategoriesLoaded(true);
       }

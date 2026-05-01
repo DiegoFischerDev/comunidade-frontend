@@ -343,6 +343,9 @@ export const api = {
           subscriptionsCount: number;
           membershipPaymentsCount: number;
           membershipPriceEurUsed: number;
+          totalRafacallUnlockRevenueEur: number;
+          rafaUnlockPaymentsCount: number;
+          rafacallFeeEurUsed: number;
         }>('/users/admin/stats', { method: 'GET' }),
       list: () =>
         request<
@@ -646,6 +649,8 @@ export const api = {
         rendasEntradaCount: string;
         furnished: boolean;
         coverImageIndex?: number;
+        /** Parceiro relocation titular; omitir = conta relocation interna do admin */
+        partnerId?: string;
       }) => {
         const fd = new FormData();
         if (input.video) fd.append('video', input.video);
@@ -666,6 +671,8 @@ export const api = {
         fd.append('caucoesCount', input.caucoesCount);
         fd.append('rendasEntradaCount', input.rendasEntradaCount);
         fd.append('furnished', input.furnished ? 'true' : 'false');
+        const pid = input.partnerId?.trim();
+        if (pid) fd.append('partnerId', pid);
         return requestFormData<{
           id: string;
           title: string;
