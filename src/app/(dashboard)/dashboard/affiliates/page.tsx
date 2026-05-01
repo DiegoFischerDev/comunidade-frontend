@@ -50,6 +50,7 @@ export default function AdminAffiliatesPage() {
   const [payModalAffiliate, setPayModalAffiliate] = useState<AffiliateRow | null>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [historyAffiliate, setHistoryAffiliate] = useState<AffiliateRow | null>(null);
   const [historyRows, setHistoryRows] = useState<PaidCommissionRow[]>([]);
@@ -83,6 +84,33 @@ export default function AdminAffiliatesPage() {
     setHistoryAffiliate(null);
     setPayModalAffiliate(a);
     setProofFile(null);
+  }
+
+  async function handleDeleteAffiliate(a: AffiliateRow) {
+    const label = a.user.name?.trim() || a.affiliateCode;
+    const ok = window.confirm(
+      `Tem certeza que deseja remover o afiliado "${label}"? Esta ação remove o perfil de afiliado e comissões relacionadas.`,
+    );
+    if (!ok) return;
+
+    setDeletingId(a.id);
+    setError('');
+    try {
+      await api.affiliate.adminDelete(a.id);
+      setRows((prev) => prev.filter((r) => r.id !== a.id));
+      if (payModalAffiliate?.id === a.id) {
+        setPayModalAffiliate(null);
+        setProofFile(null);
+      }
+      if (historyAffiliate?.id === a.id) {
+        setHistoryAffiliate(null);
+        setHistoryRows([]);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao remover afiliado.');
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   useEffect(() => {
@@ -226,6 +254,14 @@ export default function AdminAffiliatesPage() {
                         className="cursor-pointer rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
                       >
                         Ver pagamentos
+                      </button>
+                      <button
+                        type="button"
+                        disabled={deletingId === a.id}
+                        onClick={() => void handleDeleteAffiliate(a)}
+                        className="cursor-pointer rounded-md border border-red-200 bg-white px-2 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {deletingId === a.id ? 'A remover…' : 'Remover afiliado'}
                       </button>
                     </div>
                   </td>
