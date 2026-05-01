@@ -226,27 +226,55 @@ export default function BusinessPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setError('');
+    setSuccess('');
     setUploadingCatalogVideo(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const token = getAuthToken();
-      const res = await fetch(`${API_URL}/uploads`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Erro ao fazer upload do vídeo.');
+      const mime =
+        file.type && /^video\//.test(file.type)
+          ? file.type.split(';')[0]!.trim().toLowerCase()
+          : 'video/mp4';
+
+      const applyCatalogVideo = (updated: { catalogVideoUrl?: string | null }) => {
+        setCatalogVideoUrl(
+          typeof updated.catalogVideoUrl === 'string' ? updated.catalogVideoUrl : '',
+        );
+      };
+
+      let usedMultipartFallback = false;
+
+      try {
+        const presign = await api.partner.presignCatalogVideoUpload(mime);
+        const putRes = await fetch(presign.uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: { 'Content-Type': presign.contentType },
+        });
+        if (!putRes.ok) {
+          throw new Error(
+            `Não foi possível enviar o vídeo para o armazenamento (HTTP ${putRes.status}). Se usas Cloudflare R2, confere CORS no bucket (PUT a partir do domínio do dashboard).`,
+          );
+        }
+        const updated = await api.partner.confirmCatalogVideoUpload(presign.objectKey);
+        applyCatalogVideo(updated);
+      } catch (first: unknown) {
+        const err = first as Error & { status?: number; code?: string };
+        const fallback =
+          err.status === 503 || err.code === 'DIRECT_UPLOAD_UNAVAILABLE';
+        if (!fallback) {
+          throw first;
+        }
+        usedMultipartFallback = true;
+        const updated = await api.partner.uploadCatalogVideo(file);
+        applyCatalogVideo(updated);
       }
-      const newUrl = `${API_URL}${data.url}`;
-      const updated = await api.partner.updateMe(
-        buildPartnerUpdatePayload({ catalogVideoUrl: newUrl }),
-      );
-      setCatalogVideoUrl(
-        typeof updated.catalogVideoUrl === 'string' ? updated.catalogVideoUrl : '',
-      );
+
+      if (usedMultipartFallback) {
+        setSuccess(
+          'Vídeo guardado via servidor. Se o erro de tamanho voltar a aparecer, configura as variáveis R2 na API (upload direto, sem limite do proxy).',
+        );
+      } else {
+        setSuccess('Vídeo atualizado com sucesso.');
+      }
     } catch (err) {
       setError(
         err instanceof Error
