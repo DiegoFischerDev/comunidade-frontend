@@ -326,7 +326,11 @@ export const api = {
       });
       return request<{
         tz: string;
-        days: { date: string; slots: { startsAt: string; endsAt: string }[] }[];
+        days: {
+          date: string;
+          slots: { startsAt: string; endsAt: string }[];
+          adminBlockedSlots: { startsAt: string; endsAt: string }[];
+        }[];
       }>(`/rafacall/availability?${q.toString()}`, { method: 'GET' });
     },
     book: (body: { startsAtUtcIso: string; tz: string }) =>
