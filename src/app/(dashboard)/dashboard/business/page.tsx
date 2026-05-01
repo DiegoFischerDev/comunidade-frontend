@@ -20,6 +20,7 @@ export default function BusinessPage() {
   const [fullDescription, setFullDescription] = useState('');
   const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
   const [catalogImageUrls, setCatalogImageUrls] = useState<string[]>([]);
+  const [catalogVideoUrl, setCatalogVideoUrl] = useState('');
   const [instagram, setInstagram] = useState('');
   const [billingName, setBillingName] = useState('');
   const [billingNif, setBillingNif] = useState('');
@@ -28,8 +29,33 @@ export default function BusinessPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
   const [uploadingCatalogIdx, setUploadingCatalogIdx] = useState<number | null>(null);
+  const [uploadingCatalogVideo, setUploadingCatalogVideo] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+  function buildPartnerUpdatePayload(
+    overrides: Partial<{
+      catalogImageUrls: string[];
+      catalogVideoUrl: string;
+    }> = {},
+  ) {
+    return {
+      name: name.trim(),
+      whatsapp: whatsapp.trim() || undefined,
+      logoUrl: logoUrl || undefined,
+      shortDescription: shortDescription || undefined,
+      fullDescription: fullDescription || undefined,
+      backgroundImageUrl: backgroundImageUrl || undefined,
+      catalogImageUrls: catalogImageUrls.length ? catalogImageUrls : undefined,
+      catalogVideoUrl: catalogVideoUrl.trim() || '',
+      instagram: instagram || undefined,
+      billingName: billingName.trim() || null,
+      billingNif: billingNif.trim() || null,
+      billingAddress: billingAddress.trim() || null,
+      billingPostalCode: billingPostalCode.trim() || null,
+      ...overrides,
+    };
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -50,6 +76,9 @@ export default function BusinessPage() {
         setBackgroundImageUrl(data.backgroundImageUrl ?? '');
         setCatalogImageUrls(
           Array.isArray(data.catalogImageUrls) ? data.catalogImageUrls : [],
+        );
+        setCatalogVideoUrl(
+          typeof data.catalogVideoUrl === 'string' ? data.catalogVideoUrl : '',
         );
         setInstagram(data.instagram ?? '');
         setBillingName(data.billingName ?? '');
@@ -88,21 +117,7 @@ export default function BusinessPage() {
     setSaving(true);
 
     try {
-      const updated = await api.partner.updateMe({
-        name: name.trim(),
-        whatsapp: whatsapp.trim() || undefined,
-        logoUrl: logoUrl || undefined,
-        shortDescription: shortDescription || undefined,
-        fullDescription: fullDescription || undefined,
-        backgroundImageUrl: backgroundImageUrl || undefined,
-        catalogImageUrls: catalogImageUrls.length ? catalogImageUrls : undefined,
-        instagram: instagram || undefined,
-        billingName: billingName.trim() || null,
-        billingNif: billingNif.trim() || null,
-        billingAddress: billingAddress.trim() || null,
-        billingPostalCode: billingPostalCode.trim() || null,
-        // whatsapp da empresa sincronizado via serviço de parceiro
-      });
+      const updated = await api.partner.updateMe(buildPartnerUpdatePayload());
 
       setName(updated.name);
       setWhatsapp(updated.whatsapp || '');
@@ -112,6 +127,9 @@ export default function BusinessPage() {
       setBackgroundImageUrl(updated.backgroundImageUrl ?? '');
       setCatalogImageUrls(
         Array.isArray(updated.catalogImageUrls) ? updated.catalogImageUrls : [],
+      );
+      setCatalogVideoUrl(
+        typeof updated.catalogVideoUrl === 'string' ? updated.catalogVideoUrl : '',
       );
       setInstagram(updated.instagram ?? '');
       setBillingName(updated.billingName ?? '');
@@ -194,25 +212,72 @@ export default function BusinessPage() {
   }
 
   async function saveCatalogImages(newUrls: string[]) {
-    const updated = await api.partner.updateMe({
-      name: name.trim(),
-      whatsapp: whatsapp.trim() || undefined,
-      logoUrl: logoUrl || undefined,
-      shortDescription: shortDescription || undefined,
-      fullDescription: fullDescription || undefined,
-      backgroundImageUrl: backgroundImageUrl || undefined,
-      catalogImageUrls: newUrls,
-      instagram: instagram || undefined,
-      billingName: billingName.trim() || null,
-      billingNif: billingNif.trim() || null,
-      billingAddress: billingAddress.trim() || null,
-      billingPostalCode: billingPostalCode.trim() || null,
-    });
+    const updated = await api.partner.updateMe(
+      buildPartnerUpdatePayload({ catalogImageUrls: newUrls }),
+    );
     setName(updated.name);
     setWhatsapp(updated.whatsapp || '');
     setCatalogImageUrls(
       Array.isArray(updated.catalogImageUrls) ? updated.catalogImageUrls : [],
     );
+  }
+
+  async function handleCatalogVideoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError('');
+    setUploadingCatalogVideo(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = getAuthToken();
+      const res = await fetch(`${API_URL}/uploads`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Erro ao fazer upload do vídeo.');
+      }
+      const newUrl = `${API_URL}${data.url}`;
+      const updated = await api.partner.updateMe(
+        buildPartnerUpdatePayload({ catalogVideoUrl: newUrl }),
+      );
+      setCatalogVideoUrl(
+        typeof updated.catalogVideoUrl === 'string' ? updated.catalogVideoUrl : '',
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Erro ao enviar vídeo. Tente novamente.',
+      );
+    } finally {
+      setUploadingCatalogVideo(false);
+    }
+    e.target.value = '';
+  }
+
+  async function handleRemoveCatalogVideo() {
+    setError('');
+    setUploadingCatalogVideo(true);
+    try {
+      const updated = await api.partner.updateMe(
+        buildPartnerUpdatePayload({ catalogVideoUrl: '' }),
+      );
+      setCatalogVideoUrl(
+        typeof updated.catalogVideoUrl === 'string' ? updated.catalogVideoUrl : '',
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Erro ao remover vídeo. Tente novamente.',
+      );
+    } finally {
+      setUploadingCatalogVideo(false);
+    }
   }
 
   async function handleCatalogUpload(
@@ -424,6 +489,52 @@ export default function BusinessPage() {
                 />
               </div>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-zinc-700">
+              Vídeo de apresentação (opcional)
+            </label>
+            <p className="text-xs text-zinc-500">
+              Um único vídeo é mostrado na tua página pública{' '}
+              <span className="font-medium text-zinc-600">antes</span> do carrossel de imagens.
+              Formatos: MP4, MOV ou WebM (tamanho razoável para carregar bem no telemóvel).
+            </p>
+            <input
+              type="file"
+              accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
+              disabled={uploadingCatalogVideo}
+              onChange={handleCatalogVideoUpload}
+              className="block w-full text-sm text-zinc-900 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200 disabled:opacity-50"
+            />
+            <p className="text-xs text-zinc-500">
+              {uploadingCatalogVideo
+                ? 'A processar vídeo…'
+                : catalogVideoUrl
+                  ? 'Vídeo guardado. Podes substituir ou remover.'
+                  : 'Ainda não há vídeo.'}
+            </p>
+            {catalogVideoUrl ? (
+              <div className="space-y-2">
+                <div className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-950">
+                  <video
+                    src={catalogVideoUrl}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="max-h-52 w-full object-contain sm:max-h-64"
+                  />
+                </div>
+                <button
+                  type="button"
+                  disabled={uploadingCatalogVideo}
+                  onClick={() => void handleRemoveCatalogVideo()}
+                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-800 hover:bg-red-100 disabled:opacity-50"
+                >
+                  Remover vídeo
+                </button>
+              </div>
+            ) : null}
           </div>
 
           <div className="space-y-2">

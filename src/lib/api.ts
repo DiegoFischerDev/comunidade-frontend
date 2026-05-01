@@ -855,6 +855,7 @@ export const api = {
         fullDescription: string | null;
         backgroundImageUrl: string | null;
         catalogImageUrls: string[];
+        catalogVideoUrl?: string | null;
         instagram: string | null;
         billingName?: string | null;
         billingNif?: string | null;
@@ -872,6 +873,7 @@ export const api = {
       fullDescription?: string;
       backgroundImageUrl?: string;
       catalogImageUrls?: string[];
+      catalogVideoUrl?: string;
       instagram?: string;
       billingName?: string | null;
       billingNif?: string | null;
@@ -887,6 +889,7 @@ export const api = {
         fullDescription: string | null;
         backgroundImageUrl: string | null;
         catalogImageUrls: string[];
+        catalogVideoUrl?: string | null;
         instagram: string | null;
         billingName?: string | null;
         billingNif?: string | null;
@@ -1313,6 +1316,7 @@ export const api = {
         fullDescription: string | null;
         backgroundImageUrl: string | null;
         catalogImageUrls: string[];
+        catalogVideoUrl?: string | null;
         instagram: string | null;
         category?: { id: string; name: string; slug: string } | null;
         user: { email: string };

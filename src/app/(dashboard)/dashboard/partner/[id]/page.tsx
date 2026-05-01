@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { CatalogCarousel } from '@/components/CatalogCarousel';
+import { PartnerCatalogVideo } from '@/components/PartnerCatalogVideo';
 import { RelocationHouseCard } from '@/components/relocation/RelocationHouseCard';
 import { type RelocationHouseRow } from '@/components/relocation/relocation-house-shared';
 import { CardButton, CardLinkButton } from '@/components/ui/CardButton';
@@ -27,6 +28,7 @@ type PartnerDetails = {
   fullDescription: string | null;
   backgroundImageUrl: string | null;
   catalogImageUrls?: string[];
+  catalogVideoUrl?: string | null;
   instagram?: string | null;
   category?: {
     id: string;
@@ -248,6 +250,11 @@ export default function PartnerPage() {
           </p>
         </section>
       )}
+
+      <PartnerCatalogVideo
+        videoUrl={partner.catalogVideoUrl}
+        apiBaseUrl={API_URL}
+      />
 
       {/* Carrossel de catálogo */}
       {partner.catalogImageUrls && partner.catalogImageUrls.length > 0 && (
