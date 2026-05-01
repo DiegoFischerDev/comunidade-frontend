@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 
 import { RelocationHouseCard } from "@/components/relocation/RelocationHouseCard";
 import {
@@ -22,6 +23,8 @@ type RelocationPartner = {
 };
 
 const RELOCATION_IMOVEIS_PATH = "/relocation/imoveis";
+const RELOCATION_HOUSES_WHATSAPP_GROUP_URL =
+  "https://chat.whatsapp.com/Kt4ylOIU0qMBbtfHKlyvVt?mode=gi_t";
 
 export default function RelocationHousesListPage() {
   const router = useRouter();
@@ -201,6 +204,16 @@ export default function RelocationHousesListPage() {
     [parceiro, cidade, tipologia, finalidade, partners, setRouteFilters, router],
   );
 
+  const featuredRows = useMemo(
+    () => rows.filter((h) => h.featured).slice(0, 3),
+    [rows],
+  );
+  const regularRows = useMemo(() => {
+    if (featuredRows.length === 0) return rows;
+    const ids = new Set(featuredRows.map((h) => h.id));
+    return rows.filter((h) => !ids.has(h.id));
+  }, [rows, featuredRows]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -225,7 +238,45 @@ export default function RelocationHousesListPage() {
         </p>
       </div>
 
+      <section className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 shadow-sm sm:px-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              <Image src="/whatsapp.png" alt="" width={24} height={24} className="h-6 w-6 object-contain" />
+              Grupo WhatsApp de imóveis
+            </p>
+            <p className="mt-1 text-sm text-zinc-600">
+              Receba em primeira mão oportunidades de arrendamento e novidades de relocation em Portugal.
+            </p>
+          </div>
+          <a
+            href={RELOCATION_HOUSES_WHATSAPP_GROUP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-95 sm:w-auto"
+          >
+            Entrar no grupo
+          </a>
+        </div>
+      </section>
+
       {filterBar}
+
+      {!loading && featuredRows.length > 0 ? (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-900">
+              Destaque
+            </span>
+            <h2 className="text-lg font-semibold text-zinc-900">Imóveis em destaque</h2>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {featuredRows.map((h) => (
+              <RelocationHouseCard key={`featured-${h.id}`} house={h} />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {error && (
         <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -235,13 +286,13 @@ export default function RelocationHousesListPage() {
 
       {loading ? (
         <p className="text-sm text-zinc-600">A carregar imóveis…</p>
-      ) : rows.length === 0 ? (
+      ) : regularRows.length === 0 ? (
         <p className="text-sm text-zinc-600">
           Nenhum imóvel com estes critérios. Tente alargar os filtros.
         </p>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {rows.map((h) => (
+          {regularRows.map((h) => (
             <RelocationHouseCard key={h.id} house={h} />
           ))}
         </div>

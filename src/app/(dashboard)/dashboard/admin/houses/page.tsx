@@ -71,6 +71,7 @@ export default function AdminHousesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [featuringId, setFeaturingId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [savingCreate, setSavingCreate] = useState(false);
   const [title, setTitle] = useState('');
@@ -250,6 +251,21 @@ export default function AdminHousesPage() {
       setError(err instanceof Error ? err.message : 'Erro ao eliminar.');
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const onToggleFeatured = async (id: string, nextFeatured: boolean) => {
+    setFeaturingId(id);
+    setError('');
+    try {
+      await api.admin.houses.setFeatured(id, nextFeatured);
+      setItems((prev) =>
+        prev.map((h) => (h.id === id ? { ...h, featured: nextFeatured } : h)),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao atualizar destaque.');
+    } finally {
+      setFeaturingId(null);
     }
   };
 
@@ -466,6 +482,7 @@ export default function AdminHousesPage() {
                     <th className="px-4 py-2 text-left">Finalidade</th>
                     <th className="px-4 py-2 text-left">Parceiro</th>
                     <th className="px-4 py-2 text-left">Categoria</th>
+                    <th className="px-4 py-2 text-left">Destaque</th>
                     <th className="px-4 py-2 text-left">Estado</th>
                     <th className="px-4 py-2 text-left">Disponível a partir</th>
                     <th className="px-4 py-2 text-left">Criado</th>
@@ -488,6 +505,15 @@ export default function AdminHousesPage() {
                       <td className="px-4 py-2 align-top">
                         {h.partner.category?.name ?? '—'}
                       </td>
+                      <td className="whitespace-nowrap px-4 py-2 align-top text-xs">
+                        {h.featured ? (
+                          <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900">
+                            Em destaque
+                          </span>
+                        ) : (
+                          <span className="text-zinc-500">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-2 align-top">
                         <HouseStatusBadge status={h.status} />
                       </td>
@@ -507,6 +533,22 @@ export default function AdminHousesPage() {
                           >
                             Ver imóvel
                           </Link>
+                          <button
+                            type="button"
+                            disabled={featuringId === h.id}
+                            onClick={() => onToggleFeatured(h.id, !h.featured)}
+                            className={`rounded-md border px-3 py-1 text-xs font-medium disabled:opacity-50 ${
+                              h.featured
+                                ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                                : 'border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50'
+                            }`}
+                          >
+                            {featuringId === h.id
+                              ? 'A atualizar…'
+                              : h.featured
+                                ? 'Remover destaque'
+                                : 'Destacar'}
+                          </button>
                           <button
                             type="button"
                             disabled={busyId === h.id}

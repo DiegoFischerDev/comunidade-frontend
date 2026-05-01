@@ -621,6 +621,7 @@ export const api = {
             city: string;
             businessType: 'RENT' | 'SALE';
             typology: string;
+            featured: boolean;
             status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
             availableFrom: string;
             priceEur: string;
@@ -700,6 +701,11 @@ export const api = {
         request<{ ok: true }>(
           `/partners/admin/houses/${encodeURIComponent(houseId)}`,
           { method: 'DELETE' },
+        ),
+      setFeatured: (houseId: string, featured: boolean) =>
+        request<{ id: string; featured: boolean }>(
+          `/partners/admin/houses/${encodeURIComponent(houseId)}/featured`,
+          { method: 'PATCH', body: JSON.stringify({ featured }) },
         ),
     },
     categories: {
@@ -1366,6 +1372,7 @@ export const api = {
           coverImageUrl: string | null;
           videoUrl: string | null;
           partnerId: string;
+          featured: boolean;
           status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
           partner: {
             id: string;
