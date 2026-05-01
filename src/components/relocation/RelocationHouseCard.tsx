@@ -80,20 +80,15 @@ export function RelocationHouseCard({ house: h, showContactButton = true }: Prop
         ) : (
           <div className="flex h-full min-h-[8rem] items-center justify-center text-sm text-zinc-400">Sem média</div>
         )}
-        {videoSrc ? (
-          <span className="pointer-events-none absolute bottom-2 right-2 rounded bg-black/60 px-2 py-0.5 text-[10px] font-medium text-white">
-            Vídeo
-          </span>
-        ) : null}
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-2 sm:p-3">
-          <HouseStatusBadge status={h.status} variant="overlay" />
-        </div>
       </Link>
       <div className="flex flex-1 flex-col gap-3 px-4 pb-1 pt-4">
         <div>
-          <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug text-zinc-900 sm:text-base">
-            {h.title}
-          </h2>
+          <div className="flex flex-wrap items-start gap-x-2 gap-y-1">
+            <h2 className="line-clamp-2 min-w-0 flex-1 text-[15px] font-semibold leading-snug text-zinc-900 sm:text-base">
+              {h.title}
+            </h2>
+            <HouseStatusBadge status={h.status} className="shrink-0 self-start" />
+          </div>
           <p className="mt-1 text-xs text-zinc-500">
             {typoLabel} · {cityLabel} · {businessTypeLabel}
           </p>
