@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -44,16 +44,22 @@ function blocksForYmd(blocks: BlocksPayload['blocks'], ymd: string, timeZone: st
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 }
 
-function waUrl(digits: string, leadName: string, startsAtIso: string, tz: string): string {
+function waUrl(
+  digits: string,
+  leadName: string,
+  startsAtIso: string,
+  /** Texto da pré-mensagem: usar o fuso do lead para não contradizer o que ele vê no dashboard. */
+  messageTz: string,
+): string {
   const d = new Date(startsAtIso);
   const day = d.toLocaleDateString('pt-PT', {
-    timeZone: tz,
+    timeZone: messageTz,
     weekday: 'long',
     day: '2-digit',
     month: 'long',
   });
   const hour = d.toLocaleTimeString('pt-PT', {
-    timeZone: tz,
+    timeZone: messageTz,
     hour: '2-digit',
     minute: '2-digit',
   });
@@ -173,7 +179,9 @@ export default function AdminRafaCallHojePage() {
     { loading: boolean; error?: string; updatedAt?: string | null; meta?: Record<string, unknown> }
   >>({});
 
-  const tz = useMemo(() => 'Europe/Lisbon', []);
+  /** Tabela de agenda admin + bloqueios: sempre horário de Lisboa (agrupamento alinhado com API admin). */
+  const ADMIN_SCHEDULE_TZ = 'Europe/Lisbon' as const;
+  const tz = ADMIN_SCHEDULE_TZ;
 
   const [blocks, setBlocks] = useState<BlocksPayload['blocks']>([]);
   const [blocksLoading, setBlocksLoading] = useState(false);
@@ -513,7 +521,7 @@ export default function AdminRafaCallHojePage() {
                   <table className="min-w-full text-left text-sm">
                     <thead className="border-b border-zinc-200 text-xs font-semibold uppercase tracking-wide text-zinc-600">
                       <tr>
-                        <th className="px-4 py-3">Horário (Lisboa)</th>
+                        <th className="px-4 py-3">Horário (Europe/Lisbon)</th>
                         <th className="px-4 py-3 w-28">Estado</th>
                         <th className="px-4 py-3 w-44">Origem</th>
                         <th className="px-4 py-3">Lead</th>
@@ -598,7 +606,9 @@ export default function AdminRafaCallHojePage() {
                                             {planByUserId[row.item.userId]?.updatedAt
                                               ? `Atualizado em ${new Date(
                                                   planByUserId[row.item.userId]?.updatedAt as string,
-                                                ).toLocaleString('pt-PT')}`
+                                                ).toLocaleString('pt-PT', {
+                                                  timeZone: ADMIN_SCHEDULE_TZ,
+                                                })}`
                                               : 'Sem data de atualização'}
                                           </p>
                                           {planLinesFromMeta(planByUserId[row.item.userId]?.meta).length ? (
@@ -621,7 +631,12 @@ export default function AdminRafaCallHojePage() {
                               <td className="px-4 py-3">
                                 <div className="flex items-center justify-end gap-2">
                                   <a
-                                    href={waUrl(row.item.whatsappDigits, row.item.userName, row.item.startsAt, tz)}
+                                    href={waUrl(
+                                      row.item.whatsappDigits,
+                                      row.item.userName,
+                                      row.item.startsAt,
+                                      row.item.bookingTimezone?.trim() || ADMIN_SCHEDULE_TZ,
+                                    )}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-1.5 text-xs font-semibold text-white hover:from-[#c07c01] hover:to-[#e7a01f]"

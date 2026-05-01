@@ -49,6 +49,22 @@ function fallbackHttpErrorMessage(status: number): string {
   return `Não foi possível concluir o pedido (código ${status}).`;
 }
 
+/** Erros HTTP da API com código de estado (ex.: 413) para o UI decidir mensagens. */
+export type ApiHttpError = Error & { status?: number; code?: string };
+
+function enrichApiHttpError(
+  err: ApiHttpError,
+  res: Response,
+  data: unknown,
+): ApiHttpError {
+  err.status = res.status;
+  const d = data as { code?: unknown };
+  if (typeof d?.code === 'string') {
+    err.code = d.code;
+  }
+  return err;
+}
+
 type RequestOptions = RequestInit & { token?: string | null };
 
 /** Mensagem antiga da API que não queremos mostrar ao utilizador (ex.: stage ainda no deploy anterior). */
@@ -79,9 +95,11 @@ async function request<T>(
       : data.message || data.error || fallbackHttpErrorMessage(res.status);
     msg = typeof msg === 'string' ? msg : String(msg);
     if (shouldHideApiMessage(msg)) {
-      throw new Error('');
+      const err = new Error('') as ApiHttpError;
+      throw enrichApiHttpError(err, res, data);
     }
-    throw new Error(msg);
+    const err = new Error(msg) as ApiHttpError;
+    throw enrichApiHttpError(err, res, data);
   }
   return data as T;
 }
@@ -112,9 +130,11 @@ async function requestFormData<T>(
       : (data as any).message || (data as any).error || fallbackHttpErrorMessage(res.status);
     msg = typeof msg === 'string' ? msg : String(msg);
     if (shouldHideApiMessage(msg)) {
-      throw new Error('');
+      const err = new Error('') as ApiHttpError;
+      throw enrichApiHttpError(err, res, data);
     }
-    throw new Error(msg);
+    const err = new Error(msg) as ApiHttpError;
+    throw enrichApiHttpError(err, res, data);
   }
   return data as T;
 }
@@ -306,7 +326,11 @@ export const api = {
       });
       return request<{
         tz: string;
-        days: { date: string; slots: { startsAt: string; endsAt: string }[] }[];
+        days: {
+          date: string;
+          slots: { startsAt: string; endsAt: string }[];
+          adminBlockedSlots: { startsAt: string; endsAt: string }[];
+        }[];
       }>(`/rafacall/availability?${q.toString()}`, { method: 'GET' });
     },
     book: (body: { startsAtUtcIso: string; tz: string }) =>
@@ -855,6 +879,7 @@ export const api = {
         fullDescription: string | null;
         backgroundImageUrl: string | null;
         catalogImageUrls: string[];
+        catalogVideoUrl?: string | null;
         instagram: string | null;
         billingName?: string | null;
         billingNif?: string | null;
@@ -872,6 +897,7 @@ export const api = {
       fullDescription?: string;
       backgroundImageUrl?: string;
       catalogImageUrls?: string[];
+      catalogVideoUrl?: string;
       instagram?: string;
       billingName?: string | null;
       billingNif?: string | null;
@@ -887,6 +913,7 @@ export const api = {
         fullDescription: string | null;
         backgroundImageUrl: string | null;
         catalogImageUrls: string[];
+        catalogVideoUrl?: string | null;
         instagram: string | null;
         billingName?: string | null;
         billingNif?: string | null;
@@ -897,6 +924,27 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify(input),
       }),
+    uploadCatalogVideo: (file: File) => {
+      const fd = new FormData();
+      fd.append('video', file);
+      return requestFormData<{
+        id: string;
+        name: string;
+        whatsapp: string;
+        logoUrl: string | null;
+        shortDescription: string | null;
+        fullDescription: string | null;
+        backgroundImageUrl: string | null;
+        catalogImageUrls: string[];
+        catalogVideoUrl?: string | null;
+        instagram: string | null;
+        billingName?: string | null;
+        billingNif?: string | null;
+        billingAddress?: string | null;
+        billingPostalCode?: string | null;
+        category?: { id: string; slug: string; name: string } | null;
+      }>('/partners/me/catalog-video', fd, { method: 'POST' });
+    },
     services: {
       list: () =>
         request<
@@ -1313,6 +1361,7 @@ export const api = {
         fullDescription: string | null;
         backgroundImageUrl: string | null;
         catalogImageUrls: string[];
+        catalogVideoUrl?: string | null;
         instagram: string | null;
         category?: { id: string; name: string; slug: string } | null;
         user: { email: string };

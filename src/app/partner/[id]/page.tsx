@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { CatalogCarousel } from '@/components/CatalogCarousel';
+import { PartnerCatalogVideo } from '@/components/PartnerCatalogVideo';
 import { PartnerServicePriceCallout } from '@/components/PartnerServicePriceCallout';
 import { RelocationHouseCard } from '@/components/relocation/RelocationHouseCard';
 import type { RelocationHouseRow } from '@/components/relocation/relocation-house-shared';
@@ -25,6 +26,7 @@ type PartnerPublic = {
   fullDescription: string | null;
   backgroundImageUrl: string | null;
   catalogImageUrls?: string[];
+  catalogVideoUrl?: string | null;
   category: {
     id: string;
     name: string;
@@ -231,6 +233,11 @@ export default async function PartnerPublicPage({ params }: PageProps) {
           </p>
         </section>
       )}
+
+      <PartnerCatalogVideo
+        videoUrl={partner.catalogVideoUrl}
+        apiBaseUrl={API_URL}
+      />
 
       {/* Carrossel de catálogo */}
       {partner.catalogImageUrls && partner.catalogImageUrls.length > 0 && (

@@ -332,9 +332,11 @@ export function RafaCallCard() {
       setBooking(b.booking);
       setAvailability(avail);
       setRafacallStatus(s);
-      const firstDayWithSlots = avail.days.find((d) => d.slots.length > 0)?.date ?? '';
-      const firstAnyDay = avail.days[0]?.date ?? '';
-      setSelectedDate(firstDayWithSlots || firstAnyDay);
+      const firstFree = avail.days.find((d) => d.slots.length > 0)?.date;
+      const firstBlockedOnly = avail.days.find(
+        (d) => d.slots.length === 0 && (d.adminBlockedSlots?.length ?? 0) > 0,
+      )?.date;
+      setSelectedDate(firstFree ?? firstBlockedOnly ?? avail.days[0]?.date ?? '');
     } catch (e) {
       setAvailability(null);
       setSchedError(e instanceof Error ? e.message : 'Erro ao carregar horários.');
@@ -436,6 +438,17 @@ export function RafaCallCard() {
     if (!availability || !selectedDate) return [];
     return availability.days.find((d) => d.date === selectedDate)?.slots ?? [];
   }, [availability, selectedDate]);
+
+  const dayAdminBlocked = useMemo(() => {
+    if (!availability || !selectedDate) return [];
+    return availability.days.find((d) => d.date === selectedDate)?.adminBlockedSlots ?? [];
+  }, [availability, selectedDate]);
+
+  const daySlotGrid = useMemo(() => {
+    const free = daySlots.map((s) => ({ ...s, kind: 'free' as const }));
+    const blocked = dayAdminBlocked.map((s) => ({ ...s, kind: 'admin_blocked' as const }));
+    return [...free, ...blocked].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  }, [daySlots, dayAdminBlocked]);
 
   const doBook = useCallback(
     async (startsAtUtcIso: string) => {
@@ -732,27 +745,48 @@ export function RafaCallCard() {
                     <p className="mt-3 text-sm text-zinc-600">Sem dias disponíveis.</p>
                   ) : (
                     <div className="mt-3 max-h-[420px] space-y-2 overflow-auto pr-1">
-                      {availability.days.filter((d) => d.slots.length > 0).map((d) => {
-                        const isActive = d.date === selectedDate;
-                        return (
-                          <button
-                            key={d.date}
-                            type="button"
-                            disabled={schedLoading}
-                            onClick={() => setSelectedDate(d.date)}
-                            className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
-                              isActive
-                                ? 'border-emerald-400 bg-emerald-50'
-                                : 'border-zinc-200 bg-white hover:bg-zinc-50'
-                            }`}
-                          >
-                            <span className="font-medium text-zinc-900">
-                              {prettyYmdPt(d.date, tz)}
-                            </span>
-                            <span className="text-xs text-zinc-600">{d.slots.length} horários</span>
-                          </button>
-                        );
-                      })}
+                      {availability.days.filter(
+                        (d) =>
+                          d.slots.length > 0 || (d.adminBlockedSlots?.length ?? 0) > 0,
+                      ).length === 0 ? (
+                        <p className="text-sm text-zinc-600">
+                          Sem dias com horários neste período.
+                        </p>
+                      ) : (
+                        availability.days
+                          .filter(
+                            (d) =>
+                              d.slots.length > 0 || (d.adminBlockedSlots?.length ?? 0) > 0,
+                          )
+                          .map((d) => {
+                            const isActive = d.date === selectedDate;
+                            const nBlocked = d.adminBlockedSlots?.length ?? 0;
+                            const sub =
+                              d.slots.length > 0 && nBlocked > 0
+                                ? `${d.slots.length} livres · ${nBlocked} bloq.`
+                                : d.slots.length > 0
+                                  ? `${d.slots.length} livres`
+                                  : `${nBlocked} indisponível(is)`;
+                            return (
+                              <button
+                                key={d.date}
+                                type="button"
+                                disabled={schedLoading}
+                                onClick={() => setSelectedDate(d.date)}
+                                className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
+                                  isActive
+                                    ? 'border-emerald-400 bg-emerald-50'
+                                    : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                                }`}
+                              >
+                                <span className="font-medium text-zinc-900">
+                                  {prettyYmdPt(d.date, tz)}
+                                </span>
+                                <span className="text-xs text-zinc-600">{sub}</span>
+                              </button>
+                            );
+                          })
+                      )}
                     </div>
                   )}
                 </div>
@@ -765,29 +799,52 @@ export function RafaCallCard() {
                     <p className="mt-3 text-sm text-zinc-600">A carregar…</p>
                   ) : !availability ? (
                     <p className="mt-3 text-sm text-zinc-600">Não foi possível carregar os horários.</p>
-                  ) : availability.days.every((d) => d.slots.length === 0) ? (
+                  ) : availability.days.every(
+                      (d) =>
+                        d.slots.length === 0 && (d.adminBlockedSlots?.length ?? 0) === 0,
+                    ) ? (
                     <p className="mt-3 text-sm text-zinc-600">
                       Sem horários disponíveis nos próximos dias. Tenta novamente mais tarde.
                     </p>
-                  ) : daySlots.length === 0 ? (
+                  ) : daySlotGrid.length === 0 ? (
                     <p className="mt-3 text-sm text-zinc-600">
-                      Escolhe um dia com horários disponíveis.
+                      Escolhe um dia na lista ao lado.
                     </p>
                   ) : (
-                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                      {daySlots.map((s) => (
-                        <button
-                          key={s.startsAt}
-                          type="button"
-                          disabled={schedLoading}
-                          onClick={() => void doBook(s.startsAt)}
-                          className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-emerald-50"
-                          title={s.startsAt}
-                        >
-                          {formatSlotTimeInTz(s.startsAt, tz)}
-                        </button>
-                      ))}
-                    </div>
+                    <>
+                      {daySlots.length === 0 && dayAdminBlocked.length > 0 ? (
+                        <p className="mt-1 text-xs text-zinc-500">
+                          Neste dia só há horários bloqueados pela equipa no teu fuso horário.
+                        </p>
+                      ) : null}
+                      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        {daySlotGrid.map((s) =>
+                          s.kind === 'free' ? (
+                            <button
+                              key={s.startsAt}
+                              type="button"
+                              disabled={schedLoading}
+                              onClick={() => void doBook(s.startsAt)}
+                              className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-emerald-50"
+                              title={s.startsAt}
+                            >
+                              {formatSlotTimeInTz(s.startsAt, tz)}
+                            </button>
+                          ) : (
+                            <div
+                              key={s.startsAt}
+                              className="rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-center text-sm font-semibold text-zinc-500"
+                              title="Bloqueado pela equipa"
+                            >
+                              <span className="block">{formatSlotTimeInTz(s.startsAt, tz)}</span>
+                              <span className="mt-0.5 block text-[11px] font-medium normal-case text-zinc-500">
+                                Bloqueado
+                              </span>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
