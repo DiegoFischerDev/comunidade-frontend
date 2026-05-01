@@ -229,52 +229,21 @@ export default function BusinessPage() {
     setSuccess('');
     setUploadingCatalogVideo(true);
     try {
-      const mime =
-        file.type && /^video\//.test(file.type)
-          ? file.type.split(';')[0]!.trim().toLowerCase()
-          : 'video/mp4';
-
-      const applyCatalogVideo = (updated: { catalogVideoUrl?: string | null }) => {
+      try {
+        const updated = await api.partner.uploadCatalogVideo(file);
         setCatalogVideoUrl(
           typeof updated.catalogVideoUrl === 'string' ? updated.catalogVideoUrl : '',
         );
-      };
-
-      let usedMultipartFallback = false;
-
-      try {
-        const presign = await api.partner.presignCatalogVideoUpload(mime);
-        const putRes = await fetch(presign.uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: { 'Content-Type': presign.contentType },
-        });
-        if (!putRes.ok) {
+      } catch (uploadErr: unknown) {
+        const me = uploadErr as Error & { status?: number };
+        if (me.status === 413) {
           throw new Error(
-            `Não foi possível enviar o vídeo para o armazenamento (HTTP ${putRes.status}). Se usas Cloudflare R2, confere CORS no bucket (PUT a partir do domínio do dashboard).`,
+            'O servidor ou proxy recusou o ficheiro (413 — payload demasiado grande). Aumenta client_max_body_size no Nginx à frente da API e reinicia o proxy.',
           );
         }
-        const updated = await api.partner.confirmCatalogVideoUpload(presign.objectKey);
-        applyCatalogVideo(updated);
-      } catch (first: unknown) {
-        const err = first as Error & { status?: number; code?: string };
-        const fallback =
-          err.status === 503 || err.code === 'DIRECT_UPLOAD_UNAVAILABLE';
-        if (!fallback) {
-          throw first;
-        }
-        usedMultipartFallback = true;
-        const updated = await api.partner.uploadCatalogVideo(file);
-        applyCatalogVideo(updated);
+        throw uploadErr;
       }
-
-      if (usedMultipartFallback) {
-        setSuccess(
-          'Vídeo guardado via servidor. Se o erro de tamanho voltar a aparecer, configura as variáveis R2 na API (upload direto, sem limite do proxy).',
-        );
-      } else {
-        setSuccess('Vídeo atualizado com sucesso.');
-      }
+      setSuccess('Vídeo atualizado com sucesso.');
     } catch (err) {
       setError(
         err instanceof Error
@@ -525,8 +494,8 @@ export default function BusinessPage() {
             </label>
             <p className="text-xs text-zinc-500">
               Um único vídeo é mostrado na tua página pública{' '}
-              <span className="font-medium text-zinc-600">antes</span> do carrossel de imagens.
-              Formatos: MP4, MOV ou WebM (tamanho razoável para carregar bem no telemóvel).
+              <span className="font-medium text-zinc-600">antes</span> do carrossel de imagens,
+              centrado num formato vertical semelhante ao dos stories. Formatos: MP4, MOV ou WebM.
             </p>
             <input
               type="file"
@@ -544,13 +513,13 @@ export default function BusinessPage() {
             </p>
             {catalogVideoUrl ? (
               <div className="space-y-2">
-                <div className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-950">
+                <div className="mx-auto w-full max-w-[min(100%,26rem)] overflow-hidden rounded-lg border border-zinc-200 bg-black shadow-sm">
                   <video
                     src={catalogVideoUrl}
                     controls
                     playsInline
                     preload="metadata"
-                    className="max-h-52 w-full object-contain sm:max-h-64"
+                    className="mx-auto block max-h-[min(70vh,520px)] w-full object-contain"
                   />
                 </div>
                 <button

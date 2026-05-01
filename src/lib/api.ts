@@ -49,6 +49,22 @@ function fallbackHttpErrorMessage(status: number): string {
   return `Não foi possível concluir o pedido (código ${status}).`;
 }
 
+/** Erros HTTP da API com código de estado (ex.: 413) para o UI decidir mensagens. */
+export type ApiHttpError = Error & { status?: number; code?: string };
+
+function enrichApiHttpError(
+  err: ApiHttpError,
+  res: Response,
+  data: unknown,
+): ApiHttpError {
+  err.status = res.status;
+  const d = data as { code?: unknown };
+  if (typeof d?.code === 'string') {
+    err.code = d.code;
+  }
+  return err;
+}
+
 type RequestOptions = RequestInit & { token?: string | null };
 
 /** Mensagem antiga da API que não queremos mostrar ao utilizador (ex.: stage ainda no deploy anterior). */
@@ -79,9 +95,11 @@ async function request<T>(
       : data.message || data.error || fallbackHttpErrorMessage(res.status);
     msg = typeof msg === 'string' ? msg : String(msg);
     if (shouldHideApiMessage(msg)) {
-      throw new Error('');
+      const err = new Error('') as ApiHttpError;
+      throw enrichApiHttpError(err, res, data);
     }
-    throw new Error(msg);
+    const err = new Error(msg) as ApiHttpError;
+    throw enrichApiHttpError(err, res, data);
   }
   return data as T;
 }
@@ -112,9 +130,11 @@ async function requestFormData<T>(
       : (data as any).message || (data as any).error || fallbackHttpErrorMessage(res.status);
     msg = typeof msg === 'string' ? msg : String(msg);
     if (shouldHideApiMessage(msg)) {
-      throw new Error('');
+      const err = new Error('') as ApiHttpError;
+      throw enrichApiHttpError(err, res, data);
     }
-    throw new Error(msg);
+    const err = new Error(msg) as ApiHttpError;
+    throw enrichApiHttpError(err, res, data);
   }
   return data as T;
 }
@@ -899,67 +919,6 @@ export const api = {
       }>('/partners/me', {
         method: 'PATCH',
         body: JSON.stringify(input),
-      }),
-    presignCatalogVideoUpload: async (contentType: string) => {
-      const token = getToken();
-      const res = await fetch(`${API_URL}/partners/me/catalog-video/presign`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ contentType }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        let msg = Array.isArray((data as any).message)
-          ? (data as any).message[0]
-          : (data as any).message || fallbackHttpErrorMessage(res.status);
-        msg = typeof msg === 'string' ? msg : String(msg);
-        if (shouldHideApiMessage(msg)) {
-          const err = new Error('') as Error & { status: number; code?: string };
-          err.status = res.status;
-          err.code =
-            typeof data === 'object' && data && 'code' in data
-              ? String((data as { code?: unknown }).code)
-              : undefined;
-          throw err;
-        }
-        const err = new Error(msg) as Error & { status: number; code?: string };
-        err.status = res.status;
-        err.code =
-          typeof data === 'object' && data && 'code' in data
-            ? String((data as { code?: unknown }).code)
-            : undefined;
-        throw err;
-      }
-      return data as {
-        uploadUrl: string;
-        objectKey: string;
-        publicUrl: string;
-        contentType: string;
-      };
-    },
-    confirmCatalogVideoUpload: (objectKey: string) =>
-      request<{
-        id: string;
-        name: string;
-        whatsapp: string;
-        logoUrl: string | null;
-        shortDescription: string | null;
-        fullDescription: string | null;
-        backgroundImageUrl: string | null;
-        catalogImageUrls: string[];
-        catalogVideoUrl?: string | null;
-        instagram: string | null;
-        billingName?: string | null;
-        billingNif?: string | null;
-        billingAddress?: string | null;
-        billingPostalCode?: string | null;
-        category?: { id: string; slug: string; name: string } | null;
-      }>('/partners/me/catalog-video/confirm', {
-        method: 'POST',
-        body: JSON.stringify({ objectKey }),
       }),
     uploadCatalogVideo: (file: File) => {
       const fd = new FormData();

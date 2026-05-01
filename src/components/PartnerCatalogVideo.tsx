@@ -14,7 +14,9 @@ function resolveVideoSrc(url: string, apiBaseUrl = ''): string {
   return u;
 }
 
-/** Vídeo opcional do perfil do parceiro (antes do carrossel de imagens). */
+/** Vídeo opcional do perfil do parceiro (antes do carrossel de imagens).
+ *  Coluna centrada (~largura de telefone / story) para vídeos verticais não ocuparem toda a página em horizontal.
+ */
 export function PartnerCatalogVideo({
   videoUrl,
   apiBaseUrl = '',
@@ -24,17 +26,19 @@ export function PartnerCatalogVideo({
   if (!src) return null;
 
   return (
-    <section className={className}>
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-950 shadow-sm">
-        <video
-          src={src}
-          controls
-          playsInline
-          preload="metadata"
-          className="max-h-[min(70vh,540px)] w-full object-contain"
-        >
-          O teu navegador não suporta reprodução de vídeo.
-        </video>
+    <section className={`flex flex-col items-center ${className}`.trim()}>
+      <div className="w-full max-w-[min(100%,26rem)] sm:max-w-[min(100%,28rem)]">
+        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-black shadow-sm">
+          <video
+            src={src}
+            controls
+            playsInline
+            preload="metadata"
+            className="mx-auto block max-h-[min(92vh,780px)] w-full bg-black object-contain"
+          >
+            O teu navegador não suporta reprodução de vídeo.
+          </video>
+        </div>
       </div>
     </section>
   );
