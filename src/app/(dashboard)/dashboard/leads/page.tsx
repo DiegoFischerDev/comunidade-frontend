@@ -515,7 +515,7 @@ export default function PartnerLeadsPage() {
       </p>
 
       <p className="mt-4 rounded-lg border border-amber-100 bg-amber-50/90 px-4 py-3 text-sm text-amber-950">
-        <span className="font-semibold">O seu tempo médio de atendimento às solicitações: </span>
+        <span className="font-semibold">O seu tempo médio de atendimento às solicitações (em horário comercial): </span>
         {formatAvgMinutesPt(avgMinutes)}
       </p>
 

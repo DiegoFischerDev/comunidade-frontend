@@ -90,7 +90,7 @@ export default function ServicesDashboardPage() {
                     )}
                   </p>
                   <span className="mt-3 inline-flex items-center text-sm font-medium text-amber-800">
-                    {isFrontendOnlyMarketplaceCategorySlug(c.slug) ? 'Saber mais' : 'Ver parceiros'}
+                    Saber mais
                     <span className="ml-1 transition-transform group-hover:translate-x-0.5" aria-hidden>
                       →
                     </span>
