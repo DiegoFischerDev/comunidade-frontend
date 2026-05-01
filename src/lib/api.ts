@@ -343,6 +343,9 @@ export const api = {
           subscriptionsCount: number;
           membershipPaymentsCount: number;
           membershipPriceEurUsed: number;
+          totalRafacallUnlockRevenueEur: number;
+          rafaUnlockPaymentsCount: number;
+          rafacallFeeEurUsed: number;
         }>('/users/admin/stats', { method: 'GET' }),
       list: () =>
         request<

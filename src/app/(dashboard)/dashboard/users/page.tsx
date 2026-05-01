@@ -229,7 +229,7 @@ export default function UsersPage() {
       ) : (
         <>
           {stats && (
-            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               <div className="rounded-xl border border-blue-200/80 bg-blue-50/90 px-4 py-3 shadow-sm">
                 <p className="text-[11px] font-semibold tracking-wide text-blue-900/70 uppercase">
                   Total de utilizadores
@@ -273,6 +273,19 @@ export default function UsersPage() {
                   Soma de {stats.membershipPaymentsCount} pagamento(s) registados — preço
                   atual da anuidade: {formatEuro(stats.membershipPriceEurUsed)} (PIX BRL
                   contabilizado ao valor EUR em tempo de pagamento)
+                </p>
+              </div>
+              <div className="rounded-xl border border-sky-200/80 bg-sky-50/90 px-4 py-3 shadow-sm">
+                <p className="text-[11px] font-semibold tracking-wide text-sky-900/70 uppercase">
+                  Total videochamadas (EUR)
+                </p>
+                <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-sky-950">
+                  {formatEuro(stats.totalRafacallUnlockRevenueEur)}
+                </p>
+                <p className="mt-1 text-[10px] leading-tight text-sky-900/65">
+                  Soma de {stats.rafaUnlockPaymentsCount} pagamento(s) da taxa de agendamento
+                  (Stripe) — preço atual da taxa EUR: {formatEuro(stats.rafacallFeeEurUsed)}. Não
+                  inclui quando o admin libera o agendamento manualmente sem pagamento.
                 </p>
               </div>
             </div>
