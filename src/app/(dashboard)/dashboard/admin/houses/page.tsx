@@ -87,6 +87,8 @@ export default function AdminHousesPage() {
   const [images, setImages] = useState<File[]>([]);
   const [coverImageIndex, setCoverImageIndex] = useState(0);
   const [video, setVideo] = useState<File | null>(null);
+  const [relocationPartners, setRelocationPartners] = useState<{ id: string; name: string }[]>([]);
+  const [createAssignedPartnerId, setCreateAssignedPartnerId] = useState('');
 
   const [filterSearch, setFilterSearch] = useState('');
   const [filterBusinessType, setFilterBusinessType] = useState<'ALL' | 'RENT' | 'SALE'>('ALL');
@@ -116,6 +118,22 @@ export default function AdminHousesPage() {
       }
     })();
   }, [user, isAdmin, load]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    (async () => {
+      try {
+        const list = await api.admin.partners.list();
+        const reloc = list
+          .filter((p) => p.category?.slug === 'relocation')
+          .map((p) => ({ id: p.id, name: p.name }))
+          .sort((a, b) => a.name.localeCompare(b.name, 'pt-PT'));
+        setRelocationPartners(reloc);
+      } catch {
+        setRelocationPartners([]);
+      }
+    })();
+  }, [isAdmin]);
 
   const partnerOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -218,6 +236,7 @@ export default function AdminHousesPage() {
     setImages([]);
     setCoverImageIndex(0);
     setVideo(null);
+    setCreateAssignedPartnerId('');
   };
 
   const onDelete = async (id: string) => {
@@ -270,6 +289,9 @@ export default function AdminHousesPage() {
         rendasEntradaCount,
         furnished,
         ...(images.length ? { coverImageIndex } : {}),
+        ...(createAssignedPartnerId.trim()
+          ? { partnerId: createAssignedPartnerId.trim() }
+          : {}),
       });
       await load();
       resetCreateForm();
@@ -511,8 +533,18 @@ export default function AdminHousesPage() {
               <div>
                 <h2 className="text-xl font-semibold text-zinc-900">Adicionar casa</h2>
                 <p className="mt-1 text-sm text-zinc-600">
-                  Este fluxo envia o anúncio para a plataforma e para o grupo WhatsApp, igual ao fluxo de parceiros.
-                  O contacto da página do imóvel será o WhatsApp do admin.
+                  Este fluxo envia o anúncio para a plataforma e para o grupo WhatsApp, igual ao fluxo de parceiros.{' '}
+                  {createAssignedPartnerId.trim() ? (
+                    <>
+                      O anúncio fica titulado pelo parceiro escolhido; na página pública, o contacto é o WhatsApp
+                      desse parceiro.
+                    </>
+                  ) : (
+                    <>
+                      Sem parceiro escolhido, o anúncio usa a conta relocation interna do administrador e o contacto
+                      na página pública é o WhatsApp do admin.
+                    </>
+                  )}
                 </p>
               </div>
               <button
@@ -529,6 +561,26 @@ export default function AdminHousesPage() {
 
             <form onSubmit={onCreate} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
+                <label className="text-sm sm:col-span-2">
+                  <span className="mb-1 block text-xs font-medium text-zinc-700">
+                    Parceiro relocation (titular do anúncio)
+                  </span>
+                  <select
+                    value={createAssignedPartnerId}
+                    onChange={(e) => setCreateAssignedPartnerId(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                  >
+                    <option value="">Administrador — conta relocation interna</option>
+                    {relocationPartners.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="mt-1 block text-xs text-zinc-500">
+                    Só são listados parceiros com categoria Relocation (definida na área de parceiros).
+                  </span>
+                </label>
                 <label className="text-sm">
                   <span className="mb-1 block text-xs font-medium text-zinc-700">Título</span>
                   <input
