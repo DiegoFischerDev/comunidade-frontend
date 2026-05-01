@@ -1521,6 +1521,10 @@ export const api = {
           paymentProofUrl: string | null;
         }[]
       >(`/affiliate/admin/${affiliateId}/paid-commissions`, { method: 'GET' }),
+    adminDelete: (affiliateId: string) =>
+      request<{ ok: true }>(`/affiliate/admin/${encodeURIComponent(affiliateId)}`, {
+        method: 'DELETE',
+      }),
     adminPay: (affiliateId: string, file: File, commissionIds?: string[]) => {
       const token = getToken();
       const form = new FormData();
