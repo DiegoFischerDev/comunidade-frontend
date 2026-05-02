@@ -1,5 +1,6 @@
 import type { PublicHousePageData } from "@/lib/house-public-server";
 import { absoluteMediaUrlForOg } from "@/lib/house-public-server";
+import { relocationCitySchemaLocality } from "@/lib/relocation-portugal-cities";
 
 type Props = {
   house: PublicHousePageData;
@@ -7,19 +8,7 @@ type Props = {
 };
 
 export function HouseJsonLd({ house, pageUrl }: Props) {
-  const cityLabel =
-    {
-      INTERIOR: "Portugal",
-      LISBOA: "Lisboa, Portugal",
-      PORTO: "Porto, Portugal",
-      BRAGA: "Braga, Portugal",
-      COIMBRA: "Coimbra, Portugal",
-      AVEIRO: "Aveiro, Portugal",
-      FARO: "Faro, Portugal",
-      ALGARVE: "Algarve, Portugal",
-      EVORA: "Évora, Portugal",
-      VISEU: "Viseu, Portugal",
-    }[house.city] ?? "Portugal";
+  const cityLabel = relocationCitySchemaLocality(house.city);
 
   const tMatch = /^T([1-5])$/.exec(house.typology);
   const roomCount = tMatch ? Number(tMatch[1]) : undefined;

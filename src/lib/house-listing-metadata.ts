@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { absoluteMediaUrlForOg, getPublicHouse } from "@/lib/house-public-server";
+import { relocationCityDisplayName } from "@/lib/relocation-portugal-cities";
 
 function clipDescription(text: string, max = 180): string {
   const t = text.replace(/\s+/g, " ").trim();
@@ -26,19 +27,7 @@ export async function generateHouseListingMetadata(
   const title = `${house.title} | Comunidade Rafa Portugal`;
   const description = clipDescription(house.description, 180);
 
-  const cityKeyword =
-    {
-      INTERIOR: "Portugal",
-      LISBOA: "Lisboa",
-      PORTO: "Porto",
-      BRAGA: "Braga",
-      COIMBRA: "Coimbra",
-      AVEIRO: "Aveiro",
-      FARO: "Faro",
-      ALGARVE: "Algarve",
-      EVORA: "Évora",
-      VISEU: "Viseu",
-    }[house.city] ?? "Portugal";
+  const cityKeyword = relocationCityDisplayName(house.city) || "Portugal";
 
   const ogFromHouse = absoluteMediaUrlForOg(house.coverImageUrl ?? house.imageUrls?.[0]);
   const ogFromPartner = absoluteMediaUrlForOg(house.partner?.logoUrl);

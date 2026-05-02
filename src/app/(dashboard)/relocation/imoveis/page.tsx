@@ -4,12 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
+import { RelocationCityCombobox } from "@/components/relocation/RelocationCityCombobox";
 import { RelocationHouseCard } from "@/components/relocation/RelocationHouseCard";
 import {
   RELOCATION_BUSINESS_TYPE_LABELS,
   RELOCATION_BUSINESS_TYPE_OPTIONS,
-  RELOCATION_CITY_LABELS,
-  RELOCATION_CITY_OPTIONS,
   RELOCATION_TYPOLOGY_LABELS,
   RELOCATION_TYPOLOGY_OPTIONS,
   type RelocationHouseRow,
@@ -111,7 +110,7 @@ export default function RelocationHousesListPage() {
             id="filter-parceiro"
             value={parceiro}
             onChange={(e) =>
-              setRouteFilters({ parceiro: e.target.value, cidade, tipologia })
+              setRouteFilters({ parceiro: e.target.value, cidade, tipologia, finalidade })
             }
             className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
           >
@@ -124,27 +123,17 @@ export default function RelocationHousesListPage() {
           </select>
         </div>
         <div className="min-w-0 flex-1">
-          <label
-            className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500"
-            htmlFor="filter-cidade"
-          >
-            Cidade
-          </label>
-          <select
+          <RelocationCityCombobox
             id="filter-cidade"
+            label="Cidade"
             value={cidade}
-            onChange={(e) =>
-              setRouteFilters({ parceiro, cidade: e.target.value, tipologia })
+            onChange={(next) =>
+              setRouteFilters({ parceiro, cidade: next, tipologia, finalidade })
             }
-            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-          >
-            <option value="">Todas</option>
-            {RELOCATION_CITY_OPTIONS.map((key) => (
-              <option key={key} value={key}>
-                {RELOCATION_CITY_LABELS[key] ?? key}
-              </option>
-            ))}
-          </select>
+            allowEmpty
+            emptyLabel="Todas"
+            variant="amber"
+          />
         </div>
         <div className="min-w-0 flex-1">
           <label
@@ -157,7 +146,7 @@ export default function RelocationHousesListPage() {
             id="filter-tipologia"
             value={tipologia}
             onChange={(e) =>
-              setRouteFilters({ parceiro, cidade, tipologia: e.target.value })
+              setRouteFilters({ parceiro, cidade, tipologia: e.target.value, finalidade })
             }
             className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
           >

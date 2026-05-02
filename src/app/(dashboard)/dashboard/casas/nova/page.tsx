@@ -4,9 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
+import { RelocationCityCombobox } from "@/components/relocation/RelocationCityCombobox";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { CardButton, CardLinkButton } from "@/components/ui/CardButton";
+import { isRelocationPortugalCity } from "@/lib/relocation-portugal-cities";
 
 const TYPOLOGIES = [
   { id: "T1", label: "T1" },
@@ -164,6 +166,9 @@ export default function NewHousePostPage() {
     if (!cleanTitle) return setError("Preenche o título do imóvel.");
     if (!cleanDesc) return setError("Preenche a descrição.");
     if (!cleanCity) return setError("Preenche a cidade.");
+    if (!isRelocationPortugalCity(cleanCity)) {
+      return setError("Escolhe uma cidade da lista.");
+    }
     if (!availableFrom) return setError('Seleciona a data em "Disponível em".');
     if (!cleanPrice) return setError(businessType === "SALE" ? "Preenche o preço de venda." : "Preenche o preço do arrendamento.");
     if (!cleanRelocation) return setError("Preenche a taxa de relocation (em euros).");
@@ -358,14 +363,16 @@ export default function NewHousePostPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-700">Cidade</label>
-            <input
-              type="text"
+            <RelocationCityCombobox
+              id="house-city"
+              label="Cidade"
+              labelClassName="block text-xs font-medium text-zinc-700"
               value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="Ex.: Lisboa, Matosinhos"
-              autoComplete="address-level2"
-              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onChange={setCity}
+              allowEmpty={false}
+              placeholder="Pesquisar cidade…"
+              variant="blue"
+              required
             />
           </div>
 
