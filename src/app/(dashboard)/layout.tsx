@@ -851,26 +851,30 @@ export default function DashboardLayout({
           >
             Início
           </Link>
-          <Link
-            href="/plano-de-imigracao"
-            className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/plano-de-imigracao'
-                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                : 'text-zinc-800 hover:bg-zinc-100'
-            }`}
-          >
-            Plano de imigração
-          </Link>
-          <Link
-            href="/psp"
-            className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/psp' || pathname.startsWith('/psp/')
-                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                : 'text-zinc-800 hover:bg-zinc-100'
-            }`}
-          >
-            Guia PSP
-          </Link>
+          {user && (user.role === 'ADMIN' || user.tier === 'MEMBER') ? (
+            <>
+              <Link
+                href="/plano-de-imigracao"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/plano-de-imigracao'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Plano de imigração
+              </Link>
+              <Link
+                href="/psp"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/psp' || pathname.startsWith('/psp/')
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Guia PSP
+              </Link>
+            </>
+          ) : null}
           <Link
             href="/relocation/imoveis"
             className={`block rounded-md px-3 py-2 text-sm ${
