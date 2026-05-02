@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { HouseStatusBadge } from '@/components/house/HouseStatusBadge';
+import { RelocationCityCombobox } from '@/components/relocation/RelocationCityCombobox';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { isRelocationPortugalCity, relocationCityDisplayName } from '@/lib/relocation-portugal-cities';
 
 type AdminHouseRow = Awaited<ReturnType<typeof api.admin.houses.list>>[number];
 
@@ -18,19 +20,6 @@ const HOUSE_STATUS_LABELS: Record<'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE', stri
   RESERVED: 'Reservado',
   UNAVAILABLE: 'Indisponível',
 };
-
-const CITIES = [
-  { id: 'INTERIOR', label: 'Interior' },
-  { id: 'LISBOA', label: 'Lisboa' },
-  { id: 'PORTO', label: 'Porto' },
-  { id: 'BRAGA', label: 'Braga' },
-  { id: 'COIMBRA', label: 'Coimbra' },
-  { id: 'AVEIRO', label: 'Aveiro' },
-  { id: 'FARO', label: 'Faro' },
-  { id: 'ALGARVE', label: 'Algarve' },
-  { id: 'EVORA', label: 'Évora' },
-  { id: 'VISEU', label: 'Viseu' },
-] as const;
 
 const TYPOLOGIES = [
   { id: 'T1', label: 'T1' },
@@ -49,7 +38,7 @@ const BUSINESS_TYPES = [
 const ENTRADA_COUNT_OPTIONS = Array.from({ length: 13 }, (_, i) => String(i));
 
 function cityLabel(id: string): string {
-  return CITIES.find((c) => c.id === id)?.label ?? id;
+  return relocationCityDisplayName(id);
 }
 
 function typologyLabel(id: string): string {
@@ -280,6 +269,9 @@ export default function AdminHousesPage() {
     if (!cleanTitle) return setError('Preenche o título do imóvel.');
     if (!cleanDesc) return setError('Preenche a descrição.');
     if (!cleanCity) return setError('Preenche a cidade.');
+    if (!isRelocationPortugalCity(cleanCity)) {
+      return setError('Escolhe uma cidade da lista.');
+    }
     if (!availableFrom) return setError('Seleciona a data em "Disponível a partir".');
     if (!cleanPrice) {
       return setError(businessType === 'SALE' ? 'Preenche o preço de venda.' : 'Preenche o preço do arrendamento.');
@@ -633,18 +625,19 @@ export default function AdminHousesPage() {
                     required
                   />
                 </label>
-                <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Cidade</span>
-                  <input
-                    type="text"
+                <div className="text-sm">
+                  <RelocationCityCombobox
+                    id="admin-house-city"
+                    label="Cidade"
+                    labelClassName="mb-1 block text-xs font-medium text-zinc-700"
                     value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="Ex.: Lisboa, Matosinhos"
-                    autoComplete="address-level2"
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm placeholder:text-zinc-400"
+                    onChange={setCity}
+                    allowEmpty={false}
+                    placeholder="Pesquisar cidade…"
+                    variant="amber"
                     required
                   />
-                </label>
+                </div>
                 <label className="text-sm">
                   <span className="mb-1 block text-xs font-medium text-zinc-700">Tipologia</span>
                   <select

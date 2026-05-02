@@ -13,8 +13,8 @@ import {
   formatRelocationPriceByBusinessType,
   getRelocationHouseMedia,
   RELOCATION_BUSINESS_TYPE_LABELS,
-  RELOCATION_CITY_LABELS,
   RELOCATION_TYPOLOGY_LABELS,
+  relocationCityDisplayName,
   relocationAvailabilityLabel,
   relocationNextImageUnoptimized,
   openRelocationPartnerWhatsApp,
@@ -30,7 +30,7 @@ type Props = {
 export function RelocationHouseCard({ house: h, showContactButton = true }: Props) {
   const { user } = useAuth();
   const { videoSrc, primaryImageSrc } = getRelocationHouseMedia(h);
-  const cityLabel = RELOCATION_CITY_LABELS[h.city] ?? h.city;
+  const cityLabel = relocationCityDisplayName(h.city);
   const typoLabel = RELOCATION_TYPOLOGY_LABELS[h.typology] ?? h.typology;
   const businessTypeLabel = RELOCATION_BUSINESS_TYPE_LABELS[h.businessType] ?? "Arrendamento";
   const isListedButNotForContact = h.status !== "AVAILABLE";

@@ -10,19 +10,7 @@ import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
 
 import { HouseContactSection } from "./house-contact-section";
 import { HousePhotoGallery } from "./house-photo-gallery";
-
-const CITY_LABELS: Record<string, string> = {
-  INTERIOR: "Interior",
-  LISBOA: "Lisboa",
-  PORTO: "Porto",
-  BRAGA: "Braga",
-  COIMBRA: "Coimbra",
-  AVEIRO: "Aveiro",
-  FARO: "Faro",
-  ALGARVE: "Algarve",
-  EVORA: "Évora",
-  VISEU: "Viseu",
-};
+import { relocationCityDisplayName } from "@/lib/relocation-portugal-cities";
 
 const TYPOLOGY_LABELS: Record<string, string> = {
   T1: "T1",
@@ -82,7 +70,7 @@ type Props = {
 
 export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: Props) {
   const { partner } = house;
-  const cityLabel = CITY_LABELS[house.city] ?? house.city;
+  const cityLabel = relocationCityDisplayName(house.city);
   const typoLabel = TYPOLOGY_LABELS[house.typology] ?? house.typology;
   const entrada = formatHouseEntradaWithTotal(
     house.caucoesCount,

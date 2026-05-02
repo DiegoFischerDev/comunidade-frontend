@@ -3,21 +3,11 @@ import { orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { isOurImageHostname } from "@/lib/site-url";
 import { buildAdminWhatsAppUrl } from "@/lib/admin-contact-whatsapp";
+import { relocationCityDisplayName } from "@/lib/relocation-portugal-cities";
 
 export type RelocationHouseRow = Awaited<ReturnType<typeof api.marketplace.relocationHouses>>[number];
 
-export const RELOCATION_CITY_LABELS: Record<string, string> = {
-  INTERIOR: "Interior",
-  LISBOA: "Lisboa",
-  PORTO: "Porto",
-  BRAGA: "Braga",
-  COIMBRA: "Coimbra",
-  AVEIRO: "Aveiro",
-  FARO: "Faro",
-  ALGARVE: "Algarve",
-  EVORA: "Évora",
-  VISEU: "Viseu",
-};
+export { RELOCATION_CITY_OPTIONS, relocationCityDisplayName } from "@/lib/relocation-portugal-cities";
 
 export const RELOCATION_TYPOLOGY_LABELS: Record<string, string> = {
   T1: "T1",
@@ -28,7 +18,6 @@ export const RELOCATION_TYPOLOGY_LABELS: Record<string, string> = {
   QUARTO_AP_COMPARTILHADO: "Quarto em Ap compartilhado",
 };
 
-export const RELOCATION_CITY_OPTIONS = Object.keys(RELOCATION_CITY_LABELS) as string[];
 export const RELOCATION_TYPOLOGY_OPTIONS = [
   "T1",
   "T2",
@@ -85,7 +74,7 @@ export function formatRelocationFeeEur(raw: string): string {
 }
 
 export function buildRelocationLeadMessage(h: RelocationHouseRow): string {
-  const cityLabel = RELOCATION_CITY_LABELS[h.city] ?? h.city;
+  const cityLabel = relocationCityDisplayName(h.city);
   const typologyLabel = RELOCATION_TYPOLOGY_LABELS[h.typology] ?? h.typology;
   const businessLabel = RELOCATION_BUSINESS_TYPE_LABELS[h.businessType] ?? "Arrendamento";
   const mobilado = h.furnished ? "mobilado" : "não mobilado";
