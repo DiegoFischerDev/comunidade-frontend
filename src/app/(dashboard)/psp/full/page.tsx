@@ -1,6 +1,7 @@
 "use client";
 
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -9,11 +10,25 @@ import { CardButton } from '@/components/ui/CardButton';
 const PSP_COVER_SRC = '/psp/PSP%20pag%201.png';
 
 export default function PSPFullPage() {
-  const { user, refreshUser } = useAuth();
+  const router = useRouter();
+  const { user, refreshUser, loading: authLoading } = useAuth();
 
   useEffect(() => {
     void refreshUser();
   }, [refreshUser]);
+
+  const canAccessPspFull = useMemo(() => {
+    if (!user) return false;
+    if (user.role === 'ADMIN') return true;
+    return String(user.tier ?? '').trim().toUpperCase() === 'MEMBER';
+  }, [user]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!canAccessPspFull) {
+      router.replace('/psp');
+    }
+  }, [authLoading, canAccessPspFull, router]);
 
   const isMember = useMemo(() => {
     const t = String(user?.tier ?? '').trim().toUpperCase();
@@ -53,6 +68,14 @@ export default function PSPFullPage() {
     } finally {
       setSuggestSending(false);
     }
+  }
+
+  if (authLoading || !canAccessPspFull) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center px-4">
+        <p className="text-sm text-zinc-600">{authLoading ? 'A carregar…' : 'A redirecionar…'}</p>
+      </div>
+    );
   }
 
   return (

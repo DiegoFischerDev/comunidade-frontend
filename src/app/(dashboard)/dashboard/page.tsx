@@ -3,24 +3,103 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { YOUTUBE_HIGHLIGHT_FALLBACKS } from "@/lib/youtube-highlights-defaults";
-import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/components/FloatingWhatsAppButton";
 import { OPEN_AUTH_LOGIN_EVENT } from "@/lib/auth-ui-events";
 import { AffiliateEnrollModal } from "@/components/affiliate/AffiliateEnrollModal";
 import { RafaCallCard } from "@/components/RafaCallCard";
-import { PartnerLogosMarquee } from "@/components/PartnerLogosMarquee";
-import { CardLinkButton } from "@/components/ui/CardButton";
 type AffiliateMe = NonNullable<Awaited<ReturnType<typeof api.affiliate.me>>>;
+
+/** Desktop: snap ao início; mobile: cartão centrado (~76vw) com ~12vw de “peek” de cada lado. */
+const DASHBOARD_CARD_CAROUSEL_ITEM =
+  'flex-none max-md:snap-center md:snap-start max-md:w-[76vw] max-md:max-w-[288px] w-[min(288px,calc(100vw-2.75rem))] sm:w-[272px] md:w-[288px]';
+
+const DASHBOARD_CAROUSEL_IMAGE_SIZES = '(max-width: 767px) 76vw, 288px';
+
+/** Grupo gratuito “Comunidade Rafa Portugal” (cartão do dashboard). */
+const COMUNIDADE_RPM_WHATSAPP_GROUP_URL =
+  'https://chat.whatsapp.com/FA0bFhdIMD6BeMYRceFrCv?mode=gi_t';
+
+function getDashboardCarouselScrollStep(el: HTMLDivElement): number {
+  const first = el.firstElementChild as HTMLElement | null;
+  if (!first) return 300;
+  const gap = parseFloat(getComputedStyle(el).columnGap || getComputedStyle(el).gap) || 16;
+  return first.getBoundingClientRect().width + gap;
+}
+
+/** Cadeado sobre cartões exclusivos MEMBER/ADMIN (cor vermelho de marca). */
+function DashboardCarouselMemberLockIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+      className={className}
+    >
+      <path
+        fillRule="evenodd"
+        d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
+const LOCK_ICON_OVERLAY_CLASS =
+  'h-10 w-10 text-[#910001] drop-shadow-[0_1px_3px_rgba(255,255,255,0.95)] sm:h-11 sm:w-11 md:h-12 md:w-12';
+
+const LOCK_OVERLAY_POSITION =
+  'pointer-events-none absolute left-2 top-2 z-[1] sm:left-2.5 sm:top-2.5 md:left-3 md:top-3';
+
+const CAROUSEL_NAV_BTN =
+  "absolute z-[26] top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border-0 bg-gradient-to-r from-[#d58901] to-[#f0b23a] p-0 text-white shadow-sm outline-none transition-all duration-300 ease-in-out md:h-12 md:w-12 " +
+  "opacity-50 sm:opacity-0 sm:group-hover:opacity-50 sm:group-focus-within:opacity-50 " +
+  "hover:bg-none hover:bg-[#d58901] hover:opacity-100 focus-visible:bg-none focus-visible:bg-[#d58901] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 " +
+  "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-30";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const dashboardCarouselRef = useRef<HTMLDivElement | null>(null);
+  const [carouselCanPrev, setCarouselCanPrev] = useState(false);
+  const [carouselCanNext, setCarouselCanNext] = useState(true);
+
+  const updateCarouselArrows = useCallback(() => {
+    const el = dashboardCarouselRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    const epsilon = 8;
+    setCarouselCanPrev(scrollLeft > epsilon);
+    setCarouselCanNext(scrollLeft < scrollWidth - clientWidth - epsilon);
+  }, []);
+
+  useEffect(() => {
+    const el = dashboardCarouselRef.current;
+    if (!el) return;
+    updateCarouselArrows();
+    el.addEventListener("scroll", updateCarouselArrows, { passive: true });
+    const ro = new ResizeObserver(() => updateCarouselArrows());
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", updateCarouselArrows);
+      ro.disconnect();
+    };
+  }, [updateCarouselArrows]);
+
+  const scrollDashboardCarousel = useCallback((dir: 1 | -1) => {
+    const el = dashboardCarouselRef.current;
+    if (!el) return;
+    const step = getDashboardCarouselScrollStep(el);
+    el.scrollBy({ left: dir * step, behavior: "smooth" });
+  }, []);
+  const { user, loading: authLoading } = useAuth();
   const isMember = user?.tier === "MEMBER";
+  /** Plano de imigração + agendamento RafaCall: só membros VIP e admins no dashboard. */
+  const canAccessMemberVipShortcuts =
+    !authLoading && Boolean(user && (user.role === "ADMIN" || user.tier === "MEMBER"));
   const canSeeAffiliateCard =
     user?.tier === "MEMBER" || user?.role === "PARTNER" || user?.role === "ADMIN";
 
@@ -42,8 +121,6 @@ export default function DashboardPage() {
   const [affiliatePixName, setAffiliatePixName] = useState("");
   /** undefined = a carregar; null = sem perfil de afiliado */
   const [affiliate, setAffiliate] = useState<AffiliateMe | null | undefined>(undefined);
-
-  const [youtubeCards, setYoutubeCards] = useState(YOUTUBE_HIGHLIGHT_FALLBACKS);
 
   const pdfHref = isMember ? "/psp/full" : "/psp";
 
@@ -76,33 +153,6 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, [user?.id, canSeeAffiliateCard]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await api.youtubeHighlights.list();
-        if (cancelled || !data.cards?.length) return;
-        setYoutubeCards(
-          data.cards
-            .sort((a, b) => a.position - b.position)
-            .map((c) => ({
-              id: `yt-${c.position}`,
-              title: c.title,
-              href: c.videoUrl,
-              thumb: c.thumbnailUrl.startsWith("/uploads/")
-                ? resolveUploadsUrl(c.thumbnailUrl)
-                : c.thumbnailUrl,
-            })),
-        );
-      } catch {
-        /* mantém YOUTUBE_HIGHLIGHT_FALLBACKS */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const hasAffiliateEnrollment = Boolean(affiliate?.affiliateCode?.trim());
 
@@ -221,27 +271,101 @@ export default function DashboardPage() {
         </button>
       </section>
 
-      <div className="mt-8 space-y-8 px-4 md:px-6">
-      <div className="mx-auto w-full max-w-7xl px-1 sm:px-2">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-[repeat(auto-fit,minmax(20rem,1fr))]">
-        <section className="h-full min-w-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
-          <Link
-            href="/plano-de-imigracao"
-            className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
-            aria-label="Plano de imigração"
+      <div className="group relative mt-8 w-full px-0 md:px-2">
+        <button
+          type="button"
+          aria-label="Cartões anteriores"
+          aria-disabled={!carouselCanPrev}
+          disabled={!carouselCanPrev}
+          onClick={() => scrollDashboardCarousel(-1)}
+          className={`${CAROUSEL_NAV_BTN} left-0 md:left-2`}
+        >
+          <svg
+            aria-hidden
+            className="h-5 w-5 md:h-8 md:w-8"
+            width="1em"
+            height="1em"
+            viewBox="0 0 16 16"
           >
-            <Image
-              src="/rafa_cards/plano2.png"
-              alt="Plano de imigração"
-              width={1250}
-              height={1875}
-              className="h-auto w-full object-contain"
-              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
-              priority
+            <path
+              fill="currentColor"
+              fillRule="evenodd"
+              d="M9.78 4.22a.75.75 0 0 0-1.06 0L5.47 7.47a.75.75 0 0 0 0 1.06l3.25 3.25a.75.75 0 1 0 1.06-1.06L7.06 8l2.72-2.72a.75.75 0 0 0 0-1.06"
+              clipRule="evenodd"
             />
-          </Link>
+          </svg>
+        </button>
+        <button
+          type="button"
+          aria-label="Próximos cartões"
+          aria-disabled={!carouselCanNext}
+          disabled={!carouselCanNext}
+          onClick={() => scrollDashboardCarousel(1)}
+          className={`${CAROUSEL_NAV_BTN} right-0 md:right-2`}
+        >
+          <svg
+            aria-hidden
+            className="h-5 w-5 md:h-8 md:w-8"
+            width="1em"
+            height="1em"
+            viewBox="0 0 16 16"
+          >
+            <path
+              fill="currentColor"
+              fillRule="evenodd"
+              d="M6.22 4.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 0 1-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 0 1 0-1.06"
+              clipRule="evenodd"
+            />
+          </svg>
+        </button>
+        <div
+          ref={dashboardCarouselRef}
+          className="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-3 pt-1 [-webkit-overflow-scrolling:touch] overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden max-md:pl-[12vw] max-md:pr-[12vw] md:gap-5 md:pl-6 md:pr-6"
+          aria-label="Atalhos do painel — use os botões ou as teclas para navegar"
+        >
+        <section
+          className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
+        >
+          {canAccessMemberVipShortcuts ? (
+            <Link
+              href="/plano-de-imigracao"
+              className="group relative block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+              aria-label="Plano de imigração"
+            >
+              <Image
+                src="/rafa_cards/plano2.png"
+                alt="Plano de imigração"
+                width={1250}
+                height={1875}
+                className="h-auto w-full object-contain"
+                sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
+                priority
+              />
+            </Link>
+          ) : (
+            <div
+              className="pointer-events-none relative min-w-0 cursor-not-allowed select-none"
+              aria-label="Plano de imigração — disponível para membros VIP"
+            >
+              <span className="sr-only">Exclusivo para membros VIP</span>
+              <Image
+                src="/rafa_cards/plano2.png"
+                alt=""
+                width={1250}
+                height={1875}
+                className="h-auto w-full object-contain opacity-[0.88]"
+                sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
+                priority
+              />
+              <div className={LOCK_OVERLAY_POSITION}>
+                <DashboardCarouselMemberLockIcon className={LOCK_ICON_OVERLAY_CLASS} />
+              </div>
+            </div>
+          )}
         </section>
-        <section className="h-full min-w-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
+        <section
+          className={`${DASHBOARD_CARD_CAROUSEL_ITEM} h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
+        >
           <Link
             href={pdfHref}
             className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
@@ -253,12 +377,14 @@ export default function DashboardPage() {
               width={1250}
               height={1875}
               className="h-auto w-full object-contain"
-              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+              sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
               priority
             />
           </Link>
         </section>
-        <section className="h-full min-w-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
+        <section
+          className={`${DASHBOARD_CARD_CAROUSEL_ITEM} h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
+        >
           <Link
             href="/dashboard/services"
             className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
@@ -270,17 +396,21 @@ export default function DashboardPage() {
               width={1250}
               height={1875}
               className="h-auto w-full object-contain"
-              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+              sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
               priority
             />
           </Link>
         </section>
 
-        <section className="h-full min-w-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
-          <Link
-            href="/grupos-vip"
+        <section
+          className={`${DASHBOARD_CARD_CAROUSEL_ITEM} h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
+        >
+          <a
+            href={COMUNIDADE_RPM_WHATSAPP_GROUP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
-            aria-label="Grupos WhatsApp — aceder à comunidade"
+            aria-label="Abrir no WhatsApp — grupo gratuito Comunidade Rafa Portugal"
           >
             <Image
               src="/rafa_cards/grupos_whatsapp.png"
@@ -288,16 +418,45 @@ export default function DashboardPage() {
               width={1250}
               height={1875}
               className="h-auto w-full object-contain"
-              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+              sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
             />
-          </Link>
+          </a>
         </section>
 
-        <div className="flex h-full min-w-0 flex-col">
-          <RafaCallCard />
+        <div
+          className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative flex min-h-0 flex-col ${
+            canAccessMemberVipShortcuts
+              ? ""
+              : "overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm"
+          }`}
+        >
+          {canAccessMemberVipShortcuts ? (
+            <RafaCallCard />
+          ) : (
+            <div
+              className="pointer-events-none relative min-h-0 w-full cursor-not-allowed select-none"
+              aria-label="Agendar chamada com a Rafa — disponível para membros VIP"
+            >
+              <span className="sr-only">Exclusivo para membros VIP</span>
+              <Image
+                src="/rafa_cards/agendar_chamada2.png"
+                alt=""
+                width={1250}
+                height={1875}
+                className="h-auto w-full object-contain opacity-[0.88]"
+                sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
+                priority={false}
+              />
+              <div className={LOCK_OVERLAY_POSITION}>
+                <DashboardCarouselMemberLockIcon className={LOCK_ICON_OVERLAY_CLASS} />
+              </div>
+            </div>
+          )}
         </div>
 
-        <section className="h-full min-w-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md">
+        <section
+          className={`${DASHBOARD_CARD_CAROUSEL_ITEM} h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
+        >
           <Link
             href="/relocation/imoveis"
             className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
@@ -309,86 +468,35 @@ export default function DashboardPage() {
               width={1250}
               height={1875}
               className="h-auto w-full object-contain"
-              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+              sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
             />
           </Link>
         </section>
+        </div>
 
-        <section className="col-span-full w-full min-w-0 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-            <div className="flex min-w-0 flex-1 flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:gap-4 sm:text-left">
-              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-zinc-50 sm:h-16 sm:w-16">
-                <Image
-                  src="/youtube4.png"
-                  alt=""
-                  fill
-                  className="object-contain p-0.5"
-                  sizes="(max-width: 639px) 80px, 64px"
-                />
-              </div>
-              <div className="min-w-0 max-w-xl">
-                <h2 className="text-xl font-semibold text-zinc-900">Nosso canal no Youtube</h2>
-                <p className="mt-1 text-sm text-zinc-600">
-                  Assista os nossos episódios e conteúdos sobre a vida em Portugal.
-                </p>
-              </div>
-            </div>
-            <div className="flex w-full shrink-0 justify-center sm:w-auto sm:justify-end sm:self-start sm:pt-0.5">
-              <CardLinkButton
-                href="https://www.youtube.com/@rafaapelomundo"
-                target="_blank"
-                rel="noreferrer"
-                variant="primary"
-                className="min-w-[10.5rem] justify-center px-4 py-2.5 text-sm font-medium sm:min-w-0 sm:py-2"
-              >
-                Ver canal
-              </CardLinkButton>
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {youtubeCards.map((v) => {
-              return (
-                <a
-                  key={v.id}
-                  href={v.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group cursor-pointer rounded-lg border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <div className="relative aspect-video w-full overflow-hidden rounded-t-lg bg-zinc-100">
-                    <Image
-                      src={v.thumb}
-                      alt=""
-                      fill
-                      className="object-cover"
-                      sizes="(min-width: 768px) 33vw, 100vw"
-                    />
-                    <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/5" />
-                  </div>
-                  <div className="p-4">
-                    <p className="line-clamp-2 text-sm font-semibold text-zinc-900">
-                      {v.title}
-                    </p>
-                    <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-1 font-medium text-zinc-700">
-                        <span className="relative h-4 w-4" aria-hidden>
-                          <Image src="/youtube3.png" alt="" fill className="object-contain" />
-                        </span>
-                        YouTube
-                      </span>
-                      <span className="truncate">Rafa Pelo Mundo</span>
-                    </div>
-                  </div>
-                </a>
-              );
-            })}
-          </div>
-        </section>
-      </div>
-      </div>
-
-      <PartnerLogosMarquee />
+        {/* Mobile: toques nas faixas laterais (peek) só fazem scroll — não abrem o link do cartão */}
+        <button
+          type="button"
+          aria-label="Cartão anterior no carrossel"
+          disabled={!carouselCanPrev}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            scrollDashboardCarousel(-1);
+          }}
+          className="pointer-events-auto absolute bottom-[8%] left-0 top-[8%] z-[18] m-0 hidden w-[12vw] min-w-[44px] cursor-pointer border-0 bg-transparent p-0 outline-none max-md:block md:hidden touch-manipulation disabled:pointer-events-none disabled:opacity-0 focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+        />
+        <button
+          type="button"
+          aria-label="Próximo cartão no carrossel"
+          disabled={!carouselCanNext}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            scrollDashboardCarousel(1);
+          }}
+          className="pointer-events-auto absolute bottom-[8%] right-0 top-[8%] z-[18] m-0 hidden w-[12vw] min-w-[44px] cursor-pointer border-0 bg-transparent p-0 outline-none max-md:block md:hidden touch-manipulation disabled:pointer-events-none disabled:opacity-0 focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+        />
       </div>
 
       <AffiliateEnrollModal

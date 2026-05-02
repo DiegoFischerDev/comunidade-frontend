@@ -21,7 +21,9 @@
   --color-secondary-2: #e0e0e0;
   --color-secondary-3: #222222;
 
-  /* Botão WhatsApp */
+  /* Verde de marca (ícones, acentos; alinhado a CardButton) */
+  --color-brand-green: #055700;
+  /* Verde estilo app WhatsApp (reconhecimento) */
   --color-whatsapp: #25d366;
 
   /* Tipografia padrão */
@@ -33,26 +35,6 @@ body {
   color: var(--color-primary-2);
   font-family: Helvetica, Arial, sans-serif;
   overflow-x: hidden;
-}
-
-/* Marquee de logos de parceiros (dashboard) — direita → esquerda */
-@keyframes partner-logos-marquee {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-.partner-logos-track {
-  animation: partner-logos-marquee 16s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .partner-logos-track {
-    animation: none;
-  }
 }
 
 /* Alguns overlays de modal usam role="presentation"; garante que não herdem margens inesperadas */
