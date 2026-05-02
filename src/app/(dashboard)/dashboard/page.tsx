@@ -52,8 +52,9 @@ function DashboardCarouselMemberLockIcon({ className }: { className?: string }) 
 const LOCK_ICON_OVERLAY_CLASS =
   'h-10 w-10 text-[#910001] drop-shadow-[0_1px_3px_rgba(255,255,255,0.95)] sm:h-11 sm:w-11 md:h-12 md:w-12';
 
+/** Cadeado centrado na parte inferior do cartão (+15px para cima). */
 const LOCK_OVERLAY_POSITION =
-  'pointer-events-none absolute left-2 top-2 z-[1] sm:left-2.5 sm:top-2.5 md:left-3 md:top-3';
+  'pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex -translate-y-[15px] justify-center pb-2 sm:pb-2.5 md:pb-3';
 
 const CAROUSEL_NAV_BTN =
   "absolute z-[26] top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border-0 bg-gradient-to-r from-[#d58901] to-[#f0b23a] p-0 text-white shadow-sm outline-none transition-all duration-300 ease-in-out md:h-12 md:w-12 " +
@@ -121,8 +122,6 @@ export default function DashboardPage() {
   const [affiliatePixName, setAffiliatePixName] = useState("");
   /** undefined = a carregar; null = sem perfil de afiliado */
   const [affiliate, setAffiliate] = useState<AffiliateMe | null | undefined>(undefined);
-
-  const pdfHref = isMember ? "/psp/full" : "/psp";
 
   useEffect(() => {
     setAffiliateInstagram(
@@ -364,23 +363,44 @@ export default function DashboardPage() {
           )}
         </section>
         <section
-          className={`${DASHBOARD_CARD_CAROUSEL_ITEM} h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
+          className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
         >
-          <Link
-            href={pdfHref}
-            className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
-            aria-label="Guia Portugal Sem Perrengue"
-          >
-            <Image
-              src="/rafa_cards/psp2.png"
-              alt="Guia Portugal Sem Perrengue"
-              width={1250}
-              height={1875}
-              className="h-auto w-full object-contain"
-              sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
-              priority
-            />
-          </Link>
+          {canAccessMemberVipShortcuts ? (
+            <Link
+              href="/psp/full"
+              className="group relative block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+              aria-label="Guia Portugal Sem Perrengue"
+            >
+              <Image
+                src="/rafa_cards/psp2.png"
+                alt="Guia Portugal Sem Perrengue"
+                width={1250}
+                height={1875}
+                className="h-auto w-full object-contain"
+                sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
+                priority
+              />
+            </Link>
+          ) : (
+            <div
+              className="pointer-events-none relative min-w-0 cursor-not-allowed select-none"
+              aria-label="Guia Portugal Sem Perrengue — disponível para membros VIP"
+            >
+              <span className="sr-only">Exclusivo para membros VIP</span>
+              <Image
+                src="/rafa_cards/psp2.png"
+                alt=""
+                width={1250}
+                height={1875}
+                className="h-auto w-full object-contain opacity-[0.88]"
+                sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
+                priority
+              />
+              <div className={LOCK_OVERLAY_POSITION}>
+                <DashboardCarouselMemberLockIcon className={LOCK_ICON_OVERLAY_CLASS} />
+              </div>
+            </div>
+          )}
         </section>
         <section
           className={`${DASHBOARD_CARD_CAROUSEL_ITEM} h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
