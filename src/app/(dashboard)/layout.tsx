@@ -26,9 +26,8 @@ import { CardButton } from '@/components/ui/CardButton';
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
 import { SupportTicketRoot } from '@/components/support-ticket';
 import { SiteFooter } from '@/components/site/SiteFooter';
-import { prependLocalMarketplaceCategories } from '@/lib/marketplace-local-categories';
 
-/** Sub-link do menu lateral (indentado, sob “Minha empresa” / “Serviços”). */
+/** Sub-link do menu lateral (indentado, sob “Minha empresa”). */
 function SidebarNavSubLink({
   href,
   active,
@@ -499,11 +498,6 @@ export default function DashboardLayout({
   const [resetError, setResetError] = useState('');
   const [resetInfo, setResetInfo] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
-  const [categories, setCategories] = useState<
-    { id: string; slug: string; name: string }[]
-  >([]);
-  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
-  const [activeCategorySlug, setActiveCategorySlug] = useState<string | null>(null);
   const [partnerId, setPartnerId] = useState<string | null>(null);
   const [partnerCategorySlug, setPartnerCategorySlug] = useState<string | null>(null);
   const [partnerPendingLeadsCount, setPartnerPendingLeadsCount] = useState(0);
@@ -560,25 +554,6 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (!mounted || authLoading) return;
-    (async () => {
-      try {
-        // Menu lateral deve mostrar apenas categorias que existem e têm parceiros associados
-        const data = await api.marketplace.categoriesWithPartners();
-        setCategories(
-          prependLocalMarketplaceCategories(
-            data.map((c) => ({ id: c.id, slug: c.slug, name: c.name })),
-          ),
-        );
-      } catch {
-        setCategories(prependLocalMarketplaceCategories([]));
-      } finally {
-        setCategoriesLoaded(true);
-      }
-    })();
-  }, [mounted, authLoading, user]);
-
-  useEffect(() => {
-    if (!mounted || authLoading) return;
     if (!user || user.role !== 'PARTNER') {
       setPartnerId(null);
       setPartnerCategorySlug(null);
@@ -627,66 +602,6 @@ export default function DashboardLayout({
         onPending as EventListener,
       );
   }, []);
-
-  // Sincroniza categoria ativa no menu com rota atual (categoria ou parceiro)
-  useEffect(() => {
-    if (
-      pathname === '/dashboard/relocation' ||
-      pathname.startsWith('/dashboard/relocation/') ||
-      pathname === '/relocation/imoveis' ||
-      pathname.startsWith('/relocation/')
-    ) {
-      setActiveCategorySlug('relocation');
-      return;
-    }
-    if (
-      pathname.startsWith('/dashboard/casas/') &&
-      pathname !== '/dashboard/casas/nova' &&
-      !pathname.endsWith('/edit')
-    ) {
-      setActiveCategorySlug('relocation');
-      return;
-    }
-    // Página de listagem por categoria
-    if (pathname.startsWith('/dashboard/category/')) {
-      const segments = pathname.split('/');
-      const slug = segments[segments.length - 1] || null;
-      setActiveCategorySlug(slug);
-      return;
-    }
-
-    // Página de parceiro dentro do dashboard
-    if (pathname.startsWith('/dashboard/partner/')) {
-      const segments = pathname.split('/');
-      const partnerId = segments[segments.length - 1];
-      if (!partnerId) return;
-
-      // Não limpamos activeCategorySlug aqui para evitar "piscar"
-      // ao navegar de /dashboard/category/[slug] -> /dashboard/partner/[id].
-
-      (async () => {
-        try {
-          const data = await api.marketplace.partnerDetails(partnerId);
-          // category pode ser null se o parceiro não tiver categoria associada
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const category = (data as any).category as
-            | { slug: string }
-            | null
-            | undefined;
-          if (category?.slug) {
-            setActiveCategorySlug(category.slug);
-          }
-        } catch {
-          // mantemos o slug atual (se existir) em caso de erro
-        }
-      })();
-
-      return;
-    }
-
-    // Outras páginas não relacionadas a categorias/parceiros
-    setActiveCategorySlug(null);
-  }, [pathname]);
 
   // Permite que outras páginas abram o modal de auth (por exemplo, página do parceiro)
   useEffect(() => {
@@ -831,7 +746,7 @@ export default function DashboardLayout({
           ? 'Membro'
           : 'Visitante';
 
-  /** Parceiro na própria página pública (menu “Minha página”) — não ativar “Serviços” nem categorias em baixo. */
+  /** Parceiro na própria página pública (menu “Minha página”) — não ativar “Serviços”. */
   const partnerViewingOwnPublicPage =
     user?.role === 'PARTNER' &&
     partnerId &&
@@ -894,21 +809,10 @@ export default function DashboardLayout({
             target="_blank"
             rel="noreferrer"
             aria-label="Instagram"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#910001]/30 bg-white text-[#910001] shadow-sm transition hover:border-[#910001]/55 hover:bg-[#910001]/10 hover:text-[#910001] hover:shadow"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-brand-green/35 bg-white text-brand-green shadow-sm transition hover:border-brand-green/60 hover:bg-brand-green/12 hover:shadow"
           >
             <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="currentColor" aria-hidden>
               <path d="M7.5 2h9A5.5 5.5 0 0 1 22 7.5v9A5.5 5.5 0 0 1 16.5 22h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2Zm0 2A3.5 3.5 0 0 0 4 7.5v9A3.5 3.5 0 0 0 7.5 20h9a3.5 3.5 0 0 0 3.5-3.5v-9A3.5 3.5 0 0 0 16.5 4h-9Zm10.25 1.75a1 1 0 1 1 0 2 1 1 0 0 1 0-2ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />
-            </svg>
-          </a>
-          <a
-            href="https://www.youtube.com/@rafaapelomundo"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="YouTube"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d58901]/35 bg-white text-[#d58901] shadow-sm transition hover:border-[#d58901]/60 hover:bg-[#d58901]/10 hover:text-[#d58901] hover:shadow"
-          >
-            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="currentColor" aria-hidden>
-              <path d="M21.6 7.2a3 3 0 0 0-2.1-2.1C17.7 4.5 12 4.5 12 4.5s-5.7 0-7.5.6A3 3 0 0 0 2.4 7.2 31.3 31.3 0 0 0 2 12a31.3 31.3 0 0 0 .4 4.8 3 3 0 0 0 2.1 2.1c1.8.6 7.5.6 7.5.6s5.7 0 7.5-.6a3 3 0 0 0 2.1-2.1A31.3 31.3 0 0 0 22 12a31.3 31.3 0 0 0-.4-4.8ZM10 15.5v-7l6 3.5-6 3.5Z" />
             </svg>
           </a>
           <a
@@ -916,10 +820,21 @@ export default function DashboardLayout({
             target="_blank"
             rel="noreferrer"
             aria-label="TikTok"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#086601]/30 bg-white text-[#086601] shadow-sm transition hover:border-[#086601]/55 hover:bg-[#086601]/10 hover:text-[#086601] hover:shadow"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d58901]/35 bg-white text-[#d58901] shadow-sm transition hover:border-[#c07c01]/70 hover:bg-[#f0b23a]/15 hover:text-[#c07c01] hover:shadow"
           >
             <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="currentColor" aria-hidden>
               <path d="M14.5 3c.3 2.5 1.8 4.7 4.3 5.5v3.1c-1.8 0-3.4-.6-4.7-1.6v6.3c0 3.4-2.8 6.2-6.2 6.2S1.7 19 1.7 15.6s2.8-6.2 6.2-6.2c.4 0 .8 0 1.2.1v3.4c-.4-.2-.8-.3-1.2-.3-1.6 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3V3h3.4Z" />
+            </svg>
+          </a>
+          <a
+            href="https://www.youtube.com/@rafaapelomundo"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Canal no YouTube"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#910001]/35 bg-white text-[#910001] shadow-sm transition hover:border-[#910001]/60 hover:bg-[#910001]/10 hover:shadow"
+          >
+            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="currentColor" aria-hidden>
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
             </svg>
           </a>
         </div>
@@ -955,16 +870,6 @@ export default function DashboardLayout({
             }`}
           >
             Guia PSP
-          </Link>
-          <Link
-            href="/grupos-vip"
-            className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/grupos-vip'
-                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                : 'text-zinc-800 hover:bg-zinc-100'
-            }`}
-          >
-            Grupos whatsapp
           </Link>
           <Link
             href="/relocation/imoveis"
@@ -1104,16 +1009,6 @@ export default function DashboardLayout({
                 Casas (anúncios)
               </Link>
               <Link
-                href="/dashboard/admin/youtube-highlights"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/admin/youtube-highlights'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Destaques YouTube
-              </Link>
-              <Link
                 href="/dashboard/admin/commissions"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/commissions' ||
@@ -1157,48 +1052,16 @@ export default function DashboardLayout({
             </>
           )}
 
-          {categoriesLoaded && categories.length ? (
-            <SidebarNavSection
-              title="Serviços"
-              href="/dashboard/services"
-              titleActive={servicesNavTitleActive}
-              sectionActive={servicesNavTitleActive}
-            >
-              {categories.map((c) => {
-                const relocation = c.slug === 'relocation';
-                const catHref = relocation ? '/dashboard/relocation' : `/dashboard/category/${c.slug}`;
-                const isActive =
-                  !partnerViewingOwnPublicPage &&
-                  (relocation
-                    ? pathname === '/dashboard/relocation' ||
-                      pathname.startsWith('/dashboard/relocation/') ||
-                      pathname === '/relocation/imoveis' ||
-                      pathname.startsWith('/relocation/') ||
-                      (pathname.startsWith('/dashboard/casas/') &&
-                        pathname !== '/dashboard/casas/nova' &&
-                        !pathname.endsWith('/edit'))
-                    : pathname === `/dashboard/category/${c.slug}` ||
-                      (pathname.startsWith('/dashboard/partner/') &&
-                        activeCategorySlug === c.slug));
-                return (
-                  <SidebarNavSubLink key={c.id} href={catHref} active={isActive}>
-                    {c.name}
-                  </SidebarNavSubLink>
-                );
-              })}
-            </SidebarNavSection>
-          ) : (
-            <Link
-              href="/dashboard/services"
-              className={`block rounded-md px-3 py-2 text-sm ${
-                servicesNavTitleActive
-                  ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                  : 'text-zinc-800 hover:bg-zinc-100'
-              }`}
-            >
-              Serviços
-            </Link>
-          )}
+          <Link
+            href="/dashboard/services"
+            className={`block rounded-md px-3 py-2 text-sm ${
+              servicesNavTitleActive
+                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                : 'text-zinc-800 hover:bg-zinc-100'
+            }`}
+          >
+            Serviços
+          </Link>
         </nav>
       </div>
 

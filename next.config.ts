@@ -57,7 +57,6 @@ const nextConfig: NextConfig = {
   output: "standalone",
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "img.youtube.com", pathname: "/**" },
       ...uploadPatternsFromEnv,
       ...extraImageHosts,
     ],
