@@ -195,7 +195,8 @@ export default function PartnerHousesPage() {
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
           <p className="mt-2 text-sm text-zinc-600">
-            Aqui ficam guardadas as informações dos imóveis que publicaste no grupo do WhatsApp.
+            Aqui ficam os teus anúncios na plataforma. A divulgação nos grupos WhatsApp é tratada pela equipa quando
+            aplicável.
           </p>
         </div>
         <div className="shrink-0">
@@ -207,7 +208,7 @@ export default function PartnerHousesPage() {
 
       {showUpdatedBanner && (
         <div className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          Imóvel atualizado. A mensagem no WhatsApp não foi reenviada.
+          Imóvel atualizado. As alterações refletem-se na página pública do anúncio.
         </div>
       )}
 
