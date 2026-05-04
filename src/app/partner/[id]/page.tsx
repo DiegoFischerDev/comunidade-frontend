@@ -308,15 +308,6 @@ export default async function PartnerPublicPage({ params }: PageProps) {
                   <RelocationHouseCard key={h.id} house={h} showContactButton={false} />
                 ))}
               </div>
-              <div className="flex justify-center pt-1">
-                <CardLinkButton
-                  href={`/relocation/imoveis?parceiro=${encodeURIComponent(partner.id)}`}
-                  variant="primary"
-                  className="min-w-[14rem] shadow-sm"
-                >
-                  Ver todos os imóveis
-                </CardLinkButton>
-              </div>
             </>
           )}
         </section>

@@ -272,14 +272,14 @@ export default function CategoryPage() {
     <div className="space-y-8">
       <div className="flex items-center">
         <CardLinkButton
-          href="/dashboard/services"
+          href="/dashboard"
           variant="primary"
           className="shadow-sm"
         >
           <span className="opacity-90" aria-hidden>
             ←
           </span>
-          Outros serviços
+          Início
         </CardLinkButton>
       </div>
 
