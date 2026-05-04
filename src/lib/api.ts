@@ -685,6 +685,7 @@ export const api = {
         request<
           {
             id: string;
+            houseId: number;
             title: string;
             city: string;
             businessType: 'RENT' | 'SALE';
@@ -705,20 +706,50 @@ export const api = {
             };
           }[]
         >('/partners/admin/houses', { method: 'GET' }),
+      get: (houseId: string) =>
+        request<{
+          id: string;
+          houseId: number;
+          title: string;
+          description: string;
+          businessType: 'RENT' | 'SALE';
+          typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          city: string;
+          availableFrom: string;
+          priceEur: string;
+          relocationFeeEur: string;
+          caucoesCount: number;
+          rendasEntradaCount: number;
+          furnished: boolean;
+          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+          featured: boolean;
+          whatsappSentAt: string | null;
+          whatsappError: string | null;
+          imageUrls: string[];
+          coverImageUrl: string | null;
+          videoUrl: string | null;
+          createdAt: string;
+          updatedAt: string;
+          partner: {
+            id: string;
+            name: string;
+            category: { slug: string; name: string } | null;
+          };
+        }>(`/partners/admin/houses/${encodeURIComponent(houseId)}`, { method: 'GET' }),
       create: (input: {
         images?: File[];
         video?: File;
-        title: string;
-        description: string;
+        title?: string;
+        description?: string;
         businessType?: 'RENT' | 'SALE';
-        typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
-        city: string;
-        availableFrom: string;
-        priceEur: string;
-        relocationFeeEur: string;
-        caucoesCount: string;
-        rendasEntradaCount: string;
-        furnished: boolean;
+        typology?: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+        city?: string;
+        availableFrom?: string;
+        priceEur?: string;
+        relocationFeeEur?: string;
+        caucoesCount?: string;
+        rendasEntradaCount?: string;
+        furnished?: boolean;
         coverImageIndex?: number;
         /** Parceiro relocation titular; omitir = conta relocation interna do admin */
         partnerId?: string;
@@ -731,21 +762,24 @@ export const api = {
         if (input.images?.length && input.coverImageIndex != null) {
           fd.append('coverImageIndex', String(input.coverImageIndex));
         }
-        fd.append('title', input.title);
-        fd.append('description', input.description);
+        if (input.title !== undefined) fd.append('title', input.title);
+        if (input.description !== undefined) fd.append('description', input.description);
         if (input.businessType != null) fd.append('businessType', input.businessType);
-        fd.append('typology', input.typology);
-        fd.append('city', input.city);
-        fd.append('availableFrom', input.availableFrom);
-        fd.append('priceEur', input.priceEur);
-        fd.append('relocationFeeEur', input.relocationFeeEur.trim());
-        fd.append('caucoesCount', input.caucoesCount);
-        fd.append('rendasEntradaCount', input.rendasEntradaCount);
-        fd.append('furnished', input.furnished ? 'true' : 'false');
+        if (input.typology != null) fd.append('typology', input.typology);
+        if (input.city !== undefined) fd.append('city', input.city);
+        if (input.availableFrom !== undefined) fd.append('availableFrom', input.availableFrom);
+        if (input.priceEur !== undefined) fd.append('priceEur', input.priceEur);
+        if (input.relocationFeeEur !== undefined) {
+          fd.append('relocationFeeEur', input.relocationFeeEur.trim());
+        }
+        if (input.caucoesCount !== undefined) fd.append('caucoesCount', input.caucoesCount);
+        if (input.rendasEntradaCount !== undefined) fd.append('rendasEntradaCount', input.rendasEntradaCount);
+        if (input.furnished != null) fd.append('furnished', input.furnished ? 'true' : 'false');
         const pid = input.partnerId?.trim();
         if (pid) fd.append('partnerId', pid);
         return requestFormData<{
           id: string;
+          houseId: number;
           title: string;
           description: string;
           businessType: 'RENT' | 'SALE';
@@ -766,6 +800,74 @@ export const api = {
           createdAt: string;
           updatedAt: string;
         }>('/partners/admin/houses', fd, { method: 'POST' });
+      },
+      update: (
+        houseId: string,
+        input: {
+          images?: File[];
+          video?: File;
+          removeVideo?: boolean;
+          keepImageUrls?: string[];
+          title?: string;
+          description?: string;
+          typology?: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          businessType?: 'RENT' | 'SALE';
+          city?: string;
+          availableFrom?: string;
+          priceEur?: string;
+          relocationFeeEur?: string;
+          caucoesCount?: string;
+          rendasEntradaCount?: string;
+          furnished?: boolean;
+          coverImageIndex?: number;
+          status?: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+        },
+      ) => {
+        const fd = new FormData();
+        if (input.video) fd.append('video', input.video);
+        if (input.images?.length) {
+          for (const file of input.images) fd.append('images', file);
+        }
+        if (input.keepImageUrls != null) {
+          fd.append('keepImageUrls', JSON.stringify(input.keepImageUrls));
+        }
+        if (input.removeVideo) fd.append('removeVideo', 'true');
+        if (input.title != null) fd.append('title', input.title);
+        if (input.description != null) fd.append('description', input.description);
+        if (input.typology != null) fd.append('typology', input.typology);
+        if (input.businessType != null) fd.append('businessType', input.businessType);
+        if (input.city != null) fd.append('city', input.city);
+        if (input.availableFrom != null) fd.append('availableFrom', input.availableFrom);
+        if (input.priceEur != null) fd.append('priceEur', input.priceEur);
+        if (input.relocationFeeEur != null) fd.append('relocationFeeEur', input.relocationFeeEur.trim());
+        if (input.caucoesCount != null) fd.append('caucoesCount', input.caucoesCount);
+        if (input.rendasEntradaCount != null) fd.append('rendasEntradaCount', input.rendasEntradaCount);
+        if (input.furnished != null) fd.append('furnished', input.furnished ? 'true' : 'false');
+        if (input.coverImageIndex != null) fd.append('coverImageIndex', String(input.coverImageIndex));
+        if (input.status != null) fd.append('status', input.status);
+        return requestFormData<{
+          id: string;
+          houseId: number;
+          title: string;
+          description: string;
+          businessType: 'RENT' | 'SALE';
+          typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          city: string;
+          availableFrom: string;
+          priceEur: string;
+          relocationFeeEur: string;
+          caucoesCount: number;
+          rendasEntradaCount: number;
+          furnished: boolean;
+          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+          whatsappSentAt: string | null;
+          whatsappError: string | null;
+          imageUrls: string[];
+          coverImageUrl: string | null;
+          videoUrl: string | null;
+          createdAt: string;
+          updatedAt: string;
+        }>(`/partners/admin/houses/${encodeURIComponent(houseId)}`, fd, { method: 'PATCH' });
       },
       delete: (houseId: string) =>
         request<{ ok: true }>(
@@ -1116,6 +1218,7 @@ export const api = {
         request<
           {
             id: string;
+            houseId: number;
             title: string;
             description: string;
             businessType: 'RENT' | 'SALE';
@@ -1140,6 +1243,7 @@ export const api = {
       get: (id: string) =>
         request<{
           id: string;
+          houseId: number;
           title: string;
           description: string;
           businessType: 'RENT' | 'SALE';
@@ -1199,6 +1303,7 @@ export const api = {
         fd.append('furnished', input.furnished ? 'true' : 'false');
         return requestFormData<{
           id: string;
+          houseId: number;
           title: string;
           description: string;
           businessType: 'RENT' | 'SALE';
@@ -1264,6 +1369,7 @@ export const api = {
         if (input.coverImageIndex != null) fd.append('coverImageIndex', String(input.coverImageIndex));
         return requestFormData<{
           id: string;
+          houseId: number;
           title: string;
           description: string;
           businessType: 'RENT' | 'SALE';
@@ -1448,6 +1554,7 @@ export const api = {
     houseContact: (houseId: string) =>
       request<{
         id: string;
+        houseId: number;
         status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
         partnerId: string;
         title: string;
@@ -1478,6 +1585,7 @@ export const api = {
       return request<
         {
           id: string;
+          houseId: number;
           title: string;
           description: string;
           businessType: 'RENT' | 'SALE';

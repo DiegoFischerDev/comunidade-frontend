@@ -17,6 +17,8 @@ export type PublicHousePartner = {
 
 export type PublicHousePageData = {
   id: string;
+  /** Identificador numérico estável (controlo / WhatsApp). */
+  houseId: number;
   title: string;
   description: string;
   businessType: "RENT" | "SALE";

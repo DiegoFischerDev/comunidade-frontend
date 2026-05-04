@@ -202,6 +202,7 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
                 <HouseStatusBadge status={house.status} />
               </div>
               <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">{house.title}</h1>
+              <p className="text-xs font-medium tabular-nums text-zinc-500">Id: {house.houseId}</p>
               <p className="text-sm text-zinc-600">
                 {typoLabel} · {availabilityLabel(house.availableFrom)}
               </p>
