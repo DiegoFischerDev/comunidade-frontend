@@ -695,6 +695,8 @@ export const api = {
             priceEur: string;
             imageUrls: string[];
             videoUrl: string | null;
+            whatsappSentAt: string | null;
+            whatsappError: string | null;
             createdAt: string;
             partner: {
               id: string;
@@ -774,6 +776,60 @@ export const api = {
         request<{ id: string; featured: boolean }>(
           `/partners/admin/houses/${encodeURIComponent(houseId)}/featured`,
           { method: 'PATCH', body: JSON.stringify({ featured }) },
+        ),
+      sendToWhatsappGroups: (houseId: string) =>
+        request<{
+          ok: true;
+          sentToGroups: number;
+          failed: string[];
+        }>(
+          `/partners/admin/houses/${encodeURIComponent(houseId)}/send-whatsapp-groups`,
+          { method: 'POST', body: JSON.stringify({}) },
+        ),
+    },
+    houseWhatsappGroups: {
+      list: () =>
+        request<
+          {
+            id: string;
+            name: string;
+            groupJid: string;
+            active: boolean;
+            sortOrder: number;
+            createdAt: string;
+            updatedAt: string;
+          }[]
+        >('/partners/admin/house-whatsapp-groups', { method: 'GET' }),
+      create: (body: { name: string; groupJid: string }) =>
+        request<{
+          id: string;
+          name: string;
+          groupJid: string;
+          active: boolean;
+          sortOrder: number;
+          createdAt: string;
+          updatedAt: string;
+        }>('/partners/admin/house-whatsapp-groups', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
+      update: (id: string, body: { name?: string; active?: boolean }) =>
+        request<{
+          id: string;
+          name: string;
+          groupJid: string;
+          active: boolean;
+          sortOrder: number;
+          createdAt: string;
+          updatedAt: string;
+        }>(`/partners/admin/house-whatsapp-groups/${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        }),
+      delete: (id: string) =>
+        request<{ ok: true }>(
+          `/partners/admin/house-whatsapp-groups/${encodeURIComponent(id)}`,
+          { method: 'DELETE' },
         ),
     },
     categories: {

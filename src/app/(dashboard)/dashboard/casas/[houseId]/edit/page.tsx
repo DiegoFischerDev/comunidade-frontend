@@ -310,7 +310,7 @@ export default function EditHousePage() {
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900">Editar imóvel</h1>
           <p className="mt-2 text-sm text-zinc-600">
-            Alterações na página pública. A mensagem no grupo WhatsApp não é reenviada.
+            Alterações na página pública do anúncio.
           </p>
         </div>
         <CardLinkButton href="/dashboard/casas" variant="outline">

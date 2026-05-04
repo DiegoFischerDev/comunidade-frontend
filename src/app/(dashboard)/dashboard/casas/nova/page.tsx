@@ -209,10 +209,8 @@ export default function NewHousePostPage() {
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900">Publicar imóvel</h1>
           <p className="mt-2 text-sm text-zinc-600">
-            O anúncio fica na plataforma com as fotos e o vídeo que enviares. No grupo WhatsApp da comunidade enviamos
-            <strong className="font-semibold"> uma única vez </strong>
-            por imóvel, <strong className="font-semibold">só uma mensagem de texto</strong> com o resumo e o link da
-            página — sem fotos nem vídeo no grupo.
+            O anúncio fica na plataforma com as fotos e o vídeo que enviares. A divulgação nos grupos WhatsApp é feita
+            pela equipa quando for o caso (não é automática aqui).
           </p>
         </div>
         <div className="shrink-0">
@@ -298,9 +296,7 @@ export default function NewHousePostPage() {
             }}
             className="mt-2 block w-full text-sm text-zinc-700 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-zinc-900 hover:file:bg-zinc-200"
           />
-          <p className="mt-1 text-xs text-zinc-500">
-            MP4, MOV, WebM ou 3GP. Não é enviado ao grupo WhatsApp.
-          </p>
+          <p className="mt-1 text-xs text-zinc-500">MP4, MOV, WebM ou 3GP.</p>
           {videoPreviewUrl ? (
             <div className="mt-3 overflow-hidden rounded-xl bg-black">
               <video
