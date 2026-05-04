@@ -526,6 +526,50 @@ export const api = {
           { method: 'POST', body: JSON.stringify({}) },
         ),
     },
+    grupoTeste: {
+      list: () =>
+        request<
+          {
+            id: string;
+            description: string;
+            imageUrls: string[];
+            videoUrl: string | null;
+            targetGroupJid: string | null;
+            status: 'PENDING' | 'SENDING' | 'SENT' | 'FAILED';
+            sentAt: string | null;
+            whatsappError: string | null;
+            createdAt: string;
+            createdBy: { id: string; name: string };
+          }[]
+        >('/admin/grupo-teste', { method: 'GET' }),
+      create: (input: {
+        description: string;
+        targetGroupJid?: string;
+        images: File[];
+        video?: File | null;
+      }) => {
+        const fd = new FormData();
+        fd.append('description', input.description.trim());
+        const tg = input.targetGroupJid?.trim();
+        if (tg) fd.append('targetGroupJid', tg);
+        for (const f of input.images.slice(0, 6)) fd.append('images', f);
+        if (input.video) fd.append('video', input.video);
+        return requestFormData<{
+          id: string;
+          description: string;
+          imageUrls: string[];
+          videoUrl: string | null;
+          targetGroupJid: string | null;
+          status: 'PENDING';
+          createdAt: string;
+        }>('/admin/grupo-teste', fd, { method: 'POST' });
+      },
+      send: (id: string, groupJid: string) =>
+        request<{ ok: true; id: string; status: 'SENT' }>(
+          `/admin/grupo-teste/${encodeURIComponent(id)}/send`,
+          { method: 'POST', body: JSON.stringify({ groupJid: groupJid.trim() }) },
+        ),
+    },
     checklist: {
       getByUserId: (userId: string) =>
         request<{
