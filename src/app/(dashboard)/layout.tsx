@@ -746,24 +746,6 @@ export default function DashboardLayout({
           ? 'Membro'
           : 'Visitante';
 
-  /** Parceiro na própria página pública (menu “Minha página”) — não ativar “Serviços”. */
-  const partnerViewingOwnPublicPage =
-    user?.role === 'PARTNER' &&
-    partnerId &&
-    pathname === `/dashboard/partner/${partnerId}`;
-
-  const servicesNavTitleActive =
-    pathname === '/dashboard/services' ||
-    pathname.startsWith('/dashboard/category/') ||
-    (pathname.startsWith('/dashboard/partner/') && !partnerViewingOwnPublicPage) ||
-    pathname === '/dashboard/relocation' ||
-    pathname.startsWith('/dashboard/relocation/') ||
-    pathname === '/relocation/imoveis' ||
-    pathname.startsWith('/relocation/') ||
-    (pathname.startsWith('/dashboard/casas/') &&
-      pathname !== '/dashboard/casas/nova' &&
-      !pathname.endsWith('/edit'));
-
   const partnerCompanyTitleActive =
     pathname === '/dashboard/business' ||
     pathname === '/dashboard/leads' ||
@@ -875,16 +857,18 @@ export default function DashboardLayout({
               </Link>
             </>
           ) : null}
-          <Link
-            href="/relocation/imoveis"
-            className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/relocation/imoveis' || pathname.startsWith('/relocation/')
-                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                : 'text-zinc-800 hover:bg-zinc-100'
-            }`}
-          >
-            Imóveis
-          </Link>
+          {user?.role === 'ADMIN' ? (
+            <Link
+              href="/relocation/imoveis"
+              className={`block rounded-md px-3 py-2 text-sm ${
+                pathname === '/relocation/imoveis' || pathname.startsWith('/relocation/')
+                  ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                  : 'text-zinc-800 hover:bg-zinc-100'
+              }`}
+            >
+              Imóveis
+            </Link>
+          ) : null}
           {user && user.role !== 'ADMIN' ? (
             <Link
               href="/dashboard/reclame-aqui"
@@ -1055,17 +1039,6 @@ export default function DashboardLayout({
               </Link>
             </>
           )}
-
-          <Link
-            href="/dashboard/services"
-            className={`block rounded-md px-3 py-2 text-sm ${
-              servicesNavTitleActive
-                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                : 'text-zinc-800 hover:bg-zinc-100'
-            }`}
-          >
-            Serviços
-          </Link>
         </nav>
       </div>
 

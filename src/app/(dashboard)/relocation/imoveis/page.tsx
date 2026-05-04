@@ -14,6 +14,7 @@ import {
   type RelocationHouseRow,
 } from "@/components/relocation/relocation-house-shared";
 import { CardLinkButton } from "@/components/ui/CardButton";
+import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 
 type RelocationPartner = {
@@ -28,6 +29,8 @@ const RELOCATION_HOUSES_WHATSAPP_GROUP_URL =
 export default function RelocationHousesListPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, loading: authLoading } = useAuth();
+  const isAdmin = !authLoading && user?.role === "ADMIN";
   const [rows, setRows] = useState<RelocationHouseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -60,7 +63,15 @@ export default function RelocationHousesListPage() {
   );
 
   useEffect(() => {
-    (async () => {
+    if (authLoading) return;
+    if (user?.role !== "ADMIN") {
+      router.replace("/dashboard");
+    }
+  }, [authLoading, user, router]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    void (async () => {
       try {
         const data = await api.marketplace.categoriesWithPartners();
         const rel = data.find((c) => c.slug === "relocation");
@@ -71,12 +82,17 @@ export default function RelocationHousesListPage() {
         setPartners([]);
       }
     })();
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
+    if (!isAdmin) {
+      setLoading(false);
+      setRows([]);
+      return;
+    }
     setLoading(true);
     setError("");
-    (async () => {
+    void (async () => {
       try {
         const data = await api.marketplace.relocationHouses({
           partnerId: parceiro || undefined,
@@ -94,7 +110,7 @@ export default function RelocationHousesListPage() {
         setLoading(false);
       }
     })();
-  }, [parceiro, cidade, tipologia, finalidade]);
+  }, [isAdmin, parceiro, cidade, tipologia, finalidade]);
 
   const filterBar = useMemo(
     () => (
@@ -202,6 +218,22 @@ export default function RelocationHousesListPage() {
     const ids = new Set(featuredRows.map((h) => h.id));
     return rows.filter((h) => !ids.has(h.id));
   }, [rows, featuredRows]);
+
+  if (authLoading) {
+    return (
+      <div className="p-6 text-sm text-zinc-600" role="status">
+        A carregar…
+      </div>
+    );
+  }
+
+  if (user?.role !== "ADMIN") {
+    return (
+      <div className="p-6 text-sm text-zinc-600" role="status">
+        Acesso reservado a administradores. A redirecionar…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -19,10 +19,6 @@ const DASHBOARD_CARD_CAROUSEL_ITEM =
 
 const DASHBOARD_CAROUSEL_IMAGE_SIZES = '(max-width: 767px) 76vw, 288px';
 
-/** Grupo gratuito “Comunidade Rafa Portugal” (cartão do dashboard). */
-const COMUNIDADE_RPM_WHATSAPP_GROUP_URL =
-  'https://chat.whatsapp.com/FA0bFhdIMD6BeMYRceFrCv?mode=gi_t';
-
 function getDashboardCarouselScrollStep(el: HTMLDivElement): number {
   const first = el.firstElementChild as HTMLElement | null;
   if (!first) return 300;
@@ -96,6 +92,7 @@ export default function DashboardPage() {
     const step = getDashboardCarouselScrollStep(el);
     el.scrollBy({ left: dir * step, behavior: "smooth" });
   }, []);
+
   const { user, loading: authLoading } = useAuth();
   const isMember = user?.tier === "MEMBER";
   /** Plano de imigração + agendamento RafaCall: só membros VIP e admins no dashboard. */
@@ -320,181 +317,120 @@ export default function DashboardPage() {
         <div
           ref={dashboardCarouselRef}
           className="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-3 pt-1 [-webkit-overflow-scrolling:touch] overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden max-md:pl-[12vw] max-md:pr-[12vw] md:gap-5 md:pl-6 md:pr-6"
-          aria-label="Atalhos do painel — use os botões ou as teclas para navegar"
+          aria-label="Conteúdo para membros VIP — use os botões ou deslize para navegar"
         >
-        <section
-          className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
-        >
-          {canAccessMemberVipShortcuts ? (
-            <Link
-              href="/plano-de-imigracao"
-              className="group relative block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
-              aria-label="Plano de imigração"
-            >
-              <Image
-                src="/rafa_cards/plano2.png"
-                alt="Plano de imigração"
-                width={1250}
-                height={1875}
-                className="h-auto w-full object-contain"
-                sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
-                priority
-              />
-            </Link>
-          ) : (
-            <div
-              className="pointer-events-none relative min-w-0 cursor-not-allowed select-none"
-              aria-label="Plano de imigração — disponível para membros VIP"
-            >
-              <span className="sr-only">Exclusivo para membros VIP</span>
-              <Image
-                src="/rafa_cards/plano2.png"
-                alt=""
-                width={1250}
-                height={1875}
-                className="h-auto w-full object-contain opacity-[0.88]"
-                sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
-                priority
-              />
-              <div className={LOCK_OVERLAY_POSITION}>
-                <DashboardCarouselMemberLockIcon className={LOCK_ICON_OVERLAY_CLASS} />
-              </div>
-            </div>
-          )}
-        </section>
-        <section
-          className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
-        >
-          {canAccessMemberVipShortcuts ? (
-            <Link
-              href="/psp/full"
-              className="group relative block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
-              aria-label="Guia Portugal Sem Perrengue"
-            >
-              <Image
-                src="/rafa_cards/psp2.png"
-                alt="Guia Portugal Sem Perrengue"
-                width={1250}
-                height={1875}
-                className="h-auto w-full object-contain"
-                sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
-                priority
-              />
-            </Link>
-          ) : (
-            <div
-              className="pointer-events-none relative min-w-0 cursor-not-allowed select-none"
-              aria-label="Guia Portugal Sem Perrengue — disponível para membros VIP"
-            >
-              <span className="sr-only">Exclusivo para membros VIP</span>
-              <Image
-                src="/rafa_cards/psp2.png"
-                alt=""
-                width={1250}
-                height={1875}
-                className="h-auto w-full object-contain opacity-[0.88]"
-                sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
-                priority
-              />
-              <div className={LOCK_OVERLAY_POSITION}>
-                <DashboardCarouselMemberLockIcon className={LOCK_ICON_OVERLAY_CLASS} />
-              </div>
-            </div>
-          )}
-        </section>
-        <section
-          className={`${DASHBOARD_CARD_CAROUSEL_ITEM} h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
-        >
-          <Link
-            href="/dashboard/services"
-            className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
-            aria-label="Serviços"
+          <section
+            className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
           >
-            <Image
-              src="/rafa_cards/services2.png"
-              alt="Serviços"
-              width={1250}
-              height={1875}
-              className="h-auto w-full object-contain"
-              sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
-              priority
-            />
-          </Link>
-        </section>
-
-        <section
-          className={`${DASHBOARD_CARD_CAROUSEL_ITEM} h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
-        >
-          <a
-            href={COMUNIDADE_RPM_WHATSAPP_GROUP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
-            aria-label="Abrir no WhatsApp — grupo gratuito Comunidade Rafa Portugal"
-          >
-            <Image
-              src="/rafa_cards/grupos_whatsapp.png"
-              alt="Grupos de ajuda WhatsApp"
-              width={1250}
-              height={1875}
-              className="h-auto w-full object-contain"
-              sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
-            />
-          </a>
-        </section>
-
-        <div
-          className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative flex min-h-0 flex-col ${
-            canAccessMemberVipShortcuts
-              ? ""
-              : "overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm"
-          }`}
-        >
-          {canAccessMemberVipShortcuts ? (
-            <RafaCallCard />
-          ) : (
-            <div
-              className="pointer-events-none relative min-h-0 w-full cursor-not-allowed select-none"
-              aria-label="Agendar chamada com a Rafa — disponível para membros VIP"
-            >
-              <span className="sr-only">Exclusivo para membros VIP</span>
-              <Image
-                src="/rafa_cards/agendar_chamada2.png"
-                alt=""
-                width={1250}
-                height={1875}
-                className="h-auto w-full object-contain opacity-[0.88]"
-                sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
-                priority={false}
-              />
-              <div className={LOCK_OVERLAY_POSITION}>
-                <DashboardCarouselMemberLockIcon className={LOCK_ICON_OVERLAY_CLASS} />
+            {canAccessMemberVipShortcuts ? (
+              <Link
+                href="/plano-de-imigracao"
+                className="group relative block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+                aria-label="Plano de imigração"
+              >
+                <Image
+                  src="/rafa_cards/plano2.png"
+                  alt="Plano de imigração"
+                  width={1250}
+                  height={1875}
+                  className="h-auto w-full object-contain"
+                  sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
+                  priority
+                />
+              </Link>
+            ) : (
+              <div
+                className="pointer-events-none relative min-w-0 cursor-not-allowed select-none"
+                aria-label="Plano de imigração — disponível para membros VIP"
+              >
+                <span className="sr-only">Exclusivo para membros VIP</span>
+                <Image
+                  src="/rafa_cards/plano2.png"
+                  alt=""
+                  width={1250}
+                  height={1875}
+                  className="h-auto w-full object-contain opacity-[0.88]"
+                  sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
+                  priority
+                />
+                <div className={LOCK_OVERLAY_POSITION}>
+                  <DashboardCarouselMemberLockIcon className={LOCK_ICON_OVERLAY_CLASS} />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </section>
+          <section
+            className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
+          >
+            {canAccessMemberVipShortcuts ? (
+              <Link
+                href="/psp/full"
+                className="group relative block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+                aria-label="Guia Portugal Sem Perrengue"
+              >
+                <Image
+                  src="/rafa_cards/psp2.png"
+                  alt="Guia Portugal Sem Perrengue"
+                  width={1250}
+                  height={1875}
+                  className="h-auto w-full object-contain"
+                  sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
+                  priority
+                />
+              </Link>
+            ) : (
+              <div
+                className="pointer-events-none relative min-w-0 cursor-not-allowed select-none"
+                aria-label="Guia Portugal Sem Perrengue — disponível para membros VIP"
+              >
+                <span className="sr-only">Exclusivo para membros VIP</span>
+                <Image
+                  src="/rafa_cards/psp2.png"
+                  alt=""
+                  width={1250}
+                  height={1875}
+                  className="h-auto w-full object-contain opacity-[0.88]"
+                  sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
+                  priority
+                />
+                <div className={LOCK_OVERLAY_POSITION}>
+                  <DashboardCarouselMemberLockIcon className={LOCK_ICON_OVERLAY_CLASS} />
+                </div>
+              </div>
+            )}
+          </section>
+          <div
+            className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative flex min-h-0 flex-col ${
+              canAccessMemberVipShortcuts
+                ? ""
+                : "overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm"
+            }`}
+          >
+            {canAccessMemberVipShortcuts ? (
+              <RafaCallCard />
+            ) : (
+              <div
+                className="pointer-events-none relative min-h-0 w-full cursor-not-allowed select-none"
+                aria-label="Agendar chamada com a Rafa — disponível para membros VIP"
+              >
+                <span className="sr-only">Exclusivo para membros VIP</span>
+                <Image
+                  src="/rafa_cards/agendar_chamada2.png"
+                  alt=""
+                  width={1250}
+                  height={1875}
+                  className="h-auto w-full object-contain opacity-[0.88]"
+                  sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
+                  priority={false}
+                />
+                <div className={LOCK_OVERLAY_POSITION}>
+                  <DashboardCarouselMemberLockIcon className={LOCK_ICON_OVERLAY_CLASS} />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <section
-          className={`${DASHBOARD_CARD_CAROUSEL_ITEM} h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
-        >
-          <Link
-            href="/relocation/imoveis"
-            className="group block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
-            aria-label="Imóveis disponíveis em Portugal — ver listagem"
-          >
-            <Image
-              src="/rafa_cards/imoveis2.png"
-              alt="Imóveis disponíveis em Portugal — alugar ou comprar"
-              width={1250}
-              height={1875}
-              className="h-auto w-full object-contain"
-              sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
-            />
-          </Link>
-        </section>
-        </div>
-
-        {/* Mobile: toques nas faixas laterais (peek) só fazem scroll — não abrem o link do cartão */}
         <button
           type="button"
           aria-label="Cartão anterior no carrossel"

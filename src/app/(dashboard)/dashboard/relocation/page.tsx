@@ -8,6 +8,7 @@ import { PartnerEngagementBar } from "@/components/PartnerEngagementBar";
 import { RelocationHouseCard } from "@/components/relocation/RelocationHouseCard";
 import { type RelocationHouseRow } from "@/components/relocation/relocation-house-shared";
 import { CardLinkButton } from "@/components/ui/CardButton";
+import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { getPublicSiteUrl, isOurImageHostname } from "@/lib/site-url";
@@ -26,9 +27,7 @@ type RelocationPartner = {
   };
 };
 
-/**
- * URL para fundo da categoria — alinhado a `resolveUploadsUrl` e ao card em `/dashboard/services`.
- */
+/** Resolve URL de fundo da categoria relocation (uploads / remoto). */
 function categoryBackgroundImageUrl(stored: string | null | undefined): string | null {
   const raw = stored?.trim();
   if (!raw) return null;
@@ -51,6 +50,7 @@ function nextImageUnoptimized(resolvedUrl: string) {
 const PREVIEW_HOUSES = 3;
 
 export default function RelocationHousesPage() {
+  const { user } = useAuth();
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
   const siteBase = getPublicSiteUrl();
   const [rows, setRows] = useState<RelocationHouseRow[]>([]);
@@ -97,20 +97,20 @@ export default function RelocationHousesPage() {
   }, []);
 
   const previewRows = rows.slice(0, PREVIEW_HOUSES);
-  const hasFullListingLink = rows.length > 0;
+  const hasFullListingLink = rows.length > 0 && user?.role === "ADMIN";
 
   return (
     <div className="space-y-8">
       <div className="flex items-center">
         <CardLinkButton
-          href="/dashboard/services"
+          href="/dashboard"
           variant="primary"
           className="shadow-sm"
         >
           <span className="opacity-90" aria-hidden>
             ←
           </span>
-          Outros serviços
+          Início
         </CardLinkButton>
       </div>
 

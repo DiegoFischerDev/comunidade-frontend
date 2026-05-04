@@ -18,6 +18,7 @@ import {
   partnerServiceInterestMessage,
 } from '@/lib/admin-contact-whatsapp';
 import { getPublicSiteUrl } from '@/lib/site-url';
+import { useAuth } from '@/contexts/AuthContext';
 
 type PartnerDetails = {
   id: string;
@@ -46,6 +47,7 @@ type PartnerDetails = {
 };
 
 export default function PartnerPage() {
+  const { user } = useAuth();
   const params = useParams<{ id: string }>();
   const [partner, setPartner] = useState<PartnerDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -152,14 +154,14 @@ export default function PartnerPage() {
     <div className="space-y-8">
       <div className="flex items-center">
         <CardLinkButton
-          href="/dashboard/services"
+          href="/dashboard"
           variant="primary"
           className="shadow-sm"
         >
           <span className="opacity-90" aria-hidden>
             ←
           </span>
-          Outros serviços
+          Início
         </CardLinkButton>
       </div>
 
@@ -333,15 +335,17 @@ export default function PartnerPage() {
                   <RelocationHouseCard key={h.id} house={h} />
                 ))}
               </div>
-              <div className="flex justify-center pt-1">
-                <CardLinkButton
-                  href={`/relocation/imoveis?parceiro=${encodeURIComponent(partner.id)}`}
-                  variant="primary"
-                  className="min-w-[14rem] shadow-sm"
-                >
-                  Ver todos os imóveis
-                </CardLinkButton>
-              </div>
+              {user?.role === 'ADMIN' ? (
+                <div className="flex justify-center pt-1">
+                  <CardLinkButton
+                    href={`/relocation/imoveis?parceiro=${encodeURIComponent(partner.id)}`}
+                    variant="primary"
+                    className="min-w-[14rem] shadow-sm"
+                  >
+                    Ver todos os imóveis
+                  </CardLinkButton>
+                </div>
+              ) : null}
             </>
           )}
         </section>
