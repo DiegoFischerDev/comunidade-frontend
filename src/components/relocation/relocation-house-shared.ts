@@ -79,7 +79,7 @@ export function buildRelocationLeadMessage(h: RelocationHouseRow): string {
   const businessLabel = RELOCATION_BUSINESS_TYPE_LABELS[h.businessType] ?? "Arrendamento";
   const mobilado = h.furnished ? "mobilado" : "não mobilado";
   const propertyLine = `${typologyLabel} (${mobilado}), finalidade ${businessLabel}, por ${h.priceEur} em ${cityLabel} com título ${h.title}.`;
-  return `Olá, gostaria de mais informações sobre o imóvel ${propertyLine} Atendimento com ${h.partner.name}.`;
+  return `Olá, gostaria de mais informações sobre o imóvel (Id: ${h.houseId}) ${propertyLine} Atendimento com ${h.partner.name}.`;
 }
 
 export function openRelocationPartnerWhatsApp(h: RelocationHouseRow): void {

@@ -42,6 +42,7 @@ const TYPOLOGY_LABELS: Record<string, string> = {
 };
 
 function buildHouseLeadMessage(f: {
+  houseId: number;
   title: string;
   city: string;
   businessType: "RENT" | "SALE";
@@ -55,7 +56,7 @@ function buildHouseLeadMessage(f: {
   const mobilado = f.furnished ? "mobilado" : "não mobilado";
   const finalidade = f.businessType === "SALE" ? "venda" : "arrendamento";
   const propertyLine = `${typologyLabel} (${mobilado}), para ${finalidade}, por ${f.price} em ${cityLabel} com título ${f.title}.`;
-  return `Olá, gostaria de mais informações sobre o imóvel ${propertyLine} Atendimento com ${f.partnerName}.`;
+  return `Olá, gostaria de mais informações sobre o imóvel (Id: ${f.houseId}) ${propertyLine} Atendimento com ${f.partnerName}.`;
 }
 
 export function HouseContactSection({
@@ -89,6 +90,7 @@ export function HouseContactSection({
       }
       const partner = await api.marketplace.partnerDetails(partnerId);
       const text = buildHouseLeadMessage({
+        houseId: data.houseId,
         title: data.title,
         city: data.city,
         businessType: data.businessType,

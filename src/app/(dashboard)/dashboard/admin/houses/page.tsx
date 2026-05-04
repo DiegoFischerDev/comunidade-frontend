@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { HouseStatusBadge } from '@/components/house/HouseStatusBadge';
 import { RelocationCityCombobox } from '@/components/relocation/RelocationCityCombobox';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { isRelocationPortugalCity, relocationCityDisplayName } from '@/lib/relocation-portugal-cities';
+import { relocationCityDisplayName } from '@/lib/relocation-portugal-cities';
 
 type AdminHouseRow = Awaited<ReturnType<typeof api.admin.houses.list>>[number];
 type WhatsappGroupRow = Awaited<ReturnType<typeof api.admin.houseWhatsappGroups.list>>[number];
@@ -60,6 +61,7 @@ function todayLocalDateInputValue(): string {
 }
 
 export default function AdminHousesPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const [items, setItems] = useState<AdminHouseRow[]>([]);
@@ -103,6 +105,15 @@ export default function AdminHousesPage() {
   const [filterCityContains, setFilterCityContains] = useState('');
   const [filterTypology, setFilterTypology] = useState<string>('ALL');
   const [filterPartnerId, setFilterPartnerId] = useState<string>('ALL');
+  const [showUpdatedBanner, setShowUpdatedBanner] = useState(false);
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('updated') === '1') {
+      setShowUpdatedBanner(true);
+      router.replace('/dashboard/admin/houses', { scroll: false });
+    }
+  }, [router]);
 
   const load = useCallback(async () => {
     const data = await api.admin.houses.list();
@@ -175,6 +186,7 @@ export default function AdminHousesPage() {
         const cityPt = cityLabel(h.city).toLowerCase();
         const typoPt = typologyLabel(h.typology).toLowerCase();
         const hay = [
+          String(h.houseId),
           h.title,
           h.city,
           cityPt,
@@ -380,37 +392,22 @@ export default function AdminHousesPage() {
   const onCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-    const cleanTitle = title.trim();
-    const cleanDesc = description.trim();
-    const cleanPrice = priceEur.trim();
-    const cleanRelocation = relocationFeeEur.trim().replace(/\s*€\s*$/i, '').trim();
-    const cleanCity = city.trim();
-    if (!cleanTitle) return setError('Preenche o título do imóvel.');
-    if (!cleanDesc) return setError('Preenche a descrição.');
-    if (!cleanCity) return setError('Preenche a cidade.');
-    if (!isRelocationPortugalCity(cleanCity)) {
-      return setError('Escolhe uma cidade da lista.');
-    }
-    if (!availableFrom) return setError('Seleciona a data em "Disponível a partir".');
-    if (!cleanPrice) {
-      return setError(businessType === 'SALE' ? 'Preenche o preço de venda.' : 'Preenche o preço do arrendamento.');
-    }
-    if (!cleanRelocation) return setError('Preenche a taxa de relocation.');
-    if (images.length === 0 && !video) return setError('Adiciona pelo menos 1 imagem ou 1 vídeo.');
     if (images.length > 6) return setError('Podes enviar no máximo 6 imagens.');
+
+    const cleanRelocation = relocationFeeEur.trim().replace(/\s*€\s*$/i, '').trim();
 
     setSavingCreate(true);
     try {
       await api.admin.houses.create({
         ...(images.length ? { images } : {}),
         ...(video ? { video } : {}),
-        title: cleanTitle,
-        description: cleanDesc,
+        title: title.trim(),
+        description: description.trim(),
         businessType,
         typology,
-        city: cleanCity,
+        city: city.trim(),
         availableFrom,
-        priceEur: cleanPrice,
+        priceEur: priceEur.trim(),
         relocationFeeEur: cleanRelocation,
         caucoesCount,
         rendasEntradaCount,
@@ -476,6 +473,12 @@ export default function AdminHousesPage() {
       {error && (
         <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
       )}
+
+      {showUpdatedBanner ? (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+          Anúncio atualizado com sucesso.
+        </div>
+      ) : null}
 
       {loading ? (
         <p className="text-sm text-zinc-600">Carregando…</p>
@@ -592,117 +595,213 @@ export default function AdminHousesPage() {
               </button>
             </p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-              <table className="min-w-full text-sm">
-                <thead className="bg-zinc-50 text-zinc-600">
-                  <tr>
-                    <th className="px-4 py-2 text-left">Título</th>
-                    <th className="px-4 py-2 text-left">Finalidade</th>
-                    <th className="px-4 py-2 text-left">Parceiro</th>
-                    <th className="px-4 py-2 text-left">Categoria</th>
-                    <th className="px-4 py-2 text-left">Destaque</th>
-                    <th className="px-4 py-2 text-left">Estado</th>
-                    <th className="px-4 py-2 text-left">Disponível a partir</th>
-                    <th className="px-4 py-2 text-left">Criado</th>
-                    <th className="px-4 py-2 text-left">Enviado em</th>
-                    <th className="px-4 py-2 text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredItems.map((h) => (
-                    <tr key={h.id} className="border-t border-zinc-200">
-                      <td className="max-w-[200px] px-4 py-2 align-top">
-                        <span className="line-clamp-2 font-medium text-zinc-900">{h.title}</span>
-                        <p className="mt-0.5 text-xs text-zinc-500">
-                          {cityLabel(h.city)} · {typologyLabel(h.typology)}
+            <>
+              <div className="space-y-3 md:hidden">
+                {filteredItems.map((h) => (
+                  <article
+                    key={h.id}
+                    className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm ring-1 ring-zinc-900/5"
+                  >
+                    <div className="flex flex-col gap-3">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Título</p>
+                        <p className="mt-0.5 text-sm font-semibold leading-snug text-zinc-900">{h.title}</p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Parceiro</p>
+                        <p className="mt-0.5 text-sm text-zinc-800">{h.partner.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                          Finalidade
                         </p>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-2 align-top text-zinc-800">
-                        {BUSINESS_TYPE_LABELS[h.businessType] ?? h.businessType}
-                      </td>
-                      <td className="px-4 py-2 align-top">{h.partner.name}</td>
-                      <td className="px-4 py-2 align-top">
-                        {h.partner.category?.name ?? '—'}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-2 align-top text-xs">
-                        {h.featured ? (
-                          <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900">
-                            Em destaque
-                          </span>
-                        ) : (
-                          <span className="text-zinc-500">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2 align-top">
-                        <HouseStatusBadge status={h.status} />
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-2 align-top">
-                        {new Date(h.availableFrom).toLocaleDateString('pt-PT')}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-2 align-top">
-                        {new Date(h.createdAt).toLocaleString('pt-PT')}
-                      </td>
-                      <td
-                        className="whitespace-nowrap px-4 py-2 align-top text-xs text-zinc-700"
-                        title={h.whatsappError?.trim() ? h.whatsappError : undefined}
-                      >
-                        {h.partner.category?.slug === 'relocation' && h.whatsappSentAt
-                          ? new Date(h.whatsappSentAt).toLocaleString('pt-PT')
-                          : '—'}
-                      </td>
-                      <td className="px-4 py-2 text-right align-top">
-                        <div className="flex flex-wrap items-center justify-end gap-2">
-                          {h.partner.category?.slug === 'relocation' ? (
+                        <p className="mt-0.5 text-sm text-zinc-800">
+                          {BUSINESS_TYPE_LABELS[h.businessType] ?? h.businessType}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Estado</p>
+                        <div className="mt-1">
+                          <HouseStatusBadge status={h.status} />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2 border-t border-zinc-100 pt-3">
+                        {h.partner.category?.slug === 'relocation' ? (
+                          <button
+                            type="button"
+                            disabled={sendingWhatsappHouseId === h.id}
+                            onClick={() => void onSendHouseToWhatsappGroups(h.id)}
+                            className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
+                          >
+                            {sendingWhatsappHouseId === h.id ? 'A enviar…' : 'Enviar nos grupos'}
+                          </button>
+                        ) : null}
+                        <Link
+                          href={`/dashboard/admin/houses/${encodeURIComponent(h.id)}/edit`}
+                          className="flex w-full items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                        >
+                          Editar
+                        </Link>
+                        <Link
+                          href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex w-full items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                        >
+                          Ver imóvel
+                        </Link>
+                        <button
+                          type="button"
+                          disabled={featuringId === h.id}
+                          onClick={() => onToggleFeatured(h.id, !h.featured)}
+                          className={`w-full rounded-lg border px-3 py-2.5 text-sm font-medium disabled:opacity-50 ${
+                            h.featured
+                              ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                              : 'border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50'
+                          }`}
+                        >
+                          {featuringId === h.id
+                            ? 'A atualizar…'
+                            : h.featured
+                              ? 'Remover destaque'
+                              : 'Destacar'}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busyId === h.id}
+                          onClick={() => onDelete(h.id)}
+                          className="w-full rounded-lg border border-red-200 bg-white px-3 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                        >
+                          {busyId === h.id ? 'A apagar…' : 'Eliminar'}
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              <div className="hidden overflow-x-auto rounded-lg border border-zinc-200 bg-white md:block">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-zinc-50 text-zinc-600">
+                    <tr>
+                      <th className="whitespace-nowrap px-4 py-2 text-left">Id</th>
+                      <th className="px-4 py-2 text-left">Título</th>
+                      <th className="px-4 py-2 text-left">Finalidade</th>
+                      <th className="px-4 py-2 text-left">Parceiro</th>
+                      <th className="px-4 py-2 text-left">Categoria</th>
+                      <th className="px-4 py-2 text-left">Destaque</th>
+                      <th className="px-4 py-2 text-left">Estado</th>
+                      <th className="px-4 py-2 text-left">Disponível a partir</th>
+                      <th className="px-4 py-2 text-left">Criado</th>
+                      <th className="px-4 py-2 text-left">Enviado em</th>
+                      <th className="px-4 py-2 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredItems.map((h) => (
+                      <tr key={h.id} className="border-t border-zinc-200">
+                        <td className="whitespace-nowrap px-4 py-2 align-top font-mono text-xs tabular-nums text-zinc-700">
+                          {h.houseId}
+                        </td>
+                        <td className="max-w-[200px] px-4 py-2 align-top">
+                          <span className="line-clamp-2 font-medium text-zinc-900">{h.title}</span>
+                          <p className="mt-0.5 text-xs text-zinc-500">
+                            {cityLabel(h.city)} · {typologyLabel(h.typology)}
+                          </p>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-2 align-top text-zinc-800">
+                          {BUSINESS_TYPE_LABELS[h.businessType] ?? h.businessType}
+                        </td>
+                        <td className="px-4 py-2 align-top">{h.partner.name}</td>
+                        <td className="px-4 py-2 align-top">
+                          {h.partner.category?.name ?? '—'}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-2 align-top text-xs">
+                          {h.featured ? (
+                            <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900">
+                              Em destaque
+                            </span>
+                          ) : (
+                            <span className="text-zinc-500">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 align-top">
+                          <HouseStatusBadge status={h.status} />
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-2 align-top">
+                          {new Date(h.availableFrom).toLocaleDateString('pt-PT')}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-2 align-top">
+                          {new Date(h.createdAt).toLocaleString('pt-PT')}
+                        </td>
+                        <td
+                          className="whitespace-nowrap px-4 py-2 align-top text-xs text-zinc-700"
+                          title={h.whatsappError?.trim() ? h.whatsappError : undefined}
+                        >
+                          {h.partner.category?.slug === 'relocation' && h.whatsappSentAt
+                            ? new Date(h.whatsappSentAt).toLocaleString('pt-PT')
+                            : '—'}
+                        </td>
+                        <td className="px-4 py-2 text-right align-top">
+                          <div className="flex flex-wrap items-center justify-end gap-2">
+                            {h.partner.category?.slug === 'relocation' ? (
+                              <button
+                                type="button"
+                                disabled={sendingWhatsappHouseId === h.id}
+                                onClick={() => void onSendHouseToWhatsappGroups(h.id)}
+                                className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
+                              >
+                                {sendingWhatsappHouseId === h.id
+                                  ? 'A enviar…'
+                                  : 'Enviar nos grupos'}
+                              </button>
+                            ) : null}
+                            <Link
+                              href={`/dashboard/admin/houses/${encodeURIComponent(h.id)}/edit`}
+                              className="inline-flex rounded-md border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
+                            >
+                              Editar
+                            </Link>
+                            <Link
+                              href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex rounded-md border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
+                            >
+                              Ver imóvel
+                            </Link>
                             <button
                               type="button"
-                              disabled={sendingWhatsappHouseId === h.id}
-                              onClick={() => void onSendHouseToWhatsappGroups(h.id)}
-                              className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
+                              disabled={featuringId === h.id}
+                              onClick={() => onToggleFeatured(h.id, !h.featured)}
+                              className={`rounded-md border px-3 py-1 text-xs font-medium disabled:opacity-50 ${
+                                h.featured
+                                  ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                                  : 'border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50'
+                              }`}
                             >
-                              {sendingWhatsappHouseId === h.id
-                                ? 'A enviar…'
-                                : 'Enviar nos grupos'}
+                              {featuringId === h.id
+                                ? 'A atualizar…'
+                                : h.featured
+                                  ? 'Remover destaque'
+                                  : 'Destacar'}
                             </button>
-                          ) : null}
-                          <Link
-                            href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex rounded-md border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
-                          >
-                            Ver imóvel
-                          </Link>
-                          <button
-                            type="button"
-                            disabled={featuringId === h.id}
-                            onClick={() => onToggleFeatured(h.id, !h.featured)}
-                            className={`rounded-md border px-3 py-1 text-xs font-medium disabled:opacity-50 ${
-                              h.featured
-                                ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
-                                : 'border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50'
-                            }`}
-                          >
-                            {featuringId === h.id
-                              ? 'A atualizar…'
-                              : h.featured
-                                ? 'Remover destaque'
-                                : 'Destacar'}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busyId === h.id}
-                            onClick={() => onDelete(h.id)}
-                            className="rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
-                          >
-                            {busyId === h.id ? 'A apagar…' : 'Eliminar'}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                            <button
+                              type="button"
+                              disabled={busyId === h.id}
+                              onClick={() => onDelete(h.id)}
+                              className="rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                            >
+                              {busyId === h.id ? 'A apagar…' : 'Eliminar'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}
@@ -714,8 +813,9 @@ export default function AdminHousesPage() {
               <div>
                 <h2 className="text-xl font-semibold text-zinc-900">Adicionar casa</h2>
                 <p className="mt-1 text-sm text-zinc-600">
-                  O anúncio fica apenas na plataforma. Para WhatsApp, usa &quot;Enviar nos grupos&quot; na lista (após
-                  configurares os grupos).{' '}
+                  Todos os campos são opcionais: podes guardar um rascunho incompleto e completar depois em
+                  &quot;Editar&quot;. O anúncio fica apenas na plataforma; para WhatsApp, usa &quot;Enviar nos
+                  grupos&quot; na lista (após configurares os grupos).{' '}
                   {createAssignedPartnerId.trim() ? (
                     <>
                       O anúncio fica titulado pelo parceiro escolhido; na página pública, o contacto é o WhatsApp
@@ -770,7 +870,6 @@ export default function AdminHousesPage() {
                     onChange={(e) => setTitle(e.target.value)}
                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                     placeholder="Ex.: T2 mobilado no Porto"
-                    required
                   />
                 </label>
                 <div className="text-sm">
@@ -780,10 +879,9 @@ export default function AdminHousesPage() {
                     labelClassName="mb-1 block text-xs font-medium text-zinc-700"
                     value={city}
                     onChange={setCity}
-                    allowEmpty={false}
+                    allowEmpty
                     placeholder="Pesquisar cidade…"
                     variant="amber"
-                    required
                   />
                 </div>
                 <label className="text-sm">
@@ -821,7 +919,6 @@ export default function AdminHousesPage() {
                     value={availableFrom}
                     onChange={(e) => setAvailableFrom(e.target.value)}
                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                    required
                   />
                 </label>
                 <label className="text-sm">
@@ -832,7 +929,6 @@ export default function AdminHousesPage() {
                     value={priceEur}
                     onChange={(e) => setPriceEur(e.target.value)}
                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                    required
                   />
                 </label>
                 <label className="text-sm">
@@ -841,7 +937,6 @@ export default function AdminHousesPage() {
                     value={relocationFeeEur}
                     onChange={(e) => setRelocationFeeEur(e.target.value)}
                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                    required
                   />
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -892,7 +987,6 @@ export default function AdminHousesPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   rows={4}
                   className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                  required
                 />
               </label>
 

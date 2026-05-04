@@ -90,7 +90,7 @@ export function RelocationHouseCard({ house: h, showContactButton = true }: Prop
             <HouseStatusBadge status={h.status} className="shrink-0 self-start" />
           </div>
           <p className="mt-1 text-xs text-zinc-500">
-            {typoLabel} · {cityLabel} · {businessTypeLabel}
+            Id: {h.houseId} · {typoLabel} · {cityLabel} · {businessTypeLabel}
           </p>
         </div>
 

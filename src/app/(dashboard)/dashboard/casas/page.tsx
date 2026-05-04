@@ -98,6 +98,7 @@ export default function PartnerHousesPage() {
     if (!q) return rows;
     return rows.filter((r) => {
       const text = [
+        String(r.houseId),
         r.title,
         r.city,
         CITY_LABELS[r.city] ?? "",
@@ -239,7 +240,7 @@ export default function PartnerHousesPage() {
             <input
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              placeholder="Pesquisar por título, cidade, tipologia, preço…"
+              placeholder="Pesquisar por Id, título, cidade, tipologia, preço…"
               className="mt-1 w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
@@ -248,6 +249,7 @@ export default function PartnerHousesPage() {
             <table className="min-w-full text-sm">
               <thead className="bg-zinc-50 text-zinc-600">
                 <tr>
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-medium">Id</th>
                   <th className="px-4 py-3 text-left font-medium">Título</th>
                   <th className="px-4 py-3 text-left font-medium">Cidade</th>
                   <th className="px-4 py-3 text-left font-medium">Tipologia</th>
@@ -265,6 +267,9 @@ export default function PartnerHousesPage() {
               <tbody className="divide-y divide-zinc-100">
                 {filtered.map((r) => (
                   <tr key={r.id} className="align-top">
+                    <td className="whitespace-nowrap px-4 py-3 font-mono text-xs tabular-nums text-zinc-600">
+                      {r.houseId}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="font-semibold text-zinc-900">
                         {r.title}
