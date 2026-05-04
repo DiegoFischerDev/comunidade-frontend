@@ -7,10 +7,7 @@ import { RelocationCityCombobox } from "@/components/relocation/RelocationCityCo
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { CardButton, CardLinkButton } from "@/components/ui/CardButton";
-import {
-  isRelocationPortugalCity,
-  migrateLegacyHouseCityToCanonical,
-} from "@/lib/relocation-portugal-cities";
+import { migrateLegacyHouseCityToCanonical } from "@/lib/relocation-portugal-cities";
 
 const TYPOLOGIES = [
   { id: "T1", label: "T1" },
@@ -193,8 +190,8 @@ export default function AdminEditHousePage() {
     if (!cleanTitle) return setError("Preenche o título do imóvel.");
     if (!cleanDesc) return setError("Preenche a descrição.");
     if (!cleanCity) return setError("Preenche a cidade.");
-    if (!isRelocationPortugalCity(cleanCity)) {
-      return setError("Escolhe uma cidade da lista.");
+    if (cleanCity.length > 120) {
+      return setError("O nome da cidade não pode ter mais de 120 caracteres.");
     }
     if (!availableFrom) return setError('Seleciona a data em "Disponível em".');
     if (!cleanPrice) return setError(businessType === "SALE" ? "Preenche o preço de venda." : "Preenche o preço do arrendamento.");
@@ -496,6 +493,7 @@ export default function AdminEditHousePage() {
               value={city}
               onChange={setCity}
               allowEmpty={false}
+              allowCustomValue
               placeholder="Pesquisar cidade…"
               variant="blue"
               required

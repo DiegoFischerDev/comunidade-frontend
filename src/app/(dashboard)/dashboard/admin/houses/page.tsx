@@ -7,7 +7,10 @@ import { HouseStatusBadge } from '@/components/house/HouseStatusBadge';
 import { RelocationCityCombobox } from '@/components/relocation/RelocationCityCombobox';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { relocationCityDisplayName } from '@/lib/relocation-portugal-cities';
+import {
+  isRelocationPortugalCity,
+  relocationCityDisplayName,
+} from '@/lib/relocation-portugal-cities';
 
 type AdminHouseRow = Awaited<ReturnType<typeof api.admin.houses.list>>[number];
 type WhatsappGroupRow = Awaited<ReturnType<typeof api.admin.houseWhatsappGroups.list>>[number];
@@ -176,6 +179,15 @@ export default function AdminHousesPage() {
       map.set(h.partner.id, h.partner.name);
     }
     return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], 'pt-PT'));
+  }, [items]);
+
+  const extraRelocationCitiesFromHouses = useMemo(() => {
+    const out = new Set<string>();
+    for (const h of items) {
+      const c = h.city?.trim() ?? '';
+      if (c && !isRelocationPortugalCity(c)) out.add(c);
+    }
+    return [...out];
   }, [items]);
 
   const filteredItems = useMemo(() => {
@@ -625,54 +637,147 @@ export default function AdminHousesPage() {
                           <HouseStatusBadge status={h.status} />
                         </div>
                       </div>
-                      <div className="flex flex-col gap-2 border-t border-zinc-100 pt-3">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                          Enviado em
+                        </p>
+                        <p
+                          className={`mt-0.5 text-sm ${
+                            h.partner.category?.slug === 'relocation' &&
+                            sendingWhatsappHouseId === h.id
+                              ? 'font-medium text-emerald-800'
+                              : 'text-zinc-800'
+                          }`}
+                          title={
+                            h.partner.category?.slug === 'relocation' && h.whatsappError?.trim()
+                              ? h.whatsappError
+                              : undefined
+                          }
+                        >
+                          {h.partner.category?.slug !== 'relocation'
+                            ? '—'
+                            : sendingWhatsappHouseId === h.id
+                              ? 'Enviando...'
+                              : h.whatsappSentAt
+                                ? new Date(h.whatsappSentAt).toLocaleString('pt-PT')
+                                : '—'}
+                        </p>
+                      </div>
+                      <div className="flex flex-nowrap items-center justify-center gap-2 border-t border-zinc-100 pt-3">
                         {h.partner.category?.slug === 'relocation' ? (
                           <button
                             type="button"
+                            title="Enviar nos grupos WhatsApp"
+                            aria-label="Enviar nos grupos WhatsApp"
                             disabled={sendingWhatsappHouseId === h.id}
                             onClick={() => void onSendHouseToWhatsappGroups(h.id)}
-                            className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
+                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
                           >
-                            {sendingWhatsappHouseId === h.id ? 'A enviar…' : 'Enviar nos grupos'}
+                            {sendingWhatsappHouseId === h.id ? (
+                              <svg
+                                className="h-5 w-5 animate-spin"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                aria-hidden
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                className="h-5 w-5"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                                viewBox="0 0 24 24"
+                                aria-hidden
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+                                />
+                              </svg>
+                            )}
                           </button>
                         ) : null}
                         <Link
                           href={`/dashboard/admin/houses/${encodeURIComponent(h.id)}/edit`}
-                          className="flex w-full items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                          title="Editar anúncio"
+                          aria-label="Editar anúncio"
+                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50"
                         >
-                          Editar
-                        </Link>
-                        <Link
-                          href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex w-full items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
-                        >
-                          Ver imóvel
+                          <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            viewBox="0 0 24 24"
+                            aria-hidden
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+                            />
+                          </svg>
                         </Link>
                         <button
                           type="button"
-                          disabled={featuringId === h.id}
-                          onClick={() => onToggleFeatured(h.id, !h.featured)}
-                          className={`w-full rounded-lg border px-3 py-2.5 text-sm font-medium disabled:opacity-50 ${
-                            h.featured
-                              ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
-                              : 'border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50'
-                          }`}
-                        >
-                          {featuringId === h.id
-                            ? 'A atualizar…'
-                            : h.featured
-                              ? 'Remover destaque'
-                              : 'Destacar'}
-                        </button>
-                        <button
-                          type="button"
+                          title="Eliminar anúncio"
+                          aria-label="Eliminar anúncio"
                           disabled={busyId === h.id}
                           onClick={() => onDelete(h.id)}
-                          className="w-full rounded-lg border border-red-200 bg-white px-3 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:opacity-50"
                         >
-                          {busyId === h.id ? 'A apagar…' : 'Eliminar'}
+                          {busyId === h.id ? (
+                            <svg
+                              className="h-5 w-5 animate-spin"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              aria-hidden
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              />
+                            </svg>
+                          ) : (
+                            <svg
+                              className="h-5 w-5"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                              viewBox="0 0 24 24"
+                              aria-hidden
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M14.74 9l-.346 9m-4.008 0L9.22 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                              />
+                            </svg>
+                          )}
                         </button>
                       </div>
                     </div>
@@ -880,6 +985,8 @@ export default function AdminHousesPage() {
                     value={city}
                     onChange={setCity}
                     allowEmpty
+                    allowCustomValue
+                    extraCityOptions={extraRelocationCitiesFromHouses}
                     placeholder="Pesquisar cidade…"
                     variant="amber"
                   />

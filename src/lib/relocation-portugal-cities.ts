@@ -1,5 +1,6 @@
 /**
  * Principais cidades de Portugal para imóveis relocation (valor guardado = etiqueta).
+ * Cidades extra usadas na BD podem ser fundidas no combobox (admin).
  * Manter alinhado com `backend/src/partner/relocation-cities.ts`.
  */
 export const RELOCATION_PORTUGAL_CITIES = [
@@ -142,10 +143,13 @@ export function foldCitySearch(s: string): string {
     .toLowerCase();
 }
 
-export function filterRelocationCitiesByQuery(query: string): readonly string[] {
+export function filterRelocationCitiesByQuery(
+  query: string,
+  cityList: readonly string[] = RELOCATION_PORTUGAL_CITIES,
+): readonly string[] {
   const q = foldCitySearch(query.trim());
-  if (!q) return RELOCATION_PORTUGAL_CITIES;
-  return RELOCATION_PORTUGAL_CITIES.filter((c) => foldCitySearch(c).includes(q));
+  if (!q) return cityList;
+  return cityList.filter((c) => foldCitySearch(c).includes(q));
 }
 
 /** JSON-LD / schema.org `addressLocality`. */
