@@ -36,6 +36,11 @@ const BUSINESS_TYPES = [
   { id: 'SALE', label: 'Venda' },
 ] as const;
 
+const GROUP_FINALIDADE_LABELS: Record<'RENT' | 'SALE', string> = {
+  RENT: 'Arrendamento',
+  SALE: 'Venda',
+};
+
 const ENTRADA_COUNT_OPTIONS = Array.from({ length: 13 }, (_, i) => String(i));
 
 function cityLabel(id: string): string {
@@ -68,8 +73,10 @@ export default function AdminHousesPage() {
   const [loadingWhatsappGroups, setLoadingWhatsappGroups] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupJid, setNewGroupJid] = useState('');
+  const [newGroupBusinessType, setNewGroupBusinessType] = useState<'RENT' | 'SALE'>('RENT');
   const [savingWhatsappGroup, setSavingWhatsappGroup] = useState(false);
   const [togglingGroupId, setTogglingGroupId] = useState<string | null>(null);
+  const [updatingGroupPurposeId, setUpdatingGroupPurposeId] = useState<string | null>(null);
   const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
   const [sendingWhatsappHouseId, setSendingWhatsappHouseId] = useState<string | null>(null);
   const [savingCreate, setSavingCreate] = useState(false);
@@ -279,14 +286,33 @@ export default function AdminHousesPage() {
     if (!jid) return setError('Indica o JID do grupo (ex.: 120363…@g.us).');
     setSavingWhatsappGroup(true);
     try {
-      const created = await api.admin.houseWhatsappGroups.create({ name, groupJid: jid });
+      const created = await api.admin.houseWhatsappGroups.create({
+        name,
+        groupJid: jid,
+        businessType: newGroupBusinessType,
+      });
       setWhatsappGroups((prev) => [...prev, created].sort((a, b) => a.sortOrder - b.sortOrder));
       setNewGroupName('');
       setNewGroupJid('');
+      setNewGroupBusinessType('RENT');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao adicionar grupo.');
     } finally {
       setSavingWhatsappGroup(false);
+    }
+  };
+
+  const onUpdateGroupFinalidade = async (g: WhatsappGroupRow, businessType: 'RENT' | 'SALE') => {
+    if (g.businessType === businessType) return;
+    setUpdatingGroupPurposeId(g.id);
+    setError('');
+    try {
+      const updated = await api.admin.houseWhatsappGroups.update(g.id, { businessType });
+      setWhatsappGroups((prev) => prev.map((x) => (x.id === g.id ? updated : x)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao atualizar a finalidade do grupo.');
+    } finally {
+      setUpdatingGroupPurposeId(null);
     }
   };
 
@@ -318,13 +344,6 @@ export default function AdminHousesPage() {
   };
 
   const onSendHouseToWhatsappGroups = async (houseId: string) => {
-    if (
-      !window.confirm(
-        'Enviar este anúncio aos grupos ativos? Ordem: imagens, vídeo (se existir), texto com link.',
-      )
-    ) {
-      return;
-    }
     setSendingWhatsappHouseId(houseId);
     setError('');
     try {
@@ -585,7 +604,7 @@ export default function AdminHousesPage() {
                     <th className="px-4 py-2 text-left">Estado</th>
                     <th className="px-4 py-2 text-left">Disponível a partir</th>
                     <th className="px-4 py-2 text-left">Criado</th>
-                    <th className="px-4 py-2 text-left">WhatsApp</th>
+                    <th className="px-4 py-2 text-left">Enviado em</th>
                     <th className="px-4 py-2 text-right">Ações</th>
                   </tr>
                 </thead>
@@ -623,18 +642,13 @@ export default function AdminHousesPage() {
                       <td className="whitespace-nowrap px-4 py-2 align-top">
                         {new Date(h.createdAt).toLocaleString('pt-PT')}
                       </td>
-                      <td className="max-w-[140px] px-4 py-2 align-top text-xs text-zinc-600">
-                        {h.partner.category?.slug === 'relocation' ? (
-                          h.whatsappSentAt ? (
-                            <span className="text-emerald-700" title={h.whatsappError ?? ''}>
-                              Enviado
-                            </span>
-                          ) : (
-                            <span className="text-zinc-500">—</span>
-                          )
-                        ) : (
-                          <span className="text-zinc-400">N/A</span>
-                        )}
+                      <td
+                        className="whitespace-nowrap px-4 py-2 align-top text-xs text-zinc-700"
+                        title={h.whatsappError?.trim() ? h.whatsappError : undefined}
+                      >
+                        {h.partner.category?.slug === 'relocation' && h.whatsappSentAt
+                          ? new Date(h.whatsappSentAt).toLocaleString('pt-PT')
+                          : '—'}
                       </td>
                       <td className="px-4 py-2 text-right align-top">
                         <div className="flex flex-wrap items-center justify-end gap-2">
@@ -953,8 +967,10 @@ export default function AdminHousesPage() {
               <div>
                 <h2 className="text-xl font-semibold text-zinc-900">Grupos WhatsApp (relocation)</h2>
                 <p className="mt-1 text-sm text-zinc-600">
-                  Só os grupos <strong className="font-semibold">ativos</strong> recebem o envio ao clicar em
-                  &quot;Enviar nos grupos&quot; num imóvel. Ordem: imagens, vídeo (se existir), texto com link.
+                  Só os grupos <strong className="font-semibold">ativos</strong> e com a mesma{' '}
+                  <strong className="font-semibold">finalidade</strong> que o imóvel (arrendamento ou venda) recebem o
+                  envio em &quot;Enviar nos grupos&quot;. Ordem: imagens, vídeo (se existir), texto com resumo e
+                  descrição (sem link).
                 </p>
               </div>
               <button
@@ -976,6 +992,7 @@ export default function AdminHousesPage() {
                   <thead className="bg-zinc-50 text-left text-xs font-medium text-zinc-600">
                     <tr>
                       <th className="px-3 py-2">Nome</th>
+                      <th className="px-3 py-2">Finalidade</th>
                       <th className="px-3 py-2">JID</th>
                       <th className="px-3 py-2">Ativo</th>
                       <th className="px-3 py-2 text-right">—</th>
@@ -985,6 +1002,22 @@ export default function AdminHousesPage() {
                     {whatsappGroups.map((g) => (
                       <tr key={g.id} className="border-t border-zinc-100">
                         <td className="px-3 py-2 font-medium text-zinc-900">{g.name}</td>
+                        <td className="whitespace-nowrap px-3 py-2">
+                          <select
+                            value={g.businessType}
+                            disabled={updatingGroupPurposeId === g.id}
+                            onChange={(e) =>
+                              void onUpdateGroupFinalidade(
+                                g,
+                                e.target.value as 'RENT' | 'SALE',
+                              )
+                            }
+                            className="max-w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900"
+                          >
+                            <option value="RENT">{GROUP_FINALIDADE_LABELS.RENT}</option>
+                            <option value="SALE">{GROUP_FINALIDADE_LABELS.SALE}</option>
+                          </select>
+                        </td>
                         <td
                           className="max-w-[200px] truncate px-3 py-2 font-mono text-xs text-zinc-600"
                           title={g.groupJid}
@@ -1033,6 +1066,19 @@ export default function AdminHousesPage() {
                   className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                   placeholder="Ex.: Clientes Lisboa"
                 />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1 block text-xs text-zinc-600">Finalidade</span>
+                <select
+                  value={newGroupBusinessType}
+                  onChange={(e) =>
+                    setNewGroupBusinessType(e.target.value as 'RENT' | 'SALE')
+                  }
+                  className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+                >
+                  <option value="RENT">{GROUP_FINALIDADE_LABELS.RENT}</option>
+                  <option value="SALE">{GROUP_FINALIDADE_LABELS.SALE}</option>
+                </select>
               </label>
               <label className="block text-sm">
                 <span className="mb-1 block text-xs text-zinc-600">Código (JID)</span>

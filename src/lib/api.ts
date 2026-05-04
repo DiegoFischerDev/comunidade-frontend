@@ -794,17 +794,19 @@ export const api = {
             id: string;
             name: string;
             groupJid: string;
+            businessType: 'RENT' | 'SALE';
             active: boolean;
             sortOrder: number;
             createdAt: string;
             updatedAt: string;
           }[]
         >('/partners/admin/house-whatsapp-groups', { method: 'GET' }),
-      create: (body: { name: string; groupJid: string }) =>
+      create: (body: { name: string; groupJid: string; businessType: 'RENT' | 'SALE' }) =>
         request<{
           id: string;
           name: string;
           groupJid: string;
+          businessType: 'RENT' | 'SALE';
           active: boolean;
           sortOrder: number;
           createdAt: string;
@@ -813,11 +815,15 @@ export const api = {
           method: 'POST',
           body: JSON.stringify(body),
         }),
-      update: (id: string, body: { name?: string; active?: boolean }) =>
+      update: (
+        id: string,
+        body: { name?: string; active?: boolean; businessType?: 'RENT' | 'SALE' },
+      ) =>
         request<{
           id: string;
           name: string;
           groupJid: string;
+          businessType: 'RENT' | 'SALE';
           active: boolean;
           sortOrder: number;
           createdAt: string;
