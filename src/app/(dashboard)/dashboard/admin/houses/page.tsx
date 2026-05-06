@@ -11,6 +11,8 @@ import {
   isRelocationPortugalCity,
   relocationCityDisplayName,
 } from '@/lib/relocation-portugal-cities';
+import { orderHouseImagesWithCoverFirst } from '@/lib/house-entrance';
+import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
 
 type AdminHouseRow = Awaited<ReturnType<typeof api.admin.houses.list>>[number];
 type WhatsappGroupRow = Awaited<ReturnType<typeof api.admin.houseWhatsappGroups.list>>[number];
@@ -51,6 +53,51 @@ function cityLabel(id: string): string {
   return relocationCityDisplayName(id);
 }
 
+function statusSelectClass(status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE'): string {
+  switch (status) {
+    case 'AVAILABLE':
+      return 'border-emerald-200 bg-emerald-50 text-emerald-950 focus:border-emerald-400 focus:ring-emerald-400';
+    case 'RESERVED':
+      return 'border-amber-200 bg-amber-50 text-amber-950 focus:border-amber-400 focus:ring-amber-400';
+    case 'UNAVAILABLE':
+      return 'border-zinc-200 bg-zinc-50 text-zinc-800 focus:border-zinc-400 focus:ring-zinc-400';
+  }
+}
+
+function adminHouseWhatsAppSendDatesLabel(h: {
+  whatsappSends?: { sentAt: string }[];
+  whatsappSentAt: string | null;
+}): string {
+  const fromArray = (h.whatsappSends ?? [])
+    .map((x) => x.sentAt)
+    .filter((x): x is string => typeof x === 'string' && x.trim() !== '')
+    .map((iso) => new Date(iso).toLocaleDateString('pt-PT'));
+  if (fromArray.length > 0) return fromArray.reverse().join(', ');
+  if (h.whatsappSentAt) return new Date(h.whatsappSentAt).toLocaleDateString('pt-PT');
+  return '—';
+}
+
+function getHouseMedia(h: {
+  imageUrls: string[];
+  coverImageUrl?: string | null;
+  videoUrl: string | null;
+}): { primaryImageSrc: string | null; videoSrc: string | null } {
+  const ordered = orderHouseImagesWithCoverFirst(h.imageUrls ?? [], h.coverImageUrl);
+  const primaryImageSrc = ordered[0] ? resolveUploadsUrl(ordered[0]) : null;
+  const videoSrc = h.videoUrl ? resolveUploadsUrl(h.videoUrl) : null;
+  return { primaryImageSrc, videoSrc };
+}
+
+function formatAdminHousePriceEur(priceEur: string, businessType: 'RENT' | 'SALE'): string {
+  const t = (priceEur ?? '')
+    .trim()
+    .replace(/\s*€\s*$/i, '')
+    .replace(/\s*\/\s*m[eê]s?\s*$/i, '')
+    .trim();
+  if (!t) return '—';
+  return businessType === 'SALE' ? `${t} €` : `${t} € / mês`;
+}
+
 function typologyLabel(id: string): string {
   return TYPOLOGIES.find((t) => t.id === id)?.label ?? id;
 }
@@ -72,8 +119,9 @@ export default function AdminHousesPage() {
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [featuringId, setFeaturingId] = useState<string | null>(null);
+  const [updatingStatusHouseId, setUpdatingStatusHouseId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showWhatsappGroupsModal, setShowWhatsappGroupsModal] = useState(false);
+  const [showAddWhatsappGroupModal, setShowAddWhatsappGroupModal] = useState(false);
   const [whatsappGroups, setWhatsappGroups] = useState<WhatsappGroupRow[]>([]);
   const [loadingWhatsappGroups, setLoadingWhatsappGroups] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
@@ -107,7 +155,6 @@ export default function AdminHousesPage() {
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE'>('ALL');
   const [filterCityContains, setFilterCityContains] = useState('');
   const [filterTypology, setFilterTypology] = useState<string>('ALL');
-  const [filterPartnerId, setFilterPartnerId] = useState<string>('ALL');
   const [showUpdatedBanner, setShowUpdatedBanner] = useState(false);
 
   useEffect(() => {
@@ -144,13 +191,14 @@ export default function AdminHousesPage() {
     (async () => {
       try {
         await load();
+        await loadWhatsappGroups();
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar anúncios.');
       } finally {
         setLoading(false);
       }
     })();
-  }, [user, isAdmin, load]);
+  }, [user, isAdmin, load, loadWhatsappGroups]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -167,19 +215,6 @@ export default function AdminHousesPage() {
       }
     })();
   }, [isAdmin]);
-
-  useEffect(() => {
-    if (!isAdmin || !showWhatsappGroupsModal) return;
-    void loadWhatsappGroups();
-  }, [isAdmin, showWhatsappGroupsModal, loadWhatsappGroups]);
-
-  const partnerOptions = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const h of items) {
-      map.set(h.partner.id, h.partner.name);
-    }
-    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], 'pt-PT'));
-  }, [items]);
 
   const extraRelocationCitiesFromHouses = useMemo(() => {
     const out = new Set<string>();
@@ -226,7 +261,6 @@ export default function AdminHousesPage() {
       });
     }
     if (filterTypology !== 'ALL') rows = rows.filter((h) => h.typology === filterTypology);
-    if (filterPartnerId !== 'ALL') rows = rows.filter((h) => h.partner.id === filterPartnerId);
     return rows;
   }, [
     items,
@@ -235,7 +269,6 @@ export default function AdminHousesPage() {
     filterStatus,
     filterCityContains,
     filterTypology,
-    filterPartnerId,
   ]);
 
   const filtersActive = useMemo(() => {
@@ -244,8 +277,7 @@ export default function AdminHousesPage() {
       filterBusinessType !== 'ALL' ||
       filterStatus !== 'ALL' ||
       filterCityContains.trim() !== '' ||
-      filterTypology !== 'ALL' ||
-      filterPartnerId !== 'ALL'
+      filterTypology !== 'ALL'
     );
   }, [
     filterSearch,
@@ -253,7 +285,6 @@ export default function AdminHousesPage() {
     filterStatus,
     filterCityContains,
     filterTypology,
-    filterPartnerId,
   ]);
 
   function clearFilters() {
@@ -262,7 +293,6 @@ export default function AdminHousesPage() {
     setFilterStatus('ALL');
     setFilterCityContains('');
     setFilterTypology('ALL');
-    setFilterPartnerId('ALL');
   }
 
   useEffect(() => {
@@ -319,6 +349,7 @@ export default function AdminHousesPage() {
       setNewGroupName('');
       setNewGroupJid('');
       setNewGroupBusinessType('RENT');
+      setShowAddWhatsappGroupModal(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao adicionar grupo.');
     } finally {
@@ -401,6 +432,26 @@ export default function AdminHousesPage() {
     }
   };
 
+  const onQuickUpdateStatus = async (
+    id: string,
+    next: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE',
+  ) => {
+    setUpdatingStatusHouseId(id);
+    setError('');
+    const prevItems = items;
+    setItems((cur) => cur.map((h) => (h.id === id ? { ...h, status: next } : h)));
+    try {
+      await api.admin.houses.update(id, { status: next });
+      await load();
+    } catch (err) {
+      setItems(prevItems);
+      setError(err instanceof Error ? err.message : 'Erro ao atualizar estado.');
+      await load();
+    } finally {
+      setUpdatingStatusHouseId(null);
+    }
+  };
+
   const onCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
@@ -474,7 +525,7 @@ export default function AdminHousesPage() {
           </button>
           <button
             type="button"
-            onClick={() => setShowWhatsappGroupsModal(true)}
+            onClick={() => setShowAddWhatsappGroupModal(true)}
             className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100"
           >
             Adicionar grupo
@@ -489,6 +540,174 @@ export default function AdminHousesPage() {
       {showUpdatedBanner ? (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
           Anúncio atualizado com sucesso.
+        </div>
+      ) : null}
+
+      <section className="mx-auto w-full max-w-4xl rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-zinc-900">Grupos WhatsApp (relocation)</h2>
+            <p className="mt-1 text-sm text-zinc-600">
+              Só os grupos <strong className="font-semibold">ativos</strong> e com a mesma{' '}
+              <strong className="font-semibold">finalidade</strong> que o imóvel (arrendamento ou venda) recebem o
+              envio em &quot;Enviar nos grupos&quot;. Ordem: imagens, vídeo (se existir), texto com resumo e descrição
+              (sem link).
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void loadWhatsappGroups()}
+            disabled={loadingWhatsappGroups}
+            className="inline-flex w-full items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-60 sm:w-auto"
+          >
+            {loadingWhatsappGroups ? 'A atualizar…' : 'Atualizar lista'}
+          </button>
+        </div>
+
+        <div className="mt-4">
+          {loadingWhatsappGroups ? (
+            <p className="text-sm text-zinc-600">A carregar…</p>
+          ) : whatsappGroups.length === 0 ? (
+            <p className="text-sm text-zinc-500">Ainda não há grupos. Adiciona o primeiro abaixo.</p>
+          ) : (
+            <div className="max-h-64 overflow-y-auto rounded-lg border border-zinc-200">
+              <table className="min-w-full text-sm">
+                <thead className="bg-zinc-50 text-left text-xs font-medium text-zinc-600">
+                  <tr>
+                    <th className="px-3 py-2">Nome</th>
+                    <th className="px-3 py-2">Finalidade</th>
+                    <th className="px-3 py-2">JID</th>
+                    <th className="px-3 py-2">Ativo</th>
+                    <th className="px-3 py-2 text-right">—</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {whatsappGroups.map((g) => (
+                    <tr key={g.id} className="border-t border-zinc-100">
+                      <td className="px-3 py-2 font-medium text-zinc-900">{g.name}</td>
+                      <td className="whitespace-nowrap px-3 py-2">
+                        <select
+                          value={g.businessType}
+                          disabled={updatingGroupPurposeId === g.id}
+                          onChange={(e) =>
+                            void onUpdateGroupFinalidade(g, e.target.value as 'RENT' | 'SALE')
+                          }
+                          className="max-w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900"
+                        >
+                          <option value="RENT">{GROUP_FINALIDADE_LABELS.RENT}</option>
+                          <option value="SALE">{GROUP_FINALIDADE_LABELS.SALE}</option>
+                        </select>
+                      </td>
+                      <td
+                        className="max-w-[200px] truncate px-3 py-2 font-mono text-xs text-zinc-600"
+                        title={g.groupJid}
+                      >
+                        {g.groupJid}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2">
+                        <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-zinc-700">
+                          <input
+                            type="checkbox"
+                            checked={g.active}
+                            disabled={togglingGroupId === g.id}
+                            onChange={(e) => void onToggleGroupActive(g, e.target.checked)}
+                            className="h-4 w-4 rounded border-zinc-300"
+                          />
+                          {g.active ? 'Sim' : 'Não'}
+                        </label>
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          type="button"
+                          disabled={deletingGroupId === g.id}
+                          onClick={() => void onDeleteWhatsappGroup(g.id)}
+                          className="text-xs font-medium text-red-600 hover:underline disabled:opacity-50"
+                        >
+                          {deletingGroupId === g.id ? '…' : 'Remover'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+      </section>
+
+      {showAddWhatsappGroupModal ? (
+        <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/45 p-4">
+          <div className="my-8 w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-zinc-900">Adicionar grupo WhatsApp</h2>
+                <p className="mt-1 text-sm text-zinc-600">
+                  Cria um grupo para receber envios de imóveis relocation.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddWhatsappGroupModal(false)}
+                className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+              >
+                Fechar
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                void onAddWhatsappGroup(e);
+              }}
+              className="space-y-3 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50 p-4"
+            >
+              <label className="block text-sm">
+                <span className="mb-1 block text-xs text-zinc-600">Nome do grupo</span>
+                <input
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                  placeholder="Ex.: Clientes Lisboa"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1 block text-xs text-zinc-600">Finalidade</span>
+                <select
+                  value={newGroupBusinessType}
+                  onChange={(e) => setNewGroupBusinessType(e.target.value as 'RENT' | 'SALE')}
+                  className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+                >
+                  <option value="RENT">{GROUP_FINALIDADE_LABELS.RENT}</option>
+                  <option value="SALE">{GROUP_FINALIDADE_LABELS.SALE}</option>
+                </select>
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1 block text-xs text-zinc-600">Código (JID)</span>
+                <input
+                  value={newGroupJid}
+                  onChange={(e) => setNewGroupJid(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm"
+                  placeholder="120363407245204550@g.us"
+                />
+              </label>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddWhatsappGroupModal(false)}
+                  className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingWhatsappGroup}
+                  className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {savingWhatsappGroup ? 'A guardar…' : 'Adicionar'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       ) : null}
 
@@ -571,21 +790,6 @@ export default function AdminHousesPage() {
                     ))}
                   </select>
                 </label>
-                <label className="block text-xs font-medium text-zinc-700">
-                  Parceiro
-                  <select
-                    value={filterPartnerId}
-                    onChange={(e) => setFilterPartnerId(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                  >
-                    <option value="ALL">Todos</option>
-                    {partnerOptions.map(([id, name]) => (
-                      <option key={id} value={id}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
               </div>
               {filtersActive ? (
                 <button
@@ -615,13 +819,54 @@ export default function AdminHousesPage() {
                     className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm ring-1 ring-zinc-900/5"
                   >
                     <div className="flex flex-col gap-3">
-                      <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Título</p>
-                        <p className="mt-0.5 text-sm font-semibold leading-snug text-zinc-900">{h.title}</p>
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Parceiro</p>
-                        <p className="mt-0.5 text-sm text-zinc-800">{h.partner.name}</p>
+                      <div className="flex items-start gap-3">
+                        <Link
+                          href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Abrir página do imóvel"
+                          className="relative block h-14 w-20 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100"
+                        >
+                          {(() => {
+                            const { primaryImageSrc, videoSrc } = getHouseMedia(h);
+                            if (primaryImageSrc) {
+                              return (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={primaryImageSrc}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                />
+                              );
+                            }
+                            if (videoSrc) {
+                              return (
+                                <video
+                                  src={videoSrc}
+                                  className="h-full w-full object-cover"
+                                  muted
+                                  playsInline
+                                  preload="metadata"
+                                />
+                              );
+                            }
+                            return (
+                              <div className="flex h-full w-full items-center justify-center text-[11px] text-zinc-400">
+                                Sem média
+                              </div>
+                            );
+                          })()}
+                        </Link>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Título</p>
+                          <p className="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug text-zinc-900">
+                            {h.title}
+                          </p>
+                          <p className="mt-1 text-xs text-zinc-500">
+                            {cityLabel(h.city)} · {typologyLabel(h.typology)}
+                          </p>
+                        </div>
                       </div>
                       <div>
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
@@ -629,6 +874,14 @@ export default function AdminHousesPage() {
                         </p>
                         <p className="mt-0.5 text-sm text-zinc-800">
                           {BUSINESS_TYPE_LABELS[h.businessType] ?? h.businessType}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                          {h.businessType === 'SALE' ? 'Preço de venda' : 'Renda mensal'}
+                        </p>
+                        <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-900">
+                          {formatAdminHousePriceEur(h.priceEur, h.businessType)}
                         </p>
                       </div>
                       <div>
@@ -658,9 +911,7 @@ export default function AdminHousesPage() {
                             ? '—'
                             : sendingWhatsappHouseId === h.id
                               ? 'Enviando...'
-                              : h.whatsappSentAt
-                                ? new Date(h.whatsappSentAt).toLocaleString('pt-PT')
-                                : '—'}
+                              : adminHouseWhatsAppSendDatesLabel(h)}
                         </p>
                       </div>
                       <div className="flex flex-nowrap items-center justify-center gap-2 border-t border-zinc-100 pt-3">
@@ -790,10 +1041,11 @@ export default function AdminHousesPage() {
                   <thead className="bg-zinc-50 text-zinc-600">
                     <tr>
                       <th className="whitespace-nowrap px-4 py-2 text-left">Id</th>
+                      <th className="w-[76px] px-4 py-2 text-left">Mídia</th>
                       <th className="px-4 py-2 text-left">Título</th>
                       <th className="px-4 py-2 text-left">Finalidade</th>
+                      <th className="px-4 py-2 text-left">Preço</th>
                       <th className="px-4 py-2 text-left">Parceiro</th>
-                      <th className="px-4 py-2 text-left">Categoria</th>
                       <th className="px-4 py-2 text-left">Destaque</th>
                       <th className="px-4 py-2 text-left">Estado</th>
                       <th className="px-4 py-2 text-left">Disponível a partir</th>
@@ -808,6 +1060,42 @@ export default function AdminHousesPage() {
                         <td className="whitespace-nowrap px-4 py-2 align-top font-mono text-xs tabular-nums text-zinc-700">
                           {h.houseId}
                         </td>
+                        <td className="px-4 py-2 align-top">
+                          <Link
+                            href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Abrir página do imóvel"
+                            className="relative block h-10 w-14 overflow-hidden rounded-md border border-zinc-200 bg-zinc-100"
+                          >
+                            {(() => {
+                              const { primaryImageSrc, videoSrc } = getHouseMedia(h);
+                              if (primaryImageSrc) {
+                                return (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={primaryImageSrc}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                    loading="lazy"
+                                  />
+                                );
+                              }
+                              if (videoSrc) {
+                                return (
+                                  <video
+                                    src={videoSrc}
+                                    className="h-full w-full object-cover"
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                  />
+                                );
+                              }
+                              return null;
+                            })()}
+                          </Link>
+                        </td>
                         <td className="max-w-[200px] px-4 py-2 align-top">
                           <span className="line-clamp-2 font-medium text-zinc-900">{h.title}</span>
                           <p className="mt-0.5 text-xs text-zinc-500">
@@ -817,10 +1105,10 @@ export default function AdminHousesPage() {
                         <td className="whitespace-nowrap px-4 py-2 align-top text-zinc-800">
                           {BUSINESS_TYPE_LABELS[h.businessType] ?? h.businessType}
                         </td>
-                        <td className="px-4 py-2 align-top">{h.partner.name}</td>
-                        <td className="px-4 py-2 align-top">
-                          {h.partner.category?.name ?? '—'}
+                        <td className="whitespace-nowrap px-4 py-2 align-top font-medium tabular-nums text-zinc-900">
+                          {formatAdminHousePriceEur(h.priceEur, h.businessType)}
                         </td>
+                        <td className="px-4 py-2 align-top">{h.partner.name}</td>
                         <td className="whitespace-nowrap px-4 py-2 align-top text-xs">
                           {h.featured ? (
                             <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900">
@@ -831,20 +1119,41 @@ export default function AdminHousesPage() {
                           )}
                         </td>
                         <td className="px-4 py-2 align-top">
-                          <HouseStatusBadge status={h.status} />
+                          <select
+                            value={h.status}
+                            disabled={updatingStatusHouseId === h.id}
+                            onChange={(e) =>
+                              void onQuickUpdateStatus(
+                                h.id,
+                                e.target.value as 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE',
+                              )
+                            }
+                            className={`rounded-md border px-2 py-1 text-xs font-semibold focus:outline-none focus:ring-1 disabled:opacity-60 ${statusSelectClass(
+                              h.status,
+                            )}`}
+                            title={HOUSE_STATUS_LABELS[h.status]}
+                          >
+                            {(Object.keys(HOUSE_STATUS_LABELS) as Array<
+                              keyof typeof HOUSE_STATUS_LABELS
+                            >).map((s) => (
+                              <option key={s} value={s}>
+                                {HOUSE_STATUS_LABELS[s]}
+                              </option>
+                            ))}
+                          </select>
                         </td>
                         <td className="whitespace-nowrap px-4 py-2 align-top">
                           {new Date(h.availableFrom).toLocaleDateString('pt-PT')}
                         </td>
                         <td className="whitespace-nowrap px-4 py-2 align-top">
-                          {new Date(h.createdAt).toLocaleString('pt-PT')}
+                          {new Date(h.createdAt).toLocaleDateString('pt-PT')}
                         </td>
                         <td
                           className="whitespace-nowrap px-4 py-2 align-top text-xs text-zinc-700"
                           title={h.whatsappError?.trim() ? h.whatsappError : undefined}
                         >
-                          {h.partner.category?.slug === 'relocation' && h.whatsappSentAt
-                            ? new Date(h.whatsappSentAt).toLocaleString('pt-PT')
+                          {h.partner.category?.slug === 'relocation'
+                            ? adminHouseWhatsAppSendDatesLabel(h)
                             : '—'}
                         </td>
                         <td className="px-4 py-2 text-right align-top">
@@ -852,52 +1161,167 @@ export default function AdminHousesPage() {
                             {h.partner.category?.slug === 'relocation' ? (
                               <button
                                 type="button"
+                                title="Enviar nos grupos WhatsApp"
+                                aria-label="Enviar nos grupos WhatsApp"
                                 disabled={sendingWhatsappHouseId === h.id}
                                 onClick={() => void onSendHouseToWhatsappGroups(h.id)}
-                                className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
                               >
-                                {sendingWhatsappHouseId === h.id
-                                  ? 'A enviar…'
-                                  : 'Enviar nos grupos'}
+                                {sendingWhatsappHouseId === h.id ? (
+                                  <svg
+                                    className="h-4 w-4 animate-spin"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    aria-hidden
+                                  >
+                                    <circle
+                                      className="opacity-25"
+                                      cx="12"
+                                      cy="12"
+                                      r="10"
+                                      stroke="currentColor"
+                                      strokeWidth="4"
+                                    />
+                                    <path
+                                      className="opacity-75"
+                                      fill="currentColor"
+                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    />
+                                  </svg>
+                                ) : (
+                                  <svg
+                                    className="h-4 w-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                    viewBox="0 0 24 24"
+                                    aria-hidden
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+                                    />
+                                  </svg>
+                                )}
                               </button>
                             ) : null}
                             <Link
                               href={`/dashboard/admin/houses/${encodeURIComponent(h.id)}/edit`}
-                              className="inline-flex rounded-md border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
+                              title="Editar anúncio"
+                              aria-label="Editar anúncio"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50"
                             >
-                              Editar
-                            </Link>
-                            <Link
-                              href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex rounded-md border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
-                            >
-                              Ver imóvel
+                              <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                                viewBox="0 0 24 24"
+                                aria-hidden
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+                                />
+                              </svg>
                             </Link>
                             <button
                               type="button"
+                              title={h.featured ? 'Remover destaque' : 'Destacar'}
+                              aria-label={h.featured ? 'Remover destaque' : 'Destacar'}
                               disabled={featuringId === h.id}
                               onClick={() => onToggleFeatured(h.id, !h.featured)}
-                              className={`rounded-md border px-3 py-1 text-xs font-medium disabled:opacity-50 ${
+                              className={`inline-flex h-8 w-8 items-center justify-center rounded-md border disabled:opacity-50 ${
                                 h.featured
                                   ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
                                   : 'border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50'
                               }`}
                             >
-                              {featuringId === h.id
-                                ? 'A atualizar…'
-                                : h.featured
-                                  ? 'Remover destaque'
-                                  : 'Destacar'}
+                              {featuringId === h.id ? (
+                                <svg
+                                  className="h-4 w-4 animate-spin"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  aria-hidden
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  />
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  />
+                                </svg>
+                              ) : (
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                  viewBox="0 0 24 24"
+                                  aria-hidden
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557L3.04 10.385a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+                                  />
+                                </svg>
+                              )}
                             </button>
                             <button
                               type="button"
+                              title="Eliminar anúncio"
+                              aria-label="Eliminar anúncio"
                               disabled={busyId === h.id}
                               onClick={() => onDelete(h.id)}
-                              className="rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:opacity-50"
                             >
-                              {busyId === h.id ? 'A apagar…' : 'Eliminar'}
+                              {busyId === h.id ? (
+                                <svg
+                                  className="h-4 w-4 animate-spin"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  aria-hidden
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  />
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  />
+                                </svg>
+                              ) : (
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                  viewBox="0 0 24 24"
+                                  aria-hidden
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M14.74 9l-.346 9m-4.008 0L9.22 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                                  />
+                                </svg>
+                              )}
                             </button>
                           </div>
                         </td>
@@ -1161,148 +1585,6 @@ export default function AdminHousesPage() {
         </div>
       ) : null}
 
-      {showWhatsappGroupsModal ? (
-        <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/45 p-4">
-          <div className="my-8 w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl">
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold text-zinc-900">Grupos WhatsApp (relocation)</h2>
-                <p className="mt-1 text-sm text-zinc-600">
-                  Só os grupos <strong className="font-semibold">ativos</strong> e com a mesma{' '}
-                  <strong className="font-semibold">finalidade</strong> que o imóvel (arrendamento ou venda) recebem o
-                  envio em &quot;Enviar nos grupos&quot;. Ordem: imagens, vídeo (se existir), texto com resumo e
-                  descrição (sem link).
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowWhatsappGroupsModal(false)}
-                className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
-              >
-                Fechar
-              </button>
-            </div>
-
-            {loadingWhatsappGroups ? (
-              <p className="text-sm text-zinc-600">A carregar…</p>
-            ) : whatsappGroups.length === 0 ? (
-              <p className="text-sm text-zinc-500">Ainda não há grupos. Adiciona o primeiro abaixo.</p>
-            ) : (
-              <div className="mb-4 max-h-64 overflow-y-auto rounded-lg border border-zinc-200">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-zinc-50 text-left text-xs font-medium text-zinc-600">
-                    <tr>
-                      <th className="px-3 py-2">Nome</th>
-                      <th className="px-3 py-2">Finalidade</th>
-                      <th className="px-3 py-2">JID</th>
-                      <th className="px-3 py-2">Ativo</th>
-                      <th className="px-3 py-2 text-right">—</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {whatsappGroups.map((g) => (
-                      <tr key={g.id} className="border-t border-zinc-100">
-                        <td className="px-3 py-2 font-medium text-zinc-900">{g.name}</td>
-                        <td className="whitespace-nowrap px-3 py-2">
-                          <select
-                            value={g.businessType}
-                            disabled={updatingGroupPurposeId === g.id}
-                            onChange={(e) =>
-                              void onUpdateGroupFinalidade(
-                                g,
-                                e.target.value as 'RENT' | 'SALE',
-                              )
-                            }
-                            className="max-w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900"
-                          >
-                            <option value="RENT">{GROUP_FINALIDADE_LABELS.RENT}</option>
-                            <option value="SALE">{GROUP_FINALIDADE_LABELS.SALE}</option>
-                          </select>
-                        </td>
-                        <td
-                          className="max-w-[200px] truncate px-3 py-2 font-mono text-xs text-zinc-600"
-                          title={g.groupJid}
-                        >
-                          {g.groupJid}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2">
-                          <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-zinc-700">
-                            <input
-                              type="checkbox"
-                              checked={g.active}
-                              disabled={togglingGroupId === g.id}
-                              onChange={(e) => void onToggleGroupActive(g, e.target.checked)}
-                              className="h-4 w-4 rounded border-zinc-300"
-                            />
-                            {g.active ? 'Sim' : 'Não'}
-                          </label>
-                        </td>
-                        <td className="px-3 py-2 text-right">
-                          <button
-                            type="button"
-                            disabled={deletingGroupId === g.id}
-                            onClick={() => void onDeleteWhatsappGroup(g.id)}
-                            className="text-xs font-medium text-red-600 hover:underline disabled:opacity-50"
-                          >
-                            {deletingGroupId === g.id ? '…' : 'Remover'}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            <form
-              onSubmit={onAddWhatsappGroup}
-              className="space-y-3 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50 p-4"
-            >
-              <p className="text-xs font-medium text-zinc-700">Adicionar grupo</p>
-              <label className="block text-sm">
-                <span className="mb-1 block text-xs text-zinc-600">Nome do grupo</span>
-                <input
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                  placeholder="Ex.: Clientes Lisboa"
-                />
-              </label>
-              <label className="block text-sm">
-                <span className="mb-1 block text-xs text-zinc-600">Finalidade</span>
-                <select
-                  value={newGroupBusinessType}
-                  onChange={(e) =>
-                    setNewGroupBusinessType(e.target.value as 'RENT' | 'SALE')
-                  }
-                  className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
-                >
-                  <option value="RENT">{GROUP_FINALIDADE_LABELS.RENT}</option>
-                  <option value="SALE">{GROUP_FINALIDADE_LABELS.SALE}</option>
-                </select>
-              </label>
-              <label className="block text-sm">
-                <span className="mb-1 block text-xs text-zinc-600">Código (JID)</span>
-                <input
-                  value={newGroupJid}
-                  onChange={(e) => setNewGroupJid(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm"
-                  placeholder="120363407245204550@g.us"
-                />
-              </label>
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={savingWhatsappGroup}
-                  className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                >
-                  {savingWhatsappGroup ? 'A guardar…' : 'Adicionar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

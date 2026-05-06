@@ -209,10 +209,7 @@ export default function RelocationHousesListPage() {
     [parceiro, cidade, tipologia, finalidade, partners, setRouteFilters, router],
   );
 
-  const featuredRows = useMemo(
-    () => rows.filter((h) => h.featured).slice(0, 3),
-    [rows],
-  );
+  const featuredRows = useMemo(() => rows.filter((h) => h.featured), [rows]);
   const regularRows = useMemo(() => {
     if (featuredRows.length === 0) return rows;
     const ids = new Set(featuredRows.map((h) => h.id));
