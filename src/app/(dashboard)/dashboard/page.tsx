@@ -10,7 +10,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/components/FloatingWhatsAppButton";
 import { OPEN_AUTH_LOGIN_EVENT } from "@/lib/auth-ui-events";
 import { AffiliateEnrollModal } from "@/components/affiliate/AffiliateEnrollModal";
-import { RafaCallCard } from "@/components/RafaCallCard";
 type AffiliateMe = NonNullable<Awaited<ReturnType<typeof api.affiliate.me>>>;
 
 /** Desktop: snap ao início; mobile: cartão centrado (~76vw) com ~12vw de “peek” de cada lado. */
@@ -95,7 +94,7 @@ export default function DashboardPage() {
 
   const { user, loading: authLoading } = useAuth();
   const isMember = user?.tier === "MEMBER";
-  /** Plano de imigração + agendamento RafaCall: só membros VIP e admins no dashboard. */
+  /** Plano de imigração: só membros VIP e admins no dashboard. */
   const canAccessMemberVipShortcuts =
     !authLoading && Boolean(user && (user.role === "ADMIN" || user.tier === "MEMBER"));
   const canSeeAffiliateCard =
@@ -156,13 +155,13 @@ export default function DashboardPage() {
     ? "/rafa_cards/dashboard_afiliados_mobile.png"
     : isMember
       ? "/rafa_cards/hero_mobile_vip.png"
-      : "/rafa_cards/hero_mobile6.png";
+      : "/rafa_cards/hero_mobile7.png";
 
   const heroDesktopSrc = hasAffiliateEnrollment
     ? "/rafa_cards/dashboard_afiliados.png"
     : isMember
       ? "/rafa_cards/hero_pc_vip.png"
-      : "/rafa_cards/hero_pc5.png";
+      : "/rafa_cards/hero_pc6.png";
 
   /**
    * Hero: visitante → login; membro VIP → painel de indicações se já for afiliado, senão modal de
@@ -399,36 +398,6 @@ export default function DashboardPage() {
               </div>
             )}
           </section>
-          <div
-            className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative flex min-h-0 flex-col ${
-              canAccessMemberVipShortcuts
-                ? ""
-                : "overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm"
-            }`}
-          >
-            {canAccessMemberVipShortcuts ? (
-              <RafaCallCard />
-            ) : (
-              <div
-                className="pointer-events-none relative min-h-0 w-full cursor-not-allowed select-none"
-                aria-label="Agendar chamada com a Rafa — disponível para membros VIP"
-              >
-                <span className="sr-only">Exclusivo para membros VIP</span>
-                <Image
-                  src="/rafa_cards/agendar_chamada2.png"
-                  alt=""
-                  width={1250}
-                  height={1875}
-                  className="h-auto w-full object-contain opacity-[0.88]"
-                  sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
-                  priority={false}
-                />
-                <div className={LOCK_OVERLAY_POSITION}>
-                  <DashboardCarouselMemberLockIcon className={LOCK_ICON_OVERLAY_CLASS} />
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
         <button
