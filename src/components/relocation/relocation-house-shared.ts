@@ -112,5 +112,6 @@ export function getRelocationHouseMedia(h: RelocationHouseRow) {
   const videoSrc = h.videoUrl ? resolveRelocationMediaUrl(h.videoUrl) : null;
   const orderedUrls = orderHouseImagesWithCoverFirst(h.imageUrls ?? [], h.coverImageUrl);
   const primaryImageSrc = orderedUrls[0] ? resolveRelocationMediaUrl(orderedUrls[0]) : null;
-  return { videoSrc, primaryImageSrc };
+  const videoPosterSrc = h.videoPosterUrl ? resolveRelocationMediaUrl(h.videoPosterUrl) : null;
+  return { videoSrc, primaryImageSrc, videoPosterSrc };
 }
