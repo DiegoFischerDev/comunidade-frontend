@@ -72,7 +72,7 @@ function adminHouseWhatsAppSendDatesLabel(h: {
     .map((x) => x.sentAt)
     .filter((x): x is string => typeof x === 'string' && x.trim() !== '')
     .map((iso) => new Date(iso).toLocaleDateString('pt-PT'));
-  if (fromArray.length > 0) return fromArray.reverse().join(', ');
+  if (fromArray.length > 0) return fromArray.reverse().join('\n');
   if (h.whatsappSentAt) return new Date(h.whatsappSentAt).toLocaleDateString('pt-PT');
   return '—';
 }
@@ -879,7 +879,7 @@ export default function AdminHousesPage() {
                           Enviado em
                         </p>
                         <p
-                          className={`mt-0.5 text-sm ${
+                          className={`mt-0.5 whitespace-pre-line text-sm ${
                             h.partner.category?.slug === 'relocation' &&
                             sendingWhatsappHouseId === h.id
                               ? 'font-medium text-emerald-800'
@@ -1123,7 +1123,7 @@ export default function AdminHousesPage() {
                           {new Date(h.createdAt).toLocaleDateString('pt-PT')}
                         </td>
                         <td
-                          className="whitespace-nowrap px-4 py-2 align-top text-xs text-zinc-700"
+                          className="whitespace-pre-line px-4 py-2 align-top text-xs text-zinc-700"
                           title={h.whatsappError?.trim() ? h.whatsappError : undefined}
                         >
                           {h.partner.category?.slug === 'relocation'
