@@ -5,7 +5,9 @@ import { isOurImageHostname } from "@/lib/site-url";
 import { buildAdminWhatsAppUrl } from "@/lib/admin-contact-whatsapp";
 import { relocationCityDisplayName } from "@/lib/relocation-portugal-cities";
 
-export type RelocationHouseRow = Awaited<ReturnType<typeof api.marketplace.relocationHouses>>[number];
+export type RelocationHouseRow = Awaited<
+  ReturnType<typeof api.marketplace.relocationHouses>
+>["items"][number];
 
 export { RELOCATION_CITY_OPTIONS, relocationCityDisplayName } from "@/lib/relocation-portugal-cities";
 
