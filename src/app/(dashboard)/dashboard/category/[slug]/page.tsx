@@ -158,7 +158,7 @@ export default function CategoryPage() {
 
   useEffect(() => {
     if (params.slug === 'relocation') {
-      router.replace('/dashboard/relocation');
+      router.replace('/relocation/imoveis');
     }
   }, [params.slug, router]);
 

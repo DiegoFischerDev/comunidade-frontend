@@ -118,7 +118,6 @@ export default function AdminHousesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [featuringId, setFeaturingId] = useState<string | null>(null);
   const [updatingStatusHouseId, setUpdatingStatusHouseId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddWhatsappGroupModal, setShowAddWhatsappGroupModal] = useState(false);
@@ -414,21 +413,6 @@ export default function AdminHousesPage() {
       await load();
     } finally {
       setSendingWhatsappHouseId(null);
-    }
-  };
-
-  const onToggleFeatured = async (id: string, nextFeatured: boolean) => {
-    setFeaturingId(id);
-    setError('');
-    try {
-      await api.admin.houses.setFeatured(id, nextFeatured);
-      setItems((prev) =>
-        prev.map((h) => (h.id === id ? { ...h, featured: nextFeatured } : h)),
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao atualizar destaque.');
-    } finally {
-      setFeaturingId(null);
     }
   };
 
@@ -1046,7 +1030,6 @@ export default function AdminHousesPage() {
                       <th className="px-4 py-2 text-left">Finalidade</th>
                       <th className="px-4 py-2 text-left">Preço</th>
                       <th className="px-4 py-2 text-left">Parceiro</th>
-                      <th className="px-4 py-2 text-left">Destaque</th>
                       <th className="px-4 py-2 text-left">Estado</th>
                       <th className="px-4 py-2 text-left">Disponível a partir</th>
                       <th className="px-4 py-2 text-left">Criado</th>
@@ -1109,15 +1092,6 @@ export default function AdminHousesPage() {
                           {formatAdminHousePriceEur(h.priceEur, h.businessType)}
                         </td>
                         <td className="px-4 py-2 align-top">{h.partner.name}</td>
-                        <td className="whitespace-nowrap px-4 py-2 align-top text-xs">
-                          {h.featured ? (
-                            <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900">
-                              Em destaque
-                            </span>
-                          ) : (
-                            <span className="text-zinc-500">—</span>
-                          )}
-                        </td>
                         <td className="px-4 py-2 align-top">
                           <select
                             value={h.status}
@@ -1165,7 +1139,7 @@ export default function AdminHousesPage() {
                                 aria-label="Enviar nos grupos WhatsApp"
                                 disabled={sendingWhatsappHouseId === h.id}
                                 onClick={() => void onSendHouseToWhatsappGroups(h.id)}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
+                                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
                               >
                                 {sendingWhatsappHouseId === h.id ? (
                                   <svg
@@ -1210,7 +1184,7 @@ export default function AdminHousesPage() {
                               href={`/dashboard/admin/houses/${encodeURIComponent(h.id)}/edit`}
                               title="Editar anúncio"
                               aria-label="Editar anúncio"
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50"
+                              className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50"
                             >
                               <svg
                                 className="h-4 w-4"
@@ -1229,61 +1203,11 @@ export default function AdminHousesPage() {
                             </Link>
                             <button
                               type="button"
-                              title={h.featured ? 'Remover destaque' : 'Destacar'}
-                              aria-label={h.featured ? 'Remover destaque' : 'Destacar'}
-                              disabled={featuringId === h.id}
-                              onClick={() => onToggleFeatured(h.id, !h.featured)}
-                              className={`inline-flex h-8 w-8 items-center justify-center rounded-md border disabled:opacity-50 ${
-                                h.featured
-                                  ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
-                                  : 'border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50'
-                              }`}
-                            >
-                              {featuringId === h.id ? (
-                                <svg
-                                  className="h-4 w-4 animate-spin"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  aria-hidden
-                                >
-                                  <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                  />
-                                  <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                  />
-                                </svg>
-                              ) : (
-                                <svg
-                                  className="h-4 w-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth={2}
-                                  viewBox="0 0 24 24"
-                                  aria-hidden
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557L3.04 10.385a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
-                                  />
-                                </svg>
-                              )}
-                            </button>
-                            <button
-                              type="button"
                               title="Eliminar anúncio"
                               aria-label="Eliminar anúncio"
                               disabled={busyId === h.id}
                               onClick={() => onDelete(h.id)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:opacity-50"
+                              className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {busyId === h.id ? (
                                 <svg
