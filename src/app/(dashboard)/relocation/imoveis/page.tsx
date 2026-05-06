@@ -15,11 +15,6 @@ import {
 } from "@/components/relocation/relocation-house-shared";
 import { api } from "@/lib/api";
 
-type RelocationPartner = {
-  id: string;
-  name: string;
-};
-
 const RELOCATION_IMOVEIS_PATH = "/relocation/imoveis";
 const RELOCATION_HOUSES_WHATSAPP_GROUP_URL =
   "https://chat.whatsapp.com/Kt4ylOIU0qMBbtfHKlyvVt?mode=gi_t";
@@ -28,106 +23,105 @@ export default function PublicRelocationHousesListPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [rows, setRows] = useState<RelocationHouseRow[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [partners, setPartners] = useState<RelocationPartner[]>([]);
 
-  const parceiro = searchParams.get("parceiro")?.trim() ?? "";
   const cidade = searchParams.get("cidade")?.trim() ?? "";
   const tipologia = searchParams.get("tipologia")?.trim() ?? "";
   const finalidade = searchParams.get("finalidade")?.trim() ?? "";
+  const valorMin = searchParams.get("valorMin")?.trim() ?? "";
+  const valorMax = searchParams.get("valorMax")?.trim() ?? "";
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
+  const pageSize = 10;
 
   const setRouteFilters = useCallback(
     (next: {
-      parceiro?: string;
       cidade?: string;
       tipologia?: string;
       finalidade?: string;
+      valorMin?: string;
+      valorMax?: string;
+      page?: number;
     }) => {
       const q = new URLSearchParams(searchParams.toString());
-      const p = next.parceiro !== undefined ? next.parceiro : parceiro;
       const c = next.cidade !== undefined ? next.cidade : cidade;
       const t = next.tipologia !== undefined ? next.tipologia : tipologia;
       const f = next.finalidade !== undefined ? next.finalidade : finalidade;
-      if (p) q.set("parceiro", p);
-      else q.delete("parceiro");
+      const min = next.valorMin !== undefined ? next.valorMin : valorMin;
+      const max = next.valorMax !== undefined ? next.valorMax : valorMax;
+      const nextPage = next.page !== undefined ? next.page : page;
+      // Filtro por parceiro foi removido do público; garantimos que não persista na URL.
+      q.delete("parceiro");
       if (c) q.set("cidade", c);
       else q.delete("cidade");
       if (t) q.set("tipologia", t);
       else q.delete("tipologia");
       if (f) q.set("finalidade", f);
       else q.delete("finalidade");
+      if (min) q.set("valorMin", min);
+      else q.delete("valorMin");
+      if (max) q.set("valorMax", max);
+      else q.delete("valorMax");
+      if (nextPage && nextPage !== 1) q.set("page", String(nextPage));
+      else q.delete("page");
       const s = q.toString();
       router.replace(`${RELOCATION_IMOVEIS_PATH}${s ? `?${s}` : ""}`);
     },
-    [searchParams, router, parceiro, cidade, tipologia, finalidade],
+    [searchParams, router, cidade, tipologia, finalidade, valorMin, valorMax, page],
   );
 
   useEffect(() => {
-    void (async () => {
-      try {
-        const data = await api.marketplace.categoriesWithPartners();
-        const rel = data.find((c) => c.slug === "relocation");
-        setPartners((rel?.partners ?? []).map((p) => ({ id: p.id, name: p.name })));
-      } catch {
-        setPartners([]);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    setLoading(true);
-    setError("");
-    void (async () => {
-      try {
-        const data = await api.marketplace.relocationHouses({
-          partnerId: parceiro || undefined,
-          city: cidade || undefined,
-          typology: tipologia || undefined,
-          businessType: (finalidade as "RENT" | "SALE") || undefined,
-        });
-        setRows(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar imóveis.");
-        setRows([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [parceiro, cidade, tipologia, finalidade]);
+    let cancelled = false;
+    const id = window.setTimeout(() => {
+      if (cancelled) return;
+      setLoading(true);
+      setError("");
+      void (async () => {
+        try {
+          const data = await api.marketplace.relocationHouses({
+            city: cidade || undefined,
+            typology: tipologia || undefined,
+            businessType: (finalidade as "RENT" | "SALE") || undefined,
+            minPriceEur: valorMin || undefined,
+            maxPriceEur: valorMax || undefined,
+            page,
+            pageSize,
+          });
+          if (!cancelled) {
+            const nextRows = Array.isArray((data as any)?.items)
+              ? ((data as any).items as RelocationHouseRow[])
+              : // Retrocompatibilidade temporária: caso o backend ainda esteja retornando array direto.
+                (Array.isArray(data) ? (data as any as RelocationHouseRow[]) : []);
+            setRows(nextRows);
+            setTotal(typeof (data as any)?.total === "number" ? (data as any).total : nextRows.length);
+          }
+        } catch (err) {
+          if (!cancelled) {
+            setError(err instanceof Error ? err.message : "Erro ao carregar imóveis.");
+            setRows([]);
+            setTotal(0);
+          }
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      })();
+    }, 350);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
+  }, [cidade, tipologia, finalidade, valorMin, valorMax, page, pageSize]);
 
   const filterBar = useMemo(
     () => (
       <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end sm:gap-4">
         <div className="min-w-0 flex-1">
-          <label
-            className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500"
-            htmlFor="filter-parceiro"
-          >
-            Parceiro relocation
-          </label>
-          <select
-            id="filter-parceiro"
-            value={parceiro}
-            onChange={(e) =>
-              setRouteFilters({ parceiro: e.target.value, cidade, tipologia, finalidade })
-            }
-            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-          >
-            <option value="">Todos</option>
-            {partners.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="min-w-0 flex-1">
           <RelocationCityCombobox
             id="filter-cidade"
             label="Cidade"
             value={cidade}
-            onChange={(next) => setRouteFilters({ parceiro, cidade: next, tipologia, finalidade })}
+            onChange={(next) => setRouteFilters({ cidade: next, tipologia, finalidade, page: 1 })}
             allowEmpty
             emptyLabel="Todas"
             variant="amber"
@@ -144,7 +138,7 @@ export default function PublicRelocationHousesListPage() {
             id="filter-tipologia"
             value={tipologia}
             onChange={(e) =>
-              setRouteFilters({ parceiro, cidade, tipologia: e.target.value, finalidade })
+              setRouteFilters({ cidade, tipologia: e.target.value, finalidade, page: 1 })
             }
             className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
           >
@@ -167,7 +161,7 @@ export default function PublicRelocationHousesListPage() {
             id="filter-finalidade"
             value={finalidade}
             onChange={(e) =>
-              setRouteFilters({ parceiro, cidade, tipologia, finalidade: e.target.value })
+              setRouteFilters({ cidade, tipologia, finalidade: e.target.value, page: 1 })
             }
             className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
           >
@@ -179,6 +173,51 @@ export default function PublicRelocationHousesListPage() {
             ))}
           </select>
         </div>
+        <div className="min-w-0 flex-1">
+          <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500">
+            Valor (EUR)
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              inputMode="numeric"
+              type="number"
+              min={0}
+              step={1}
+              value={valorMin}
+              onChange={(e) =>
+                setRouteFilters({
+                  cidade,
+                  tipologia,
+                  finalidade,
+                  valorMin: e.target.value,
+                  page: 1,
+                })
+              }
+              placeholder="Mín."
+              aria-label="Valor mínimo"
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            />
+            <input
+              inputMode="numeric"
+              type="number"
+              min={0}
+              step={1}
+              value={valorMax}
+              onChange={(e) =>
+                setRouteFilters({
+                  cidade,
+                  tipologia,
+                  finalidade,
+                  valorMax: e.target.value,
+                  page: 1,
+                })
+              }
+              placeholder="Máx."
+              aria-label="Valor máximo"
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            />
+          </div>
+        </div>
         <button
           type="button"
           onClick={() => router.replace(RELOCATION_IMOVEIS_PATH)}
@@ -188,15 +227,18 @@ export default function PublicRelocationHousesListPage() {
         </button>
       </div>
     ),
-    [parceiro, cidade, tipologia, finalidade, partners, setRouteFilters, router],
+    [cidade, tipologia, finalidade, valorMin, valorMax, setRouteFilters, router],
   );
 
-  const featuredRows = useMemo(() => rows.filter((h) => h.featured), [rows]);
+  const featuredRows = useMemo(() => (rows ?? []).filter((h) => h.featured), [rows]);
   const regularRows = useMemo(() => {
     if (featuredRows.length === 0) return rows;
     const ids = new Set(featuredRows.map((h) => h.id));
-    return rows.filter((h) => !ids.has(h.id));
+    return (rows ?? []).filter((h) => !ids.has(h.id));
   }, [rows, featuredRows]);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const clampedPage = Math.min(page, totalPages);
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
@@ -264,11 +306,40 @@ export default function PublicRelocationHousesListPage() {
           Nenhum imóvel com estes critérios. Tente alargar os filtros.
         </p>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {regularRows.map((h) => (
-            <RelocationHouseCard key={h.id} house={h} />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {regularRows.map((h) => (
+              <RelocationHouseCard key={h.id} house={h} />
+            ))}
+          </div>
+
+          {totalPages > 1 ? (
+            <nav
+              className="flex flex-wrap items-center justify-center gap-2 pt-2"
+              aria-label="Paginação de imóveis"
+            >
+              <button
+                type="button"
+                onClick={() => setRouteFilters({ page: Math.max(1, clampedPage - 1) })}
+                disabled={clampedPage <= 1}
+                className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Anterior
+              </button>
+              <span className="px-2 text-sm text-zinc-700">
+                Página <strong>{clampedPage}</strong> de <strong>{totalPages}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => setRouteFilters({ page: Math.min(totalPages, clampedPage + 1) })}
+                disabled={clampedPage >= totalPages}
+                className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Próxima
+              </button>
+            </nav>
+          ) : null}
+        </>
       )}
     </div>
   );

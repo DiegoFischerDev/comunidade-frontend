@@ -99,8 +99,10 @@ export default function PartnerPage() {
       try {
         const data = await api.marketplace.relocationHouses({
           partnerId: partner.id,
+          page: 1,
+          pageSize: 3,
         });
-        if (!cancelled) setRelocationPreview(data.slice(0, 3));
+        if (!cancelled) setRelocationPreview(data.items.slice(0, 3));
       } catch {
         if (!cancelled) setRelocationPreview([]);
       } finally {

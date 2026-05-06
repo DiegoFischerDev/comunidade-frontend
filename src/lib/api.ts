@@ -1578,15 +1578,27 @@ export const api = {
       city?: string;
       typology?: string;
       businessType?: 'RENT' | 'SALE';
+      minPriceEur?: string;
+      maxPriceEur?: string;
+      page?: number;
+      pageSize?: number;
     }) => {
       const q = new URLSearchParams();
       if (query?.partnerId?.trim()) q.set('partnerId', query.partnerId.trim());
       if (query?.city?.trim()) q.set('city', query.city.trim());
       if (query?.typology?.trim()) q.set('typology', query.typology.trim());
       if (query?.businessType?.trim()) q.set('businessType', query.businessType.trim());
+      if (query?.minPriceEur?.trim()) q.set('minPriceEur', query.minPriceEur.trim());
+      if (query?.maxPriceEur?.trim()) q.set('maxPriceEur', query.maxPriceEur.trim());
+      if (typeof query?.page === 'number' && Number.isFinite(query.page)) {
+        q.set('page', String(query.page));
+      }
+      if (typeof query?.pageSize === 'number' && Number.isFinite(query.pageSize)) {
+        q.set('pageSize', String(query.pageSize));
+      }
       const qs = q.toString();
-      return request<
-        {
+      return request<{
+        items: {
           id: string;
           houseId: number;
           title: string;
@@ -1613,8 +1625,11 @@ export const api = {
             logoUrl: string | null;
             shortDescription: string | null;
           };
-        }[]
-      >(`/partners/relocation/houses${qs ? `?${qs}` : ''}`, { method: 'GET' });
+        }[];
+        total: number;
+        page: number;
+        pageSize: number;
+      }>(`/partners/relocation/houses${qs ? `?${qs}` : ''}`, { method: 'GET' });
     },
     /** Público: sem Bearer (evita 401 com JWT expirado em rotas @Public). */
     relocationCategory: () =>
