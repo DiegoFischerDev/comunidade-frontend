@@ -13,8 +13,6 @@ import {
   RELOCATION_TYPOLOGY_OPTIONS,
   type RelocationHouseRow,
 } from "@/components/relocation/relocation-house-shared";
-import { CardLinkButton } from "@/components/ui/CardButton";
-import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 
 type RelocationPartner = {
@@ -26,11 +24,9 @@ const RELOCATION_IMOVEIS_PATH = "/relocation/imoveis";
 const RELOCATION_HOUSES_WHATSAPP_GROUP_URL =
   "https://chat.whatsapp.com/Kt4ylOIU0qMBbtfHKlyvVt?mode=gi_t";
 
-export default function RelocationHousesListPage() {
+export default function PublicRelocationHousesListPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, loading: authLoading } = useAuth();
-  const isAdmin = !authLoading && user?.role === "ADMIN";
   const [rows, setRows] = useState<RelocationHouseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -42,7 +38,12 @@ export default function RelocationHousesListPage() {
   const finalidade = searchParams.get("finalidade")?.trim() ?? "";
 
   const setRouteFilters = useCallback(
-    (next: { parceiro?: string; cidade?: string; tipologia?: string; finalidade?: string }) => {
+    (next: {
+      parceiro?: string;
+      cidade?: string;
+      tipologia?: string;
+      finalidade?: string;
+    }) => {
       const q = new URLSearchParams(searchParams.toString());
       const p = next.parceiro !== undefined ? next.parceiro : parceiro;
       const c = next.cidade !== undefined ? next.cidade : cidade;
@@ -63,33 +64,18 @@ export default function RelocationHousesListPage() {
   );
 
   useEffect(() => {
-    if (authLoading) return;
-    if (user?.role !== "ADMIN") {
-      router.replace("/dashboard");
-    }
-  }, [authLoading, user, router]);
-
-  useEffect(() => {
-    if (!isAdmin) return;
     void (async () => {
       try {
         const data = await api.marketplace.categoriesWithPartners();
         const rel = data.find((c) => c.slug === "relocation");
-        setPartners(
-          (rel?.partners ?? []).map((p) => ({ id: p.id, name: p.name })),
-        );
+        setPartners((rel?.partners ?? []).map((p) => ({ id: p.id, name: p.name })));
       } catch {
         setPartners([]);
       }
     })();
-  }, [isAdmin]);
+  }, []);
 
   useEffect(() => {
-    if (!isAdmin) {
-      setLoading(false);
-      setRows([]);
-      return;
-    }
     setLoading(true);
     setError("");
     void (async () => {
@@ -102,15 +88,13 @@ export default function RelocationHousesListPage() {
         });
         setRows(data);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Erro ao carregar imóveis.",
-        );
+        setError(err instanceof Error ? err.message : "Erro ao carregar imóveis.");
         setRows([]);
       } finally {
         setLoading(false);
       }
     })();
-  }, [isAdmin, parceiro, cidade, tipologia, finalidade]);
+  }, [parceiro, cidade, tipologia, finalidade]);
 
   const filterBar = useMemo(
     () => (
@@ -216,43 +200,15 @@ export default function RelocationHousesListPage() {
     return rows.filter((h) => !ids.has(h.id));
   }, [rows, featuredRows]);
 
-  if (authLoading) {
-    return (
-      <div className="p-6 text-sm text-zinc-600" role="status">
-        A carregar…
-      </div>
-    );
-  }
-
-  if (user?.role !== "ADMIN") {
-    return (
-      <div className="p-6 text-sm text-zinc-600" role="status">
-        Acesso reservado a administradores. A redirecionar…
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <CardLinkButton
-          href="/dashboard/relocation"
-          variant="primary"
-          className="w-fit shadow-sm"
-        >
-          <span className="opacity-90" aria-hidden>
-            ←
-          </span>
-          Relocation
-        </CardLinkButton>
-      </div>
-
+    <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
-          Todos os imóveis
+          Imóveis Relocation
         </h1>
         <p className="mt-1 text-sm text-zinc-600">
-          Encontre o imóvel perfeito e conte com nosso suporte para fechar o contrato direto com o senhorio, sem burocracia.
+          Encontre o imóvel perfeito e conte com nosso suporte para fechar o contrato direto com o senhorio, sem
+          burocracia.
         </p>
       </div>
 
@@ -260,7 +216,13 @@ export default function RelocationHousesListPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              <Image src="/whatsapp.png" alt="" width={24} height={24} className="h-6 w-6 object-contain" />
+              <Image
+                src="/whatsapp.png"
+                alt=""
+                width={24}
+                height={24}
+                className="h-6 w-6 object-contain"
+              />
               Grupo WhatsApp de imóveis
             </p>
             <p className="mt-1 text-sm text-zinc-600">
@@ -318,3 +280,4 @@ export default function RelocationHousesListPage() {
     </div>
   );
 }
+

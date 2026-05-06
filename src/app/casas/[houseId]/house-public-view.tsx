@@ -124,7 +124,7 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
             </Link>
             <nav className="shrink-0">
               <Link
-                href="/dashboard/relocation"
+                href="/relocation/imoveis"
                 className="inline-flex rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 sm:px-4 sm:text-sm"
               >
                 Catálogo de imóveis
@@ -138,10 +138,10 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
         {isDashboard ? (
           <nav className="text-sm">
             <Link
-              href="/dashboard/relocation"
-              className="inline-flex font-medium text-amber-800 underline-offset-4 hover:underline"
+              href="/relocation/imoveis"
+              className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
             >
-              ← Catálogo Relocation
+              Ver todos os imóveis
             </Link>
           </nav>
         ) : null}

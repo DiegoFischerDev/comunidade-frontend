@@ -112,7 +112,7 @@ export function HouseContactSection({
     return (
       <p className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700">
         Este anúncio está indisponível. Explora outros imóveis na{" "}
-        <Link href="/dashboard/relocation" className="font-medium text-amber-800 underline">
+        <Link href="/relocation/imoveis" className="font-medium text-amber-800 underline">
           listagem Relocation
         </Link>
         .
@@ -124,7 +124,7 @@ export function HouseContactSection({
     return (
       <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
         Este imóvel está <strong className="font-semibold">reservado</strong>. Explora outros anúncios na{" "}
-        <Link href="/dashboard/relocation" className="font-medium text-amber-900 underline">
+        <Link href="/relocation/imoveis" className="font-medium text-amber-900 underline">
           listagem Relocation
         </Link>
         .
