@@ -53,6 +53,17 @@ function cityLabel(id: string): string {
   return relocationCityDisplayName(id);
 }
 
+function statusSelectClass(status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE'): string {
+  switch (status) {
+    case 'AVAILABLE':
+      return 'border-emerald-200 bg-emerald-50 text-emerald-950 focus:border-emerald-400 focus:ring-emerald-400';
+    case 'RESERVED':
+      return 'border-amber-200 bg-amber-50 text-amber-950 focus:border-amber-400 focus:ring-amber-400';
+    case 'UNAVAILABLE':
+      return 'border-zinc-200 bg-zinc-50 text-zinc-800 focus:border-zinc-400 focus:ring-zinc-400';
+  }
+}
+
 function adminHouseWhatsAppSendDatesLabel(h: {
   whatsappSends?: { sentAt: string }[];
   whatsappSentAt: string | null;
@@ -108,6 +119,7 @@ export default function AdminHousesPage() {
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [featuringId, setFeaturingId] = useState<string | null>(null);
+  const [updatingStatusHouseId, setUpdatingStatusHouseId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddWhatsappGroupModal, setShowAddWhatsappGroupModal] = useState(false);
   const [whatsappGroups, setWhatsappGroups] = useState<WhatsappGroupRow[]>([]);
@@ -143,7 +155,6 @@ export default function AdminHousesPage() {
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE'>('ALL');
   const [filterCityContains, setFilterCityContains] = useState('');
   const [filterTypology, setFilterTypology] = useState<string>('ALL');
-  const [filterPartnerId, setFilterPartnerId] = useState<string>('ALL');
   const [showUpdatedBanner, setShowUpdatedBanner] = useState(false);
 
   useEffect(() => {
@@ -205,14 +216,6 @@ export default function AdminHousesPage() {
     })();
   }, [isAdmin]);
 
-  const partnerOptions = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const h of items) {
-      map.set(h.partner.id, h.partner.name);
-    }
-    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], 'pt-PT'));
-  }, [items]);
-
   const extraRelocationCitiesFromHouses = useMemo(() => {
     const out = new Set<string>();
     for (const h of items) {
@@ -258,7 +261,6 @@ export default function AdminHousesPage() {
       });
     }
     if (filterTypology !== 'ALL') rows = rows.filter((h) => h.typology === filterTypology);
-    if (filterPartnerId !== 'ALL') rows = rows.filter((h) => h.partner.id === filterPartnerId);
     return rows;
   }, [
     items,
@@ -267,7 +269,6 @@ export default function AdminHousesPage() {
     filterStatus,
     filterCityContains,
     filterTypology,
-    filterPartnerId,
   ]);
 
   const filtersActive = useMemo(() => {
@@ -276,8 +277,7 @@ export default function AdminHousesPage() {
       filterBusinessType !== 'ALL' ||
       filterStatus !== 'ALL' ||
       filterCityContains.trim() !== '' ||
-      filterTypology !== 'ALL' ||
-      filterPartnerId !== 'ALL'
+      filterTypology !== 'ALL'
     );
   }, [
     filterSearch,
@@ -285,7 +285,6 @@ export default function AdminHousesPage() {
     filterStatus,
     filterCityContains,
     filterTypology,
-    filterPartnerId,
   ]);
 
   function clearFilters() {
@@ -294,7 +293,6 @@ export default function AdminHousesPage() {
     setFilterStatus('ALL');
     setFilterCityContains('');
     setFilterTypology('ALL');
-    setFilterPartnerId('ALL');
   }
 
   useEffect(() => {
@@ -434,6 +432,26 @@ export default function AdminHousesPage() {
     }
   };
 
+  const onQuickUpdateStatus = async (
+    id: string,
+    next: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE',
+  ) => {
+    setUpdatingStatusHouseId(id);
+    setError('');
+    const prevItems = items;
+    setItems((cur) => cur.map((h) => (h.id === id ? { ...h, status: next } : h)));
+    try {
+      await api.admin.houses.update(id, { status: next });
+      await load();
+    } catch (err) {
+      setItems(prevItems);
+      setError(err instanceof Error ? err.message : 'Erro ao atualizar estado.');
+      await load();
+    } finally {
+      setUpdatingStatusHouseId(null);
+    }
+  };
+
   const onCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
@@ -525,7 +543,7 @@ export default function AdminHousesPage() {
         </div>
       ) : null}
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <section className="mx-auto w-full max-w-4xl rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <h2 className="text-base font-semibold text-zinc-900">Grupos WhatsApp (relocation)</h2>
@@ -768,21 +786,6 @@ export default function AdminHousesPage() {
                     {TYPOLOGIES.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block text-xs font-medium text-zinc-700">
-                  Parceiro
-                  <select
-                    value={filterPartnerId}
-                    onChange={(e) => setFilterPartnerId(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                  >
-                    <option value="ALL">Todos</option>
-                    {partnerOptions.map(([id, name]) => (
-                      <option key={id} value={id}>
-                        {name}
                       </option>
                     ))}
                   </select>
@@ -1116,7 +1119,28 @@ export default function AdminHousesPage() {
                           )}
                         </td>
                         <td className="px-4 py-2 align-top">
-                          <HouseStatusBadge status={h.status} />
+                          <select
+                            value={h.status}
+                            disabled={updatingStatusHouseId === h.id}
+                            onChange={(e) =>
+                              void onQuickUpdateStatus(
+                                h.id,
+                                e.target.value as 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE',
+                              )
+                            }
+                            className={`rounded-md border px-2 py-1 text-xs font-semibold focus:outline-none focus:ring-1 disabled:opacity-60 ${statusSelectClass(
+                              h.status,
+                            )}`}
+                            title={HOUSE_STATUS_LABELS[h.status]}
+                          >
+                            {(Object.keys(HOUSE_STATUS_LABELS) as Array<
+                              keyof typeof HOUSE_STATUS_LABELS
+                            >).map((s) => (
+                              <option key={s} value={s}>
+                                {HOUSE_STATUS_LABELS[s]}
+                              </option>
+                            ))}
+                          </select>
                         </td>
                         <td className="whitespace-nowrap px-4 py-2 align-top">
                           {new Date(h.availableFrom).toLocaleDateString('pt-PT')}
@@ -1137,44 +1161,167 @@ export default function AdminHousesPage() {
                             {h.partner.category?.slug === 'relocation' ? (
                               <button
                                 type="button"
+                                title="Enviar nos grupos WhatsApp"
+                                aria-label="Enviar nos grupos WhatsApp"
                                 disabled={sendingWhatsappHouseId === h.id}
                                 onClick={() => void onSendHouseToWhatsappGroups(h.id)}
-                                className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
                               >
-                                {sendingWhatsappHouseId === h.id
-                                  ? 'A enviar…'
-                                  : 'Enviar nos grupos'}
+                                {sendingWhatsappHouseId === h.id ? (
+                                  <svg
+                                    className="h-4 w-4 animate-spin"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    aria-hidden
+                                  >
+                                    <circle
+                                      className="opacity-25"
+                                      cx="12"
+                                      cy="12"
+                                      r="10"
+                                      stroke="currentColor"
+                                      strokeWidth="4"
+                                    />
+                                    <path
+                                      className="opacity-75"
+                                      fill="currentColor"
+                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    />
+                                  </svg>
+                                ) : (
+                                  <svg
+                                    className="h-4 w-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                    viewBox="0 0 24 24"
+                                    aria-hidden
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+                                    />
+                                  </svg>
+                                )}
                               </button>
                             ) : null}
                             <Link
                               href={`/dashboard/admin/houses/${encodeURIComponent(h.id)}/edit`}
-                              className="inline-flex rounded-md border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
+                              title="Editar anúncio"
+                              aria-label="Editar anúncio"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50"
                             >
-                              Editar
+                              <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                                viewBox="0 0 24 24"
+                                aria-hidden
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+                                />
+                              </svg>
                             </Link>
                             <button
                               type="button"
+                              title={h.featured ? 'Remover destaque' : 'Destacar'}
+                              aria-label={h.featured ? 'Remover destaque' : 'Destacar'}
                               disabled={featuringId === h.id}
                               onClick={() => onToggleFeatured(h.id, !h.featured)}
-                              className={`rounded-md border px-3 py-1 text-xs font-medium disabled:opacity-50 ${
+                              className={`inline-flex h-8 w-8 items-center justify-center rounded-md border disabled:opacity-50 ${
                                 h.featured
                                   ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
                                   : 'border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50'
                               }`}
                             >
-                              {featuringId === h.id
-                                ? 'A atualizar…'
-                                : h.featured
-                                  ? 'Remover destaque'
-                                  : 'Destacar'}
+                              {featuringId === h.id ? (
+                                <svg
+                                  className="h-4 w-4 animate-spin"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  aria-hidden
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  />
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  />
+                                </svg>
+                              ) : (
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                  viewBox="0 0 24 24"
+                                  aria-hidden
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557L3.04 10.385a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+                                  />
+                                </svg>
+                              )}
                             </button>
                             <button
                               type="button"
+                              title="Eliminar anúncio"
+                              aria-label="Eliminar anúncio"
                               disabled={busyId === h.id}
                               onClick={() => onDelete(h.id)}
-                              className="rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:opacity-50"
                             >
-                              {busyId === h.id ? 'A apagar…' : 'Eliminar'}
+                              {busyId === h.id ? (
+                                <svg
+                                  className="h-4 w-4 animate-spin"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  aria-hidden
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  />
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  />
+                                </svg>
+                              ) : (
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                  viewBox="0 0 24 24"
+                                  aria-hidden
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M14.74 9l-.346 9m-4.008 0L9.22 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                                  />
+                                </svg>
+                              )}
                             </button>
                           </div>
                         </td>
