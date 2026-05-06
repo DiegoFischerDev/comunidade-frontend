@@ -697,6 +697,7 @@ export const api = {
             imageUrls: string[];
             videoUrl: string | null;
             whatsappSentAt: string | null;
+            whatsappSends?: { sentAt: string }[];
             whatsappError: string | null;
             createdAt: string;
             partner: {
@@ -821,6 +822,7 @@ export const api = {
           furnished?: boolean;
           coverImageIndex?: number;
           status?: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+          partnerId?: string;
         },
       ) => {
         const fd = new FormData();
@@ -845,6 +847,7 @@ export const api = {
         if (input.furnished != null) fd.append('furnished', input.furnished ? 'true' : 'false');
         if (input.coverImageIndex != null) fd.append('coverImageIndex', String(input.coverImageIndex));
         if (input.status != null) fd.append('status', input.status);
+        if (input.partnerId != null) fd.append('partnerId', input.partnerId);
         return requestFormData<{
           id: string;
           houseId: number;

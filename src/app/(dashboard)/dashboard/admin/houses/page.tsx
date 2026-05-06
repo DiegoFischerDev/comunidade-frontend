@@ -11,6 +11,8 @@ import {
   isRelocationPortugalCity,
   relocationCityDisplayName,
 } from '@/lib/relocation-portugal-cities';
+import { orderHouseImagesWithCoverFirst } from '@/lib/house-entrance';
+import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
 
 type AdminHouseRow = Awaited<ReturnType<typeof api.admin.houses.list>>[number];
 type WhatsappGroupRow = Awaited<ReturnType<typeof api.admin.houseWhatsappGroups.list>>[number];
@@ -51,6 +53,40 @@ function cityLabel(id: string): string {
   return relocationCityDisplayName(id);
 }
 
+function adminHouseWhatsAppSendDatesLabel(h: {
+  whatsappSends?: { sentAt: string }[];
+  whatsappSentAt: string | null;
+}): string {
+  const fromArray = (h.whatsappSends ?? [])
+    .map((x) => x.sentAt)
+    .filter((x): x is string => typeof x === 'string' && x.trim() !== '')
+    .map((iso) => new Date(iso).toLocaleDateString('pt-PT'));
+  if (fromArray.length > 0) return fromArray.reverse().join(', ');
+  if (h.whatsappSentAt) return new Date(h.whatsappSentAt).toLocaleDateString('pt-PT');
+  return '—';
+}
+
+function getHouseMedia(h: {
+  imageUrls: string[];
+  coverImageUrl?: string | null;
+  videoUrl: string | null;
+}): { primaryImageSrc: string | null; videoSrc: string | null } {
+  const ordered = orderHouseImagesWithCoverFirst(h.imageUrls ?? [], h.coverImageUrl);
+  const primaryImageSrc = ordered[0] ? resolveUploadsUrl(ordered[0]) : null;
+  const videoSrc = h.videoUrl ? resolveUploadsUrl(h.videoUrl) : null;
+  return { primaryImageSrc, videoSrc };
+}
+
+function formatAdminHousePriceEur(priceEur: string, businessType: 'RENT' | 'SALE'): string {
+  const t = (priceEur ?? '')
+    .trim()
+    .replace(/\s*€\s*$/i, '')
+    .replace(/\s*\/\s*m[eê]s?\s*$/i, '')
+    .trim();
+  if (!t) return '—';
+  return businessType === 'SALE' ? `${t} €` : `${t} € / mês`;
+}
+
 function typologyLabel(id: string): string {
   return TYPOLOGIES.find((t) => t.id === id)?.label ?? id;
 }
@@ -73,7 +109,7 @@ export default function AdminHousesPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [featuringId, setFeaturingId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showWhatsappGroupsModal, setShowWhatsappGroupsModal] = useState(false);
+  const [showAddWhatsappGroupModal, setShowAddWhatsappGroupModal] = useState(false);
   const [whatsappGroups, setWhatsappGroups] = useState<WhatsappGroupRow[]>([]);
   const [loadingWhatsappGroups, setLoadingWhatsappGroups] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
@@ -144,13 +180,14 @@ export default function AdminHousesPage() {
     (async () => {
       try {
         await load();
+        await loadWhatsappGroups();
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar anúncios.');
       } finally {
         setLoading(false);
       }
     })();
-  }, [user, isAdmin, load]);
+  }, [user, isAdmin, load, loadWhatsappGroups]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -167,11 +204,6 @@ export default function AdminHousesPage() {
       }
     })();
   }, [isAdmin]);
-
-  useEffect(() => {
-    if (!isAdmin || !showWhatsappGroupsModal) return;
-    void loadWhatsappGroups();
-  }, [isAdmin, showWhatsappGroupsModal, loadWhatsappGroups]);
 
   const partnerOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -319,6 +351,7 @@ export default function AdminHousesPage() {
       setNewGroupName('');
       setNewGroupJid('');
       setNewGroupBusinessType('RENT');
+      setShowAddWhatsappGroupModal(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao adicionar grupo.');
     } finally {
@@ -474,7 +507,7 @@ export default function AdminHousesPage() {
           </button>
           <button
             type="button"
-            onClick={() => setShowWhatsappGroupsModal(true)}
+            onClick={() => setShowAddWhatsappGroupModal(true)}
             className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100"
           >
             Adicionar grupo
@@ -489,6 +522,174 @@ export default function AdminHousesPage() {
       {showUpdatedBanner ? (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
           Anúncio atualizado com sucesso.
+        </div>
+      ) : null}
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-zinc-900">Grupos WhatsApp (relocation)</h2>
+            <p className="mt-1 text-sm text-zinc-600">
+              Só os grupos <strong className="font-semibold">ativos</strong> e com a mesma{' '}
+              <strong className="font-semibold">finalidade</strong> que o imóvel (arrendamento ou venda) recebem o
+              envio em &quot;Enviar nos grupos&quot;. Ordem: imagens, vídeo (se existir), texto com resumo e descrição
+              (sem link).
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void loadWhatsappGroups()}
+            disabled={loadingWhatsappGroups}
+            className="inline-flex w-full items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-60 sm:w-auto"
+          >
+            {loadingWhatsappGroups ? 'A atualizar…' : 'Atualizar lista'}
+          </button>
+        </div>
+
+        <div className="mt-4">
+          {loadingWhatsappGroups ? (
+            <p className="text-sm text-zinc-600">A carregar…</p>
+          ) : whatsappGroups.length === 0 ? (
+            <p className="text-sm text-zinc-500">Ainda não há grupos. Adiciona o primeiro abaixo.</p>
+          ) : (
+            <div className="max-h-64 overflow-y-auto rounded-lg border border-zinc-200">
+              <table className="min-w-full text-sm">
+                <thead className="bg-zinc-50 text-left text-xs font-medium text-zinc-600">
+                  <tr>
+                    <th className="px-3 py-2">Nome</th>
+                    <th className="px-3 py-2">Finalidade</th>
+                    <th className="px-3 py-2">JID</th>
+                    <th className="px-3 py-2">Ativo</th>
+                    <th className="px-3 py-2 text-right">—</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {whatsappGroups.map((g) => (
+                    <tr key={g.id} className="border-t border-zinc-100">
+                      <td className="px-3 py-2 font-medium text-zinc-900">{g.name}</td>
+                      <td className="whitespace-nowrap px-3 py-2">
+                        <select
+                          value={g.businessType}
+                          disabled={updatingGroupPurposeId === g.id}
+                          onChange={(e) =>
+                            void onUpdateGroupFinalidade(g, e.target.value as 'RENT' | 'SALE')
+                          }
+                          className="max-w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900"
+                        >
+                          <option value="RENT">{GROUP_FINALIDADE_LABELS.RENT}</option>
+                          <option value="SALE">{GROUP_FINALIDADE_LABELS.SALE}</option>
+                        </select>
+                      </td>
+                      <td
+                        className="max-w-[200px] truncate px-3 py-2 font-mono text-xs text-zinc-600"
+                        title={g.groupJid}
+                      >
+                        {g.groupJid}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2">
+                        <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-zinc-700">
+                          <input
+                            type="checkbox"
+                            checked={g.active}
+                            disabled={togglingGroupId === g.id}
+                            onChange={(e) => void onToggleGroupActive(g, e.target.checked)}
+                            className="h-4 w-4 rounded border-zinc-300"
+                          />
+                          {g.active ? 'Sim' : 'Não'}
+                        </label>
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          type="button"
+                          disabled={deletingGroupId === g.id}
+                          onClick={() => void onDeleteWhatsappGroup(g.id)}
+                          className="text-xs font-medium text-red-600 hover:underline disabled:opacity-50"
+                        >
+                          {deletingGroupId === g.id ? '…' : 'Remover'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+      </section>
+
+      {showAddWhatsappGroupModal ? (
+        <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/45 p-4">
+          <div className="my-8 w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-zinc-900">Adicionar grupo WhatsApp</h2>
+                <p className="mt-1 text-sm text-zinc-600">
+                  Cria um grupo para receber envios de imóveis relocation.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddWhatsappGroupModal(false)}
+                className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+              >
+                Fechar
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                void onAddWhatsappGroup(e);
+              }}
+              className="space-y-3 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50 p-4"
+            >
+              <label className="block text-sm">
+                <span className="mb-1 block text-xs text-zinc-600">Nome do grupo</span>
+                <input
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                  placeholder="Ex.: Clientes Lisboa"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1 block text-xs text-zinc-600">Finalidade</span>
+                <select
+                  value={newGroupBusinessType}
+                  onChange={(e) => setNewGroupBusinessType(e.target.value as 'RENT' | 'SALE')}
+                  className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+                >
+                  <option value="RENT">{GROUP_FINALIDADE_LABELS.RENT}</option>
+                  <option value="SALE">{GROUP_FINALIDADE_LABELS.SALE}</option>
+                </select>
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1 block text-xs text-zinc-600">Código (JID)</span>
+                <input
+                  value={newGroupJid}
+                  onChange={(e) => setNewGroupJid(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm"
+                  placeholder="120363407245204550@g.us"
+                />
+              </label>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddWhatsappGroupModal(false)}
+                  className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingWhatsappGroup}
+                  className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {savingWhatsappGroup ? 'A guardar…' : 'Adicionar'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       ) : null}
 
@@ -615,13 +816,54 @@ export default function AdminHousesPage() {
                     className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm ring-1 ring-zinc-900/5"
                   >
                     <div className="flex flex-col gap-3">
-                      <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Título</p>
-                        <p className="mt-0.5 text-sm font-semibold leading-snug text-zinc-900">{h.title}</p>
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Parceiro</p>
-                        <p className="mt-0.5 text-sm text-zinc-800">{h.partner.name}</p>
+                      <div className="flex items-start gap-3">
+                        <Link
+                          href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Abrir página do imóvel"
+                          className="relative block h-14 w-20 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100"
+                        >
+                          {(() => {
+                            const { primaryImageSrc, videoSrc } = getHouseMedia(h);
+                            if (primaryImageSrc) {
+                              return (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={primaryImageSrc}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                />
+                              );
+                            }
+                            if (videoSrc) {
+                              return (
+                                <video
+                                  src={videoSrc}
+                                  className="h-full w-full object-cover"
+                                  muted
+                                  playsInline
+                                  preload="metadata"
+                                />
+                              );
+                            }
+                            return (
+                              <div className="flex h-full w-full items-center justify-center text-[11px] text-zinc-400">
+                                Sem média
+                              </div>
+                            );
+                          })()}
+                        </Link>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Título</p>
+                          <p className="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug text-zinc-900">
+                            {h.title}
+                          </p>
+                          <p className="mt-1 text-xs text-zinc-500">
+                            {cityLabel(h.city)} · {typologyLabel(h.typology)}
+                          </p>
+                        </div>
                       </div>
                       <div>
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
@@ -629,6 +871,14 @@ export default function AdminHousesPage() {
                         </p>
                         <p className="mt-0.5 text-sm text-zinc-800">
                           {BUSINESS_TYPE_LABELS[h.businessType] ?? h.businessType}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                          {h.businessType === 'SALE' ? 'Preço de venda' : 'Renda mensal'}
+                        </p>
+                        <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-900">
+                          {formatAdminHousePriceEur(h.priceEur, h.businessType)}
                         </p>
                       </div>
                       <div>
@@ -658,9 +908,7 @@ export default function AdminHousesPage() {
                             ? '—'
                             : sendingWhatsappHouseId === h.id
                               ? 'Enviando...'
-                              : h.whatsappSentAt
-                                ? new Date(h.whatsappSentAt).toLocaleString('pt-PT')
-                                : '—'}
+                              : adminHouseWhatsAppSendDatesLabel(h)}
                         </p>
                       </div>
                       <div className="flex flex-nowrap items-center justify-center gap-2 border-t border-zinc-100 pt-3">
@@ -790,10 +1038,11 @@ export default function AdminHousesPage() {
                   <thead className="bg-zinc-50 text-zinc-600">
                     <tr>
                       <th className="whitespace-nowrap px-4 py-2 text-left">Id</th>
+                      <th className="w-[76px] px-4 py-2 text-left">Mídia</th>
                       <th className="px-4 py-2 text-left">Título</th>
                       <th className="px-4 py-2 text-left">Finalidade</th>
+                      <th className="px-4 py-2 text-left">Preço</th>
                       <th className="px-4 py-2 text-left">Parceiro</th>
-                      <th className="px-4 py-2 text-left">Categoria</th>
                       <th className="px-4 py-2 text-left">Destaque</th>
                       <th className="px-4 py-2 text-left">Estado</th>
                       <th className="px-4 py-2 text-left">Disponível a partir</th>
@@ -808,6 +1057,42 @@ export default function AdminHousesPage() {
                         <td className="whitespace-nowrap px-4 py-2 align-top font-mono text-xs tabular-nums text-zinc-700">
                           {h.houseId}
                         </td>
+                        <td className="px-4 py-2 align-top">
+                          <Link
+                            href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Abrir página do imóvel"
+                            className="relative block h-10 w-14 overflow-hidden rounded-md border border-zinc-200 bg-zinc-100"
+                          >
+                            {(() => {
+                              const { primaryImageSrc, videoSrc } = getHouseMedia(h);
+                              if (primaryImageSrc) {
+                                return (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={primaryImageSrc}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                    loading="lazy"
+                                  />
+                                );
+                              }
+                              if (videoSrc) {
+                                return (
+                                  <video
+                                    src={videoSrc}
+                                    className="h-full w-full object-cover"
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                  />
+                                );
+                              }
+                              return null;
+                            })()}
+                          </Link>
+                        </td>
                         <td className="max-w-[200px] px-4 py-2 align-top">
                           <span className="line-clamp-2 font-medium text-zinc-900">{h.title}</span>
                           <p className="mt-0.5 text-xs text-zinc-500">
@@ -817,10 +1102,10 @@ export default function AdminHousesPage() {
                         <td className="whitespace-nowrap px-4 py-2 align-top text-zinc-800">
                           {BUSINESS_TYPE_LABELS[h.businessType] ?? h.businessType}
                         </td>
-                        <td className="px-4 py-2 align-top">{h.partner.name}</td>
-                        <td className="px-4 py-2 align-top">
-                          {h.partner.category?.name ?? '—'}
+                        <td className="whitespace-nowrap px-4 py-2 align-top font-medium tabular-nums text-zinc-900">
+                          {formatAdminHousePriceEur(h.priceEur, h.businessType)}
                         </td>
+                        <td className="px-4 py-2 align-top">{h.partner.name}</td>
                         <td className="whitespace-nowrap px-4 py-2 align-top text-xs">
                           {h.featured ? (
                             <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900">
@@ -837,14 +1122,14 @@ export default function AdminHousesPage() {
                           {new Date(h.availableFrom).toLocaleDateString('pt-PT')}
                         </td>
                         <td className="whitespace-nowrap px-4 py-2 align-top">
-                          {new Date(h.createdAt).toLocaleString('pt-PT')}
+                          {new Date(h.createdAt).toLocaleDateString('pt-PT')}
                         </td>
                         <td
                           className="whitespace-nowrap px-4 py-2 align-top text-xs text-zinc-700"
                           title={h.whatsappError?.trim() ? h.whatsappError : undefined}
                         >
-                          {h.partner.category?.slug === 'relocation' && h.whatsappSentAt
-                            ? new Date(h.whatsappSentAt).toLocaleString('pt-PT')
+                          {h.partner.category?.slug === 'relocation'
+                            ? adminHouseWhatsAppSendDatesLabel(h)
                             : '—'}
                         </td>
                         <td className="px-4 py-2 text-right align-top">
@@ -866,14 +1151,6 @@ export default function AdminHousesPage() {
                               className="inline-flex rounded-md border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
                             >
                               Editar
-                            </Link>
-                            <Link
-                              href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex rounded-md border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
-                            >
-                              Ver imóvel
                             </Link>
                             <button
                               type="button"
@@ -1161,148 +1438,6 @@ export default function AdminHousesPage() {
         </div>
       ) : null}
 
-      {showWhatsappGroupsModal ? (
-        <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/45 p-4">
-          <div className="my-8 w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl">
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold text-zinc-900">Grupos WhatsApp (relocation)</h2>
-                <p className="mt-1 text-sm text-zinc-600">
-                  Só os grupos <strong className="font-semibold">ativos</strong> e com a mesma{' '}
-                  <strong className="font-semibold">finalidade</strong> que o imóvel (arrendamento ou venda) recebem o
-                  envio em &quot;Enviar nos grupos&quot;. Ordem: imagens, vídeo (se existir), texto com resumo e
-                  descrição (sem link).
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowWhatsappGroupsModal(false)}
-                className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
-              >
-                Fechar
-              </button>
-            </div>
-
-            {loadingWhatsappGroups ? (
-              <p className="text-sm text-zinc-600">A carregar…</p>
-            ) : whatsappGroups.length === 0 ? (
-              <p className="text-sm text-zinc-500">Ainda não há grupos. Adiciona o primeiro abaixo.</p>
-            ) : (
-              <div className="mb-4 max-h-64 overflow-y-auto rounded-lg border border-zinc-200">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-zinc-50 text-left text-xs font-medium text-zinc-600">
-                    <tr>
-                      <th className="px-3 py-2">Nome</th>
-                      <th className="px-3 py-2">Finalidade</th>
-                      <th className="px-3 py-2">JID</th>
-                      <th className="px-3 py-2">Ativo</th>
-                      <th className="px-3 py-2 text-right">—</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {whatsappGroups.map((g) => (
-                      <tr key={g.id} className="border-t border-zinc-100">
-                        <td className="px-3 py-2 font-medium text-zinc-900">{g.name}</td>
-                        <td className="whitespace-nowrap px-3 py-2">
-                          <select
-                            value={g.businessType}
-                            disabled={updatingGroupPurposeId === g.id}
-                            onChange={(e) =>
-                              void onUpdateGroupFinalidade(
-                                g,
-                                e.target.value as 'RENT' | 'SALE',
-                              )
-                            }
-                            className="max-w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900"
-                          >
-                            <option value="RENT">{GROUP_FINALIDADE_LABELS.RENT}</option>
-                            <option value="SALE">{GROUP_FINALIDADE_LABELS.SALE}</option>
-                          </select>
-                        </td>
-                        <td
-                          className="max-w-[200px] truncate px-3 py-2 font-mono text-xs text-zinc-600"
-                          title={g.groupJid}
-                        >
-                          {g.groupJid}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2">
-                          <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-zinc-700">
-                            <input
-                              type="checkbox"
-                              checked={g.active}
-                              disabled={togglingGroupId === g.id}
-                              onChange={(e) => void onToggleGroupActive(g, e.target.checked)}
-                              className="h-4 w-4 rounded border-zinc-300"
-                            />
-                            {g.active ? 'Sim' : 'Não'}
-                          </label>
-                        </td>
-                        <td className="px-3 py-2 text-right">
-                          <button
-                            type="button"
-                            disabled={deletingGroupId === g.id}
-                            onClick={() => void onDeleteWhatsappGroup(g.id)}
-                            className="text-xs font-medium text-red-600 hover:underline disabled:opacity-50"
-                          >
-                            {deletingGroupId === g.id ? '…' : 'Remover'}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            <form
-              onSubmit={onAddWhatsappGroup}
-              className="space-y-3 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50 p-4"
-            >
-              <p className="text-xs font-medium text-zinc-700">Adicionar grupo</p>
-              <label className="block text-sm">
-                <span className="mb-1 block text-xs text-zinc-600">Nome do grupo</span>
-                <input
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                  placeholder="Ex.: Clientes Lisboa"
-                />
-              </label>
-              <label className="block text-sm">
-                <span className="mb-1 block text-xs text-zinc-600">Finalidade</span>
-                <select
-                  value={newGroupBusinessType}
-                  onChange={(e) =>
-                    setNewGroupBusinessType(e.target.value as 'RENT' | 'SALE')
-                  }
-                  className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
-                >
-                  <option value="RENT">{GROUP_FINALIDADE_LABELS.RENT}</option>
-                  <option value="SALE">{GROUP_FINALIDADE_LABELS.SALE}</option>
-                </select>
-              </label>
-              <label className="block text-sm">
-                <span className="mb-1 block text-xs text-zinc-600">Código (JID)</span>
-                <input
-                  value={newGroupJid}
-                  onChange={(e) => setNewGroupJid(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm"
-                  placeholder="120363407245204550@g.us"
-                />
-              </label>
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={savingWhatsappGroup}
-                  className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                >
-                  {savingWhatsappGroup ? 'A guardar…' : 'Adicionar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

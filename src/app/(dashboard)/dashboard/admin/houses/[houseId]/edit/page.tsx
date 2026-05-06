@@ -64,6 +64,8 @@ export default function AdminEditHousePage() {
   const [error, setError] = useState("");
   const [partnerLabel, setPartnerLabel] = useState("");
   const [numericHouseId, setNumericHouseId] = useState<number | null>(null);
+  const [relocationPartners, setRelocationPartners] = useState<{ id: string; name: string }[]>([]);
+  const [assignedPartnerId, setAssignedPartnerId] = useState("");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -119,6 +121,7 @@ export default function AdminEditHousePage() {
         setNumericHouseId(h.houseId);
         const cat = h.partner.category?.name?.trim();
         setPartnerLabel(cat ? `${h.partner.name} · ${cat}` : h.partner.name);
+        setAssignedPartnerId(h.partner.id);
         setTitle(h.title);
         setDescription(h.description);
         setBusinessType(h.businessType);
@@ -156,6 +159,22 @@ export default function AdminEditHousePage() {
       cancelled = true;
     };
   }, [houseId, user]);
+
+  useEffect(() => {
+    if (!user || user.role !== "ADMIN") return;
+    (async () => {
+      try {
+        const list = await api.admin.partners.list();
+        const reloc = list
+          .filter((p) => p.category?.slug === "relocation")
+          .map((p) => ({ id: p.id, name: p.name }))
+          .sort((a, b) => a.name.localeCompare(b.name, "pt-PT"));
+        setRelocationPartners(reloc);
+      } catch {
+        setRelocationPartners([]);
+      }
+    })();
+  }, [user]);
 
   const totalImageCount = retainedImageUrls.length + newImages.length;
   useEffect(() => {
@@ -219,6 +238,7 @@ export default function AdminEditHousePage() {
         rendasEntradaCount,
         furnished,
         status,
+        partnerId: assignedPartnerId,
         keepImageUrls: retainedImageUrls,
         images: newImages.length ? newImages : undefined,
         video: video ?? undefined,
@@ -308,6 +328,27 @@ export default function AdminEditHousePage() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-zinc-700">
+            Parceiro relocation (titular do anúncio)
+          </label>
+          <select
+            value={assignedPartnerId}
+            onChange={(e) => setAssignedPartnerId(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+          >
+            <option value="">Administrador — conta relocation interna</option>
+            {relocationPartners.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-zinc-500">
+            Ao alterar, o contacto na página pública passa a ser o WhatsApp do parceiro escolhido.
+          </p>
         </div>
 
         <div>
