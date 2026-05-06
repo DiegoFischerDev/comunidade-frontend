@@ -230,12 +230,17 @@ export default function PublicRelocationHousesListPage() {
     [cidade, tipologia, finalidade, valorMin, valorMax, setRouteFilters, router],
   );
 
-  const featuredRows = useMemo(() => (rows ?? []).filter((h) => h.featured), [rows]);
+  const safeRows = useMemo(
+    () => (Array.isArray(rows) ? rows : []),
+    [rows],
+  );
+
+  const featuredRows = useMemo(() => safeRows.filter((h) => h.featured), [safeRows]);
   const regularRows = useMemo(() => {
-    if (featuredRows.length === 0) return rows;
+    if (featuredRows.length === 0) return safeRows;
     const ids = new Set(featuredRows.map((h) => h.id));
-    return (rows ?? []).filter((h) => !ids.has(h.id));
-  }, [rows, featuredRows]);
+    return safeRows.filter((h) => !ids.has(h.id));
+  }, [safeRows, featuredRows]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const clampedPage = Math.min(page, totalPages);
