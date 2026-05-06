@@ -29,21 +29,13 @@ type Props = {
 
 export function RelocationHouseCard({ house: h, showContactButton = true }: Props) {
   const { user } = useAuth();
-  const { videoSrc, primaryImageSrc } = getRelocationHouseMedia(h);
+  const { videoSrc, primaryImageSrc, videoPosterSrc } = getRelocationHouseMedia(h);
   const cityLabel = relocationCityDisplayName(h.city);
   const typoLabel = RELOCATION_TYPOLOGY_LABELS[h.typology] ?? h.typology;
   const businessTypeLabel = RELOCATION_BUSINESS_TYPE_LABELS[h.businessType] ?? "Arrendamento";
   const isListedButNotForContact = h.status !== "AVAILABLE";
 
   const handleContactClick = () => {
-    if (!user) {
-      window.dispatchEvent(
-        new CustomEvent("open-auth-modal", {
-          detail: { mode: "login" },
-        }),
-      );
-      return;
-    }
     openRelocationPartnerWhatsApp(h);
   };
 
@@ -69,14 +61,39 @@ export function RelocationHouseCard({ house: h, showContactButton = true }: Prop
             sizes="(max-width: 640px) 100vw, 33vw"
             unoptimized={relocationNextImageUnoptimized(primaryImageSrc)}
           />
-        ) : videoSrc ? (
-          <video
-            src={videoSrc}
-            className="pointer-events-none h-full w-full object-cover transition group-hover:scale-[1.02]"
-            muted
-            playsInline
-            preload="metadata"
+        ) : videoPosterSrc ? (
+          <Image
+            src={videoPosterSrc}
+            alt=""
+            fill
+            className="object-cover transition group-hover:scale-[1.02]"
+            sizes="(max-width: 640px) 100vw, 33vw"
+            unoptimized={relocationNextImageUnoptimized(videoPosterSrc)}
           />
+        ) : videoSrc ? (
+          <>
+            {/* Mobile (iOS): vídeo pode não pintar 1º frame sem interação → fallback. */}
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-zinc-100 text-zinc-500 md:hidden">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-9 w-9 text-zinc-400"
+                fill="currentColor"
+                aria-hidden
+              >
+                <path d="M3 6.75A2.75 2.75 0 0 1 5.75 4h8.5A2.75 2.75 0 0 1 17 6.75v1.19l2.22-1.27A1.5 1.5 0 0 1 21.5 7.97v8.06a1.5 1.5 0 0 1-2.28 1.3L17 16.06v1.19A2.75 2.75 0 0 1 14.25 20h-8.5A2.75 2.75 0 0 1 3 17.25v-10.5Z" />
+              </svg>
+              <span className="text-sm font-medium">Vídeo</span>
+            </div>
+
+            {/* Desktop: manter preview via vídeo (funciona bem). */}
+            <video
+              src={videoSrc}
+              className="pointer-events-none hidden h-full w-full object-cover transition group-hover:scale-[1.02] md:block"
+              muted
+              playsInline
+              preload="metadata"
+            />
+          </>
         ) : (
           <div className="flex h-full min-h-[8rem] items-center justify-center text-sm text-zinc-400">Sem média</div>
         )}

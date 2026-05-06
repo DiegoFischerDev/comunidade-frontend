@@ -1615,6 +1615,7 @@ export const api = {
           imageUrls: string[];
           coverImageUrl: string | null;
           videoUrl: string | null;
+          videoPosterUrl: string | null;
           partnerId: string;
           featured: boolean;
           status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
