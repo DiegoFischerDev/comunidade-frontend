@@ -1198,9 +1198,11 @@ export const api = {
             user: {
               id: string;
               name: string | null;
+              whatsapp: string;
               email: string;
               tier: 'VISITOR' | 'MEMBER';
             } | null;
+            visitorWhatsapp: string | null;
             immigrationPlan: {
               updatedAt: string;
               answers: {
