@@ -586,6 +586,8 @@ export const api = {
             name: string;
             whatsapp: string;
             logoUrl: string | null;
+            priority: number;
+            maxPendingLeads: number;
             createdAt: string;
             user: { id: string; email: string | null; role: string };
             category: { id: string; name: string; slug: string } | null;
@@ -612,12 +614,17 @@ export const api = {
         }),
       delete: (id: string) =>
         request<void>(`/partners/${id}`, { method: 'DELETE' }),
-      update: (id: string, input: { categoryId?: string | null }) =>
+      update: (
+        id: string,
+        input: { categoryId?: string | null; priority?: number; maxPendingLeads?: number },
+      ) =>
         request<{
           id: string;
           name: string;
           whatsapp: string;
           logoUrl: string | null;
+          priority: number;
+          maxPendingLeads: number;
           createdAt: string;
           user: { id: string; email: string | null; role: string };
           category: { id: string; name: string; slug: string } | null;
