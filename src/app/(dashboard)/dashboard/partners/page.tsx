@@ -10,6 +10,8 @@ type PartnerRow = {
   name: string;
   whatsapp: string;
   logoUrl: string | null;
+  priority: number;
+  maxPendingLeads: number;
   createdAt: string;
   user: { id: string; email: string | null; role: string };
   category: { id: string; name: string; slug: string } | null;
@@ -26,6 +28,8 @@ export default function PartnersPage() {
   const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(
     null,
   );
+  const [updatingPriorityPartnerId, setUpdatingPriorityPartnerId] = useState<string | null>(null);
+  const [updatingMaxPendingPartnerId, setUpdatingMaxPendingPartnerId] = useState<string | null>(null);
 
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -101,6 +105,8 @@ export default function PartnersPage() {
           name: result.partner.name,
           whatsapp: result.partner.whatsapp,
           logoUrl: result.partner.logoUrl,
+          priority: 0,
+          maxPendingLeads: 0,
           createdAt: result.partner.createdAt,
           user: result.user,
           category: null,
@@ -253,6 +259,8 @@ export default function PartnersPage() {
                 <th className="px-4 py-2 text-left">Logo</th>
                 <th className="px-4 py-2 text-left">Nome</th>
                 <th className="px-4 py-2 text-left">WhatsApp</th>
+                <th className="px-4 py-2 text-left">Prioridade</th>
+                <th className="px-4 py-2 text-left">Max leads pendentes</th>
                 <th className="px-4 py-2 text-left">Categoria</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
@@ -274,6 +282,87 @@ export default function PartnersPage() {
                   </td>
                   <td className="px-4 py-2">{p.name}</td>
                   <td className="px-4 py-2">{p.whatsapp}</td>
+                  <td className="px-4 py-2">
+                    <select
+                      value={String(typeof p.priority === 'number' ? p.priority : 0)}
+                      onChange={async (e) => {
+                        const nextPriority = Math.max(0, parseInt(e.target.value, 10) || 0);
+                        setUpdatingPriorityPartnerId(p.id);
+                        setError('');
+                        try {
+                          const updated = await api.admin.partners.update(p.id, {
+                            priority: nextPriority,
+                          });
+                          setPartners((prev) =>
+                            prev.map((row) =>
+                              row.id === p.id
+                                ? { ...row, priority: updated.priority }
+                                : row,
+                            ),
+                          );
+                        } catch (err) {
+                          setError(
+                            err instanceof Error
+                              ? err.message
+                              : 'Erro ao atualizar prioridade do parceiro.',
+                          );
+                        } finally {
+                          setUpdatingPriorityPartnerId(null);
+                        }
+                      }}
+                      disabled={updatingPriorityPartnerId === p.id}
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                      aria-label={`Prioridade do parceiro ${p.name}`}
+                    >
+                      <option value="0">0</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
+                      <option value="8">8</option>
+                      <option value="9">9</option>
+                      <option value="10">10</option>
+                    </select>
+                  </td>
+                  <td className="px-4 py-2">
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={String(typeof p.maxPendingLeads === 'number' ? p.maxPendingLeads : 0)}
+                      onChange={async (e) => {
+                        const nextMax = Math.max(0, parseInt(e.target.value, 10) || 0);
+                        setUpdatingMaxPendingPartnerId(p.id);
+                        setError('');
+                        try {
+                          const updated = await api.admin.partners.update(p.id, {
+                            maxPendingLeads: nextMax,
+                          });
+                          setPartners((prev) =>
+                            prev.map((row) =>
+                              row.id === p.id
+                                ? { ...row, maxPendingLeads: updated.maxPendingLeads }
+                                : row,
+                            ),
+                          );
+                        } catch (err) {
+                          setError(
+                            err instanceof Error
+                              ? err.message
+                              : 'Erro ao atualizar max leads pendentes do parceiro.',
+                          );
+                        } finally {
+                          setUpdatingMaxPendingPartnerId(null);
+                        }
+                      }}
+                      disabled={updatingMaxPendingPartnerId === p.id}
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                      aria-label={`Max leads pendentes do parceiro ${p.name}`}
+                    />
+                  </td>
                   <td className="px-4 py-2">
                     <select
                       value={p.category?.id ?? ''}
