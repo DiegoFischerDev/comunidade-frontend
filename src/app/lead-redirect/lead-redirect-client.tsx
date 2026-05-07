@@ -25,7 +25,7 @@ export function LeadRedirectClient() {
   }, [leadId, token]);
 
   useEffect(() => {
-    if (!leadId || !token) {
+    if (!leadId) {
       setError("Link inválido.");
       return;
     }
@@ -52,7 +52,7 @@ export function LeadRedirectClient() {
     return () => {
       cancelled = true;
     };
-  }, [endpoint, leadId, token]);
+  }, [endpoint, leadId]);
 
   return (
     <div className="mx-auto w-full max-w-xl px-4 py-10">

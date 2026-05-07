@@ -116,15 +116,19 @@ function getPlanLines(lead: LeadRow): string[] {
 }
 
 function displayNameForLead(lead: LeadRow): string {
-  return lead.contactType === 'visitor'
-    ? 'Visitante'
-    : lead.user?.name || '—';
+  const contactName =
+    typeof (lead as any).contactName === 'string' ? (lead as any).contactName.trim() : '';
+  if (contactName) return contactName;
+  if (lead.user?.name?.trim()) return lead.user.name.trim();
+  return 'Cliente WhatsApp';
 }
 
 function leadMatchesFilter(lead: LeadRow, filter: string): boolean {
   if (!filter.trim()) return true;
   const q = filter.trim().toLowerCase();
-  const name = (lead.user?.name ?? '').toLowerCase();
+  const contactName =
+    typeof (lead as any).contactName === 'string' ? (lead as any).contactName.trim() : '';
+  const name = (contactName || lead.user?.name || '').toLowerCase();
   const tier =
     lead.user?.tier === 'MEMBER'
       ? 'membro vip'
@@ -207,7 +211,6 @@ function LeadRowsDesktop({
   return (
     <>
       {leads.map((lead) => {
-        const planLines = getPlanLines(lead);
         const name = displayNameForLead(lead);
         return (
           <tr key={lead.id} className="border-t border-zinc-200">
@@ -216,19 +219,6 @@ function LeadRowsDesktop({
             </td>
             <td className="min-w-0 px-3 py-2.5 align-top text-xs leading-relaxed text-zinc-700">
               {lead.interestComment ?? '—'}
-            </td>
-            <td className="min-w-[140px] px-3 py-2.5 align-top">
-              <PlanImmigrationBlock
-                lead={lead}
-                planLines={planLines}
-                open={Boolean(openPlanByLeadId[lead.id])}
-                onToggle={() =>
-                  setOpenPlanByLeadId((prev) => ({
-                    ...prev,
-                    [lead.id]: !prev[lead.id],
-                  }))
-                }
-              />
             </td>
             <td className="whitespace-nowrap px-3 py-2.5 align-top text-xs text-zinc-700">
               {new Date(lead.createdAt).toLocaleString('pt-PT')}
@@ -271,7 +261,6 @@ function LeadCardsMobile({
   return (
     <div className="space-y-4">
       {leads.map((lead) => {
-        const planLines = getPlanLines(lead);
         const name = displayNameForLead(lead);
         return (
           <article
@@ -293,26 +282,6 @@ function LeadCardsMobile({
                   {lead.interestComment ?? '—'}
                 </dd>
               </div>
-              {planLines.length > 0 ? (
-                <div>
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                    Plano de imigração
-                  </dt>
-                  <dd className="mt-0.5">
-                    <PlanImmigrationBlock
-                      lead={lead}
-                      planLines={planLines}
-                      open={Boolean(openPlanByLeadId[lead.id])}
-                      onToggle={() =>
-                        setOpenPlanByLeadId((prev) => ({
-                          ...prev,
-                          [lead.id]: !prev[lead.id],
-                        }))
-                      }
-                    />
-                  </dd>
-                </div>
-              ) : null}
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
                   Data do pedido
@@ -399,12 +368,11 @@ function LeadTableSection({
         <table className="w-full min-w-[760px] table-fixed border-collapse text-sm xl:min-w-0">
           <thead className="bg-zinc-50 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">
             <tr>
-              <th className="w-[16%] px-3 py-3">Nome</th>
-              <th className="w-[27%] px-3 py-3">Interesse</th>
-              <th className="w-[21%] px-3 py-3">Plano de imigração</th>
+              <th className="w-[18%] px-3 py-3">Nome</th>
+              <th className="w-[37%] px-3 py-3">Interesse</th>
               <th className="w-[14%] px-3 py-3">Data do pedido</th>
-              <th className="w-[11%] px-3 py-3">Estado</th>
-              <th className="w-[11%] px-3 py-3 text-right">WhatsApp</th>
+              <th className="w-[15%] px-3 py-3">Estado</th>
+              <th className="w-[16%] px-3 py-3 text-right">WhatsApp</th>
             </tr>
           </thead>
           <tbody className="text-zinc-800">
@@ -541,7 +509,7 @@ export default function PartnerLeadsPage() {
               type="text"
               value={filterInput}
               onChange={(e) => setFilterInput(e.target.value)}
-              placeholder="Pesquisar por nome, interesse, plano ou data…"
+              placeholder="Pesquisar por nome, interesse ou data…"
               className="mt-1 w-full max-w-lg rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
