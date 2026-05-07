@@ -1192,6 +1192,7 @@ export const api = {
             createdAt: string;
             attendedAt: string | null;
             interestComment: string | null;
+            contactName: string | null;
             awaitingAttendance: boolean;
             contactType: 'user' | 'visitor';
             user: {

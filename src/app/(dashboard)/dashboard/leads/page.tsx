@@ -116,9 +116,7 @@ function getPlanLines(lead: LeadRow): string[] {
 }
 
 function displayNameForLead(lead: LeadRow): string {
-  const contactName =
-    typeof (lead as any).contactName === 'string' ? (lead as any).contactName.trim() : '';
-  if (contactName) return contactName;
+  if (lead.contactName?.trim()) return lead.contactName.trim();
   if (lead.user?.name?.trim()) return lead.user.name.trim();
   return 'Cliente WhatsApp';
 }
@@ -126,9 +124,7 @@ function displayNameForLead(lead: LeadRow): string {
 function leadMatchesFilter(lead: LeadRow, filter: string): boolean {
   if (!filter.trim()) return true;
   const q = filter.trim().toLowerCase();
-  const contactName =
-    typeof (lead as any).contactName === 'string' ? (lead as any).contactName.trim() : '';
-  const name = (contactName || lead.user?.name || '').toLowerCase();
+  const name = (lead.contactName?.trim() || lead.user?.name || '').toLowerCase();
   const tier =
     lead.user?.tier === 'MEMBER'
       ? 'membro vip'
