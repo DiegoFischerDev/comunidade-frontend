@@ -687,6 +687,41 @@ export const api = {
           }[]
         >('/partners/admin/sales', { method: 'GET' }),
     },
+    leads: {
+      list: (partnerId?: string) => {
+        const q = new URLSearchParams();
+        if (partnerId) q.set('partnerId', partnerId);
+        return request<
+          {
+            id: string;
+            createdAt: string;
+            attendedAt: string | null;
+            interestComment: string | null;
+            contactName: string | null;
+            partner: {
+              id: string;
+              name: string;
+              category?: { slug: string; name: string } | null;
+            } | null;
+            user: {
+              id: string;
+              name: string | null;
+              whatsapp: string;
+              email: string;
+              tier: 'VISITOR' | 'MEMBER';
+              role: string;
+            } | null;
+            visitorWhatsapp: string | null;
+          }[]
+        >(`/partners/admin/leads${q.toString() ? `?${q.toString()}` : ''}`, {
+          method: 'GET',
+        });
+      },
+      delete: (leadId: string) =>
+        request<{ ok: true }>(`/partners/admin/leads/${encodeURIComponent(leadId)}`, {
+          method: 'DELETE',
+        }),
+    },
     houses: {
       list: () =>
         request<
