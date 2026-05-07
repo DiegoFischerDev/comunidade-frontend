@@ -10,6 +10,34 @@ import { useAuth } from "@/contexts/AuthContext";
 import { CardButton, CardLinkButton } from "@/components/ui/CardButton";
 import { isRelocationPortugalCity } from "@/lib/relocation-portugal-cities";
 
+const EXTRA_RELOCATION_CITIES_STORAGE_KEY = "relocation-extra-city-options";
+
+function loadExtraRelocationCitiesFromStorage(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(EXTRA_RELOCATION_CITIES_STORAGE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+    const list = Array.isArray(parsed) ? parsed : [];
+    const out: string[] = [];
+    for (const x of list) {
+      const t = typeof x === "string" ? x.trim() : "";
+      if (t && !out.includes(t)) out.push(t);
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+function saveExtraRelocationCitiesToStorage(next: string[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(EXTRA_RELOCATION_CITIES_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // ignore
+  }
+}
+
 const TYPOLOGIES = [
   { id: "T1", label: "T1" },
   { id: "T2", label: "T2" },
@@ -44,6 +72,7 @@ export default function NewHousePostPage() {
   const [typology, setTypology] = useState<(typeof TYPOLOGIES)[number]["id"]>("T2");
   const [businessType, setBusinessType] = useState<(typeof BUSINESS_TYPES)[number]["id"]>("RENT");
   const [city, setCity] = useState("");
+  const [extraCityOptions, setExtraCityOptions] = useState<string[]>([]);
   const [availableFrom, setAvailableFrom] = useState(() => todayLocalDateInputValue());
   const [priceEur, setPriceEur] = useState("");
   const [relocationFeeEur, setRelocationFeeEur] = useState("");
@@ -78,6 +107,23 @@ export default function NewHousePostPage() {
       cancelled = true;
     };
   }, [user]);
+
+  useEffect(() => {
+    setExtraCityOptions(loadExtraRelocationCitiesFromStorage());
+  }, []);
+
+  const handleCityChange = (next: string) => {
+    setCity(next);
+    const t = next.trim();
+    if (!t) return;
+    if (isRelocationPortugalCity(t)) return;
+    setExtraCityOptions((prev) => {
+      if (prev.includes(t)) return prev;
+      const merged = [...prev, t].sort((a, b) => a.localeCompare(b, "pt"));
+      saveExtraRelocationCitiesToStorage(merged);
+      return merged;
+    });
+  };
 
   const imagePreviews = useMemo(
     () => images.map((file) => ({ file, url: URL.createObjectURL(file) })),
@@ -166,9 +212,6 @@ export default function NewHousePostPage() {
     if (!cleanTitle) return setError("Preenche o título do imóvel.");
     if (!cleanDesc) return setError("Preenche a descrição.");
     if (!cleanCity) return setError("Preenche a cidade.");
-    if (!isRelocationPortugalCity(cleanCity)) {
-      return setError("Escolhe uma cidade da lista.");
-    }
     if (!availableFrom) return setError('Seleciona a data em "Disponível em".');
     if (!cleanPrice) return setError(businessType === "SALE" ? "Preenche o preço de venda." : "Preenche o preço do arrendamento.");
     if (!cleanRelocation) return setError("Preenche a taxa de relocation (em euros).");
@@ -222,7 +265,7 @@ export default function NewHousePostPage() {
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-5 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div>
-          <span className="block text-xs font-medium text-zinc-700">Fotos (opcional até 6)</span>
+          <span className="block text-xs font-medium text-zinc-700">Fotos</span>
           <div className="mt-3 space-y-3">
             <input
               ref={imageInputRef}
@@ -286,7 +329,7 @@ export default function NewHousePostPage() {
             ) : null}
           </div>
 
-          <span className="mt-6 block text-xs font-medium text-zinc-700">Vídeo (opcional — só na página do imóvel)</span>
+          <span className="mt-6 block text-xs font-medium text-zinc-700">Vídeo</span>
           <input
             type="file"
             accept="video/mp4,video/quicktime,video/webm,video/3gpp,.mp4,.mov,.webm,.3gp"
@@ -364,8 +407,10 @@ export default function NewHousePostPage() {
               label="Cidade"
               labelClassName="block text-xs font-medium text-zinc-700"
               value={city}
-              onChange={setCity}
+              onChange={handleCityChange}
               allowEmpty={false}
+              allowCustomValue
+              extraCityOptions={extraCityOptions}
               placeholder="Pesquisar cidade…"
               variant="blue"
               required
