@@ -125,6 +125,9 @@ function leadMatchesFilter(lead: LeadRow, filter: string): boolean {
   if (!filter.trim()) return true;
   const q = filter.trim().toLowerCase();
   const name = (lead.contactName?.trim() || lead.user?.name || '').toLowerCase();
+  const waDigits =
+    (lead.user?.whatsapp ?? lead.visitorWhatsapp ?? '').replace(/\D/g, '').toLowerCase();
+  const qDigits = q.replace(/\D/g, '');
   const tier =
     lead.user?.tier === 'MEMBER'
       ? 'membro vip'
@@ -136,6 +139,7 @@ function leadMatchesFilter(lead: LeadRow, filter: string): boolean {
   const interest = (lead.interestComment ?? '').toLowerCase();
   return (
     name.includes(q) ||
+    (qDigits.length >= 3 && waDigits.includes(qDigits)) ||
     tier.includes(q) ||
     data.includes(q) ||
     planText.includes(q) ||
