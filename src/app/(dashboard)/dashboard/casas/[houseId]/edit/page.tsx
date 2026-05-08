@@ -13,6 +13,7 @@ import {
 } from "@/lib/relocation-portugal-cities";
 
 const TYPOLOGIES = [
+  { id: "T0", label: "T0" },
   { id: "T1", label: "T1" },
   { id: "T2", label: "T2" },
   { id: "T3", label: "T3" },

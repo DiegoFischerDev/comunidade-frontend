@@ -756,7 +756,7 @@ export const api = {
           title: string;
           description: string;
           businessType: 'RENT' | 'SALE';
-          typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          typology: 'T0' | 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
           city: string;
           availableFrom: string;
           priceEur: string;
@@ -785,7 +785,7 @@ export const api = {
         title?: string;
         description?: string;
         businessType?: 'RENT' | 'SALE';
-        typology?: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+        typology?: 'T0' | 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
         city?: string;
         availableFrom?: string;
         priceEur?: string;
@@ -826,7 +826,7 @@ export const api = {
           title: string;
           description: string;
           businessType: 'RENT' | 'SALE';
-          typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          typology: 'T0' | 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
           city: string;
           availableFrom: string;
           priceEur: string;
@@ -853,7 +853,7 @@ export const api = {
           keepImageUrls?: string[];
           title?: string;
           description?: string;
-          typology?: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          typology?: 'T0' | 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
           businessType?: 'RENT' | 'SALE';
           city?: string;
           availableFrom?: string;
@@ -896,7 +896,7 @@ export const api = {
           title: string;
           description: string;
           businessType: 'RENT' | 'SALE';
-          typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          typology: 'T0' | 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
           city: string;
           availableFrom: string;
           priceEur: string;
@@ -1270,7 +1270,7 @@ export const api = {
             title: string;
             description: string;
             businessType: 'RENT' | 'SALE';
-            typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+            typology: 'T0' | 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
             city: string;
             availableFrom: string;
             priceEur: string;
@@ -1295,7 +1295,7 @@ export const api = {
           title: string;
           description: string;
           businessType: 'RENT' | 'SALE';
-          typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          typology: 'T0' | 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
           city: string;
           availableFrom: string;
           priceEur: string;
@@ -1318,7 +1318,7 @@ export const api = {
         title: string;
         description: string;
         businessType?: 'RENT' | 'SALE';
-        typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+        typology: 'T0' | 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
         city: string;
         availableFrom: string;
         priceEur: string;
@@ -1355,7 +1355,7 @@ export const api = {
           title: string;
           description: string;
           businessType: 'RENT' | 'SALE';
-          typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          typology: 'T0' | 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
           city: string;
           availableFrom: string;
           priceEur: string;
@@ -1382,7 +1382,7 @@ export const api = {
           keepImageUrls?: string[];
           title?: string;
           description?: string;
-          typology?: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          typology?: 'T0' | 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
           businessType?: 'RENT' | 'SALE';
           city?: string;
           availableFrom?: string;
@@ -1421,7 +1421,7 @@ export const api = {
           title: string;
           description: string;
           businessType: 'RENT' | 'SALE';
-          typology: 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          typology: 'T0' | 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
           city: string;
           availableFrom: string;
           priceEur: string;
