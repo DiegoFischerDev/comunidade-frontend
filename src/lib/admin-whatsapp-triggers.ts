@@ -29,6 +29,14 @@ export const ADMIN_WHATSAPP_TRIGGERS: AdminWhatsappTrigger[] = [
     notes: "Mensagens fromMe=true são ignoradas no receiver (anti-loop).",
   },
   {
+    name: "Vistos (jurídico)",
+    trigger: 'Contém "mais sobre o serviço de vistos" ou "atendimento vistos"',
+    handledBy: "ambos",
+    action:
+      'Cria lead na categoria juridico, atribui por prioridade/maxPendingLeads e envia lista ao parceiro.',
+    notes: "Mensagens fromMe=true são ignoradas no receiver (anti-loop).",
+  },
+  {
     name: "Interesse em imóvel",
     trigger: 'Contém "tenho interesse no imovel 17" (ID numérico)',
     handledBy: "ambos",
