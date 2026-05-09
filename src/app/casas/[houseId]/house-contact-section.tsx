@@ -51,12 +51,8 @@ function buildHouseLeadMessage(f: {
   furnished: boolean;
   partnerName: string;
 }) {
-  const cityLabel = CITY_LABELS[f.city] ?? f.city;
-  const typologyLabel = TYPOLOGY_LABELS[f.typology] ?? f.typology;
-  const mobilado = f.furnished ? "mobilado" : "não mobilado";
-  const finalidade = f.businessType === "SALE" ? "venda" : "arrendamento";
-  const propertyLine = `${typologyLabel} (${mobilado}), para ${finalidade}, por ${f.price} em ${cityLabel} com título ${f.title}.`;
-  return `Olá, gostaria de mais informações sobre o imóvel (Id: ${f.houseId}) ${propertyLine} Atendimento com ${f.partnerName}.`;
+  // IMPORTANTE: precisa conter o gatilho para disparar o flow processHouseInterestInbound.
+  return `Tenho interesse no imovel ${f.houseId}, ${f.title}`;
 }
 
 export function HouseContactSection({

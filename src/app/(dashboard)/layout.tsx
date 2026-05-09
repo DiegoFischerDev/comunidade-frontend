@@ -1005,6 +1005,16 @@ export default function DashboardLayout({
                 Leads (parceiros)
               </Link>
               <Link
+                href="/dashboard/admin/gatilhos"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/admin/gatilhos'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Gatilhos (WhatsApp)
+              </Link>
+              <Link
                 href="/dashboard/admin/commissions"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/commissions' ||
