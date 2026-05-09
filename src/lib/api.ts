@@ -632,7 +632,10 @@ export const api = {
           method: 'PATCH',
           body: JSON.stringify(input),
         }),
-      addManualLead: (partnerId: string, body: { whatsapp: string; interestComment?: string }) =>
+      addManualLead: (
+        partnerId: string,
+        body: { whatsapp: string; contactName?: string; interestComment?: string },
+      ) =>
         request<{ leadId: string }>(
           `/partners/admin/${encodeURIComponent(partnerId)}/leads/manual`,
           { method: 'POST', body: JSON.stringify(body) },
