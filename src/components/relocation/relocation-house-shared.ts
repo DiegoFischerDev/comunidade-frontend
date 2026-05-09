@@ -76,12 +76,8 @@ export function formatRelocationFeeEur(raw: string): string {
 }
 
 export function buildRelocationLeadMessage(h: RelocationHouseRow): string {
-  const cityLabel = relocationCityDisplayName(h.city);
-  const typologyLabel = RELOCATION_TYPOLOGY_LABELS[h.typology] ?? h.typology;
-  const businessLabel = RELOCATION_BUSINESS_TYPE_LABELS[h.businessType] ?? "Arrendamento";
-  const mobilado = h.furnished ? "mobilado" : "não mobilado";
-  const propertyLine = `${typologyLabel} (${mobilado}), finalidade ${businessLabel}, por ${h.priceEur} em ${cityLabel} com título ${h.title}.`;
-  return `Olá, gostaria de mais informações sobre o imóvel (Id: ${h.houseId}) ${propertyLine} Atendimento com ${h.partner.name}.`;
+  // IMPORTANTE: precisa conter o gatilho para disparar o flow processHouseInterestInbound.
+  return `Tenho interesse no imovel ${h.houseId}, ${h.title}`;
 }
 
 export function openRelocationPartnerWhatsApp(h: RelocationHouseRow): void {
