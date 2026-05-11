@@ -741,6 +741,7 @@ export const api = {
             priceEur: string;
             imageUrls: string[];
             videoUrl: string | null;
+            videoPosterUrl?: string | null;
             whatsappSentAt: string | null;
             whatsappSends?: { sentAt: string }[];
             whatsappError: string | null;
@@ -774,6 +775,7 @@ export const api = {
           imageUrls: string[];
           coverImageUrl: string | null;
           videoUrl: string | null;
+          videoPosterUrl?: string | null;
           createdAt: string;
           updatedAt: string;
           partner: {
@@ -785,6 +787,7 @@ export const api = {
       create: (input: {
         images?: File[];
         video?: File;
+        thumbnail?: File;
         title?: string;
         description?: string;
         businessType?: 'RENT' | 'SALE';
@@ -802,6 +805,7 @@ export const api = {
       }) => {
         const fd = new FormData();
         if (input.video) fd.append('video', input.video);
+        if (input.thumbnail) fd.append('thumbnail', input.thumbnail);
         if (input.images?.length) {
           for (const file of input.images) fd.append('images', file);
         }
@@ -852,6 +856,7 @@ export const api = {
         input: {
           images?: File[];
           video?: File;
+          thumbnail?: File;
           removeVideo?: boolean;
           keepImageUrls?: string[];
           title?: string;
@@ -872,6 +877,7 @@ export const api = {
       ) => {
         const fd = new FormData();
         if (input.video) fd.append('video', input.video);
+        if (input.thumbnail) fd.append('thumbnail', input.thumbnail);
         if (input.images?.length) {
           for (const file of input.images) fd.append('images', file);
         }
