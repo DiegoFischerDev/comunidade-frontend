@@ -943,6 +943,12 @@ export const api = {
           { method: 'POST', body: JSON.stringify({}) },
         ),
     },
+    relocationCities: {
+      list: () =>
+        request<{ cities: string[] }>('/partners/admin/relocation-cities', {
+          method: 'GET',
+        }),
+    },
     houseWhatsappGroups: {
       list: () =>
         request<

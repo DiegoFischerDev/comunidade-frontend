@@ -67,6 +67,7 @@ export default function AdminEditHousePage() {
   const [numericHouseId, setNumericHouseId] = useState<number | null>(null);
   const [relocationPartners, setRelocationPartners] = useState<{ id: string; name: string }[]>([]);
   const [assignedPartnerId, setAssignedPartnerId] = useState("");
+  const [extraRelocationCities, setExtraRelocationCities] = useState<string[]>([]);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -140,7 +141,8 @@ export default function AdminEditHousePage() {
         setDescription(h.description);
         setBusinessType(h.businessType);
         setTypology(h.typology);
-        setCity(migrateLegacyHouseCityToCanonical(h.city));
+        // Admin pode guardar cidades fora da lista fixa — manter o valor gravado.
+        setCity(h.city?.trim?.() ? h.city.trim() : "");
         setAvailableFrom(toDateInputValue(h.availableFrom));
         setPriceEur(h.priceEur);
         setRelocationFeeEur(h.relocationFeeEur);
@@ -188,6 +190,18 @@ export default function AdminEditHousePage() {
         setRelocationPartners(reloc);
       } catch {
         setRelocationPartners([]);
+      }
+    })();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || user.role !== "ADMIN") return;
+    (async () => {
+      try {
+        const res = await api.admin.relocationCities.list();
+        setExtraRelocationCities(Array.isArray(res.cities) ? res.cities : []);
+      } catch {
+        setExtraRelocationCities([]);
       }
     })();
   }, [user]);
@@ -578,6 +592,7 @@ export default function AdminEditHousePage() {
               onChange={setCity}
               allowEmpty={false}
               allowCustomValue
+              extraCityOptions={extraRelocationCities}
               placeholder="Pesquisar cidade…"
               variant="blue"
               required

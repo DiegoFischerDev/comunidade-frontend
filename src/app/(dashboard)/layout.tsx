@@ -1321,11 +1321,12 @@ export default function DashboardLayout({
                     setWhatsappBrowserSessionToken('');
                     setWhatsappPollError('');
                   }}
+                  disabled
                   className={`flex-1 cursor-pointer rounded-full px-3 py-1.5 ${
                     authMode === 'register'
                       ? 'bg-white text-zinc-900 shadow-sm'
                       : 'hover:text-zinc-900'
-                  }`}
+                  } cursor-pointer disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   Criar conta
                 </button>
@@ -1402,6 +1403,8 @@ export default function DashboardLayout({
                 className="mt-5 space-y-4"
                 onSubmit={async (e) => {
                   e.preventDefault();
+                  setRegisterError('Criação de conta desativada temporariamente.');
+                  return;
                   setRegisterError('');
                   setRegisterInfo('');
                   if (registerPassword !== registerPasswordConfirm) {
@@ -1416,11 +1419,10 @@ export default function DashboardLayout({
                             'comunidade_ref_affiliate',
                           )
                         : null;
+                    const refCandidate = refRaw ?? '';
                     const refTrimmed =
-                      refRaw &&
-                      refRaw !== 'nenhum' &&
-                      refRaw.trim().length > 0
-                        ? refRaw.trim()
+                      refCandidate !== 'nenhum' && refCandidate.trim().length > 0
+                        ? refCandidate.trim()
                         : undefined;
 
                     const res = await register({
@@ -1436,19 +1438,20 @@ export default function DashboardLayout({
                       res.whatsappBrowserSessionToken
                     ) {
                       setWhatsappPollError('');
-                      setWhatsappVerifyCode(res.whatsappVerificationCode);
-                      setWhatsappVerifyOpenUrl(res.whatsappOpenUrl);
-                      setWhatsappRegistrationNumber(res.whatsappRegistrationNumber);
-                      setWhatsappBrowserSessionToken(res.whatsappBrowserSessionToken);
+                      setWhatsappVerifyCode(res.whatsappVerificationCode ?? '');
+                      setWhatsappVerifyOpenUrl(res.whatsappOpenUrl ?? '');
+                      setWhatsappRegistrationNumber(res.whatsappRegistrationNumber ?? '');
+                      setWhatsappBrowserSessionToken(res.whatsappBrowserSessionToken ?? '');
                       setAuthMode('registerWhatsappVerify');
                       return;
                     }
-                  } catch (err) {
-                    setRegisterError(
-                      err instanceof Error
-                        ? err.message
-                        : 'Erro ao criar conta.',
-                    );
+                  } catch (err: unknown) {
+                    const anyErr = err as any;
+                    const message =
+                      anyErr?.message && String(anyErr.message).trim()
+                        ? String(anyErr.message)
+                        : 'Erro ao criar conta.';
+                    setRegisterError(message);
                   } finally {
                     setRegisterLoading(false);
                   }
@@ -1505,8 +1508,8 @@ export default function DashboardLayout({
                 {/* Ativação passa a ser sempre via WhatsApp */}
                 <button
                   type="submit"
-                  disabled={registerLoading}
-                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  disabled
+                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {registerLoading ? 'A processar…' : 'Criar conta'}
                 </button>
