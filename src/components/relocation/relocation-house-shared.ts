@@ -2,7 +2,7 @@ import { api } from "@/lib/api";
 import { orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { isOurImageHostname } from "@/lib/site-url";
-import { buildAdminWhatsAppUrl } from "@/lib/admin-contact-whatsapp";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import { relocationCityDisplayName } from "@/lib/relocation-portugal-cities";
 
 export type RelocationHouseRow = Awaited<
@@ -82,7 +82,13 @@ export function buildRelocationLeadMessage(h: RelocationHouseRow): string {
 
 export function openRelocationPartnerWhatsApp(h: RelocationHouseRow): void {
   const text = buildRelocationLeadMessage(h);
-  const url = buildAdminWhatsAppUrl(text);
+  const partnerWhatsapp = h.partner?.whatsapp ?? "";
+  const digits = partnerWhatsapp.replace(/\D/g, "");
+  if (!digits) {
+    alert("Este anúncio não tem WhatsApp do parceiro configurado.");
+    return;
+  }
+  const url = buildWhatsAppUrl(partnerWhatsapp, text);
   const opened = window.open(url, "_blank", "noopener,noreferrer");
   if (opened == null) {
     window.location.assign(url);
