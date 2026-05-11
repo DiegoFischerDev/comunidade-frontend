@@ -82,11 +82,14 @@ function getHouseMedia(h: {
   imageUrls: string[];
   coverImageUrl?: string | null;
   videoUrl: string | null;
+  videoPosterUrl?: string | null;
 }): { primaryImageSrc: string | null; videoSrc: string | null } {
   const ordered = orderHouseImagesWithCoverFirst(h.imageUrls ?? [], h.coverImageUrl);
   const primaryImageSrc = ordered[0] ? resolveUploadsUrl(ordered[0]) : null;
   const videoSrc = h.videoUrl ? resolveUploadsUrl(h.videoUrl) : null;
-  return { primaryImageSrc, videoSrc };
+  // Se não há imagens, usamos a thumbnail manual (videoPosterUrl) apenas para preview em listas/cards.
+  const fallbackThumb = !primaryImageSrc && h.videoPosterUrl ? resolveUploadsUrl(h.videoPosterUrl) : null;
+  return { primaryImageSrc: primaryImageSrc ?? fallbackThumb, videoSrc };
 }
 
 function formatAdminHousePriceEur(priceEur: string, businessType: 'RENT' | 'SALE'): string {
@@ -147,6 +150,7 @@ export default function AdminHousesPage() {
   const [images, setImages] = useState<File[]>([]);
   const [coverImageIndex, setCoverImageIndex] = useState(0);
   const [video, setVideo] = useState<File | null>(null);
+  const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [relocationPartners, setRelocationPartners] = useState<{ id: string; name: string }[]>([]);
   const [createAssignedPartnerId, setCreateAssignedPartnerId] = useState('');
 
@@ -314,6 +318,7 @@ export default function AdminHousesPage() {
     setImages([]);
     setCoverImageIndex(0);
     setVideo(null);
+    setThumbnail(null);
     setCreateAssignedPartnerId('');
   };
 
@@ -449,6 +454,7 @@ export default function AdminHousesPage() {
       await api.admin.houses.create({
         ...(images.length ? { images } : {}),
         ...(video ? { video } : {}),
+        ...(thumbnail ? { thumbnail } : {}),
         title: title.trim(),
         description: description.trim(),
         businessType,
@@ -1026,7 +1032,7 @@ export default function AdminHousesPage() {
                   <thead className="bg-zinc-50 text-zinc-600">
                     <tr>
                       <th className="whitespace-nowrap px-4 py-2 text-left">Id</th>
-                      <th className="w-[76px] px-4 py-2 text-left">Mídia</th>
+                      <th className="w-[76px] px-4 py-2 text-left">Thumb</th>
                       <th className="px-4 py-2 text-left">Título</th>
                       <th className="px-4 py-2 text-left">Finalidade</th>
                       <th className="px-4 py-2 text-left">Preço</th>
@@ -1468,6 +1474,21 @@ export default function AdminHousesPage() {
                   />
                 </label>
               </div>
+
+              <label className="block text-sm">
+                <span className="mb-1 block text-xs font-medium text-zinc-700">
+                  Thumbnail (opcional)
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setThumbnail(e.target.files?.[0] ?? null)}
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                />
+                <span className="mt-1 block text-xs text-zinc-500">
+                  Usada apenas no preview da lista e nos cards públicos (quando não houver fotos).
+                </span>
+              </label>
 
               {images.length > 1 ? (
                 <label className="block text-sm">

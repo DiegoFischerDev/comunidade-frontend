@@ -87,6 +87,8 @@ export default function AdminEditHousePage() {
   const [video, setVideo] = useState<File | null>(null);
   const [removeVideo, setRemoveVideo] = useState(false);
   const [existingVideoUrl, setExistingVideoUrl] = useState<string | null>(null);
+  const [existingThumbnailUrl, setExistingThumbnailUrl] = useState<string | null>(null);
+  const [thumbnail, setThumbnail] = useState<File | null>(null);
 
   const newImagePreviews = useMemo(
     () => newImages.map((file) => ({ file, url: URL.createObjectURL(file) })),
@@ -104,11 +106,22 @@ export default function AdminEditHousePage() {
     [video],
   );
 
+  const thumbnailPreviewUrl = useMemo(
+    () => (thumbnail ? URL.createObjectURL(thumbnail) : null),
+    [thumbnail],
+  );
+
   useEffect(() => {
     return () => {
       if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
     };
   }, [videoPreviewUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (thumbnailPreviewUrl) URL.revokeObjectURL(thumbnailPreviewUrl);
+    };
+  }, [thumbnailPreviewUrl]);
 
   useEffect(() => {
     if (!houseId || !user || user.role !== "ADMIN") return;
@@ -147,8 +160,10 @@ export default function AdminEditHousePage() {
           setCoverImageIndex(0);
         }
         setExistingVideoUrl(h.videoUrl);
+        setExistingThumbnailUrl(h.videoPosterUrl ?? null);
         setRemoveVideo(false);
         setVideo(null);
+        setThumbnail(null);
         setNewImages([]);
       } catch (e) {
         if (!cancelled) setLoadError(e instanceof Error ? e.message : "Erro ao carregar.");
@@ -243,6 +258,7 @@ export default function AdminEditHousePage() {
         keepImageUrls: retainedImageUrls,
         images: newImages.length ? newImages : undefined,
         video: video ?? undefined,
+        thumbnail: thumbnail ?? undefined,
         removeVideo: removeVideo && !video ? true : undefined,
         coverImageIndex: totalImages > 0 ? coverImageIndex : undefined,
       });
@@ -486,6 +502,32 @@ export default function AdminEditHousePage() {
             <div className="mt-3 overflow-hidden rounded-xl bg-black">
               <video src={videoPreviewUrl} className="max-h-64 w-full object-contain" controls playsInline />
             </div>
+          ) : null}
+        </div>
+
+        <div>
+          <span className="block text-xs font-medium text-zinc-700">Thumbnail (opcional)</span>
+          <p className="mt-1 text-xs text-zinc-500">
+            Usada apenas no preview da lista e nos cards públicos (quando não houver fotos).
+          </p>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setThumbnail(e.target.files?.[0] ?? null)}
+            className="mt-2 block w-full text-sm text-zinc-700 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-zinc-900"
+          />
+          {thumbnailPreviewUrl ? (
+            <img
+              src={thumbnailPreviewUrl}
+              alt="Preview thumbnail"
+              className="mt-3 h-28 w-40 rounded-md border border-zinc-200 object-cover"
+            />
+          ) : existingThumbnailUrl ? (
+            <img
+              src={resolveMediaUrl(existingThumbnailUrl)}
+              alt="Thumbnail atual"
+              className="mt-3 h-28 w-40 rounded-md border border-zinc-200 object-cover"
+            />
           ) : null}
         </div>
 
