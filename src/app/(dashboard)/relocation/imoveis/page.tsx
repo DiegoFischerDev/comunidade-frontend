@@ -15,9 +15,11 @@ import {
   relocationCityDisplayName,
   type RelocationHouseRow,
 } from "@/components/relocation/relocation-house-shared";
+import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 
 const RELOCATION_IMOVEIS_PATH = "/relocation/imoveis";
+const LIST_SECTION_TITLE = "Imóveis disponíveis";
 const RELOCATION_HOUSES_WHATSAPP_GROUP_URL =
   "https://chat.whatsapp.com/Kt4ylOIU0qMBbtfHKlyvVt?mode=gi_t";
 
@@ -51,13 +53,35 @@ function availableFromMonthNamePt(iso: string): string {
   return d.toLocaleDateString("pt-PT", { month: "long" }).toLowerCase();
 }
 
+function formatRelocationAvailableListLine(h: RelocationHouseRow): string {
+  const typo = RELOCATION_TYPOLOGY_LABELS[h.typology] ?? h.typology;
+  const city = relocationCityDisplayName(h.city);
+  const price = listLinePriceEur(h.priceEur);
+  const monthPt = availableFromMonthNamePt(h.availableFrom);
+  return `${typo} - ${city} - ${price} - ${monthPt}`;
+}
+
+/** Host + path + query, sem `https://` (para partilhar no clipboard). */
+function relocationImoveisClipboardUrlNoProtocol(): string {
+  if (typeof window !== "undefined") {
+    return `${window.location.host}${window.location.pathname}${window.location.search}`;
+  }
+  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "")
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/$/, "");
+  return `${base || "comunidade.rafaportugal.com"}${RELOCATION_IMOVEIS_PATH}`;
+}
+
 export default function PublicRelocationHousesListPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
   const [rows, setRows] = useState<RelocationHouseRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [listCopyDone, setListCopyDone] = useState(false);
 
   const cidade = searchParams.get("cidade")?.trim() ?? "";
   const tipologia = searchParams.get("tipologia")?.trim() ?? "";
@@ -274,17 +298,37 @@ export default function PublicRelocationHousesListPage() {
     return safeRows.filter((h) => !ids.has(h.id));
   }, [safeRows, featuredRows]);
 
-  const listRowsSortedByTypology = useMemo(() => {
-    return [...safeRows].sort((a, b) => {
-      const ia = TYPOLOGY_SORT_INDEX.get(a.typology) ?? 999;
-      const ib = TYPOLOGY_SORT_INDEX.get(b.typology) ?? 999;
-      if (ia !== ib) return ia - ib;
-      return relocationCityDisplayName(a.city).localeCompare(
-        relocationCityDisplayName(b.city),
-        "pt",
-      );
-    });
+  const availableListRowsSorted = useMemo(() => {
+    return safeRows
+      .filter((h) => h.status === "AVAILABLE")
+      .sort((a, b) => {
+        const ia = TYPOLOGY_SORT_INDEX.get(a.typology) ?? 999;
+        const ib = TYPOLOGY_SORT_INDEX.get(b.typology) ?? 999;
+        if (ia !== ib) return ia - ib;
+        return relocationCityDisplayName(a.city).localeCompare(
+          relocationCityDisplayName(b.city),
+          "pt",
+        );
+      });
   }, [safeRows]);
+
+  const handleCopyAvailableList = useCallback(async () => {
+    const lines = availableListRowsSorted.map(
+      (h) => `🏠 ${formatRelocationAvailableListLine(h)}`,
+    );
+    const url = relocationImoveisClipboardUrlNoProtocol();
+    const text =
+      lines.length > 0
+        ? `${LIST_SECTION_TITLE}\n\n${lines.join("\n")}\n\n${url}`
+        : `${LIST_SECTION_TITLE}\n\n${url}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setListCopyDone(true);
+      window.setTimeout(() => setListCopyDone(false), 2000);
+    } catch {
+      setListCopyDone(false);
+    }
+  }, [availableListRowsSorted]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const clampedPage = Math.min(page, totalPages);
@@ -330,30 +374,47 @@ export default function PublicRelocationHousesListPage() {
 
       {filterBar}
 
-      {!loading && safeRows.length > 0 ? (
+      {!loading ? (
         <section
           className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm sm:px-5"
-          aria-label="Lista resumida de imóveis"
+          aria-label="Lista resumida de imóveis disponíveis"
         >
-          <ul className="list-none space-y-2.5 text-sm leading-relaxed text-zinc-800">
-            {listRowsSortedByTypology.map((h) => {
-              const typo = RELOCATION_TYPOLOGY_LABELS[h.typology] ?? h.typology;
-              const city = relocationCityDisplayName(h.city);
-              const price = listLinePriceEur(h.priceEur);
-              const monthPt = availableFromMonthNamePt(h.availableFrom);
-              const line = `${typo} - ${city} - ${price} - ${monthPt}`;
-              return (
-                <li key={`list-${h.id}`} className="border-b border-zinc-100 pb-2.5 last:border-0 last:pb-0">
-                  <Link
-                    href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
-                    className="block cursor-pointer select-text text-zinc-900 transition hover:text-amber-900 hover:underline decoration-amber-600/50 underline-offset-2"
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-lg font-semibold text-zinc-900">{LIST_SECTION_TITLE}</h2>
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={() => void handleCopyAvailableList()}
+                className="inline-flex w-full shrink-0 items-center justify-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:border-zinc-400 hover:bg-zinc-50 sm:w-auto"
+              >
+                {listCopyDone ? "Copiado!" : "Copiar"}
+              </button>
+            ) : null}
+          </div>
+          {availableListRowsSorted.length === 0 ? (
+            <p className="text-sm text-zinc-600">
+              Nenhum imóvel disponível com estes filtros nesta página.
+            </p>
+          ) : (
+            <ul className="list-none space-y-2.5 text-sm leading-relaxed text-zinc-800">
+              {availableListRowsSorted.map((h) => {
+                const line = formatRelocationAvailableListLine(h);
+                return (
+                  <li
+                    key={`list-${h.id}`}
+                    className="border-b border-zinc-100 pb-2.5 last:border-0 last:pb-0"
                   >
-                    {line}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+                    <Link
+                      href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
+                      className="block cursor-pointer select-text text-zinc-900 transition hover:text-amber-900 hover:underline decoration-amber-600/50 underline-offset-2"
+                    >
+                      🏠 {line}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </section>
       ) : null}
 
