@@ -830,6 +830,7 @@ export const api = {
               name: string;
               category: { slug: string; name: string } | null;
             };
+            _count: { redirectClicks: number };
           }[]
         >('/partners/admin/houses', { method: 'GET' }),
       get: (houseId: string) =>

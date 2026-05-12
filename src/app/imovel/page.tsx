@@ -21,6 +21,7 @@ export default async function ImovelRedirectEntryPage({
 }) {
   const sp = await searchParams;
   const id = firstString(sp, "id");
+  const mode = firstString(sp, "mode");
 
   const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(
     /\/$/,
@@ -28,8 +29,9 @@ export default async function ImovelRedirectEntryPage({
   );
 
   if (id) {
+    const qs = mode ? `?mode=${encodeURIComponent(mode)}` : "";
     redirect(
-      `${apiBase}/redirect-links/public/by-house/${encodeURIComponent(id)}`,
+      `${apiBase}/redirect-links/public/by-house/${encodeURIComponent(id)}${qs}`,
     );
   }
 
