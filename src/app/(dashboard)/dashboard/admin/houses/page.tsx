@@ -1034,6 +1034,7 @@ export default function AdminHousesPage() {
                       <th className="whitespace-nowrap px-4 py-2 text-left">Id</th>
                       <th className="w-[76px] px-4 py-2 text-left">Thumb</th>
                       <th className="px-4 py-2 text-left">Título</th>
+                      <th className="whitespace-nowrap px-4 py-2 text-right tabular-nums">Clicks</th>
                       <th className="px-4 py-2 text-left">Finalidade</th>
                       <th className="px-4 py-2 text-left">Preço</th>
                       <th className="px-4 py-2 text-left">Parceiro</th>
@@ -1091,6 +1092,9 @@ export default function AdminHousesPage() {
                           <p className="mt-0.5 text-xs text-zinc-500">
                             {cityLabel(h.city)} · {typologyLabel(h.typology)}
                           </p>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-2 align-top text-right font-semibold tabular-nums text-zinc-900">
+                          {h._count.redirectClicks}
                         </td>
                         <td className="whitespace-nowrap px-4 py-2 align-top text-zinc-800">
                           {BUSINESS_TYPE_LABELS[h.businessType] ?? h.businessType}

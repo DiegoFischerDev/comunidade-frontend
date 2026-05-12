@@ -5,7 +5,6 @@ import { useCallback, useState } from "react";
 
 import { api } from "@/lib/api";
 import { CardButton } from "@/components/ui/CardButton";
-import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 
 type Props = {
   houseId: string;
@@ -95,7 +94,8 @@ export function HouseContactSection({
         furnished: data.furnished,
         partnerName: partner.name,
       });
-      window.location.assign(buildWhatsAppUrl(partner.whatsapp, text));
+      // Passa pelo nosso redirecionamento para contabilizar clique e manter o gatilho do flow.
+      window.location.assign(`/imovel?id=${encodeURIComponent(String(data.houseId))}&mode=interest`);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Não foi possível abrir o contacto.",
