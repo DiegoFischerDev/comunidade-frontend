@@ -18,42 +18,6 @@ type Props = {
   status: "AVAILABLE" | "RESERVED" | "UNAVAILABLE";
 };
 
-const CITY_LABELS: Record<string, string> = {
-  INTERIOR: "Interior",
-  LISBOA: "Lisboa",
-  PORTO: "Porto",
-  BRAGA: "Braga",
-  COIMBRA: "Coimbra",
-  AVEIRO: "Aveiro",
-  FARO: "Faro",
-  ALGARVE: "Algarve",
-  EVORA: "Évora",
-  VISEU: "Viseu",
-};
-
-const TYPOLOGY_LABELS: Record<string, string> = {
-  T1: "T1",
-  T2: "T2",
-  T3: "T3",
-  T4: "T4",
-  T5: "T5",
-  QUARTO_AP_COMPARTILHADO: "Quarto em Ap compartilhado",
-};
-
-function buildHouseLeadMessage(f: {
-  houseId: number;
-  title: string;
-  city: string;
-  businessType: "RENT" | "SALE";
-  typology: string;
-  price: string;
-  furnished: boolean;
-  partnerName: string;
-}) {
-  // IMPORTANTE: precisa conter o gatilho para disparar o flow processHouseInterestInbound.
-  return `Tenho interesse no imovel ${f.houseId}, ${f.title}`;
-}
-
 export function HouseContactSection({
   houseId,
   partnerId,
@@ -83,19 +47,8 @@ export function HouseContactSection({
         setBusy(false);
         return;
       }
-      const partner = await api.marketplace.partnerDetails(partnerId);
-      const text = buildHouseLeadMessage({
-        houseId: data.houseId,
-        title: data.title,
-        city: data.city,
-        businessType: data.businessType,
-        typology: data.typology,
-        price: data.priceEur,
-        furnished: data.furnished,
-        partnerName: partner.name,
-      });
-      // Passa pelo nosso redirecionamento para contabilizar clique e manter o gatilho do flow.
-      window.location.assign(`/imovel?id=${encodeURIComponent(String(data.houseId))}&mode=interest`);
+      // Redireciona pelo `/imovel` → API regista o clique e devolve wa.me com a mensagem certa.
+      window.location.assign(`/imovel?id=${encodeURIComponent(String(data.houseId))}`);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Não foi possível abrir o contacto.",
