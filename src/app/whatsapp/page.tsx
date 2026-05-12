@@ -1,45 +1,9 @@
-import { redirect } from "next/navigation";
-
-function firstString(
-  sp: Record<string, string | string[] | undefined>,
-  key: string,
-): string {
-  const v = sp[key];
-  if (typeof v === "string") return v.trim();
-  if (Array.isArray(v)) return v[0]?.trim() ?? "";
-  return "";
-}
+import { RedirectToApiWithVisitor } from "@/components/redirect/RedirectToApiWithVisitor";
 
 /**
- * Entrada pública recomendada para links personalizados: /whatsapp?t=<slug>
- * Imóveis: preferir /imovel?id=<id> (mantém-se ?imovel= como legado).
+ * Entrada pública: /whatsapp?t=<slug> ou ?imovel= (legado).
+ * Cliente envia `rd_vid` estável na query para deduplicação de cliques no API.
  */
-export default async function WhatsappRedirectEntryPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const sp = await searchParams;
-  const t = firstString(sp, "t");
-  const tituloLegacy = firstString(sp, "titulo");
-  const slug = t || tituloLegacy;
-  const imovel = firstString(sp, "imovel");
-
-  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(
-    /\/$/,
-    "",
-  );
-
-  if (slug) {
-    redirect(
-      `${apiBase}/redirect-links/public/by-titulo/${encodeURIComponent(slug)}`,
-    );
-  }
-  if (imovel) {
-    redirect(
-      `${apiBase}/redirect-links/public/by-house/${encodeURIComponent(imovel)}`,
-    );
-  }
-
-  redirect("/");
+export default function WhatsappRedirectEntryPage() {
+  return <RedirectToApiWithVisitor variant="share" />;
 }
