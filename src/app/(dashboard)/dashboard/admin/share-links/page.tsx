@@ -26,6 +26,38 @@ function CopyLinkIcon({ className }: { className?: string }) {
   );
 }
 
+function TrashIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
+    </svg>
+  );
+}
+
+/** Apresentação legível do número guardado (apenas dígitos). */
+function formatWhatsappDigits(digits: string): string {
+  const d = String(digits ?? "").replace(/\D/g, "");
+  if (!d) return "—";
+  if (d.length === 12 && d.startsWith("351")) {
+    const r = d.slice(3);
+    return `+351 ${r.slice(0, 3)} ${r.slice(3, 6)} ${r.slice(6)}`;
+  }
+  if (d.length === 9 && /^9\d{8}$/.test(d)) {
+    return `+351 ${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6)}`;
+  }
+  return d;
+}
+
 export default function AdminShareLinksPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
@@ -40,29 +72,54 @@ export default function AdminShareLinksPage() {
   const [phrase, setPhrase] = useState("");
   const [creating, setCreating] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [busyDeleteCustomId, setBusyDeleteCustomId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    const o = await api.admin.shareLinks.overview();
+  /** Período opcional (AAAA-MM-DD). Ambas vazias = totais desde sempre. */
+  const [periodFrom, setPeriodFrom] = useState("");
+  const [periodTo, setPeriodTo] = useState("");
+
+  const reloadOverview = useCallback(async () => {
+    const pf = periodFrom.trim();
+    const pt = periodTo.trim();
+    if ((pf && !pt) || (!pf && pt)) return;
+    const o = await api.admin.shareLinks.overview(
+      pf && pt ? { from: pf, to: pt } : {},
+    );
     setData(o);
-  }, []);
+  }, [periodFrom, periodTo]);
 
   useEffect(() => {
     if (!user || !isAdmin) {
       setLoading(false);
       return;
     }
+    const pf = periodFrom.trim();
+    const pt = periodTo.trim();
+    if ((pf && !pt) || (!pf && pt)) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
     (async () => {
       setError("");
       setLoading(true);
       try {
-        await load();
+        const o = await api.admin.shareLinks.overview(
+          pf && pt ? { from: pf, to: pt } : {},
+        );
+        if (!cancelled) setData(o);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar.");
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Erro ao carregar.");
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, [user, isAdmin, load]);
+    return () => {
+      cancelled = true;
+    };
+  }, [user, isAdmin, periodFrom, periodTo]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -78,7 +135,7 @@ export default function AdminShareLinksPage() {
       setWhatsapp("");
       setPhrase("");
       setAddModalOpen(false);
-      await load();
+      await reloadOverview();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar link.");
     } finally {
@@ -102,6 +159,26 @@ export default function AdminShareLinksPage() {
 
   function copyText(text: string) {
     void navigator.clipboard.writeText(text);
+  }
+
+  async function handleDeleteCustomLink(id: string, title: string) {
+    if (
+      !confirm(
+        `Eliminar o link «${title}»? O histórico de cliques deste link será removido.`,
+      )
+    ) {
+      return;
+    }
+    setBusyDeleteCustomId(id);
+    setError("");
+    try {
+      await api.admin.shareLinks.deleteCustom(id);
+      await reloadOverview();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao eliminar o link.");
+    } finally {
+      setBusyDeleteCustomId(null);
+    }
   }
 
   const origin =
@@ -144,6 +221,50 @@ export default function AdminShareLinksPage() {
           Histórico de cliques →
         </Link>
       </div>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <p className="text-sm font-medium text-zinc-900">Cliques por período</p>
+        <p className="mt-1 text-xs text-zinc-500">
+          Sem datas: totais acumulados. Com &quot;De&quot; e &quot;Até&quot;: apenas cliques nesse intervalo (datas em UTC).
+          A lista ordena sempre por mais cliques primeiro.
+        </p>
+        <div className="mt-3 flex flex-wrap items-end gap-3">
+          <label className="block text-sm">
+            <span className="block text-xs font-medium text-zinc-600">De</span>
+            <input
+              type="date"
+              value={periodFrom}
+              onChange={(e) => setPeriodFrom(e.target.value)}
+              className="mt-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="block text-xs font-medium text-zinc-600">Até</span>
+            <input
+              type="date"
+              value={periodTo}
+              onChange={(e) => setPeriodTo(e.target.value)}
+              className="mt-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => {
+              setPeriodFrom("");
+              setPeriodTo("");
+            }}
+            className="cursor-pointer rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+          >
+            Limpar período
+          </button>
+        </div>
+        {((periodFrom.trim() && !periodTo.trim()) ||
+          (!periodFrom.trim() && periodTo.trim())) ? (
+          <p className="mt-2 text-xs text-amber-800">
+            Preenche data inicial e final, ou limpa ambas para ver totais.
+          </p>
+        ) : null}
+      </section>
 
       {error && !addModalOpen ? (
         <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -286,14 +407,27 @@ export default function AdminShareLinksPage() {
             <thead className="border-b border-zinc-200 bg-zinc-50 text-xs uppercase text-zinc-600">
               <tr>
                 <th className="px-4 py-3">Título</th>
-                <th className="px-4 py-3">Cliques</th>
+                <th className="px-4 py-3 align-bottom">
+                  <span className="block">Cliques</span>
+                  {data.clickPeriod ? (
+                    <span className="mt-1 block text-[10px] font-normal normal-case tracking-normal text-zinc-500">
+                      {data.clickPeriod.from} — {data.clickPeriod.to}
+                    </span>
+                  ) : (
+                    <span className="mt-1 block text-[10px] font-normal normal-case tracking-normal text-zinc-500">
+                      total
+                    </span>
+                  )}
+                </th>
+                <th className="px-4 py-3">Whatsapp</th>
                 <th className="px-4 py-3">Link de entrada</th>
+                <th className="whitespace-nowrap px-4 py-3 text-right">Ações</th>
               </tr>
             </thead>
             <tbody>
               {data.customLinks.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-zinc-500">
+                  <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
                     Ainda não há links personalizados.
                   </td>
                 </tr>
@@ -310,6 +444,18 @@ export default function AdminShareLinksPage() {
                       {row.clickCount}
                     </td>
                     <td className="px-4 py-3 align-top">
+                      <div className="font-medium tabular-nums text-zinc-900">
+                        {formatWhatsappDigits(row.whatsappDigits)}
+                      </div>
+                      <p
+                        className="mt-2 max-w-[min(280px,40vw)] text-xs leading-snug text-zinc-500"
+                        title={row.whatsappPhrase}
+                      >
+                        frase:{" "}
+                        <span className="text-zinc-700">{row.whatsappPhrase}</span>
+                      </p>
+                    </td>
+                    <td className="px-4 py-3 align-top">
                       <div className="flex flex-wrap items-center gap-2">
                         <code className="max-w-[min(420px,55vw)] truncate rounded bg-zinc-100 px-2 py-1 text-xs">
                           {row.entryUrl}
@@ -324,12 +470,41 @@ export default function AdminShareLinksPage() {
                           <CopyLinkIcon className="h-4 w-4" />
                         </button>
                       </div>
-                      <p
-                        className="mt-2 max-w-[min(520px,85vw)] text-xs leading-snug text-zinc-500"
-                        title={row.whatsappPhrase}
+                    </td>
+                    <td className="px-4 py-3 align-top text-right">
+                      <button
+                        type="button"
+                        title="Eliminar link"
+                        aria-label="Eliminar link"
+                        disabled={busyDeleteCustomId === row.id}
+                        onClick={() => void handleDeleteCustomLink(row.id, row.title)}
+                        className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-red-200 bg-white text-red-700 shadow-sm transition-colors hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        frase: <span className="text-zinc-700">{row.whatsappPhrase}</span>
-                      </p>
+                        {busyDeleteCustomId === row.id ? (
+                          <svg
+                            className="h-4 w-4 animate-spin"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            aria-hidden
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
+                          </svg>
+                        ) : (
+                          <TrashIcon className="h-4 w-4" />
+                        )}
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -344,7 +519,18 @@ export default function AdminShareLinksPage() {
               <tr>
                 <th className="px-4 py-3">Imóvel</th>
                 <th className="px-4 py-3">Parceiro</th>
-                <th className="px-4 py-3">Cliques</th>
+                <th className="px-4 py-3 align-bottom">
+                  <span className="block">Cliques</span>
+                  {data.clickPeriod ? (
+                    <span className="mt-1 block text-[10px] font-normal normal-case tracking-normal text-zinc-500">
+                      {data.clickPeriod.from} — {data.clickPeriod.to}
+                    </span>
+                  ) : (
+                    <span className="mt-1 block text-[10px] font-normal normal-case tracking-normal text-zinc-500">
+                      total
+                    </span>
+                  )}
+                </th>
                 <th className="px-4 py-3">Link de entrada</th>
               </tr>
             </thead>
