@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
@@ -9,8 +10,10 @@ import { RelocationHouseCard } from "@/components/relocation/RelocationHouseCard
 import {
   RELOCATION_BUSINESS_TYPE_LABELS,
   RELOCATION_BUSINESS_TYPE_OPTIONS,
+  formatRelocationPriceByBusinessType,
   RELOCATION_TYPOLOGY_LABELS,
   RELOCATION_TYPOLOGY_OPTIONS,
+  relocationCityDisplayName,
   type RelocationHouseRow,
 } from "@/components/relocation/relocation-house-shared";
 import { api } from "@/lib/api";
@@ -18,6 +21,26 @@ import { api } from "@/lib/api";
 const RELOCATION_IMOVEIS_PATH = "/relocation/imoveis";
 const RELOCATION_HOUSES_WHATSAPP_GROUP_URL =
   "https://chat.whatsapp.com/Kt4ylOIU0qMBbtfHKlyvVt?mode=gi_t";
+
+function formatAvailableDateDdMmYyyy(iso: string): string {
+  const raw = String(iso ?? "").trim();
+  if (!raw) return "—";
+  const day = raw.slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(day)) {
+    const [y, m, dd] = day.split("-").map(Number);
+    const d = new Date(y, m - 1, dd);
+    if (Number.isNaN(d.getTime())) return "—";
+    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  }
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return "—";
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+}
+
+/** Ex.: `400 € / mês` → `400€ / mês` (estilo lista). */
+function compactPriceEurLabel(priceFormatted: string): string {
+  return priceFormatted.replace(/\s+€/g, "€");
+}
 
 export default function PublicRelocationHousesListPage() {
   const router = useRouter();
@@ -285,6 +308,35 @@ export default function PublicRelocationHousesListPage() {
       </section>
 
       {filterBar}
+
+      {!loading && safeRows.length > 0 ? (
+        <section
+          className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm sm:px-5"
+          aria-label="Lista resumida de imóveis"
+        >
+          <ul className="list-none space-y-2.5 text-sm leading-relaxed text-zinc-800">
+            {safeRows.map((h) => {
+              const typo = RELOCATION_TYPOLOGY_LABELS[h.typology] ?? h.typology;
+              const city = relocationCityDisplayName(h.city);
+              const price = compactPriceEurLabel(
+                formatRelocationPriceByBusinessType(h.priceEur, h.businessType),
+              );
+              const when = formatAvailableDateDdMmYyyy(h.availableFrom);
+              const line = `${typo} - ${city} - ${price} - ${when}`;
+              return (
+                <li key={`list-${h.id}`} className="border-b border-zinc-100 pb-2.5 last:border-0 last:pb-0">
+                  <Link
+                    href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
+                    className="block text-zinc-900 transition hover:text-amber-900 hover:underline decoration-amber-600/50 underline-offset-2"
+                  >
+                    {line}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
 
       {!loading && featuredRows.length > 0 ? (
         <section className="space-y-3">
