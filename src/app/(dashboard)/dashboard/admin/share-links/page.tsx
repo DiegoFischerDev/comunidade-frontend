@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -22,6 +22,24 @@ function CopyLinkIcon({ className }: { className?: string }) {
     >
       <rect x="9" y="9" width="13" height="13" rx="2" />
       <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+    </svg>
+  );
+}
+
+function CheckCopyIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M20 6L9 17l-5-5" />
     </svg>
   );
 }
@@ -130,6 +148,8 @@ export default function AdminShareLinksPage() {
   const [editPhrase, setEditPhrase] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [ogBusy, setOgBusy] = useState(false);
+  const [copiedLinkKey, setCopiedLinkKey] = useState<string | null>(null);
+  const copyFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /** Período opcional (AAAA-MM-DD). Ambas vazias = totais desde sempre. */
   const [periodFrom, setPeriodFrom] = useState("");
@@ -287,8 +307,29 @@ export default function AdminShareLinksPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [editingRow, closeEditModal]);
 
-  function copyText(text: string) {
-    void navigator.clipboard.writeText(text);
+  useEffect(() => {
+    return () => {
+      if (copyFeedbackTimerRef.current != null) {
+        clearTimeout(copyFeedbackTimerRef.current);
+      }
+    };
+  }, []);
+
+  async function copyEntryUrl(key: string, text: string) {
+    if (copyFeedbackTimerRef.current != null) {
+      clearTimeout(copyFeedbackTimerRef.current);
+      copyFeedbackTimerRef.current = null;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      return;
+    }
+    setCopiedLinkKey(key);
+    copyFeedbackTimerRef.current = setTimeout(() => {
+      setCopiedLinkKey(null);
+      copyFeedbackTimerRef.current = null;
+    }, 2000);
   }
 
   async function handleDeleteCustomLink(id: string, title: string) {
@@ -719,12 +760,26 @@ export default function AdminShareLinksPage() {
                         </code>
                         <button
                           type="button"
-                          title="Copiar link"
-                          aria-label="Copiar link"
-                          className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-zinc-200 bg-white text-amber-700 shadow-sm transition-colors hover:border-amber-300 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
-                          onClick={() => copyText(row.entryUrl)}
+                          title={
+                            copiedLinkKey === `custom:${row.id}`
+                              ? "Copiado para a área de transferência"
+                              : "Copiar link"
+                          }
+                          aria-label={
+                            copiedLinkKey === `custom:${row.id}` ? "Copiado" : "Copiar link"
+                          }
+                          className={`inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border shadow-sm transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+                            copiedLinkKey === `custom:${row.id}`
+                              ? "animate-copy-link-pop border-emerald-500 bg-emerald-50 text-emerald-700 focus-visible:ring-emerald-500"
+                              : "border-zinc-200 bg-white text-amber-700 hover:border-amber-300 hover:bg-amber-50 focus-visible:ring-amber-500"
+                          }`}
+                          onClick={() => void copyEntryUrl(`custom:${row.id}`, row.entryUrl)}
                         >
-                          <CopyLinkIcon className="h-4 w-4" />
+                          {copiedLinkKey === `custom:${row.id}` ? (
+                            <CheckCopyIcon className="h-4 w-4" />
+                          ) : (
+                            <CopyLinkIcon className="h-4 w-4" />
+                          )}
                         </button>
                       </div>
                       <p
@@ -854,12 +909,26 @@ export default function AdminShareLinksPage() {
                         </code>
                         <button
                           type="button"
-                          title="Copiar link"
-                          aria-label="Copiar link"
-                          className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-zinc-200 bg-white text-amber-700 shadow-sm transition-colors hover:border-amber-300 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
-                          onClick={() => copyText(row.entryUrl)}
+                          title={
+                            copiedLinkKey === `house:${row.id}`
+                              ? "Copiado para a área de transferência"
+                              : "Copiar link"
+                          }
+                          aria-label={
+                            copiedLinkKey === `house:${row.id}` ? "Copiado" : "Copiar link"
+                          }
+                          className={`inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border shadow-sm transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+                            copiedLinkKey === `house:${row.id}`
+                              ? "animate-copy-link-pop border-emerald-500 bg-emerald-50 text-emerald-700 focus-visible:ring-emerald-500"
+                              : "border-zinc-200 bg-white text-amber-700 hover:border-amber-300 hover:bg-amber-50 focus-visible:ring-amber-500"
+                          }`}
+                          onClick={() => void copyEntryUrl(`house:${row.id}`, row.entryUrl)}
                         >
-                          <CopyLinkIcon className="h-4 w-4" />
+                          {copiedLinkKey === `house:${row.id}` ? (
+                            <CheckCopyIcon className="h-4 w-4" />
+                          ) : (
+                            <CopyLinkIcon className="h-4 w-4" />
+                          )}
                         </button>
                       </div>
                       <p className="mt-2 text-xs text-zinc-500">

@@ -15,7 +15,7 @@ export const ADMIN_WHATSAPP_TRIGGERS: AdminWhatsappTrigger[] = [
   {
     name: "Quiz financiamento (início)",
     trigger:
-      'Ex.: "Olá, quero saber se consigo financiar uma casa em Portugal" (e variações) ou "questionario"',
+      'Ex.: "Olá, quero saber se consigo financiar uma casa em Portugal" (e variações) ou "questionario". Aceita a mesma frase seguida de espaço/URL (pré-visualização do WhatsApp).',
     handledBy: "whatsapp-evolution-verify",
     action:
       "Inicia o questionário, envia mensagens em sequência e pode sugerir link de grupo.",

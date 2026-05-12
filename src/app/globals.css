@@ -70,3 +70,20 @@ div[role='presentation'].fixed {
     display: none !important;
   }
 }
+
+/* Botão «copiar link» (admin share-links): feedback ao copiar */
+@keyframes copy-link-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1.06);
+  }
+}
+
+.animate-copy-link-pop {
+  animation: copy-link-pop 0.48s cubic-bezier(0.34, 1.45, 0.64, 1) both;
+}
