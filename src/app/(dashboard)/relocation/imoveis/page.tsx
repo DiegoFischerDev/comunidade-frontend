@@ -10,7 +10,6 @@ import { RelocationHouseCard } from "@/components/relocation/RelocationHouseCard
 import {
   RELOCATION_BUSINESS_TYPE_LABELS,
   RELOCATION_BUSINESS_TYPE_OPTIONS,
-  formatRelocationPriceByBusinessType,
   RELOCATION_TYPOLOGY_LABELS,
   RELOCATION_TYPOLOGY_OPTIONS,
   relocationCityDisplayName,
@@ -22,24 +21,34 @@ const RELOCATION_IMOVEIS_PATH = "/relocation/imoveis";
 const RELOCATION_HOUSES_WHATSAPP_GROUP_URL =
   "https://chat.whatsapp.com/Kt4ylOIU0qMBbtfHKlyvVt?mode=gi_t";
 
-function formatAvailableDateDdMmYyyy(iso: string): string {
+const TYPOLOGY_SORT_INDEX = new Map<string, number>(
+  RELOCATION_TYPOLOGY_OPTIONS.map((k, i) => [k, i]),
+);
+
+/** Valor só com montante + € (sem «/ mês»). */
+function listLinePriceEur(priceEur: string): string {
+  const t = priceEur
+    .trim()
+    .replace(/\s*€\s*$/i, "")
+    .replace(/\s*\/\s*m[eê]s?\s*$/i, "")
+    .trim();
+  return `${t.replace(/\s+/g, " ")}€`;
+}
+
+/** Mês por extenso em português (ex.: «junho», «novembro») a partir de `availableFrom`. */
+function availableFromMonthNamePt(iso: string): string {
   const raw = String(iso ?? "").trim();
   if (!raw) return "—";
   const day = raw.slice(0, 10);
+  let d: Date;
   if (/^\d{4}-\d{2}-\d{2}$/.test(day)) {
     const [y, m, dd] = day.split("-").map(Number);
-    const d = new Date(y, m - 1, dd);
-    if (Number.isNaN(d.getTime())) return "—";
-    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+    d = new Date(y, m - 1, dd);
+  } else {
+    d = new Date(raw);
   }
-  const d = new Date(raw);
   if (Number.isNaN(d.getTime())) return "—";
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
-}
-
-/** Ex.: `400 € / mês` → `400€ / mês` (estilo lista). */
-function compactPriceEurLabel(priceFormatted: string): string {
-  return priceFormatted.replace(/\s+€/g, "€");
+  return d.toLocaleDateString("pt-PT", { month: "long" }).toLowerCase();
 }
 
 export default function PublicRelocationHousesListPage() {
@@ -265,6 +274,18 @@ export default function PublicRelocationHousesListPage() {
     return safeRows.filter((h) => !ids.has(h.id));
   }, [safeRows, featuredRows]);
 
+  const listRowsSortedByTypology = useMemo(() => {
+    return [...safeRows].sort((a, b) => {
+      const ia = TYPOLOGY_SORT_INDEX.get(a.typology) ?? 999;
+      const ib = TYPOLOGY_SORT_INDEX.get(b.typology) ?? 999;
+      if (ia !== ib) return ia - ib;
+      return relocationCityDisplayName(a.city).localeCompare(
+        relocationCityDisplayName(b.city),
+        "pt",
+      );
+    });
+  }, [safeRows]);
+
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const clampedPage = Math.min(page, totalPages);
 
@@ -315,19 +336,17 @@ export default function PublicRelocationHousesListPage() {
           aria-label="Lista resumida de imóveis"
         >
           <ul className="list-none space-y-2.5 text-sm leading-relaxed text-zinc-800">
-            {safeRows.map((h) => {
+            {listRowsSortedByTypology.map((h) => {
               const typo = RELOCATION_TYPOLOGY_LABELS[h.typology] ?? h.typology;
               const city = relocationCityDisplayName(h.city);
-              const price = compactPriceEurLabel(
-                formatRelocationPriceByBusinessType(h.priceEur, h.businessType),
-              );
-              const when = formatAvailableDateDdMmYyyy(h.availableFrom);
-              const line = `${typo} - ${city} - ${price} - ${when}`;
+              const price = listLinePriceEur(h.priceEur);
+              const monthPt = availableFromMonthNamePt(h.availableFrom);
+              const line = `${typo} - ${city} - ${price} - ${monthPt}`;
               return (
                 <li key={`list-${h.id}`} className="border-b border-zinc-100 pb-2.5 last:border-0 last:pb-0">
                   <Link
                     href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
-                    className="block text-zinc-900 transition hover:text-amber-900 hover:underline decoration-amber-600/50 underline-offset-2"
+                    className="block cursor-pointer select-text text-zinc-900 transition hover:text-amber-900 hover:underline decoration-amber-600/50 underline-offset-2"
                   >
                     {line}
                   </Link>
