@@ -205,14 +205,6 @@ export default function AdminShareLinksPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Links de redirecionamento</h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          Partilha sempre o link do site (entrada). Ex.:{" "}
-          <code className="rounded bg-zinc-100 px-1 py-0.5 text-xs">{hintEntryBase}</code> ou{" "}
-          <code className="rounded bg-zinc-100 px-1 py-0.5 text-xs">
-            {origin ? `${origin}/imovel?id=…` : "/imovel?id=…"}
-          </code>
-          . Cada abertura regista um clique com data (para relatórios futuros).
-        </p>
         </div>
         <Link
           href="/dashboard/admin/share-links/clicks"
@@ -222,12 +214,7 @@ export default function AdminShareLinksPage() {
         </Link>
       </div>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-medium text-zinc-900">Cliques por período</p>
-        <p className="mt-1 text-xs text-zinc-500">
-          Sem datas: totais acumulados. Com &quot;De&quot; e &quot;Até&quot;: apenas cliques nesse intervalo (datas em UTC).
-          A lista ordena sempre por mais cliques primeiro.
-        </p>
+      <section className="">
         <div className="mt-3 flex flex-wrap items-end gap-3">
           <label className="block text-sm">
             <span className="block text-xs font-medium text-zinc-600">De</span>
