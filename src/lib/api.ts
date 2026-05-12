@@ -699,6 +699,7 @@ export const api = {
             title: string;
             whatsappDigits: string;
             whatsappPhrase: string;
+            ogImageUrl: string | null;
             clickCount: number;
             createdAt: string;
             entryUrl: string;
@@ -710,6 +711,7 @@ export const api = {
             title: string;
             priceEur: string;
             partnerName: string;
+            previewImageUrl: string | null;
             clickCount: number;
             entryUrl: string;
             messagePreview: string;
@@ -728,6 +730,7 @@ export const api = {
           title: string;
           whatsappDigits: string;
           whatsappPhrase: string;
+          ogImageUrl: string | null;
           createdAt: string;
           entryUrl: string;
           exitUrlPreview: string;
@@ -754,6 +757,7 @@ export const api = {
           title: string;
           whatsappDigits: string;
           whatsappPhrase: string;
+          ogImageUrl: string | null;
           createdAt: string;
           entryUrl: string;
           exitUrlPreview: string;
@@ -766,10 +770,25 @@ export const api = {
           id: string;
           title: string;
           slug: string;
+          ogImageUrl: string | null;
           entryUrl: string;
         }>(`/redirect-links/admin/custom/${encodeURIComponent(id)}`, {
           method: 'GET',
         }),
+      uploadCustomOgImage: (id: string, file: File) => {
+        const fd = new FormData();
+        fd.set('file', file);
+        return requestFormData<{ ogImageUrl: string }>(
+          `/redirect-links/admin/custom/${encodeURIComponent(id)}/og-image`,
+          fd,
+          { method: 'POST' },
+        );
+      },
+      deleteCustomOgImage: (id: string) =>
+        request<{ ok: true; ogImageUrl: null }>(
+          `/redirect-links/admin/custom/${encodeURIComponent(id)}/og-image`,
+          { method: 'DELETE' },
+        ),
       clearCustomClicks: (id: string) =>
         request<{ deleted: number }>(
           `/redirect-links/admin/custom/${encodeURIComponent(id)}/clicks`,

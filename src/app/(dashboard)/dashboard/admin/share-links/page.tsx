@@ -97,6 +97,17 @@ function formatWhatsappDigits(digits: string): string {
   return d;
 }
 
+function ogImageAbsoluteUrl(og: string | null | undefined): string | null {
+  const u = (og ?? "").trim();
+  if (!u) return null;
+  if (/^https?:\/\//i.test(u)) return u;
+  const api = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(
+    /\/$/,
+    "",
+  );
+  return `${api}${u.startsWith("/") ? u : `/${u}`}`;
+}
+
 export default function AdminShareLinksPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
@@ -118,6 +129,7 @@ export default function AdminShareLinksPage() {
   const [editWhatsapp, setEditWhatsapp] = useState("");
   const [editPhrase, setEditPhrase] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
+  const [ogBusy, setOgBusy] = useState(false);
 
   /** Período opcional (AAAA-MM-DD). Ambas vazias = totais desde sempre. */
   const [periodFrom, setPeriodFrom] = useState("");
@@ -223,6 +235,37 @@ export default function AdminShareLinksPage() {
       setError(err instanceof Error ? err.message : "Erro ao guardar alterações.");
     } finally {
       setSavingEdit(false);
+    }
+  }
+
+  async function handleOgImageSelected(file: File | null) {
+    if (!editingRow || !file) return;
+    setOgBusy(true);
+    setError("");
+    try {
+      const r = await api.admin.shareLinks.uploadCustomOgImage(editingRow.id, file);
+      setEditingRow((prev) => (prev ? { ...prev, ogImageUrl: r.ogImageUrl } : null));
+      await reloadOverview();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao enviar imagem.");
+    } finally {
+      setOgBusy(false);
+    }
+  }
+
+  async function handleOgImageRemove() {
+    if (!editingRow?.ogImageUrl) return;
+    if (!confirm("Remover a imagem de pré-visualização (WhatsApp / redes)?")) return;
+    setOgBusy(true);
+    setError("");
+    try {
+      await api.admin.shareLinks.deleteCustomOgImage(editingRow.id);
+      setEditingRow((prev) => (prev ? { ...prev, ogImageUrl: null } : null));
+      await reloadOverview();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao remover imagem.");
+    } finally {
+      setOgBusy(false);
     }
   }
 
@@ -505,6 +548,52 @@ export default function AdminShareLinksPage() {
                   required
                 />
               </label>
+              <div className="sm:col-span-2 rounded-lg border border-zinc-200 bg-zinc-50/80 p-4">
+                <p className="text-sm font-medium text-zinc-800">
+                  Imagem ao partilhar o link (WhatsApp)
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Formato recomendado: horizontal. A imagem é optimizada automaticamente (1200×630).
+                </p>
+                <div className="mt-3 flex flex-wrap items-start gap-4">
+                  {ogImageAbsoluteUrl(editingRow.ogImageUrl) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={ogImageAbsoluteUrl(editingRow.ogImageUrl)!}
+                      alt="Pré-visualização OG"
+                      className="max-h-28 rounded border border-zinc-200 object-contain shadow-sm"
+                    />
+                  ) : (
+                    <span className="text-xs text-zinc-500">Sem imagem personalizada.</span>
+                  )}
+                  <div className="flex min-w-[180px] flex-col gap-2">
+                    <label className="inline-block">
+                      <span className="sr-only">Escolher imagem OG</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        disabled={ogBusy || savingEdit}
+                        className="block w-full max-w-xs text-xs text-zinc-600 file:mr-2 file:cursor-pointer file:rounded file:border-0 file:bg-amber-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-amber-900 hover:file:bg-amber-200 disabled:opacity-50"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0] ?? null;
+                          e.target.value = "";
+                          void handleOgImageSelected(f);
+                        }}
+                      />
+                    </label>
+                    {editingRow.ogImageUrl ? (
+                      <button
+                        type="button"
+                        disabled={ogBusy || savingEdit}
+                        onClick={() => void handleOgImageRemove()}
+                        className="cursor-pointer self-start rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        {ogBusy ? "A processar…" : "Remover imagem"}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
               <div className="flex flex-wrap justify-end gap-2 sm:col-span-2">
                 <button
                   type="button"
@@ -515,7 +604,7 @@ export default function AdminShareLinksPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={savingEdit}
+                  disabled={savingEdit || ogBusy}
                   className="cursor-pointer rounded-md bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
                 >
                   {savingEdit ? "A guardar…" : "Guardar"}
@@ -573,6 +662,7 @@ export default function AdminShareLinksPage() {
             <thead className="border-b border-zinc-200 bg-zinc-50 text-xs uppercase text-zinc-600">
               <tr>
                 <th className="px-4 py-3">Título</th>
+                <th className="px-4 py-3">Imagem</th>
                 <th className="px-4 py-3 align-bottom">
                   <span className="block">Cliques</span>
                   {data.clickPeriod ? (
@@ -589,7 +679,7 @@ export default function AdminShareLinksPage() {
             <tbody>
               {data.customLinks.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
+                  <td colSpan={6} className="px-4 py-8 text-center text-zinc-500">
                     Ainda não há links personalizados.
                   </td>
                 </tr>
@@ -601,6 +691,18 @@ export default function AdminShareLinksPage() {
                       <div className="mt-1 text-xs text-zinc-500">
                         slug: <code>{row.slug}</code>
                       </div>
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      {ogImageAbsoluteUrl(row.ogImageUrl) ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={ogImageAbsoluteUrl(row.ogImageUrl)!}
+                          alt=""
+                          className="h-12 w-[76px] rounded border border-zinc-200 object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs text-zinc-400">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 align-top font-semibold tabular-nums">
                       {row.clickCount}
@@ -647,7 +749,7 @@ export default function AdminShareLinksPage() {
                           type="button"
                           title="Editar link"
                           aria-label="Editar link"
-                          disabled={busyDeleteCustomId === row.id || savingEdit}
+                          disabled={busyDeleteCustomId === row.id || savingEdit || ogBusy}
                           onClick={() => openEditModal(row)}
                           className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-700 shadow-sm transition-colors hover:border-amber-300 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
@@ -700,6 +802,7 @@ export default function AdminShareLinksPage() {
             <thead className="border-b border-zinc-200 bg-zinc-50 text-xs uppercase text-zinc-600">
               <tr>
                 <th className="px-4 py-3">Imóvel</th>
+                <th className="px-4 py-3">Imagem</th>
                 <th className="px-4 py-3">Parceiro</th>
                 <th className="px-4 py-3 align-bottom">
                   <span className="block">Cliques</span>
@@ -715,7 +818,7 @@ export default function AdminShareLinksPage() {
             <tbody>
               {data.houseLinks.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-zinc-500">
+                  <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
                     Nenhum anúncio encontrado.
                   </td>
                 </tr>
@@ -727,6 +830,18 @@ export default function AdminShareLinksPage() {
                       <div className="mt-1 text-xs text-zinc-500">
                         ref. #{row.houseId} · {row.priceEur}
                       </div>
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      {ogImageAbsoluteUrl(row.previewImageUrl) ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={ogImageAbsoluteUrl(row.previewImageUrl)!}
+                          alt=""
+                          className="h-12 w-[76px] rounded border border-zinc-200 object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs text-zinc-400">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 align-top text-zinc-700">{row.partnerName}</td>
                     <td className="px-4 py-3 align-top font-semibold tabular-nums">
