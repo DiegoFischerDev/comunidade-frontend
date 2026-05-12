@@ -74,13 +74,8 @@ export function formatRelocationFeeEur(raw: string): string {
   return `${t} €`;
 }
 
-export function buildRelocationLeadMessage(h: RelocationHouseRow): string {
-  // IMPORTANTE: precisa conter o gatilho para disparar o flow processHouseInterestInbound.
-  return `Tenho interesse no imovel ${h.houseId}, ${h.title}`;
-}
-
 export function openRelocationPartnerWhatsApp(h: RelocationHouseRow): void {
-  const url = `/imovel?id=${encodeURIComponent(String(h.houseId))}&mode=interest`;
+  const url = `/imovel?id=${encodeURIComponent(String(h.houseId))}`;
   const opened = window.open(url, "_blank", "noopener,noreferrer");
   if (opened == null) {
     window.location.assign(url);
