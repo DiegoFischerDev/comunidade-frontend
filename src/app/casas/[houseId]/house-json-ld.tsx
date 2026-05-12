@@ -10,7 +10,7 @@ type Props = {
 export function HouseJsonLd({ house, pageUrl }: Props) {
   const cityLabel = relocationCitySchemaLocality(house.city);
 
-  const tMatch = /^T([1-5])$/.exec(house.typology);
+  const tMatch = /^T([0-5])$/.exec(house.typology);
   const roomCount = tMatch ? Number(tMatch[1]) : undefined;
 
   const primaryImage = absoluteMediaUrlForOg(house.coverImageUrl ?? house.imageUrls?.[0]);

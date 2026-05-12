@@ -11,6 +11,7 @@ export type RelocationHouseRow = Awaited<
 export { RELOCATION_CITY_OPTIONS, relocationCityDisplayName } from "@/lib/relocation-portugal-cities";
 
 export const RELOCATION_TYPOLOGY_LABELS: Record<string, string> = {
+  T0: "T0",
   T1: "T1",
   T2: "T2",
   T3: "T3",
@@ -20,6 +21,7 @@ export const RELOCATION_TYPOLOGY_LABELS: Record<string, string> = {
 };
 
 export const RELOCATION_TYPOLOGY_OPTIONS = [
+  "T0",
   "T1",
   "T2",
   "T3",
