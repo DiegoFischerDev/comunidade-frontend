@@ -587,7 +587,6 @@ export const api = {
             whatsapp: string;
             logoUrl: string | null;
             priority: number;
-            maxPendingLeads: number;
             createdAt: string;
             user: { id: string; email: string | null; role: string };
             category: { id: string; name: string; slug: string } | null;
@@ -616,7 +615,7 @@ export const api = {
         request<void>(`/partners/${id}`, { method: 'DELETE' }),
       update: (
         id: string,
-        input: { categoryId?: string | null; priority?: number; maxPendingLeads?: number },
+        input: { categoryId?: string | null; priority?: number },
       ) =>
         request<{
           id: string;
@@ -624,7 +623,6 @@ export const api = {
           whatsapp: string;
           logoUrl: string | null;
           priority: number;
-          maxPendingLeads: number;
           createdAt: string;
           user: { id: string; email: string | null; role: string };
           category: { id: string; name: string; slug: string } | null;
@@ -632,14 +630,6 @@ export const api = {
           method: 'PATCH',
           body: JSON.stringify(input),
         }),
-      addManualLead: (
-        partnerId: string,
-        body: { whatsapp: string; contactName?: string; interestComment?: string },
-      ) =>
-        request<{ leadId: string }>(
-          `/partners/admin/${encodeURIComponent(partnerId)}/leads/manual`,
-          { method: 'POST', body: JSON.stringify(body) },
-        ),
       listCategories: () =>
         request<
           {
@@ -685,45 +675,16 @@ export const api = {
             commissionPaidEur: string | null;
             wantsInvoice: boolean;
             partner: { id: string; name: string };
-            user: { id: string; name: string | null; whatsapp: string | null; tier: 'VISITOR' | 'MEMBER' };
-            service: { id: string; title: string };
-          }[]
-        >('/partners/admin/sales', { method: 'GET' }),
-    },
-    leads: {
-      list: (partnerId?: string) => {
-        const q = new URLSearchParams();
-        if (partnerId) q.set('partnerId', partnerId);
-        return request<
-          {
-            id: string;
-            createdAt: string;
-            attendedAt: string | null;
-            interestComment: string | null;
-            contactName: string | null;
-            partner: {
-              id: string;
-              name: string;
-              category?: { slug: string; name: string } | null;
-            } | null;
             user: {
               id: string;
               name: string | null;
-              whatsapp: string;
-              email: string;
+              email: string | null;
+              whatsapp: string | null;
               tier: 'VISITOR' | 'MEMBER';
-              role: string;
-            } | null;
-            visitorWhatsapp: string | null;
+            };
+            service: { id: string; title: string };
           }[]
-        >(`/partners/admin/leads${q.toString() ? `?${q.toString()}` : ''}`, {
-          method: 'GET',
-        });
-      },
-      delete: (leadId: string) =>
-        request<{ ok: true }>(`/partners/admin/leads/${encodeURIComponent(leadId)}`, {
-          method: 'DELETE',
-        }),
+        >('/partners/admin/sales', { method: 'GET' }),
     },
     shareLinks: {
       overview: (opts?: { from?: string; to?: string }) => {
@@ -779,13 +740,51 @@ export const api = {
           `/redirect-links/admin/custom/${encodeURIComponent(id)}`,
           { method: 'DELETE' },
         ),
+      updateCustom: (
+        id: string,
+        body: {
+          title?: string;
+          whatsapp?: string;
+          whatsappPhrase?: string;
+        },
+      ) =>
+        request<{
+          id: string;
+          slug: string;
+          title: string;
+          whatsappDigits: string;
+          whatsappPhrase: string;
+          createdAt: string;
+          entryUrl: string;
+          exitUrlPreview: string;
+        }>(`/redirect-links/admin/custom/${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        }),
+      getCustom: (id: string) =>
+        request<{
+          id: string;
+          title: string;
+          slug: string;
+          entryUrl: string;
+        }>(`/redirect-links/admin/custom/${encodeURIComponent(id)}`, {
+          method: 'GET',
+        }),
+      clearCustomClicks: (id: string) =>
+        request<{ deleted: number }>(
+          `/redirect-links/admin/custom/${encodeURIComponent(id)}/clicks`,
+          { method: 'DELETE' },
+        ),
       clickHistory: (opts?: {
         kind?: 'CUSTOM_LINK' | 'HOUSE';
+        partnerShareLinkId?: string;
         limit?: number;
         offset?: number;
       }) => {
         const q = new URLSearchParams();
         if (opts?.kind) q.set('kind', opts.kind);
+        if (opts?.partnerShareLinkId)
+          q.set('partnerShareLinkId', opts.partnerShareLinkId);
         if (opts?.limit != null) q.set('limit', String(opts.limit));
         if (opts?.offset != null) q.set('offset', String(opts.offset));
         const qs = q.toString();
@@ -794,6 +793,7 @@ export const api = {
             id: string;
             kind: 'CUSTOM_LINK' | 'HOUSE';
             clickedAt: string;
+            visitorKey: string | null;
             customLink: {
               id: string;
               title: string;
@@ -1211,8 +1211,6 @@ export const api = {
         billingAddress?: string | null;
         billingPostalCode?: string | null;
         category?: { id: string; slug: string; name: string } | null;
-        pendingLeadsCount?: number;
-        averageResponseMinutes?: number | null;
       }>('/partners/me', { method: 'GET' }),
     updateMe: (input: {
       name?: string;
@@ -1324,48 +1322,6 @@ export const api = {
         }),
       delete: (id: string) =>
         request<void>(`/partners/me/services/${id}`, { method: 'DELETE' }),
-    },
-    leads: {
-      list: () =>
-        request<
-          {
-            id: string;
-            createdAt: string;
-            attendedAt: string | null;
-            interestComment: string | null;
-            contactName: string | null;
-            awaitingAttendance: boolean;
-            contactType: 'user' | 'visitor';
-            user: {
-              id: string;
-              name: string | null;
-              whatsapp: string;
-              email: string;
-              tier: 'VISITOR' | 'MEMBER';
-            } | null;
-            visitorWhatsapp: string | null;
-            immigrationPlan: {
-              updatedAt: string;
-              answers: {
-                visaType: string | null;
-                cidade: string | null;
-                cidadePlanoB: string | null;
-                agregadoFamiliar: string | null;
-                numQuartos: string | null;
-                profissoesPossiveis: string[];
-                precisaCarro: boolean | null;
-                dataViagem: string | null;
-                dataAima: string | null;
-                notas: string | null;
-              };
-            } | null;
-          }[]
-        >('/partners/me/leads', { method: 'GET' }),
-      openContact: (leadId: string) =>
-        request<{ waMeUrl: string }>(
-          `/partners/me/leads/${encodeURIComponent(leadId)}/contact`,
-          { method: 'POST', body: JSON.stringify({}) },
-        ),
     },
     houses: {
       list: () =>
@@ -1571,7 +1527,13 @@ export const api = {
             commissionSuggestedEur: string | null;
             commissionPaidEur: string | null;
             wantsInvoice: boolean;
-            user: { id: string; name: string | null; whatsapp: string | null; tier: 'VISITOR' | 'MEMBER' };
+            user: {
+              id: string;
+              name: string | null;
+              email: string | null;
+              whatsapp: string | null;
+              tier: 'VISITOR' | 'MEMBER';
+            };
             service: { id: string; title: string; rpmCommissionEur: string | null };
           }[]
         >('/partners/me/sales', { method: 'GET' }),
@@ -1585,7 +1547,13 @@ export const api = {
           commissionSuggestedEur: string | null;
           commissionPaidEur: string | null;
           wantsInvoice: boolean;
-          user: { id: string; name: string | null; whatsapp: string | null; tier: 'VISITOR' | 'MEMBER' };
+          user: {
+            id: string;
+            name: string | null;
+            email: string | null;
+            whatsapp: string | null;
+            tier: 'VISITOR' | 'MEMBER';
+          };
           service: { id: string; title: string; rpmCommissionEur: string | null };
         }>('/partners/me/sales', {
           method: 'POST',

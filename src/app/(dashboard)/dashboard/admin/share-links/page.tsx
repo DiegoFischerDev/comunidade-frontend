@@ -44,6 +44,45 @@ function TrashIcon({ className }: { className?: string }) {
   );
 }
 
+function PencilIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+}
+
+function ClickListIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+    </svg>
+  );
+}
+
+type CustomLinkRow = Overview["customLinks"][number];
+
 /** Apresentação legível do número guardado (apenas dígitos). */
 function formatWhatsappDigits(digits: string): string {
   const d = String(digits ?? "").replace(/\D/g, "");
@@ -73,6 +112,12 @@ export default function AdminShareLinksPage() {
   const [creating, setCreating] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [busyDeleteCustomId, setBusyDeleteCustomId] = useState<string | null>(null);
+
+  const [editingRow, setEditingRow] = useState<CustomLinkRow | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editWhatsapp, setEditWhatsapp] = useState("");
+  const [editPhrase, setEditPhrase] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   /** Período opcional (AAAA-MM-DD). Ambas vazias = totais desde sempre. */
   const [periodFrom, setPeriodFrom] = useState("");
@@ -148,6 +193,39 @@ export default function AdminShareLinksPage() {
     setError("");
   }, []);
 
+  const openEditModal = useCallback((row: CustomLinkRow) => {
+    setEditingRow(row);
+    setEditTitle(row.title);
+    setEditWhatsapp(row.whatsappDigits);
+    setEditPhrase(row.whatsappPhrase);
+    setError("");
+  }, []);
+
+  const closeEditModal = useCallback(() => {
+    setEditingRow(null);
+    setError("");
+  }, []);
+
+  async function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingRow) return;
+    setSavingEdit(true);
+    setError("");
+    try {
+      await api.admin.shareLinks.updateCustom(editingRow.id, {
+        title: editTitle.trim(),
+        whatsapp: editWhatsapp.trim(),
+        whatsappPhrase: editPhrase.trim(),
+      });
+      setEditingRow(null);
+      await reloadOverview();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao guardar alterações.");
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
   useEffect(() => {
     if (!addModalOpen) return;
     const onKey = (ev: KeyboardEvent) => {
@@ -156,6 +234,15 @@ export default function AdminShareLinksPage() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [addModalOpen, closeAddModal]);
+
+  useEffect(() => {
+    if (!editingRow) return;
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") closeEditModal();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [editingRow, closeEditModal]);
 
   function copyText(text: string) {
     void navigator.clipboard.writeText(text);
@@ -253,7 +340,7 @@ export default function AdminShareLinksPage() {
         ) : null}
       </section>
 
-      {error && !addModalOpen ? (
+      {error && !addModalOpen && !editingRow ? (
         <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {error}
         </div>
@@ -347,6 +434,98 @@ export default function AdminShareLinksPage() {
         </div>
       ) : null}
 
+      {editingRow ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="presentation"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeEditModal();
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="share-link-edit-modal-title"
+            className="max-h-[min(90vh,720px)] w-full max-w-lg overflow-y-auto rounded-xl border border-zinc-200 bg-white p-6 shadow-xl"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <h2 id="share-link-edit-modal-title" className="text-lg font-medium text-zinc-900">
+                Editar link
+              </h2>
+              <button
+                type="button"
+                onClick={() => closeEditModal()}
+                className="cursor-pointer rounded-md p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                aria-label="Fechar"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-zinc-500">
+              O identificador na URL (<code className="rounded bg-zinc-100 px-1">{editingRow.slug}</code>) mantém-se;
+              os links já partilhados continuam válidos.
+            </p>
+            {error ? (
+              <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                {error}
+              </div>
+            ) : null}
+            <form onSubmit={(e) => void handleEditSubmit(e)} className="mt-4 grid gap-4 sm:grid-cols-2">
+              <label className="block sm:col-span-2">
+                <span className="text-sm font-medium text-zinc-700">Título</span>
+                <input
+                  className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  placeholder="Ex.: Parceiro João — Lisboa"
+                  required
+                />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="text-sm font-medium text-zinc-700">WhatsApp do destino</span>
+                <input
+                  className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                  value={editWhatsapp}
+                  onChange={(e) => setEditWhatsapp(e.target.value)}
+                  placeholder="+351 912 345 678"
+                  required
+                  autoComplete="tel"
+                />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="text-sm font-medium text-zinc-700">Frase pré-preenchida no WhatsApp</span>
+                <textarea
+                  className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                  rows={3}
+                  value={editPhrase}
+                  onChange={(e) => setEditPhrase(e.target.value)}
+                  placeholder="Mensagem que abre ao clicar no link"
+                  required
+                />
+              </label>
+              <div className="flex flex-wrap justify-end gap-2 sm:col-span-2">
+                <button
+                  type="button"
+                  onClick={() => closeEditModal()}
+                  className="cursor-pointer rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="cursor-pointer rounded-md bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                >
+                  {savingEdit ? "A guardar…" : "Guardar"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-end justify-between gap-3 border-b border-zinc-200">
         <div className="flex gap-2">
           <button
@@ -400,11 +579,7 @@ export default function AdminShareLinksPage() {
                     <span className="mt-1 block text-[10px] font-normal normal-case tracking-normal text-zinc-500">
                       {data.clickPeriod.from} — {data.clickPeriod.to}
                     </span>
-                  ) : (
-                    <span className="mt-1 block text-[10px] font-normal normal-case tracking-normal text-zinc-500">
-                      total
-                    </span>
-                  )}
+                  ) : null}
                 </th>
                 <th className="px-4 py-3">Whatsapp</th>
                 <th className="px-4 py-3">Link de entrada</th>
@@ -434,13 +609,6 @@ export default function AdminShareLinksPage() {
                       <div className="font-medium tabular-nums text-zinc-900">
                         {formatWhatsappDigits(row.whatsappDigits)}
                       </div>
-                      <p
-                        className="mt-2 max-w-[min(280px,40vw)] text-xs leading-snug text-zinc-500"
-                        title={row.whatsappPhrase}
-                      >
-                        frase:{" "}
-                        <span className="text-zinc-700">{row.whatsappPhrase}</span>
-                      </p>
                     </td>
                     <td className="px-4 py-3 align-top">
                       <div className="flex flex-wrap items-center gap-2">
@@ -457,41 +625,68 @@ export default function AdminShareLinksPage() {
                           <CopyLinkIcon className="h-4 w-4" />
                         </button>
                       </div>
+                      <p
+                        className="mt-2 max-w-[min(480px,60vw)] text-xs leading-snug text-zinc-500"
+                        title={row.whatsappPhrase}
+                      >
+                        frase:{" "}
+                        <span className="text-zinc-700">{row.whatsappPhrase}</span>
+                      </p>
                     </td>
                     <td className="px-4 py-3 align-top text-right">
-                      <button
-                        type="button"
-                        title="Eliminar link"
-                        aria-label="Eliminar link"
-                        disabled={busyDeleteCustomId === row.id}
-                        onClick={() => void handleDeleteCustomLink(row.id, row.title)}
-                        className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-red-200 bg-white text-red-700 shadow-sm transition-colors hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {busyDeleteCustomId === row.id ? (
-                          <svg
-                            className="h-4 w-4 animate-spin"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            aria-hidden
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            />
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            />
-                          </svg>
-                        ) : (
-                          <TrashIcon className="h-4 w-4" />
-                        )}
-                      </button>
+                      <div className="inline-flex flex-wrap justify-end gap-2">
+                        <Link
+                          href={`/dashboard/admin/share-links/${row.id}/clicks`}
+                          title="Ver cliques deste link"
+                          aria-label="Ver cliques deste link"
+                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-700 shadow-sm transition-colors hover:border-amber-300 hover:bg-amber-50"
+                        >
+                          <ClickListIcon className="h-4 w-4" />
+                        </Link>
+                        <button
+                          type="button"
+                          title="Editar link"
+                          aria-label="Editar link"
+                          disabled={busyDeleteCustomId === row.id || savingEdit}
+                          onClick={() => openEditModal(row)}
+                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-700 shadow-sm transition-colors hover:border-amber-300 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          title="Eliminar link"
+                          aria-label="Eliminar link"
+                          disabled={busyDeleteCustomId === row.id}
+                          onClick={() => void handleDeleteCustomLink(row.id, row.title)}
+                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-red-200 bg-white text-red-700 shadow-sm transition-colors hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {busyDeleteCustomId === row.id ? (
+                            <svg
+                              className="h-4 w-4 animate-spin"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              aria-hidden
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              />
+                            </svg>
+                          ) : (
+                            <TrashIcon className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -512,11 +707,7 @@ export default function AdminShareLinksPage() {
                     <span className="mt-1 block text-[10px] font-normal normal-case tracking-normal text-zinc-500">
                       {data.clickPeriod.from} — {data.clickPeriod.to}
                     </span>
-                  ) : (
-                    <span className="mt-1 block text-[10px] font-normal normal-case tracking-normal text-zinc-500">
-                      total
-                    </span>
-                  )}
+                  ) : null}
                 </th>
                 <th className="px-4 py-3">Link de entrada</th>
               </tr>

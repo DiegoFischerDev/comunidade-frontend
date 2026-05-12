@@ -500,7 +500,6 @@ export default function DashboardLayout({
   const [resetLoading, setResetLoading] = useState(false);
   const [partnerId, setPartnerId] = useState<string | null>(null);
   const [partnerCategorySlug, setPartnerCategorySlug] = useState<string | null>(null);
-  const [partnerPendingLeadsCount, setPartnerPendingLeadsCount] = useState(0);
 
   useEffect(() => {
     setMounted(true);
@@ -557,7 +556,6 @@ export default function DashboardLayout({
     if (!user || user.role !== 'PARTNER') {
       setPartnerId(null);
       setPartnerCategorySlug(null);
-      setPartnerPendingLeadsCount(0);
       return;
     }
     let cancelled = false;
@@ -567,15 +565,11 @@ export default function DashboardLayout({
         if (!cancelled) {
           setPartnerId(me.id);
           setPartnerCategorySlug(me.category?.slug ?? null);
-          setPartnerPendingLeadsCount(
-            typeof me.pendingLeadsCount === 'number' ? me.pendingLeadsCount : 0,
-          );
         }
       } catch {
         if (!cancelled) {
           setPartnerId(null);
           setPartnerCategorySlug(null);
-          setPartnerPendingLeadsCount(0);
         }
       }
     })();
@@ -583,25 +577,6 @@ export default function DashboardLayout({
       cancelled = true;
     };
   }, [mounted, authLoading, user?.role]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const onPending = (event: Event) => {
-      const detail = (event as CustomEvent<{ count?: number }>).detail;
-      if (typeof detail?.count === 'number') {
-        setPartnerPendingLeadsCount(detail.count);
-      }
-    };
-    window.addEventListener(
-      'partner-pending-leads-changed',
-      onPending as EventListener,
-    );
-    return () =>
-      window.removeEventListener(
-        'partner-pending-leads-changed',
-        onPending as EventListener,
-      );
-  }, []);
 
   // Permite que outras páginas abram o modal de auth (por exemplo, página do parceiro)
   useEffect(() => {
@@ -748,7 +723,6 @@ export default function DashboardLayout({
 
   const partnerCompanyTitleActive =
     pathname === '/dashboard/business' ||
-    pathname === '/dashboard/leads' ||
     pathname.startsWith('/dashboard/casas') ||
     pathname.startsWith('/dashboard/partner/') ||
     pathname === '/dashboard/my-sales' ||
@@ -901,13 +875,6 @@ export default function DashboardLayout({
               titleActive={partnerCompanyTitleActive}
               sectionActive={partnerNavSectionActive}
             >
-              <SidebarNavSubLink
-                href="/dashboard/leads"
-                active={pathname === '/dashboard/leads'}
-                badgeCount={partnerPendingLeadsCount}
-              >
-                Meus leads
-              </SidebarNavSubLink>
               {partnerCategorySlug === 'relocation' ? (
                 <SidebarNavSubLink
                   href="/dashboard/casas"
@@ -993,16 +960,6 @@ export default function DashboardLayout({
                 }`}
               >
                 Casas (anúncios)
-              </Link>
-              <Link
-                href="/dashboard/admin/leads"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/admin/leads'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Leads (parceiros)
               </Link>
               <Link
                 href="/dashboard/admin/share-links"

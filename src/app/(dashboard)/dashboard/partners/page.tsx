@@ -11,7 +11,6 @@ type PartnerRow = {
   whatsapp: string;
   logoUrl: string | null;
   priority: number;
-  maxPendingLeads: number;
   createdAt: string;
   user: { id: string; email: string | null; role: string };
   category: { id: string; name: string; slug: string } | null;
@@ -29,7 +28,6 @@ export default function PartnersPage() {
     null,
   );
   const [updatingPriorityPartnerId, setUpdatingPriorityPartnerId] = useState<string | null>(null);
-  const [updatingMaxPendingPartnerId, setUpdatingMaxPendingPartnerId] = useState<string | null>(null);
 
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -37,12 +35,6 @@ export default function PartnersPage() {
   const [logoUrl, setLogoUrl] = useState('');
   const [creating, setCreating] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-
-  const [leadModalPartner, setLeadModalPartner] = useState<PartnerRow | null>(null);
-  const [leadWa, setLeadWa] = useState('');
-  const [leadName, setLeadName] = useState('');
-  const [leadInterest, setLeadInterest] = useState('');
-  const [leadSaving, setLeadSaving] = useState(false);
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -107,7 +99,6 @@ export default function PartnersPage() {
           whatsapp: result.partner.whatsapp,
           logoUrl: result.partner.logoUrl,
           priority: 0,
-          maxPendingLeads: 0,
           createdAt: result.partner.createdAt,
           user: result.user,
           category: null,
@@ -261,7 +252,6 @@ export default function PartnersPage() {
                 <th className="px-4 py-2 text-left">Nome</th>
                 <th className="px-4 py-2 text-left">WhatsApp</th>
                 <th className="px-4 py-2 text-left">Prioridade</th>
-                <th className="px-4 py-2 text-left">Max leads pendentes</th>
                 <th className="px-4 py-2 text-left">Categoria</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
@@ -329,42 +319,6 @@ export default function PartnersPage() {
                     </select>
                   </td>
                   <td className="px-4 py-2">
-                    <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={String(typeof p.maxPendingLeads === 'number' ? p.maxPendingLeads : 0)}
-                      onChange={async (e) => {
-                        const nextMax = Math.max(0, parseInt(e.target.value, 10) || 0);
-                        setUpdatingMaxPendingPartnerId(p.id);
-                        setError('');
-                        try {
-                          const updated = await api.admin.partners.update(p.id, {
-                            maxPendingLeads: nextMax,
-                          });
-                          setPartners((prev) =>
-                            prev.map((row) =>
-                              row.id === p.id
-                                ? { ...row, maxPendingLeads: updated.maxPendingLeads }
-                                : row,
-                            ),
-                          );
-                        } catch (err) {
-                          setError(
-                            err instanceof Error
-                              ? err.message
-                              : 'Erro ao atualizar max leads pendentes do parceiro.',
-                          );
-                        } finally {
-                          setUpdatingMaxPendingPartnerId(null);
-                        }
-                      }}
-                      disabled={updatingMaxPendingPartnerId === p.id}
-                      className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-                      aria-label={`Max leads pendentes do parceiro ${p.name}`}
-                    />
-                  </td>
-                  <td className="px-4 py-2">
                     <select
                       value={p.category?.id ?? ''}
                       onChange={async (e) => {
@@ -408,20 +362,6 @@ export default function PartnersPage() {
                     {new Date(p.createdAt).toLocaleString('pt-PT')}
                   </td>
                   <td className="px-4 py-2 text-right">
-                    <CardButton
-                      type="button"
-                      onClick={() => {
-                        setError('');
-                        setLeadWa('');
-                        setLeadInterest('');
-                        setLeadModalPartner(p);
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="mr-2"
-                    >
-                      Adicionar lead
-                    </CardButton>
                     <CardButton
                       type="button"
                       onClick={async () => {
@@ -476,7 +416,7 @@ export default function PartnersPage() {
               {partners.length === 0 && (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-4 py-4 text-center text-sm text-zinc-500"
                   >
                     Nenhum parceiro encontrado.
@@ -487,106 +427,6 @@ export default function PartnersPage() {
           </table>
         </div>
       )}
-
-      {leadModalPartner ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          role="presentation"
-          onClick={() => !leadSaving && setLeadModalPartner(null)}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-base font-semibold text-zinc-900">
-              Adicionar lead — {leadModalPartner.name}
-            </h2>
-            <p className="mt-1 text-sm text-zinc-600">
-              O número recebe a confirmação por WhatsApp e o parceiro é notificado do novo pedido.
-            </p>
-            <div className="mt-4 space-y-3">
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-zinc-700">
-                  Nome do lead
-                </label>
-                <input
-                  type="text"
-                  value={leadName}
-                  onChange={(e) => setLeadName(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="Ex.: José"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-zinc-700">
-                  WhatsApp do lead (com DDI, ex. 351…)
-                </label>
-                <input
-                  type="text"
-                  value={leadWa}
-                  onChange={(e) => setLeadWa(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="351912345678"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-zinc-700">
-                  Interesse (opcional)
-                </label>
-                <input
-                  type="text"
-                  value={leadInterest}
-                  onChange={(e) => setLeadInterest(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="Ex.: Pedido manual — cliente ligou por telefone"
-                />
-              </div>
-            </div>
-            <div className="mt-5 flex justify-end gap-2">
-              <CardButton
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={leadSaving}
-                onClick={() => setLeadModalPartner(null)}
-              >
-                Cancelar
-              </CardButton>
-              <CardButton
-                type="button"
-                variant="primary"
-                size="sm"
-                disabled={leadSaving || !leadWa.trim()}
-                onClick={async () => {
-                  setError('');
-                  setLeadSaving(true);
-                  try {
-                    await api.admin.partners.addManualLead(leadModalPartner.id, {
-                      whatsapp: leadWa.trim(),
-                      contactName: leadName.trim() || undefined,
-                      interestComment: leadInterest.trim() || undefined,
-                    });
-                    setLeadModalPartner(null);
-                    setLeadWa('');
-                    setLeadName('');
-                    setLeadInterest('');
-                  } catch (err) {
-                    setError(
-                      err instanceof Error
-                        ? err.message
-                        : 'Erro ao registar o lead.',
-                    );
-                  } finally {
-                    setLeadSaving(false);
-                  }
-                }}
-              >
-                {leadSaving ? 'A guardar…' : 'Registar'}
-              </CardButton>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

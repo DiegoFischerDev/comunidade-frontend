@@ -160,6 +160,7 @@ export default function AdminShareLinkClicksPage() {
               <thead className="border-b border-zinc-200 bg-zinc-50 text-xs uppercase text-zinc-600">
                 <tr>
                   <th className="px-4 py-3">Data / hora</th>
+                  <th className="px-4 py-3">Identificador</th>
                   <th className="px-4 py-3">Tipo</th>
                   <th className="px-4 py-3">Destino</th>
                 </tr>
@@ -167,7 +168,7 @@ export default function AdminShareLinkClicksPage() {
               <tbody>
                 {items.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-4 py-10 text-center text-zinc-500">
+                    <td colSpan={4} className="px-4 py-10 text-center text-zinc-500">
                       Sem cliques registados (com os filtros actuais).
                     </td>
                   </tr>
@@ -179,6 +180,16 @@ export default function AdminShareLinkClicksPage() {
                           dateStyle: "short",
                           timeStyle: "medium",
                         })}
+                      </td>
+                      <td className="max-w-[200px] px-4 py-3">
+                        <code
+                          className="break-all text-xs text-zinc-700"
+                          title={row.visitorKey ?? undefined}
+                        >
+                          {row.visitorKey && row.visitorKey.length > 0
+                            ? row.visitorKey
+                            : "—"}
+                        </code>
                       </td>
                       <td className="px-4 py-3">
                         <span

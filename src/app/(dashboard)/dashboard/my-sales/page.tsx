@@ -5,10 +5,16 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CardButton } from '@/components/ui/CardButton';
 
-type LeadRow = Awaited<ReturnType<typeof api.partner.leads.list>>[number];
 type ServiceRow = Awaited<ReturnType<typeof api.partner.services.list>>[number];
 type SaleRow = Awaited<ReturnType<typeof api.partner.sales.list>>[number];
 type PartnerMe = Awaited<ReturnType<typeof api.partner.me>>;
+
+type CustomerPick = {
+  id: string;
+  name: string | null;
+  email: string;
+  whatsapp: string;
+};
 
 function formatEurString(value: string): string {
   const n = Number(value);
@@ -25,7 +31,6 @@ export default function MySalesPage() {
   const { user } = useAuth();
   const isPartner = user?.role === 'PARTNER';
 
-  const [leads, setLeads] = useState<LeadRow[]>([]);
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [partnerMe, setPartnerMe] = useState<PartnerMe | null>(null);
@@ -33,6 +38,7 @@ export default function MySalesPage() {
   const [error, setError] = useState('');
 
   const [leadUserId, setLeadUserId] = useState('');
+  const [manualClientUserId, setManualClientUserId] = useState('');
   const [serviceId, setServiceId] = useState('');
   const [amountEur, setAmountEur] = useState('');
   const [creating, setCreating] = useState(false);
@@ -66,13 +72,11 @@ export default function MySalesPage() {
       setError('');
       setLoading(true);
       try {
-        const [leadsData, servicesData, salesData, me] = await Promise.all([
-          api.partner.leads.list(),
+        const [servicesData, salesData, me] = await Promise.all([
           api.partner.services.list(),
           api.partner.sales.list(),
           api.partner.me(),
         ]);
-        setLeads(leadsData);
         setServices(servicesData);
         setSales(salesData);
         setPartnerMe(me);
@@ -95,21 +99,40 @@ export default function MySalesPage() {
     );
   }, [payingSale]);
 
-  const leadsRegistados = useMemo(
-    () => leads.filter((l) => l.user != null),
-    [leads],
-  );
+  const customersFromSales = useMemo(() => {
+    const m = new Map<string, CustomerPick>();
+    for (const s of sales) {
+      const u = s.user;
+      if (!u?.id) continue;
+      if (!m.has(u.id)) {
+        m.set(u.id, {
+          id: u.id,
+          name: u.name,
+          email: u.email ?? '',
+          whatsapp: u.whatsapp ?? '',
+        });
+      }
+    }
+    return [...m.values()].sort((a, b) =>
+      (a.name ?? a.email).localeCompare(b.name ?? b.email, 'pt-PT'),
+    );
+  }, [sales]);
 
-  const filteredLeads = useMemo(() => {
+  const filteredCustomers = useMemo(() => {
     const q = leadQuery.trim().toLowerCase();
-    if (!q) return leadsRegistados;
-    return leadsRegistados.filter((l) => {
-      const u = l.user!;
-      const name = (u.name ?? '').toLowerCase();
-      const email = (u.email ?? '').toLowerCase();
-      return name.includes(q) || email.includes(q);
+    if (!q) return customersFromSales;
+    return customersFromSales.filter((c) => {
+      const name = (c.name ?? '').toLowerCase();
+      const email = (c.email ?? '').toLowerCase();
+      const wa = (c.whatsapp ?? '').replace(/\D/g, '');
+      const digits = q.replace(/\D/g, '');
+      return (
+        name.includes(q) ||
+        email.includes(q) ||
+        (digits.length >= 6 && wa.includes(digits))
+      );
     });
-  }, [leadsRegistados, leadQuery]);
+  }, [customersFromSales, leadQuery]);
 
   if (!user) return null;
 
@@ -129,16 +152,18 @@ export default function MySalesPage() {
     setCreateError('');
     setCreating(true);
     try {
-      if (!leadUserId) throw new Error('Selecione um lead.');
+      const uid = (leadUserId || manualClientUserId.trim()).trim();
+      if (!uid) throw new Error('Selecione um cliente na lista ou cole o ID (UUID).');
       if (!serviceId) throw new Error('Selecione um serviço.');
       if (!amountEur.trim()) throw new Error('Informe o valor da venda.');
       const created = await api.partner.sales.create({
-        leadUserId,
+        leadUserId: uid,
         serviceId,
         amountEur: amountEur.trim(),
       });
       setSales((prev) => [created, ...prev]);
       setLeadUserId('');
+      setManualClientUserId('');
       setServiceId('');
       setAmountEur('');
       setLeadQuery('');
@@ -156,7 +181,7 @@ export default function MySalesPage() {
   async function handleDeleteSale(sale: SaleRow) {
     if (
       !window.confirm(
-        `Remover esta venda?\n\nLead: ${sale.user.name ?? '—'}\nServiço: ${sale.service.title}\nValor: ${sale.amountEur} €`,
+        `Remover esta venda?\n\nCliente: ${sale.user.name ?? '—'}\nServiço: ${sale.service.title}\nValor: ${sale.amountEur} €`,
       )
     ) {
       return;
@@ -200,7 +225,7 @@ export default function MySalesPage() {
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Minhas vendas</h1>
         <p className="mt-2 text-sm text-zinc-600">
-          Registre vendas feitas para leads e pague a comissão RPM quando desejar.
+          Registe vendas para clientes com conta na comunidade e pague a comissão RPM quando desejar.
         </p>
       </div>
 
@@ -218,6 +243,7 @@ export default function MySalesPage() {
             setError('');
             setCreateError('');
             setLeadUserId('');
+            setManualClientUserId('');
             setServiceId('');
             setAmountEur('');
             setLeadQuery('');
@@ -245,7 +271,7 @@ export default function MySalesPage() {
                   Registrar nova venda
                 </h2>
                 <p className="mt-1 text-sm text-zinc-600">
-                  Selecione o lead, o serviço e o valor vendido.
+                  Escolha o cliente (membro com conta), o serviço e o valor vendido.
                 </p>
               </div>
               <button
@@ -267,7 +293,7 @@ export default function MySalesPage() {
               )}
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-zinc-700">
-                  Lead
+                  Cliente (membro)
                 </label>
                 <div className="relative">
                   <input
@@ -275,42 +301,42 @@ export default function MySalesPage() {
                     onChange={(e) => {
                       setLeadQuery(e.target.value);
                       setLeadUserId('');
+                      setManualClientUserId('');
                       setLeadDropdownOpen(true);
                     }}
                     onFocus={() => setLeadDropdownOpen(true)}
                     onBlur={() => {
-                      // pequeno delay para permitir clique no item
                       window.setTimeout(() => setLeadDropdownOpen(false), 120);
                     }}
-                    placeholder="Digite o nome do lead…"
+                    placeholder="Nome, e-mail ou WhatsApp…"
                     className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
 
                   {leadDropdownOpen && (
                     <div className="absolute z-50 mt-2 max-h-64 w-full overflow-auto rounded-lg border border-zinc-200 bg-white shadow-lg">
-                      {filteredLeads.length === 0 ? (
+                      {filteredCustomers.length === 0 ? (
                         <div className="px-3 py-2 text-sm text-zinc-500">
-                          Nenhum lead encontrado.
+                          Nenhum cliente nas vendas anteriores — usa o ID abaixo.
                         </div>
                       ) : (
-                        filteredLeads.map((l) => (
+                        filteredCustomers.map((c) => (
                           <button
-                            key={l.id}
+                            key={c.id}
                             type="button"
                             onMouseDown={(e) => {
                               e.preventDefault();
-                              const u = l.user!;
-                              setLeadUserId(u.id);
-                              setLeadQuery(u.name ?? u.email ?? '');
+                              setLeadUserId(c.id);
+                              setManualClientUserId('');
+                              setLeadQuery(c.name ?? c.email ?? c.whatsapp ?? '');
                               setLeadDropdownOpen(false);
                             }}
                             className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm text-zinc-800 hover:bg-zinc-50"
                           >
                             <span className="min-w-0 truncate font-medium text-zinc-900">
-                              {l.user!.name ?? '—'}
+                              {c.name ?? '—'}
                             </span>
                             <span className="shrink-0 text-xs text-zinc-600">
-                              {l.user!.email ?? '—'}
+                              {c.email || c.whatsapp || '—'}
                             </span>
                           </button>
                         ))
@@ -318,10 +344,18 @@ export default function MySalesPage() {
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-zinc-500">
-                  Dica: se o lead não aparecer, ele precisa existir na tua lista
-                  de leads.
-                </p>
+                <label className="mt-2 block text-xs font-medium text-zinc-600">
+                  Ou ID do utilizador (UUID)
+                </label>
+                <input
+                  value={manualClientUserId}
+                  onChange={(e) => {
+                    setManualClientUserId(e.target.value);
+                    setLeadUserId('');
+                  }}
+                  placeholder="cole o UUID se o cliente ainda não tiver venda registada"
+                  className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
               </div>
 
               <div className="space-y-1">
@@ -381,7 +415,7 @@ export default function MySalesPage() {
           <table className="min-w-full text-sm">
             <thead className="bg-zinc-50 text-zinc-600">
               <tr>
-                <th className="px-4 py-2 text-left">Lead</th>
+                <th className="px-4 py-2 text-left">Cliente</th>
                 <th className="px-4 py-2 text-left">Serviço</th>
                 <th className="px-4 py-2 text-left">Valor</th>
                 <th className="px-4 py-2 text-left">Comissão RPM</th>
@@ -477,7 +511,7 @@ export default function MySalesPage() {
             <div className="mt-4 space-y-3">
               <div className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700">
                 <p>
-                  <span className="font-medium text-zinc-900">Lead:</span>{' '}
+                  <span className="font-medium text-zinc-900">Cliente:</span>{' '}
                   {payingSale.user.name ?? '—'}
                 </p>
                 <p className="mt-1">
