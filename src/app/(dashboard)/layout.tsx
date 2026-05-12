@@ -1005,6 +1005,17 @@ export default function DashboardLayout({
                 Leads (parceiros)
               </Link>
               <Link
+                href="/dashboard/admin/share-links"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/admin/share-links' ||
+                  pathname.startsWith('/dashboard/admin/share-links/')
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Links WhatsApp
+              </Link>
+              <Link
                 href="/dashboard/admin/gatilhos"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/gatilhos'

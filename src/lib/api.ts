@@ -725,6 +725,85 @@ export const api = {
           method: 'DELETE',
         }),
     },
+    shareLinks: {
+      overview: () =>
+        request<{
+          customLinks: {
+            id: string;
+            slug: string;
+            title: string;
+            whatsappDigits: string;
+            whatsappPhrase: string;
+            clickCount: number;
+            createdAt: string;
+            entryUrl: string;
+            exitUrlPreview: string;
+          }[];
+          houseLinks: {
+            id: string;
+            houseId: number;
+            title: string;
+            priceEur: string;
+            partnerName: string;
+            clickCount: number;
+            entryUrl: string;
+            messagePreview: string;
+          }[];
+        }>('/redirect-links/admin/overview', { method: 'GET' }),
+      createCustom: (body: {
+        title: string;
+        whatsapp: string;
+        whatsappPhrase: string;
+      }) =>
+        request<{
+          id: string;
+          slug: string;
+          title: string;
+          whatsappDigits: string;
+          whatsappPhrase: string;
+          createdAt: string;
+          entryUrl: string;
+          exitUrlPreview: string;
+        }>('/redirect-links/admin/custom', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
+      clickHistory: (opts?: {
+        kind?: 'CUSTOM_LINK' | 'HOUSE';
+        limit?: number;
+        offset?: number;
+      }) => {
+        const q = new URLSearchParams();
+        if (opts?.kind) q.set('kind', opts.kind);
+        if (opts?.limit != null) q.set('limit', String(opts.limit));
+        if (opts?.offset != null) q.set('offset', String(opts.offset));
+        const qs = q.toString();
+        return request<{
+          items: {
+            id: string;
+            kind: 'CUSTOM_LINK' | 'HOUSE';
+            clickedAt: string;
+            customLink: {
+              id: string;
+              title: string;
+              slug: string;
+            } | null;
+            house: {
+              id: string;
+              houseId: number;
+              title: string;
+              partnerName: string;
+            } | null;
+          }[];
+          total: number;
+          limit: number;
+          offset: number;
+          hasMore: boolean;
+        }>(`/redirect-links/admin/clicks${qs ? `?${qs}` : ''}`, {
+          method: 'GET',
+        });
+      },
+    },
     houses: {
       list: () =>
         request<
