@@ -726,8 +726,12 @@ export const api = {
         }),
     },
     shareLinks: {
-      overview: () =>
-        request<{
+      overview: (opts?: { from?: string; to?: string }) => {
+        const q = new URLSearchParams();
+        if (opts?.from) q.set('from', opts.from);
+        if (opts?.to) q.set('to', opts.to);
+        const qs = q.toString();
+        return request<{
           customLinks: {
             id: string;
             slug: string;
@@ -749,7 +753,9 @@ export const api = {
             entryUrl: string;
             messagePreview: string;
           }[];
-        }>('/redirect-links/admin/overview', { method: 'GET' }),
+          clickPeriod: { from: string; to: string } | null;
+        }>(`/redirect-links/admin/overview${qs ? `?${qs}` : ''}`, { method: 'GET' });
+      },
       createCustom: (body: {
         title: string;
         whatsapp: string;
@@ -768,6 +774,11 @@ export const api = {
           method: 'POST',
           body: JSON.stringify(body),
         }),
+      deleteCustom: (id: string) =>
+        request<{ ok: true }>(
+          `/redirect-links/admin/custom/${encodeURIComponent(id)}`,
+          { method: 'DELETE' },
+        ),
       clickHistory: (opts?: {
         kind?: 'CUSTOM_LINK' | 'HOUSE';
         limit?: number;
