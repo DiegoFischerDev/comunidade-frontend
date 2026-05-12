@@ -778,6 +778,8 @@ export const api = {
       clickHistory: (opts?: {
         kind?: 'CUSTOM_LINK' | 'HOUSE';
         partnerShareLinkId?: string;
+        from?: string;
+        to?: string;
         limit?: number;
         offset?: number;
       }) => {
@@ -785,6 +787,8 @@ export const api = {
         if (opts?.kind) q.set('kind', opts.kind);
         if (opts?.partnerShareLinkId)
           q.set('partnerShareLinkId', opts.partnerShareLinkId);
+        if (opts?.from) q.set('from', opts.from);
+        if (opts?.to) q.set('to', opts.to);
         if (opts?.limit != null) q.set('limit', String(opts.limit));
         if (opts?.offset != null) q.set('offset', String(opts.offset));
         const qs = q.toString();
@@ -794,6 +798,7 @@ export const api = {
             kind: 'CUSTOM_LINK' | 'HOUSE';
             clickedAt: string;
             visitorKey: string | null;
+            visitorCountryCode: string | null;
             customLink: {
               id: string;
               title: string;

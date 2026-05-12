@@ -5,12 +5,26 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { visitorCountryDisplayName } from "@/lib/visitor-country-display";
 
 type ClickRow = Awaited<
   ReturnType<typeof api.admin.shareLinks.clickHistory>
 >["items"][number];
 
 const PAGE_SIZE = 50;
+
+function periodDateOpts(
+  periodFrom: string,
+  periodTo: string,
+):
+  | { ok: false; reason: "partial" }
+  | { ok: true; from?: string; to?: string } {
+  const pf = periodFrom.trim();
+  const pt = periodTo.trim();
+  if ((pf && !pt) || (!pf && pt)) return { ok: false, reason: "partial" };
+  if (!pf && !pt) return { ok: true };
+  return { ok: true, from: pf, to: pt };
+}
 
 export default function AdminShareLinkDetailClicksPage() {
   const params = useParams();
@@ -32,6 +46,8 @@ export default function AdminShareLinkDetailClicksPage() {
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState("");
   const [clearing, setClearing] = useState(false);
+  const [periodFrom, setPeriodFrom] = useState("");
+  const [periodTo, setPeriodTo] = useState("");
 
   const loadMeta = useCallback(async (): Promise<boolean> => {
     if (!linkId) return false;
@@ -50,10 +66,13 @@ export default function AdminShareLinkDetailClicksPage() {
   const loadClicks = useCallback(
     async (fromOffset: number, append: boolean) => {
       if (!linkId) return;
+      const dates = periodDateOpts(periodFrom, periodTo);
+      if (!dates.ok) return;
       setListError("");
       try {
         const data = await api.admin.shareLinks.clickHistory({
           partnerShareLinkId: linkId,
+          ...(dates.from && dates.to ? { from: dates.from, to: dates.to } : {}),
           limit: PAGE_SIZE,
           offset: fromOffset,
         });
@@ -69,7 +88,7 @@ export default function AdminShareLinkDetailClicksPage() {
         setListError(err instanceof Error ? err.message : "Erro ao carregar cliques.");
       }
     },
-    [linkId],
+    [linkId, periodFrom, periodTo],
   );
 
   useEffect(() => {
@@ -83,7 +102,14 @@ export default function AdminShareLinkDetailClicksPage() {
       const ok = await loadMeta();
       if (cancelled) return;
       if (ok) {
-        await loadClicks(0, false);
+        const dates = periodDateOpts(periodFrom, periodTo);
+        if (!dates.ok) {
+          setItems([]);
+          setTotal(0);
+          setHasMore(false);
+        } else {
+          await loadClicks(0, false);
+        }
       } else {
         setItems([]);
         setTotal(0);
@@ -94,9 +120,11 @@ export default function AdminShareLinkDetailClicksPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, isAdmin, linkId, loadMeta, loadClicks]);
+  }, [user, isAdmin, linkId, periodFrom, periodTo, loadMeta, loadClicks]);
 
   async function loadMore() {
+    const dates = periodDateOpts(periodFrom, periodTo);
+    if (!dates.ok) return;
     const next = offset + PAGE_SIZE;
     await loadClicks(next, true);
   }
@@ -147,6 +175,9 @@ export default function AdminShareLinkDetailClicksPage() {
     );
   }
 
+  const dates = periodDateOpts(periodFrom, periodTo);
+  const periodInvalid = !dates.ok;
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -186,9 +217,57 @@ export default function AdminShareLinkDetailClicksPage() {
       </div>
 
       {meta && !metaError ? (
+        <section>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="block text-sm">
+              <span className="block text-xs font-medium text-zinc-600">De</span>
+              <input
+                type="date"
+                value={periodFrom}
+                onChange={(e) => setPeriodFrom(e.target.value)}
+                className="mt-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="block text-xs font-medium text-zinc-600">Até</span>
+              <input
+                type="date"
+                value={periodTo}
+                onChange={(e) => setPeriodTo(e.target.value)}
+                className="mt-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                setPeriodFrom("");
+                setPeriodTo("");
+              }}
+              className="cursor-pointer rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+            >
+              Limpar período
+            </button>
+          </div>
+          {periodInvalid ? (
+            <p className="mt-2 text-xs text-amber-800">
+              Preenche data inicial e final, ou limpa ambas para ver todo o histórico.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
+      {meta && !metaError && !periodInvalid ? (
         <p className="text-sm text-zinc-600">
           Cada linha corresponde a um dispositivo/browser que abriu o link (após a deduplicação
           por cookie). Total: <strong className="font-semibold text-zinc-900">{total}</strong>
+          {dates.from && dates.to ? (
+            <span className="text-zinc-500">
+              {" "}
+              (período: {dates.from} — {dates.to})
+            </span>
+          ) : (
+            <span className="text-zinc-500"> (todo o período)</span>
+          )}
         </p>
       ) : null}
 
@@ -200,7 +279,7 @@ export default function AdminShareLinkDetailClicksPage() {
 
       {loading && !meta ? (
         <p className="text-sm text-zinc-500">A carregar…</p>
-      ) : metaError ? null : (
+      ) : metaError ? null : periodInvalid ? null : (
         <>
           <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
             <table className="min-w-full text-left text-sm">
@@ -218,7 +297,9 @@ export default function AdminShareLinkDetailClicksPage() {
                     </td>
                   </tr>
                 ) : (
-                  items.map((row) => (
+                  items.map((row) => {
+                    const countryName = visitorCountryDisplayName(row.visitorCountryCode);
+                    return (
                     <tr key={row.id} className="border-b border-zinc-100 last:border-0">
                       <td className="whitespace-nowrap px-4 py-3 text-zinc-800 tabular-nums">
                         {new Date(row.clickedAt).toLocaleString("pt-PT", {
@@ -227,15 +308,30 @@ export default function AdminShareLinkDetailClicksPage() {
                         })}
                       </td>
                       <td className="px-4 py-3">
+                        <div className="text-xs text-zinc-600">
+                          País:{" "}
+                          {countryName ? (
+                            <>
+                              <span className="font-medium text-zinc-800">{countryName}</span>
+                              <span className="text-zinc-500">
+                                {" "}
+                                ({row.visitorCountryCode})
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-zinc-400">—</span>
+                          )}
+                        </div>
                         <code
-                          className="break-all text-xs text-zinc-800"
+                          className="mt-1 block break-all text-xs text-zinc-800"
                           title={row.visitorKey ?? undefined}
                         >
                           {formatVisitorLabel(row.visitorKey)}
                         </code>
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
