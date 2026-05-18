@@ -5,7 +5,10 @@ import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
-import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
+import {
+  OPEN_AUTH_LOGIN_EVENT,
+  OPEN_RAFA_CALL_SCHEDULE_EVENT,
+} from '@/lib/auth-ui-events';
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
 import { CardButton } from '@/components/ui/CardButton';
 
@@ -240,7 +243,12 @@ function PaymentMethodRow({
   );
 }
 
-export function RafaCallCard() {
+type RafaCallCardProps = {
+  /** Tamanhos Next/Image quando o cartão está no carrossel do dashboard. */
+  carouselImageSizes?: string;
+};
+
+export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
   const { user, token } = useAuth();
   const searchParams = useSearchParams();
   const [payOpen, setPayOpen] = useState(false);
@@ -420,6 +428,15 @@ export function RafaCallCard() {
     void handleAgendar();
   }, [searchParams, handleAgendar]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onOpen = () => {
+      void handleAgendar();
+    };
+    window.addEventListener(OPEN_RAFA_CALL_SCHEDULE_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_RAFA_CALL_SCHEDULE_EVENT, onOpen);
+  }, [handleAgendar]);
+
   const handleReagendar = useCallback(() => {
     void handleAgendar();
   }, [handleAgendar]);
@@ -557,19 +574,28 @@ export function RafaCallCard() {
       : null;
   const memberStatusLoading =
     Boolean(user && token && rafacallStatus === undefined);
+  const inCarousel = Boolean(carouselImageSizes);
+  const imageSizes =
+    carouselImageSizes ?? '(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw';
+  const cardShellClass = inCarousel
+    ? 'relative overflow-hidden'
+    : 'relative overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 shadow-sm';
+  const scheduleButtonClass = inCarousel
+    ? 'group relative w-full cursor-pointer overflow-hidden rounded-lg border-0 bg-transparent p-0 text-left shadow-none transition hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-80'
+    : 'group relative w-full cursor-pointer overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 text-left shadow-sm transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-80';
 
   return (
     <>
       <div className="h-full w-full min-w-0">
         {hasBookedSlot && scheduleLines ? (
-          <div className="relative overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 shadow-sm">
+          <div className={cardShellClass}>
             <Image
               src="/rafa_cards/chamada_agendada2.png"
               alt="Chamada de vídeo com a Rafa agendada"
               width={1250}
               height={1875}
               className="h-auto w-full object-contain"
-              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+              sizes={imageSizes}
               priority
             />
             <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3 bg-gradient-to-t from-white from-40% via-white/95 to-transparent px-4 pb-4 pt-12 sm:px-5 sm:pb-5">
@@ -635,7 +661,7 @@ export function RafaCallCard() {
               type="button"
               onClick={() => void handleAgendar()}
               disabled={statusLoading || memberStatusLoading}
-              className="group relative w-full cursor-pointer overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 text-left shadow-sm transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-80"
+              className={scheduleButtonClass}
             >
               <Image
                 src="/rafa_cards/agendar_chamada2.png"
@@ -643,11 +669,11 @@ export function RafaCallCard() {
                 width={1250}
                 height={1875}
                 className="h-auto w-full object-contain"
-                sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+                sizes={imageSizes}
                 priority
               />
             </button>
-            {memberStatusLoading ? (
+            {memberStatusLoading && !inCarousel ? (
               <p className="mt-2 text-center text-xs text-zinc-500">A carregar o teu agendamento…</p>
             ) : null}
           </div>

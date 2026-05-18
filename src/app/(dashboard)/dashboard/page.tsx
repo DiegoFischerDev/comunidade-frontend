@@ -11,6 +11,8 @@ import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/lib/auth-ui-events";
 import { OPEN_AUTH_LOGIN_EVENT } from "@/lib/auth-ui-events";
 import { isActiveMember } from "@/lib/membership-access";
 import { AffiliateEnrollModal } from "@/components/affiliate/AffiliateEnrollModal";
+import { DashboardIntroVideoModal } from "@/components/dashboard/DashboardIntroVideoModal";
+import { RafaCallCard } from "@/components/RafaCallCard";
 type AffiliateMe = NonNullable<Awaited<ReturnType<typeof api.affiliate.me>>>;
 
 /** Desktop: snap ao início; mobile: cartão centrado (~76vw) com ~12vw de “peek” de cada lado. */
@@ -100,17 +102,13 @@ export default function DashboardPage() {
   const canSeeAffiliateCard =
     isMember || user?.role === "PARTNER" || user?.role === "ADMIN";
 
+  const [introVideoOpen, setIntroVideoOpen] = useState(false);
+
   function openMembershipOrLogin() {
     if (typeof window === "undefined") return;
-    if (!user) {
-      window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
-      return;
-    }
-    if (!isMember) {
-      window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
-    }
+    setIntroVideoOpen(true);
+    window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
   }
-
   const [affiliateModalOpen, setAffiliateModalOpen] = useState(false);
   const [affiliateSaving, setAffiliateSaving] = useState(false);
   const [affiliateError, setAffiliateError] = useState("");
@@ -326,8 +324,50 @@ export default function DashboardPage() {
         <div
           ref={dashboardCarouselRef}
           className="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-3 pt-1 [-webkit-overflow-scrolling:touch] overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden max-md:pl-[12vw] max-md:pr-[12vw] md:gap-5 md:pl-6 md:pr-6"
-          aria-label="Conteúdo para membros VIP — use os botões ou deslize para navegar"
+          aria-label="Conteúdo da comunidade — use os botões ou deslize para navegar"
         >
+          <section
+            className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
+          >
+            <button
+              type="button"
+              onClick={() => setIntroVideoOpen(true)}
+              className="group relative min-w-0 w-full cursor-pointer text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+              aria-label="Ver vídeo de apresentação da comunidade"
+            >
+              <Image
+                src="/boas_vindas.png"
+                alt="Boas-vindas — assistir vídeo da Comunidade Rafa Portugal"
+                width={1250}
+                height={1875}
+                className="h-auto w-full object-contain"
+                sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
+                priority
+              />
+              <span
+                className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                aria-hidden
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/55 text-white shadow-lg transition group-hover:bg-black/70 sm:h-16 sm:w-16">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    className="ml-0.5 h-7 w-7 sm:h-8 sm:w-8"
+                  >
+                    <path d="M8 5.14v14.72a1 1 0 0 0 1.5.86l11.14-7.36a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14Z" />
+                  </svg>
+                </span>
+              </span>
+            </button>
+          </section>
+          {canAccessMemberVipShortcuts ? (
+            <section
+              className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
+            >
+              <RafaCallCard carouselImageSizes={DASHBOARD_CAROUSEL_IMAGE_SIZES} />
+            </section>
+          ) : null}
           <section
             className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
           >
@@ -437,6 +477,11 @@ export default function DashboardPage() {
           className="pointer-events-auto absolute bottom-[8%] right-0 top-[8%] z-[18] m-0 hidden w-[12vw] min-w-[44px] cursor-pointer border-0 bg-transparent p-0 outline-none max-md:block md:hidden touch-manipulation disabled:pointer-events-none disabled:opacity-0 focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
         />
       </div>
+
+      <DashboardIntroVideoModal
+        open={introVideoOpen}
+        onClose={() => setIntroVideoOpen(false)}
+      />
 
       <AffiliateEnrollModal
         open={affiliateModalOpen}
