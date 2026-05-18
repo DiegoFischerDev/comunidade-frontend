@@ -58,8 +58,8 @@ function formatRafaSlotRangePt(
 }
 
 const ROLES: UserRow['role'][] = ['USER', 'PARTNER', 'ADMIN'];
-const TIERS = ['VISITOR', 'MEMBER'] as const;
-const TIER_LABELS: Record<string, string> = { VISITOR: 'Visitante', MEMBER: 'Membro' };
+const TIERS = ['MEMBER'] as const;
+const TIER_LABELS: Record<string, string> = { MEMBER: 'Membro' };
 
 type UsersAdminStats = Awaited<ReturnType<typeof api.admin.users.stats>>;
 
@@ -373,7 +373,7 @@ export default function UsersPage() {
                     <select
                       value={u.tier}
                       onChange={async (e) => {
-                        const newTier = e.target.value as 'VISITOR' | 'MEMBER';
+                        const newTier = e.target.value as 'MEMBER';
                         try {
                           await api.admin.users.updateTier(u.id, {
                             tier: newTier,

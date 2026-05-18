@@ -11,7 +11,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getAuthToken, clearAuthToken, api } from '@/lib/api';
-import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
+import { OPEN_AUTH_LOGIN_EVENT, OPEN_MEMBERSHIP_MODAL_EVENT } from '@/lib/auth-ui-events';
+import { isActiveMember } from '@/lib/membership-access';
 import {
   WHATSAPP_REGISTRATION_POLL_MAX_MS,
   WHATSAPP_REGISTRATION_POLL_TIMEOUT_MESSAGE,
@@ -464,7 +465,7 @@ export default function DashboardLayout({
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<
     'login' | 'register' | 'registerWhatsappVerify' | 'forgot' | 'resetPassword'
-  >('register');
+  >('login');
   const [whatsappVerifyCode, setWhatsappVerifyCode] = useState('');
   const [whatsappVerifyOpenUrl, setWhatsappVerifyOpenUrl] = useState('');
   const [whatsappRegistrationNumber, setWhatsappRegistrationNumber] =
@@ -543,8 +544,7 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const openLogin = () => {
-      // Por padrão, abrimos no fluxo de criação de conta.
-      setAuthMode('register');
+      setAuthMode('login');
       setIsAuthModalOpen(true);
     };
     window.addEventListener(OPEN_AUTH_LOGIN_EVENT, openLogin);
@@ -717,9 +717,11 @@ export default function DashboardLayout({
       ? 'Admin'
       : user?.role === 'PARTNER'
         ? 'Parceiro'
-        : user?.tier === 'MEMBER'
+        : isActiveMember(user)
           ? 'Membro'
-          : 'Visitante';
+          : user
+            ? 'Sem VIP'
+            : 'Anónimo';
 
   const partnerCompanyTitleActive =
     pathname === '/dashboard/business' ||
@@ -807,7 +809,7 @@ export default function DashboardLayout({
           >
             Início
           </Link>
-          {user && (user.role === 'ADMIN' || user.tier === 'MEMBER') ? (
+          {user && (user.role === 'ADMIN' || isActiveMember(user)) ? (
             <>
               <Link
                 href="/plano-de-imigracao"
@@ -854,7 +856,7 @@ export default function DashboardLayout({
             </Link>
           ) : null}
 
-          {user?.tier === 'MEMBER' && (
+          {isActiveMember(user) && (
             <Link
               href="/dashboard/my-referrals"
               className={`block rounded-md px-3 py-2 text-sm ${
@@ -1033,7 +1035,7 @@ export default function DashboardLayout({
         {/* Bloco do usuário */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
-            {user?.tier === 'MEMBER' ? (
+            {isActiveMember(user) ? (
               <Image
                 src="/icon_vip.png"
                 alt="VIP"
@@ -1060,7 +1062,7 @@ export default function DashboardLayout({
                     {roleLabel}
                     {isImpersonating && ' (modo admin)'}
                   </p>
-                ) : user.tier === 'MEMBER' ? (
+                ) : isActiveMember(user) ? (
                   <div className="mt-0.5 min-w-0 space-y-0.5">
                     <p className="text-[10px] font-medium leading-tight text-zinc-600">
                       Membro VIP
@@ -1242,7 +1244,7 @@ export default function DashboardLayout({
                         ? 'Informe o seu WhatsApp para receber um código de recuperação.'
                         : authMode === 'resetPassword'
                           ? 'Introduza o código recebido por WhatsApp e defina uma nova senha.'
-                          : 'Faça login ou crie a sua conta para continuar.'}
+                          : 'Entre com o WhatsApp e a senha da sua conta.'}
                 </p>
               </div>
               <button
@@ -1262,44 +1264,6 @@ export default function DashboardLayout({
               </button>
             </div>
 
-            {authMode !== 'registerWhatsappVerify' && (
-              <div className="mt-4 flex rounded-full bg-zinc-100 p-1 text-xs font-medium text-zinc-600">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('login');
-                  }}
-                  className={`flex-1 cursor-pointer rounded-full px-3 py-1.5 ${
-                    authMode === 'login'
-                      ? 'bg-white text-zinc-900 shadow-sm'
-                      : 'hover:text-zinc-900'
-                  }`}
-                >
-                  Já tenho conta
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('register');
-                    setRegisterError('');
-                    setRegisterInfo('');
-                    setWhatsappVerifyCode('');
-                    setWhatsappVerifyOpenUrl('');
-                    setWhatsappRegistrationNumber('');
-                    setWhatsappBrowserSessionToken('');
-                    setWhatsappPollError('');
-                  }}
-                  disabled
-                  className={`flex-1 cursor-pointer rounded-full px-3 py-1.5 ${
-                    authMode === 'register'
-                      ? 'bg-white text-zinc-900 shadow-sm'
-                      : 'hover:text-zinc-900'
-                  } cursor-pointer disabled:cursor-not-allowed disabled:opacity-50`}
-                >
-                  Criar conta
-                </button>
-              </div>
-            )}
 
             {authMode === 'login' ? (
               <form
@@ -1365,6 +1329,19 @@ export default function DashboardLayout({
                 >
                   {loginLoading ? 'Entrando…' : 'Entrar'}
                 </button>
+                <p className="text-center text-sm text-zinc-600">
+                  Ainda não tem conta?{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAuthModalOpen(false);
+                      window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
+                    }}
+                    className="cursor-pointer font-medium text-emerald-700 underline-offset-2 hover:underline"
+                  >
+                    Criar conta (pagamento)
+                  </button>
+                </p>
               </form>
             ) : authMode === 'register' ? (
               <form

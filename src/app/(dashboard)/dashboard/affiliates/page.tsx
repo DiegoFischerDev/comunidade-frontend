@@ -128,19 +128,19 @@ export default function AdminAffiliatesPage() {
   }, [user?.role]);
 
   const aggregates = useMemo(() => {
-    let visitorReferrals = 0;
+    let inactiveReferrals = 0;
     let memberReferrals = 0;
     let pendingEur = 0;
     let paidEur = 0;
     for (const a of rows) {
-      visitorReferrals += a.referralsByTier.visitor;
+      inactiveReferrals += a.referralsByTier.inactive;
       memberReferrals += a.referralsByTier.member;
       pendingEur += a.totals?.pending ?? 0;
       paidEur += a.totals?.paid ?? 0;
     }
     return {
       totalAffiliates: rows.length,
-      visitorReferrals,
+      inactiveReferrals,
       memberReferrals,
       pendingEur,
       paidEur,
@@ -175,10 +175,10 @@ export default function AdminAffiliatesPage() {
           </div>
           <div className="rounded-xl border border-violet-200/80 bg-violet-50/90 px-4 py-3 shadow-sm">
             <p className="text-[11px] font-semibold tracking-wide text-violet-900/70 uppercase">
-              Indicados visitantes
+              Indicados sem VIP ativo
             </p>
             <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-violet-950">
-              {aggregates.visitorReferrals}
+              {aggregates.inactiveReferrals}
             </p>
           </div>
           <div className="rounded-xl border border-teal-200/80 bg-teal-50/90 px-4 py-3 shadow-sm">
@@ -235,7 +235,7 @@ export default function AdminAffiliatesPage() {
                   <td className="px-3 py-2">{a.affiliateCode}</td>
                   <td className="px-3 py-2">{a.payoutMethod}</td>
                   <td className="px-3 py-2">
-                    VISITOR {a.referralsByTier.visitor} / MEMBER {a.referralsByTier.member}
+                    Inativos {a.referralsByTier.inactive ?? 0} / MEMBER {a.referralsByTier.member}
                   </td>
                   <td className="px-3 py-2">{(a.totals?.pending ?? 0).toFixed(2)}</td>
                   <td className="px-3 py-2">{(a.totals?.paid ?? 0).toFixed(2)}</td>

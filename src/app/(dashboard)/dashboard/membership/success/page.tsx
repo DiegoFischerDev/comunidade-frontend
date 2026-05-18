@@ -1,15 +1,78 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
 
 export default function MembershipSuccessPage() {
-  const { refreshUser } = useAuth();
+  const { refreshUser, loginWithToken, user } = useAuth();
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get('session_id')?.trim() ?? '';
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    refreshUser();
-  }, [refreshUser]);
+    let cancelled = false;
+
+    async function run() {
+      if (sessionId) {
+        const maxAttempts = 12;
+        for (let i = 0; i < maxAttempts; i++) {
+          if (cancelled) return;
+          try {
+            const res = await api.stripe.claimGuestMembership(sessionId);
+            if (res.status === 'ready') {
+              await loginWithToken(res.token);
+              if (!cancelled) setStatus('ready');
+              return;
+            }
+            if (res.status === 'consumed' || res.status === 'expired' || res.status === 'invalid') {
+              break;
+            }
+          } catch {
+            // retry
+          }
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+      }
+
+      try {
+        await refreshUser();
+        if (!cancelled) setStatus('ready');
+      } catch (e) {
+        if (!cancelled) {
+          setStatus('error');
+          setError(e instanceof Error ? e.message : 'Erro ao confirmar o pagamento.');
+        }
+      }
+    }
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId, loginWithToken, refreshUser]);
+
+  if (status === 'loading') {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-12 text-center">
+        <p className="text-sm text-zinc-600">A confirmar o pagamento e a criar a sua conta…</p>
+      </div>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-12 text-center">
+        <p className="text-sm text-red-700">{error || 'Não foi possível confirmar o pagamento.'}</p>
+        <Link href="/dashboard" className="mt-4 inline-block text-sm font-medium text-blue-600 hover:underline">
+          Voltar ao dashboard
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-lg px-4 py-12 text-center">
@@ -21,7 +84,9 @@ export default function MembershipSuccessPage() {
         </div>
         <h1 className="text-xl font-bold text-zinc-900">Pagamento concluído</h1>
         <p className="mt-2 text-zinc-700">
-          Obrigado! Já és membro da Comunidade Rafa Portugal. Tens acesso a todos os benefícios durante um ano.
+          {user
+            ? 'Obrigado! Já és membro da Comunidade Rafa Portugal. Tens acesso a todos os benefícios durante um ano.'
+            : 'Obrigado! O pagamento foi recebido. Entra com o WhatsApp e a senha que definiste.'}
         </p>
         <Link
           href="/dashboard"

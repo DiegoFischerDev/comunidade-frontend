@@ -7,8 +7,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/components/FloatingWhatsAppButton";
+import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/lib/auth-ui-events";
 import { OPEN_AUTH_LOGIN_EVENT } from "@/lib/auth-ui-events";
+import { isActiveMember } from "@/lib/membership-access";
 import { AffiliateEnrollModal } from "@/components/affiliate/AffiliateEnrollModal";
 type AffiliateMe = NonNullable<Awaited<ReturnType<typeof api.affiliate.me>>>;
 
@@ -93,12 +94,22 @@ export default function DashboardPage() {
   }, []);
 
   const { user, loading: authLoading } = useAuth();
-  const isMember = user?.tier === "MEMBER";
+  const isMember = isActiveMember(user);
   /** Plano de imigração: só membros VIP e admins no dashboard. */
-  const canAccessMemberVipShortcuts =
-    !authLoading && Boolean(user && (user.role === "ADMIN" || user.tier === "MEMBER"));
+  const canAccessMemberVipShortcuts = !authLoading && isMember;
   const canSeeAffiliateCard =
-    user?.tier === "MEMBER" || user?.role === "PARTNER" || user?.role === "ADMIN";
+    isMember || user?.role === "PARTNER" || user?.role === "ADMIN";
+
+  function openMembershipOrLogin() {
+    if (typeof window === "undefined") return;
+    if (!user) {
+      window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
+      return;
+    }
+    if (!isMember) {
+      window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
+    }
+  }
 
   const [affiliateModalOpen, setAffiliateModalOpen] = useState(false);
   const [affiliateSaving, setAffiliateSaving] = useState(false);
@@ -169,8 +180,8 @@ export default function DashboardPage() {
    */
   function handleHeroClick() {
     if (typeof window === "undefined") return;
-    if (!user) {
-      window.dispatchEvent(new Event(OPEN_AUTH_LOGIN_EVENT));
+    if (!isMember) {
+      openMembershipOrLogin();
       return;
     }
     if (isMember) {
@@ -182,7 +193,6 @@ export default function DashboardPage() {
       setAffiliateModalOpen(true);
       return;
     }
-    window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
   }
 
   async function handleAffiliateSubmit(e: React.FormEvent) {
@@ -338,8 +348,10 @@ export default function DashboardPage() {
                 />
               </Link>
             ) : (
-              <div
-                className="pointer-events-none relative min-w-0 cursor-not-allowed select-none"
+              <button
+                type="button"
+                onClick={openMembershipOrLogin}
+                className="relative min-w-0 w-full cursor-pointer select-none text-left"
                 aria-label="Plano de imigração — disponível para membros VIP"
               >
                 <span className="sr-only">Exclusivo para membros VIP</span>
@@ -355,7 +367,7 @@ export default function DashboardPage() {
                 <div className={LOCK_OVERLAY_POSITION}>
                   <DashboardCarouselMemberLockIcon className={LOCK_ICON_OVERLAY_CLASS} />
                 </div>
-              </div>
+              </button>
             )}
           </section>
           <section
@@ -378,8 +390,10 @@ export default function DashboardPage() {
                 />
               </Link>
             ) : (
-              <div
-                className="pointer-events-none relative min-w-0 cursor-not-allowed select-none"
+              <button
+                type="button"
+                onClick={openMembershipOrLogin}
+                className="relative min-w-0 w-full cursor-pointer select-none text-left"
                 aria-label="Guia Portugal Sem Perrengue — disponível para membros VIP"
               >
                 <span className="sr-only">Exclusivo para membros VIP</span>
@@ -395,7 +409,7 @@ export default function DashboardPage() {
                 <div className={LOCK_OVERLAY_POSITION}>
                   <DashboardCarouselMemberLockIcon className={LOCK_ICON_OVERLAY_CLASS} />
                 </div>
-              </div>
+              </button>
             )}
           </section>
         </div>

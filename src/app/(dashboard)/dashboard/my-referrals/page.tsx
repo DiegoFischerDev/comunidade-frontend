@@ -22,8 +22,18 @@ function resolveAffiliateProofUrl(pathOrUrl: string | null | undefined): string 
   return `${API_BASE}${u.startsWith('/') ? u : `/${u}`}`;
 }
 
-function TierPlanoBadge({ tier }: { tier: 'VISITOR' | 'MEMBER' }) {
-  if (tier === 'MEMBER') {
+function TierPlanoBadge({
+  tier,
+  membershipExpiresAt,
+}: {
+  tier: 'MEMBER';
+  membershipExpiresAt?: string | null;
+}) {
+  const active =
+    tier === 'MEMBER' &&
+    membershipExpiresAt &&
+    new Date(membershipExpiresAt) > new Date();
+  if (active) {
     return (
       <span className="inline-flex rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-900">
         Membro
@@ -32,14 +42,18 @@ function TierPlanoBadge({ tier }: { tier: 'VISITOR' | 'MEMBER' }) {
   }
   return (
     <span className="inline-flex rounded-full border border-zinc-200/90 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-800">
-      Visitante
+      Sem VIP
     </span>
   );
 }
 
 export default function MyReferralsPage() {
   const { user } = useAuth();
-  const isVisitor = user?.tier !== 'MEMBER';
+  const isVisitor = !(
+    user?.tier === 'MEMBER' &&
+    user.membershipExpiresAt &&
+    new Date(user.membershipExpiresAt) > new Date()
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [affiliate, setAffiliate] = useState<Awaited<ReturnType<typeof api.affiliate.me>>>(null);
@@ -441,7 +455,7 @@ export default function MyReferralsPage() {
                         <td className="px-3 py-2">{r.name}</td>
                         <td className="px-3 py-2">{formatReferralInstagram(r.instagram)}</td>
                         <td className="px-3 py-2">
-                          <TierPlanoBadge tier={r.tier} />
+                          <TierPlanoBadge tier={r.tier} membershipExpiresAt={r.membershipExpiresAt} />
                         </td>
                         <td className="px-3 py-2 tabular-nums">
                           {formatComissaoGerada(r.commission)}

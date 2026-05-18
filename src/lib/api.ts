@@ -277,6 +277,42 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(params),
       }),
+    createGuestMembershipCheckout: (params: {
+      name: string;
+      email: string;
+      whatsapp: string;
+      password: string;
+      passwordConfirm: string;
+      successUrl: string;
+      cancelUrl: string;
+      paymentMethod: 'card' | 'mbway' | 'pix';
+      affiliateCode?: string;
+    }) =>
+      request<{ url: string }>('/stripe/create-guest-membership-checkout', {
+        method: 'POST',
+        body: JSON.stringify(params),
+        token: null,
+      }),
+    claimGuestMembership: (sessionId: string) =>
+      request<
+        | { status: 'pending' }
+        | {
+            status: 'ready';
+            token: string;
+            user: {
+              id: string;
+              email: string | null;
+              role: string;
+              whatsapp: string;
+            };
+          }
+        | { status: 'expired' }
+        | { status: 'consumed' }
+        | { status: 'invalid' }
+      >(`/stripe/claim-guest-membership?session_id=${encodeURIComponent(sessionId)}`, {
+        method: 'GET',
+        token: null,
+      }),
     getRafaCallAmounts: () =>
       request<{ eurCents: number; pixCentavos: number }>('/stripe/rafa-call-amounts', {
         method: 'GET',
@@ -427,7 +463,7 @@ export const api = {
           `/users/${id}/role`,
           { method: 'PATCH', body: JSON.stringify({ role }) },
         ),
-      updateTier: (id: string, body: { tier: 'VISITOR' | 'MEMBER' }) =>
+      updateTier: (id: string, body: { tier: 'MEMBER' }) =>
         request<{
           id: string;
           name: string;
@@ -680,7 +716,7 @@ export const api = {
               name: string | null;
               email: string | null;
               whatsapp: string | null;
-              tier: 'VISITOR' | 'MEMBER';
+              tier: 'MEMBER';
             };
             service: { id: string; title: string };
           }[]
@@ -1556,7 +1592,7 @@ export const api = {
               name: string | null;
               email: string | null;
               whatsapp: string | null;
-              tier: 'VISITOR' | 'MEMBER';
+              tier: 'MEMBER';
             };
             service: { id: string; title: string; rpmCommissionEur: string | null };
           }[]
@@ -1576,7 +1612,7 @@ export const api = {
             name: string | null;
             email: string | null;
             whatsapp: string | null;
-            tier: 'VISITOR' | 'MEMBER';
+            tier: 'MEMBER';
           };
           service: { id: string; title: string; rpmCommissionEur: string | null };
         }>('/partners/me/sales', {
@@ -1858,7 +1894,8 @@ export const api = {
           id: string;
           name: string;
           instagram: string | null;
-          tier: 'VISITOR' | 'MEMBER';
+          tier: 'MEMBER';
+          membershipExpiresAt: string | null;
           role: 'USER' | 'PARTNER' | 'ADMIN';
           createdAt: string;
           commission: { amount: number; currency: 'EUR' | 'BRL' } | null;
@@ -1875,7 +1912,7 @@ export const api = {
           paymentProofUrl?: string | null;
           paidAt?: string | null;
           createdAt: string;
-          referredUser: { id: string; name: string; email: string; tier: 'VISITOR' | 'MEMBER' };
+          referredUser: { id: string; name: string; email: string; tier: 'MEMBER' };
         }[];
       }>('/affiliate/my-commissions', { method: 'GET' }),
     adminList: () =>
@@ -1894,11 +1931,11 @@ export const api = {
             name: string;
             email: string;
             role: 'USER' | 'PARTNER' | 'ADMIN';
-            tier: 'VISITOR' | 'MEMBER';
+            tier: 'MEMBER';
             instagram: string | null;
           };
           totals: { pending: number; paid: number };
-          referralsByTier: { visitor: number; member: number; partner: number; admin: number };
+          referralsByTier: { inactive: number; member: number; partner: number; admin: number };
         }[]
       >('/affiliate/admin/list', { method: 'GET' }),
     adminPaidCommissions: (affiliateId: string) =>
