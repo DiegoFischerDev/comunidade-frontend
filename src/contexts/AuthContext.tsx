@@ -38,7 +38,11 @@ type AuthContextValue = {
   token: string | null;
   loading: boolean;
   isImpersonating: boolean;
-  login: (whatsapp: string, password: string) => Promise<void>;
+  login: (params: {
+    password: string;
+    whatsapp?: string;
+    email?: string;
+  }) => Promise<void>;
   /** Após pagamento confirmado, aplica o JWT devolvido pelo claim da sessão Stripe. */
   loginWithToken: (token: string) => Promise<void>;
   /** Termina a sessão neste browser (tokens em localStorage são limpos). */
@@ -162,8 +166,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [syncAuthStateFromStorageEvent]);
 
   const login = useCallback(
-    async (whatsapp: string, password: string) => {
-      const { token: t } = await api.auth.login(whatsapp, password);
+    async (params: {
+      password: string;
+      whatsapp?: string;
+      email?: string;
+    }) => {
+      const { token: t } = await api.auth.login(params);
       setAuthToken(t);
       setDeviceSessionToken(t);
       await loadUser(t);

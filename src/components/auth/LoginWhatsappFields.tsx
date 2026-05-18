@@ -1,6 +1,6 @@
 "use client";
 
-import { type Ref, useEffect, useRef, useState } from "react";
+import { type ReactNode, type Ref, useEffect, useRef, useState } from "react";
 
 import {
   LOGIN_COUNTRY_CUSTOM_SELECT,
@@ -23,6 +23,8 @@ type Props = {
   error?: string;
   /** Ref do contentor para scroll/focus em validação. */
   fieldRef?: Ref<HTMLDivElement>;
+  /** Ação à direita da label (ex.: «Utilizar e-mail»). */
+  labelAction?: ReactNode;
 };
 
 /**
@@ -36,6 +38,7 @@ export function LoginWhatsappFields({
   label = "WhatsApp",
   error,
   fieldRef,
+  labelAction,
 }: Props) {
   const hasError = Boolean(error);
   const [dial, setDial] = useState(LOGIN_COUNTRY_DIALS[0]!.dial);
@@ -104,9 +107,12 @@ export function LoginWhatsappFields({
   return (
     <div ref={fieldRef} className="space-y-1.5">
       {!hasError ? (
-        <label htmlFor={selectId} className="block text-sm font-medium text-zinc-700">
-          {label}
-        </label>
+        <div className="flex items-center justify-between gap-2">
+          <label htmlFor={selectId} className="text-sm font-medium text-zinc-700">
+            {label}
+          </label>
+          {labelAction}
+        </div>
       ) : (
         <p id={`${idPrefix}-phone-error`} className="text-xs font-medium text-red-700">
           {error}

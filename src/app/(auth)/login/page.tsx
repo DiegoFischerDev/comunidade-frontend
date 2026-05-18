@@ -1,8 +1,11 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import {
+  LoginMethodSwitchLink,
+  type LoginMethod,
+} from "@/components/auth/LoginMethodSwitchLink";
 import { LoginWhatsappFields } from "@/components/auth/LoginWhatsappFields";
 import { useAuth } from "@/contexts/AuthContext";
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/lib/auth-ui-events";
@@ -21,7 +24,9 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next");
 
+  const [loginMethod, setLoginMethod] = useState<LoginMethod>("whatsapp");
   const [whatsapp, setWhatsapp] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordHydrated, setPasswordHydrated] = useState(false);
   const [error, setError] = useState("");
@@ -68,7 +73,11 @@ function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      await login(whatsapp, password);
+      if (loginMethod === "email") {
+        await login({ email: email.trim(), password });
+      } else {
+        await login({ whatsapp, password });
+      }
       if (next && isSafeInternalNextPath(next)) {
         router.replace(next);
       }
@@ -85,14 +94,55 @@ function LoginForm() {
       <p className="mt-1 text-sm text-zinc-500">Comunidade Rafa Portugal</p>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         {error && (
-          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </div>
         )}
-        <LoginWhatsappFields
-          idPrefix="page-login"
-          value={whatsapp}
-          onChange={setWhatsapp}
-          disabled={loading}
-        />
+        {loginMethod === "whatsapp" ? (
+          <LoginWhatsappFields
+            idPrefix="page-login"
+            value={whatsapp}
+            onChange={setWhatsapp}
+            disabled={loading}
+            labelAction={
+              <LoginMethodSwitchLink
+                method={loginMethod}
+                onSwitch={(method) => {
+                  setLoginMethod(method);
+                  setError("");
+                }}
+                disabled={loading}
+              />
+            }
+          />
+        ) : (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <label htmlFor="page-login-email" className="text-sm font-medium text-zinc-700">
+                E-mail
+              </label>
+              <LoginMethodSwitchLink
+                method={loginMethod}
+                onSwitch={(method) => {
+                  setLoginMethod(method);
+                  setError("");
+                }}
+                disabled={loading}
+              />
+            </div>
+            <input
+              id="page-login-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={loading}
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+        )}
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-zinc-700">
             Senha

@@ -54,16 +54,13 @@ export function FloatingWhatsAppButton({
   useEffect(() => {
     const handler = () => {
       if (memberActive) {
-        setOpen(true);
         return;
       }
-      setOpen(false);
-      setShowMembershipModal(false);
-      router.push(MEMBERSHIP_CHECKOUT_PATH);
+      setShowMembershipModal(true);
     };
     window.addEventListener(OPEN_MEMBERSHIP_MODAL_EVENT, handler);
     return () => window.removeEventListener(OPEN_MEMBERSHIP_MODAL_EVENT, handler);
-  }, [memberActive, router]);
+  }, [memberActive]);
 
   function closeAll() {
     setOpen(false);
@@ -95,7 +92,10 @@ export function FloatingWhatsAppButton({
               ) : (
                 <button
                   type="button"
-                  onClick={() => setShowMembershipModal(true)}
+                  onClick={() => {
+                    setOpen(false);
+                    setShowMembershipModal(true);
+                  }}
                   className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-medium text-white hover:from-[#c07c01] hover:to-[#e7a01f]"
                 >
                   Abrir WhatsApp
@@ -117,7 +117,7 @@ export function FloatingWhatsAppButton({
         </button>
       </div>
 
-      {open && showMembershipModal && (
+      {showMembershipModal && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4"
           onClick={closeAll}

@@ -141,18 +141,22 @@ async function requestFormData<T>(
 
 export const api = {
   auth: {
-    login: (whatsapp: string, password: string) =>
+    login: (params: {
+      password: string;
+      whatsapp?: string;
+      email?: string;
+    }) =>
       request<{ user: { id: string; email: string | null; whatsapp: string | null; role: string }; token: string }>(
         '/auth/login',
-        { method: 'POST', body: JSON.stringify({ whatsapp, password }) },
+        { method: 'POST', body: JSON.stringify(params) },
       ),
-    forgotPassword: (whatsapp: string) =>
+    forgotPassword: (email: string) =>
       request<{ success: boolean }>('/auth/forgot-password', {
         method: 'POST',
-        body: JSON.stringify({ whatsapp }),
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
       }),
     resetPassword: (params: {
-      whatsapp: string;
+      email: string;
       code: string;
       newPassword: string;
     }) =>

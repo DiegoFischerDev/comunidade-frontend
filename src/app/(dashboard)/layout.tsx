@@ -18,6 +18,10 @@ import {
 } from '@/lib/auth-ui-events';
 import { isActiveMember } from '@/lib/membership-access';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  LoginMethodSwitchLink,
+  type LoginMethod,
+} from '@/components/auth/LoginMethodSwitchLink';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import {
   LOGIN_PASSWORD_STORAGE_KEY,
@@ -333,7 +337,9 @@ export default function DashboardLayout({
   const [authMode, setAuthMode] = useState<'login' | 'forgot' | 'resetPassword'>(
     'login',
   );
+  const [loginMethod, setLoginMethod] = useState<LoginMethod>('whatsapp');
   const [loginWhatsapp, setLoginWhatsapp] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginPasswordHydrated, setLoginPasswordHydrated] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -342,11 +348,11 @@ export default function DashboardLayout({
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
   const [pendingWelcomeAfterVerify, setPendingWelcomeAfterVerify] =
     useState(false);
-  const [forgotWhatsapp, setForgotWhatsapp] = useState('');
+  const [forgotEmail, setForgotEmail] = useState('');
   const [forgotError, setForgotError] = useState('');
   const [forgotInfo, setForgotInfo] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
-  const [resetWhatsapp, setResetWhatsapp] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
   const [resetCode, setResetCode] = useState('');
   const [resetPassword, setResetPassword] = useState('');
   const [resetError, setResetError] = useState('');
@@ -1009,9 +1015,9 @@ export default function DashboardLayout({
                 </h2>
                 <p className="mt-1 text-xs text-zinc-500">
                   {authMode === 'forgot'
-                    ? 'Informe o seu WhatsApp para receber um código de recuperação.'
+                    ? 'Informe o e-mail da sua conta para receber um código de recuperação.'
                     : authMode === 'resetPassword'
-                      ? 'Introduza o código recebido por WhatsApp e defina uma nova senha.'
+                      ? 'Introduza o código recebido por e-mail e defina uma nova senha.'
                       : 'Entre com o WhatsApp e a senha da sua conta.'}
                 </p>
               </div>
@@ -1034,7 +1040,17 @@ export default function DashboardLayout({
                   setLoginError('');
                   setLoginLoading(true);
                   try {
-                    await login(loginWhatsapp, loginPassword);
+                    if (loginMethod === 'email') {
+                      await login({
+                        email: loginEmail.trim(),
+                        password: loginPassword,
+                      });
+                    } else {
+                      await login({
+                        whatsapp: loginWhatsapp,
+                        password: loginPassword,
+                      });
+                    }
                     setIsAuthModalOpen(false);
                   } catch (err) {
                     const message =
@@ -1050,12 +1066,54 @@ export default function DashboardLayout({
                     {loginError}
                   </div>
                 )}
-                <LoginWhatsappFields
-                  idPrefix="auth-modal"
-                  value={loginWhatsapp}
-                  onChange={setLoginWhatsapp}
-                  disabled={loginLoading}
-                />
+                {loginMethod === 'whatsapp' ? (
+                  <LoginWhatsappFields
+                    idPrefix="auth-modal"
+                    value={loginWhatsapp}
+                    onChange={setLoginWhatsapp}
+                    disabled={loginLoading}
+                    labelAction={
+                      <LoginMethodSwitchLink
+                        method={loginMethod}
+                        onSwitch={(method) => {
+                          setLoginMethod(method);
+                          setLoginError('');
+                        }}
+                        disabled={loginLoading}
+                      />
+                    }
+                  />
+                ) : (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <label
+                        htmlFor="auth-modal-email"
+                        className="text-sm font-medium text-zinc-700"
+                      >
+                        E-mail
+                      </label>
+                      <LoginMethodSwitchLink
+                        method={loginMethod}
+                        onSwitch={(method) => {
+                          setLoginMethod(method);
+                          setLoginError('');
+                        }}
+                        disabled={loginLoading}
+                      />
+                    </div>
+                    <input
+                      id="auth-modal-email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      required
+                      disabled={loginLoading}
+                      className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                    />
+                  </div>
+                )}
                 <AuthPasswordField
                   id="auth-password"
                   name="password"
@@ -1075,7 +1133,7 @@ export default function DashboardLayout({
                     onClick={() => {
                       setForgotError('');
                       setForgotInfo('');
-                      setForgotWhatsapp(loginWhatsapp);
+                      setForgotEmail(loginEmail.trim());
                       setAuthMode('forgot');
                     }}
                     className="cursor-pointer text-sm font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
@@ -1098,9 +1156,9 @@ export default function DashboardLayout({
                       setIsAuthModalOpen(false);
                       window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
                     }}
-                    className="cursor-pointer font-medium text-emerald-700 underline-offset-2 hover:underline"
+                    className="cursor-pointer font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
                   >
-                    Criar conta (pagamento)
+                    Criar conta
                   </button>
                 </p>
               </form>
@@ -1113,18 +1171,15 @@ export default function DashboardLayout({
                   setForgotInfo('');
                   setForgotLoading(true);
                   try {
-                    await api.auth.forgotPassword(forgotWhatsapp);
-                    setResetWhatsapp(forgotWhatsapp);
+                    const emailSent = forgotEmail.trim();
+                    await api.auth.forgotPassword(emailSent);
+                    setResetEmail(emailSent);
                     setAuthMode('resetPassword');
                     setResetCode('');
                     setResetPassword('');
                     setResetError('');
-                    const waDisplay =
-                      formatWhatsappRegistrationDisplay(forgotWhatsapp) ||
-                      forgotWhatsapp.replace(/\D/g, '') ||
-                      forgotWhatsapp.trim();
                     setResetInfo(
-                      `Enviámos um código de recuperação para o WhatsApp ${waDisplay}.`,
+                      `Se existir uma conta com esse e-mail, enviámos um código de recuperação para ${emailSent}.`,
                     );
                   } catch (err) {
                     setForgotError(
@@ -1147,13 +1202,25 @@ export default function DashboardLayout({
                     {forgotInfo}
                   </div>
                 )}
-                <LoginWhatsappFields
-                  idPrefix="auth-forgot"
-                  value={forgotWhatsapp}
-                  onChange={setForgotWhatsapp}
-                  disabled={forgotLoading}
-                  label="WhatsApp da conta"
-                />
+                <div>
+                  <label
+                    htmlFor="auth-forgot-email"
+                    className="block text-sm font-medium text-zinc-700"
+                  >
+                    E-mail da conta
+                  </label>
+                  <input
+                    id="auth-forgot-email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    required
+                    disabled={forgotLoading}
+                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                </div>
                 <button
                   type="submit"
                   disabled={forgotLoading}
@@ -1171,19 +1238,24 @@ export default function DashboardLayout({
                   setResetInfo('');
                   setResetLoading(true);
                   try {
-                    if (!resetWhatsapp) {
+                    if (!resetEmail.trim()) {
                       throw new Error(
-                        'WhatsApp para recuperação não encontrado. Volte a solicitar a recuperação de senha.',
+                        'E-mail para recuperação não encontrado. Volte a solicitar a recuperação de senha.',
                       );
                     }
 
+                    const emailForReset = resetEmail.trim();
+
                     await api.auth.resetPassword({
-                      whatsapp: resetWhatsapp,
+                      email: emailForReset,
                       code: resetCode,
                       newPassword: resetPassword,
                     });
 
-                    await login(resetWhatsapp, resetPassword);
+                    await login({
+                      email: emailForReset,
+                      password: resetPassword,
+                    });
                     setIsAuthModalOpen(false);
                   } catch (err) {
                     setResetError(
@@ -1246,7 +1318,7 @@ export default function DashboardLayout({
                       setResetPassword('');
                       setForgotError('');
                       setForgotInfo('');
-                      setForgotWhatsapp(resetWhatsapp);
+                      setForgotEmail(resetEmail);
                       setAuthMode('forgot');
                     }}
                     className="cursor-pointer text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline disabled:opacity-50"
