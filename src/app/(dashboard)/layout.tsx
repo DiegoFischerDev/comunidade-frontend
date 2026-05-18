@@ -11,7 +11,11 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getAuthToken, clearAuthToken, api } from '@/lib/api';
-import { OPEN_AUTH_LOGIN_EVENT, OPEN_MEMBERSHIP_MODAL_EVENT } from '@/lib/auth-ui-events';
+import {
+  MEMBERSHIP_CHECKOUT_PATH,
+  OPEN_AUTH_LOGIN_EVENT,
+  OPEN_MEMBERSHIP_MODAL_EVENT,
+} from '@/lib/auth-ui-events';
 import { isActiveMember } from '@/lib/membership-access';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
@@ -313,6 +317,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   /** Início do dashboard: hero em full-bleed; padding move-se para a página. */
   const isDashboardHome = pathname === '/dashboard';
+  const isMembershipCheckout = pathname === MEMBERSHIP_CHECKOUT_PATH;
   const {
     user,
     logout,
@@ -892,6 +897,15 @@ export default function DashboardLayout({
       </div>
     </div>
   );
+
+  if (isMembershipCheckout) {
+    return (
+      <>
+        {children}
+        <FloatingWhatsAppButton hideFloatingButton />
+      </>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50 md:pl-56">

@@ -10,7 +10,6 @@ type UserRow = {
   email: string | null;
   whatsapp: string;
   role: string;
-  tier: string;
   membershipExpiresAt: string | null;
   rafaCallSchedulingUnlocked: boolean;
   rafaCallSlotStartsAt: string | null;
@@ -58,8 +57,6 @@ function formatRafaSlotRangePt(
 }
 
 const ROLES: UserRow['role'][] = ['USER', 'PARTNER', 'ADMIN'];
-const TIERS = ['MEMBER'] as const;
-const TIER_LABELS: Record<string, string> = { MEMBER: 'Membro' };
 
 type UsersAdminStats = Awaited<ReturnType<typeof api.admin.users.stats>>;
 
@@ -106,7 +103,6 @@ export default function UsersPage() {
         emailStr.includes(term) ||
         (u.whatsapp || '').toLowerCase().includes(term) ||
         u.role.toLowerCase().includes(term) ||
-        (TIER_LABELS[u.tier] || u.tier || '').toLowerCase().includes(term) ||
         createdAt.toLowerCase().includes(term) ||
         rafaStr.includes(term)
       );
@@ -305,7 +301,7 @@ export default function UsersPage() {
               type="text"
               value={filterInput}
               onChange={(e) => setFilterInput(e.target.value)}
-              placeholder="Pesquisar por nome, email, WhatsApp, role, tier, agendamento Rafa ou data…"
+              placeholder="Pesquisar por nome, email, WhatsApp, role, agendamento Rafa ou data…"
               className="mt-1 w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
@@ -317,7 +313,6 @@ export default function UsersPage() {
                   <th className="px-4 py-2 text-left">Nome</th>
                   <th className="px-4 py-2 text-left">WhatsApp</th>
                   <th className="px-4 py-2 text-left">Role</th>
-                  <th className="px-4 py-2 text-left">Tier</th>
                   <th className="px-4 py-2 text-left">Criado em</th>
                   <th className="px-4 py-2 text-left">Membro até</th>
                   <th className="px-4 py-2 text-left min-w-[200px]">
@@ -330,7 +325,7 @@ export default function UsersPage() {
                 {filteredUsers.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={7}
                       className="px-4 py-4 text-center text-sm text-zinc-500"
                     >
                       Nenhum usuário corresponde ao filtro.
@@ -365,33 +360,6 @@ export default function UsersPage() {
                       {ROLES.map((r) => (
                         <option key={r} value={r}>
                           {r}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-4 py-2">
-                    <select
-                      value={u.tier}
-                      onChange={async (e) => {
-                        const newTier = e.target.value as 'MEMBER';
-                        try {
-                          await api.admin.users.updateTier(u.id, {
-                            tier: newTier,
-                          });
-                          await refreshUsersAndStats();
-                        } catch (err) {
-                          setError(
-                            err instanceof Error
-                              ? err.message
-                              : 'Erro ao atualizar tier.',
-                          );
-                        }
-                      }}
-                      className="cursor-pointer rounded border border-zinc-300 px-2 py-1 text-sm"
-                    >
-                      {TIERS.map((t) => (
-                        <option key={t} value={t}>
-                          {TIER_LABELS[t]}
                         </option>
                       ))}
                     </select>

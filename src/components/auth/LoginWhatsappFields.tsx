@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type Ref, useEffect, useRef, useState } from "react";
 
 import {
   LOGIN_COUNTRY_CUSTOM_SELECT,
@@ -19,6 +19,10 @@ type Props = {
   disabled?: boolean;
   /** Por defeito: "WhatsApp". */
   label?: string;
+  /** Mensagem de erro (checkout). */
+  error?: string;
+  /** Ref do contentor para scroll/focus em validação. */
+  fieldRef?: Ref<HTMLDivElement>;
 };
 
 /**
@@ -30,7 +34,10 @@ export function LoginWhatsappFields({
   onChange,
   disabled,
   label = "WhatsApp",
+  error,
+  fieldRef,
 }: Props) {
+  const hasError = Boolean(error);
   const [dial, setDial] = useState(LOGIN_COUNTRY_DIALS[0]!.dial);
   const [local, setLocal] = useState("");
   const [ready, setReady] = useState(false);
@@ -95,10 +102,16 @@ export function LoginWhatsappFields({
   const chevronBg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`;
 
   return (
-    <div className="space-y-1.5">
-      <label htmlFor={selectId} className="block text-sm font-medium text-zinc-700">
-        {label}
-      </label>
+    <div ref={fieldRef} className="space-y-1.5">
+      {!hasError ? (
+        <label htmlFor={selectId} className="block text-sm font-medium text-zinc-700">
+          {label}
+        </label>
+      ) : (
+        <p id={`${idPrefix}-phone-error`} className="text-xs font-medium text-red-700">
+          {error}
+        </p>
+      )}
       <div className="grid w-full min-w-0 grid-cols-[3.75rem_minmax(0,1fr)] items-stretch gap-1.5 sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:gap-2">
         <select
           id={selectId}
@@ -107,7 +120,12 @@ export function LoginWhatsappFields({
           onChange={(e) => handleCountrySelect(e.target.value)}
           aria-label={`País do telefone: ${selectedMeta.label}`}
           title={selectedMeta.label}
-          className="box-border h-full min-h-[2.5rem] w-full min-w-0 max-w-full cursor-pointer appearance-none rounded-lg border border-zinc-300 bg-white py-1.5 pl-1 pr-5 text-center text-lg leading-none focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:min-h-0 sm:py-2 sm:pl-1.5 sm:pr-7 sm:text-2xl"
+          aria-invalid={hasError || undefined}
+          className={`box-border h-full min-h-[2.5rem] w-full min-w-0 max-w-full cursor-pointer appearance-none rounded-lg border bg-white py-1.5 pl-1 pr-5 text-center text-lg leading-none sm:min-h-0 sm:py-2 sm:pl-1.5 sm:pr-7 sm:text-2xl ${
+            hasError
+              ? 'border-red-700 focus:border-red-700 focus:outline-none focus:ring-1 focus:ring-red-700'
+              : 'border-zinc-300 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500'
+          }`}
           style={{
             backgroundImage: chevronBg,
             backgroundRepeat: "no-repeat",
@@ -128,7 +146,13 @@ export function LoginWhatsappFields({
             ✏️
           </option>
         </select>
-        <div className="flex min-w-0 flex-1 overflow-hidden rounded-lg border border-zinc-300 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+        <div
+          className={`relative flex min-w-0 flex-1 overflow-hidden rounded-lg border ${
+            hasError
+              ? 'border-red-700 focus-within:border-red-700 focus-within:ring-1 focus-within:ring-red-700'
+              : 'border-zinc-300 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500'
+          }`}
+        >
           {isCustom ? (
             <>
               <span
@@ -187,8 +211,20 @@ export function LoginWhatsappFields({
             }
             required
             aria-label="Número de telemóvel sem código do país"
-            className="min-w-0 flex-1 border-0 bg-white px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
+            aria-invalid={hasError || undefined}
+            aria-describedby={hasError ? `${idPrefix}-phone-error` : undefined}
+            className={`min-w-0 flex-1 border-0 bg-white px-3 py-2 text-sm outline-none placeholder:text-zinc-400 ${
+              hasError ? 'text-red-900' : 'text-zinc-900'
+            }`}
           />
+          {hasError ? (
+            <span
+              className="pointer-events-none absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-red-700 text-white"
+              aria-hidden
+            >
+              <span className="text-xs font-bold leading-none">!</span>
+            </span>
+          ) : null}
         </div>
       </div>
     </div>
