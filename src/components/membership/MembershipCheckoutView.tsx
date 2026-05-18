@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { KiwiFloatInput } from '@/components/membership/KiwiFloatInput';
+import { MembershipTermsModal } from '@/components/membership/MembershipTermsModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { isActiveMember } from '@/lib/membership-access';
@@ -91,6 +92,7 @@ export function MembershipCheckoutView() {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<SignupFieldKey, string>>>({});
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
 
   const fieldRefs = {
     name: useRef<HTMLDivElement>(null),
@@ -233,24 +235,9 @@ export function MembershipCheckoutView() {
   return (
     <div className="min-h-screen bg-[#f3f4f6] py-4 sm:py-8">
       <div className="mx-auto max-w-[1000px] px-2 sm:px-4">
-        {/* Banner superior (estilo Kiwify) */}
-        <div className="flex justify-center p-2">
-          <div className="w-[220px]">
-            <Image
-              src="/rafa_cards/membro_vip_modal3.png"
-              alt="Membro VIP — Comunidade Rafa Portugal"
-              width={220}
-              height={330}
-              className="h-auto w-full"
-              priority
-              unoptimized
-            />
-          </div>
-        </div>
-
         {/* Cabeçalho do produto */}
         <div className="p-2">
-          <div className="flex w-full items-center rounded-md bg-transparent p-4">
+          <div className="flex w-full flex-col items-center justify-center rounded-md bg-transparent p-4 text-center">
             <Image
               src="/logo_principal2.png"
               alt=""
@@ -258,11 +245,9 @@ export function MembershipCheckoutView() {
               height={128}
               className="relative max-h-32 w-auto max-w-[128px] rounded-md object-contain"
             />
-            <div className="ml-4 flex min-w-0 flex-1 items-end">
-              <div>
-                <h1 className="text-2xl font-bold text-black">{MEMBERSHIP_PRODUCT_TITLE}</h1>
-                <p className="mt-0.5 text-sm text-zinc-600">{MEMBERSHIP_PRODUCT_SUBTITLE}</p>
-              </div>
+            <div className="mt-4 max-w-lg">
+              <h1 className="text-2xl font-bold text-black">{MEMBERSHIP_PRODUCT_TITLE}</h1>
+              <p className="mt-0.5 text-sm text-zinc-600">{MEMBERSHIP_PRODUCT_SUBTITLE}</p>
             </div>
           </div>
         </div>
@@ -478,13 +463,25 @@ export function MembershipCheckoutView() {
               </button>
 
               <p className="bottom-0 pt-3 text-center text-[11px] leading-relaxed text-zinc-500">
-                Ao clicar em &quot;{payLabel}&quot;, confirmas que leste e aceitas os termos da
-                Comunidade Rafa Portugal. O pagamento é processado pela{' '}
+                Ao clicar em &quot;{payLabel}&quot;, confirmas que leste e aceitas os{' '}
+                <button
+                  type="button"
+                  onClick={() => setTermsModalOpen(true)}
+                  className="cursor-pointer font-semibold"
+                >
+                  termos da Comunidade Rafa Portugal
+                </button>
+                . O pagamento é processado pela{' '}
                 <span className="font-semibold">Stripe</span>. Após a confirmação, a tua conta de
                 membro é criada instantaneamente.
               </p>
             </div>
           </div>
+
+          <MembershipTermsModal
+            open={termsModalOpen}
+            onClose={() => setTermsModalOpen(false)}
+          />
 
           <p className="pb-8 text-center">
             <Link
