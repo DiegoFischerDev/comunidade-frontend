@@ -361,6 +361,44 @@ export default function DashboardPage() {
               </span>
             </button>
           </section>
+          <section
+            className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
+          >
+            <Link
+              href="/relocation/imoveis"
+              className="group relative block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+              aria-label="Imóveis disponíveis em Portugal"
+            >
+              <Image
+                src="/rafa_cards/imoveis2.png"
+                alt="Imóveis disponíveis em Portugal — alugar ou comprar"
+                width={1250}
+                height={1875}
+                className="h-auto w-full object-contain transition group-hover:opacity-95"
+                sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
+                priority
+              />
+            </Link>
+          </section>
+          <section
+            className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
+          >
+            <Link
+              href="/relocation/servicos"
+              className="group relative block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+              aria-label="Serviços que indico"
+            >
+              <Image
+                src="/rafa_cards/services2.png"
+                alt="Serviços que uso e indico — parceiros de confiança"
+                width={1250}
+                height={1875}
+                className="h-auto w-full object-contain transition group-hover:opacity-95"
+                sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
+                priority
+              />
+            </Link>
+          </section>
           {canAccessMemberVipShortcuts ? (
             <section
               className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}

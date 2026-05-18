@@ -610,12 +610,22 @@ export default function DashboardLayout({
           <Link
             href="/relocation/imoveis"
             className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/relocation/imoveis' || pathname.startsWith('/relocation/')
+              pathname === '/relocation/imoveis'
                 ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                 : 'text-zinc-800 hover:bg-zinc-100'
             }`}
           >
             Imóveis
+          </Link>
+          <Link
+            href="/relocation/servicos"
+            className={`block rounded-md px-3 py-2 text-sm ${
+              pathname === '/relocation/servicos'
+                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                : 'text-zinc-800 hover:bg-zinc-100'
+            }`}
+          >
+            Serviços
           </Link>
           {user && user.role !== 'ADMIN' ? (
             <Link
@@ -747,6 +757,16 @@ export default function DashboardLayout({
                 }`}
               >
                 Links WhatsApp
+              </Link>
+              <Link
+                href="/dashboard/admin/recommended-services"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/admin/recommended-services'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Serviços indicados
               </Link>
               <Link
                 href="/dashboard/admin/gatilhos"

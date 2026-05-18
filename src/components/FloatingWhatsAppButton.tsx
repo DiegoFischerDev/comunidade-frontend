@@ -137,7 +137,7 @@ export function FloatingWhatsAppButton({
             </button>
             <div className="relative overflow-hidden rounded-2xl">
               <Image
-                src="/rafa_cards/membro_vip_modal3.png"
+                src="/rafa_cards/membro_vip_modal5.png"
                 alt="Membro VIP — oferta Comunidade Rafa Portugal"
                 width={800}
                 height={1200}

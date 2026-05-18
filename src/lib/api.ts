@@ -340,6 +340,19 @@ export const api = {
         status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
       }>('/rafacall/cancel', { method: 'POST', body: JSON.stringify(body) }),
   },
+  recommendedServices: {
+    list: () =>
+      request<
+        {
+          id: string;
+          title: string;
+          slug: string;
+          linkTitle: string;
+          whatsappPhrase: string;
+          redirectPath: string;
+        }[]
+      >('/recommended-services', { method: 'GET' }),
+  },
   admin: {
     users: {
       stats: () =>
@@ -823,6 +836,64 @@ export const api = {
           method: 'GET',
         });
       },
+    },
+    recommendedServices: {
+      list: () =>
+        request<
+          {
+            id: string;
+            title: string;
+            sortOrder: number;
+            active: boolean;
+            createdAt: string;
+            redirectPath: string;
+            partnerShareLink: {
+              id: string;
+              slug: string;
+              title: string;
+              whatsappDigits: string;
+            };
+          }[]
+        >('/recommended-services/admin', { method: 'GET' }),
+      availableLinks: () =>
+        request<
+          {
+            id: string;
+            slug: string;
+            title: string;
+            whatsappDigits: string;
+            createdAt: string;
+            alreadyUsed: boolean;
+          }[]
+        >('/recommended-services/admin/available-links', { method: 'GET' }),
+      create: (body: {
+        title: string;
+        partnerShareLinkId: string;
+        sortOrder?: number;
+        active?: boolean;
+      }) =>
+        request('/recommended-services/admin', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
+      update: (
+        id: string,
+        body: {
+          title?: string;
+          partnerShareLinkId?: string;
+          sortOrder?: number;
+          active?: boolean;
+        },
+      ) =>
+        request(`/recommended-services/admin/${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        }),
+      delete: (id: string) =>
+        request<{ ok: true }>(
+          `/recommended-services/admin/${encodeURIComponent(id)}`,
+          { method: 'DELETE' },
+        ),
     },
     houses: {
       list: () =>
