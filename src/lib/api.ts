@@ -141,66 +141,11 @@ async function requestFormData<T>(
 
 export const api = {
   auth: {
-    register: (params: {
-      name: string;
-      password: string;
-      affiliateCode?: string;
-    }) =>
-      request<{
-        user: {
-          id: string;
-          role: string;
-          name: string;
-          whatsapp?: string;
-          createdAt: string;
-        };
-        requiresEmailVerification: boolean;
-        requiresWhatsappVerification?: boolean;
-        whatsappVerificationCode?: string;
-        whatsappRegistrationNumber?: string;
-        whatsappOpenUrl?: string;
-        whatsappBrowserSessionToken?: string;
-      }>('/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(params),
-      }),
     login: (whatsapp: string, password: string) =>
       request<{ user: { id: string; email: string | null; whatsapp: string | null; role: string }; token: string }>(
         '/auth/login',
         { method: 'POST', body: JSON.stringify({ whatsapp, password }) },
       ),
-    /** Polling após registo com WhatsApp: JWT quando a conta estiver criada. */
-    pollWhatsappRegistration: (browserSessionToken: string) =>
-      request<
-        | { status: 'pending' }
-        | {
-            status: 'ready';
-            token: string;
-            user: {
-              id: string;
-              email: string | null;
-              role: string;
-              whatsapp: string;
-            };
-          }
-        | { status: 'expired' }
-        | { status: 'consumed' }
-        | { status: 'invalid' }
-      >(
-        `/auth/whatsapp/registration-poll?token=${encodeURIComponent(browserSessionToken)}`,
-        { method: 'GET' },
-      ),
-    // Endpoints de verificação por e-mail são mantidos apenas para retrocompatibilidade.
-    verifyEmail: (email: string, code: string) =>
-      request<{ success: boolean }>('/auth/verify-email', {
-        method: 'POST',
-        body: JSON.stringify({ email, code }),
-      }),
-    resendVerification: (email: string) =>
-      request<{ success: boolean }>('/auth/resend-verification', {
-        method: 'POST',
-        body: JSON.stringify({ email }),
-      }),
     forgotPassword: (whatsapp: string) =>
       request<{ success: boolean }>('/auth/forgot-password', {
         method: 'POST',

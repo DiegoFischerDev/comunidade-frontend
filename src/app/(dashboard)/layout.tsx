@@ -13,10 +13,6 @@ import Image from 'next/image';
 import { getAuthToken, clearAuthToken, api } from '@/lib/api';
 import { OPEN_AUTH_LOGIN_EVENT, OPEN_MEMBERSHIP_MODAL_EVENT } from '@/lib/auth-ui-events';
 import { isActiveMember } from '@/lib/membership-access';
-import {
-  WHATSAPP_REGISTRATION_POLL_MAX_MS,
-  WHATSAPP_REGISTRATION_POLL_TIMEOUT_MESSAGE,
-} from '@/lib/whatsapp-registration-poll';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import {
@@ -200,139 +196,6 @@ function WhatsappIcon({ className }: { className?: string }) {
   );
 }
 
-function RegisterWhatsappVerifyPanel({
-  pollError,
-  registrationNumber,
-  verifyCode,
-  openUrl,
-  onOpenWhatsApp,
-  onBackToRegister,
-}: {
-  pollError: string;
-  registrationNumber: string;
-  verifyCode: string;
-  openUrl: string;
-  onOpenWhatsApp: () => void;
-  onBackToRegister: () => void;
-}) {
-  const [justCopied, setJustCopied] = useState<'number' | 'code' | null>(null);
-  const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const displayNumber = formatWhatsappRegistrationDisplay(registrationNumber);
-  const digitsForCopy = registrationNumber.replace(/\D/g, '');
-  const codeForCopy = verifyCode.replace(/\s/g, '');
-
-  const flashCopied = (which: 'number' | 'code') => {
-    if (copyResetRef.current) clearTimeout(copyResetRef.current);
-    setJustCopied(which);
-    copyResetRef.current = setTimeout(() => {
-      setJustCopied(null);
-      copyResetRef.current = null;
-    }, 2000);
-  };
-
-  const copyNumber = async () => {
-    if (!digitsForCopy) return;
-    try {
-      await navigator.clipboard.writeText(digitsForCopy);
-      flashCopied('number');
-    } catch {
-      // ignore
-    }
-  };
-
-  const copyCode = async () => {
-    if (!codeForCopy) return;
-    try {
-      await navigator.clipboard.writeText(codeForCopy);
-      flashCopied('code');
-    } catch {
-      // ignore
-    }
-  };
-
-  return (
-    <div className="mt-5 space-y-4">
-      {pollError ? (
-        <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
-          {pollError}
-        </div>
-      ) : null}
-      <p className="text-xs leading-relaxed text-zinc-600">
-        Envie o código de verificação por WhatsApp para o número da comunidade abaixo.
-      </p>
-      <div>
-        <p className="text-xs font-medium text-zinc-500">Número (WhatsApp)</p>
-        <div
-          className="mt-1 flex min-h-[2.25rem] items-center"
-          aria-live="polite"
-        >
-          <WhatsappIcon className="h-4 w-4 shrink-0 text-[#25D366]" />
-          <div className="ml-1.5 flex min-w-0 flex-1 items-center sm:ml-2">
-            <span className="min-w-0 select-all text-sm font-medium tabular-nums text-zinc-800">
-              {displayNumber || '—'}
-            </span>
-            <button
-              type="button"
-              onClick={copyNumber}
-              disabled={!digitsForCopy}
-              title={justCopied === 'number' ? 'Copiado' : 'Copiar número'}
-              aria-label="Copiar número de WhatsApp"
-              className="ml-[10px] shrink-0 cursor-pointer rounded p-0.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {justCopied === 'number' ? (
-                <CheckIcon className="h-[1.15rem] w-[1.15rem] text-emerald-600" />
-              ) : (
-                <CopyIcon className="h-[1.15rem] w-[1.15rem]" />
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-      <div>
-        <p className="text-xs font-medium text-zinc-500">Código de verificação</p>
-        <div className="mt-1 flex min-h-[3rem] items-stretch overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
-          <div
-            className="flex min-w-0 flex-1 items-center justify-center px-3 py-2 text-center text-xl font-bold tracking-[0.18em] text-zinc-900 select-all sm:text-2xl"
-            aria-live="polite"
-          >
-            {verifyCode}
-          </div>
-          <button
-            type="button"
-            onClick={copyCode}
-            disabled={!codeForCopy}
-            title={justCopied === 'code' ? 'Copiado' : 'Copiar código'}
-            aria-label="Copiar código de verificação"
-            className="shrink-0 cursor-pointer self-stretch border-l border-zinc-200 bg-white px-2.5 text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {justCopied === 'code' ? (
-              <CheckIcon className="mx-auto h-5 w-5 text-emerald-600" />
-            ) : (
-              <CopyIcon className="mx-auto h-5 w-5" />
-            )}
-          </button>
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={() => {
-          if (openUrl) onOpenWhatsApp();
-        }}
-        className="flex w-full cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-medium text-white hover:from-[#c07c01] hover:to-[#e7a01f] disabled:cursor-not-allowed disabled:opacity-50"
-        disabled={!openUrl}
-      >
-        Abrir WhatsApp
-      </button>
-      <button
-        type="button"
-        onClick={onBackToRegister}
-        className="w-full cursor-pointer text-center text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
-      >
-        Voltar ao registo
-      </button>
-    </div>
-  );
-}
 
 function EyeIcon({ className }: { className?: string }) {
   return (
@@ -456,35 +319,20 @@ export default function DashboardLayout({
     loading: authLoading,
     login,
     loginWithToken,
-    register,
     isImpersonating,
     stopImpersonation,
   } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<
-    'login' | 'register' | 'registerWhatsappVerify' | 'forgot' | 'resetPassword'
-  >('login');
-  const [whatsappVerifyCode, setWhatsappVerifyCode] = useState('');
-  const [whatsappVerifyOpenUrl, setWhatsappVerifyOpenUrl] = useState('');
-  const [whatsappRegistrationNumber, setWhatsappRegistrationNumber] =
-    useState('');
-  const [whatsappBrowserSessionToken, setWhatsappBrowserSessionToken] =
-    useState('');
-  const [whatsappPollError, setWhatsappPollError] = useState('');
-  const whatsappPollStartedAtRef = useRef<number | null>(null);
+  const [authMode, setAuthMode] = useState<'login' | 'forgot' | 'resetPassword'>(
+    'login',
+  );
   const [loginWhatsapp, setLoginWhatsapp] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginPasswordHydrated, setLoginPasswordHydrated] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
-  const [registerName, setRegisterName] = useState('');
-  const [registerPassword, setRegisterPassword] = useState('');
-  const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState('');
-  const [registerError, setRegisterError] = useState('');
-  const [registerInfo, setRegisterInfo] = useState('');
-  const [registerLoading, setRegisterLoading] = useState(false);
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
   const [pendingWelcomeAfterVerify, setPendingWelcomeAfterVerify] =
@@ -583,12 +431,14 @@ export default function DashboardLayout({
     if (typeof window === 'undefined') return;
 
     const handler = (event: Event) => {
-      const custom = event as CustomEvent<{
-        mode?: 'login' | 'register';
-      }>;
-      const mode = custom.detail?.mode ?? 'register';
-      setAuthMode(mode);
-      setIsAuthModalOpen(true);
+      const custom = event as CustomEvent<{ mode?: 'login' }>;
+      if (custom.detail?.mode === 'login') {
+        setAuthMode('login');
+        setIsAuthModalOpen(true);
+        return;
+      }
+      setIsAuthModalOpen(false);
+      window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
     };
 
     window.addEventListener('open-auth-modal', handler as EventListener);
@@ -614,93 +464,6 @@ export default function DashboardLayout({
       setPendingWelcomeAfterVerify(false);
     }
   }, [pendingWelcomeAfterVerify, user]);
-
-  // Boas-vindas após registo + WhatsApp concluído na página /registro
-  useEffect(() => {
-    if (!user || typeof window === 'undefined') return;
-    try {
-      if (sessionStorage.getItem('comunidade_welcome_after_wa') === '1') {
-        sessionStorage.removeItem('comunidade_welcome_after_wa');
-        const raw = (user.name ?? '').trim();
-        const first =
-          raw.split(' ')[0] ||
-          (user.email ? user.email.split('@')[0] : 'bem-vindo(a)');
-        setWelcomeName(first);
-        setIsWelcomeOpen(true);
-      }
-    } catch {
-      // noop
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (authMode === 'registerWhatsappVerify' && whatsappBrowserSessionToken) {
-      whatsappPollStartedAtRef.current = Date.now();
-    } else {
-      whatsappPollStartedAtRef.current = null;
-    }
-  }, [authMode, whatsappBrowserSessionToken]);
-
-  const pollWhatsappRegistration = useCallback(async () => {
-    if (!whatsappBrowserSessionToken) return;
-    const started = whatsappPollStartedAtRef.current;
-    if (
-      started != null &&
-      Date.now() - started > WHATSAPP_REGISTRATION_POLL_MAX_MS
-    ) {
-      setWhatsappPollError(WHATSAPP_REGISTRATION_POLL_TIMEOUT_MESSAGE);
-      setWhatsappBrowserSessionToken('');
-      return;
-    }
-    try {
-      const r = await api.auth.pollWhatsappRegistration(
-        whatsappBrowserSessionToken,
-      );
-      if (r.status === 'ready') {
-        setPendingWelcomeAfterVerify(true);
-        await loginWithToken(r.token);
-        setWhatsappVerifyCode('');
-        setWhatsappVerifyOpenUrl('');
-        setWhatsappRegistrationNumber('');
-        setWhatsappBrowserSessionToken('');
-        setWhatsappPollError('');
-        setAuthMode('login');
-        setIsAuthModalOpen(false);
-        return;
-      }
-      if (r.status === 'expired') {
-        setWhatsappPollError(
-          'O tempo para ativar a conta neste passo expirou. Crie a conta de novo.',
-        );
-        setWhatsappBrowserSessionToken('');
-        return;
-      }
-      if (r.status === 'consumed') {
-        setWhatsappPollError(
-          'Esta sessão já foi utilizada. Entre com o WhatsApp e a palavra-passe.',
-        );
-        setWhatsappBrowserSessionToken('');
-        return;
-      }
-      if (r.status === 'invalid') {
-        setWhatsappPollError(
-          'Não encontrámos o pedido de registo. Volte atrás e tente criar a conta outra vez.',
-        );
-        setWhatsappBrowserSessionToken('');
-      }
-    } catch {
-      // próximo intervalo
-    }
-  }, [whatsappBrowserSessionToken, loginWithToken]);
-
-  useEffect(() => {
-    if (authMode !== 'registerWhatsappVerify' || !whatsappBrowserSessionToken) {
-      return;
-    }
-    void pollWhatsappRegistration();
-    const id = window.setInterval(() => void pollWhatsappRegistration(), 2500);
-    return () => window.clearInterval(id);
-  }, [authMode, whatsappBrowserSessionToken, pollWhatsappRegistration]);
 
   if (!mounted || authLoading) {
     return (
@@ -1221,11 +984,6 @@ export default function DashboardLayout({
           onMouseDown={(e) => {
             // Fecha ao clicar fora do modal (no backdrop).
             if (e.target !== e.currentTarget) return;
-            setWhatsappVerifyCode('');
-            setWhatsappVerifyOpenUrl('');
-            setWhatsappRegistrationNumber('');
-            setWhatsappBrowserSessionToken('');
-            setWhatsappPollError('');
             setIsAuthModalOpen(false);
           }}
         >
@@ -1233,30 +991,19 @@ export default function DashboardLayout({
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-base font-semibold text-zinc-900">
-                  {authMode === 'registerWhatsappVerify'
-                    ? 'Ativar conta no WhatsApp'
-                    : 'Entrar na Comunidade Rafa Portugal'}
+                  Entrar na Comunidade Rafa Portugal
                 </h2>
                 <p className="mt-1 text-xs text-zinc-500">
-                  {authMode === 'registerWhatsappVerify'
-                      ? 'Envie o código pelo WhatsApp para concluir o registo.'
-                      : authMode === 'forgot'
-                        ? 'Informe o seu WhatsApp para receber um código de recuperação.'
-                        : authMode === 'resetPassword'
-                          ? 'Introduza o código recebido por WhatsApp e defina uma nova senha.'
-                          : 'Entre com o WhatsApp e a senha da sua conta.'}
+                  {authMode === 'forgot'
+                    ? 'Informe o seu WhatsApp para receber um código de recuperação.'
+                    : authMode === 'resetPassword'
+                      ? 'Introduza o código recebido por WhatsApp e defina uma nova senha.'
+                      : 'Entre com o WhatsApp e a senha da sua conta.'}
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setWhatsappVerifyCode('');
-                  setWhatsappVerifyOpenUrl('');
-                  setWhatsappRegistrationNumber('');
-                  setWhatsappBrowserSessionToken('');
-                  setWhatsappPollError('');
-                  setIsAuthModalOpen(false);
-                }}
+                onClick={() => setIsAuthModalOpen(false)}
                 className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50"
                 aria-label="Fechar"
               >
@@ -1343,146 +1090,6 @@ export default function DashboardLayout({
                   </button>
                 </p>
               </form>
-            ) : authMode === 'register' ? (
-              <form
-                className="mt-5 space-y-4"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  setRegisterError('Criação de conta desativada temporariamente.');
-                  return;
-                  setRegisterError('');
-                  setRegisterInfo('');
-                  if (registerPassword !== registerPasswordConfirm) {
-                    setRegisterError('As senhas não coincidem.');
-                    return;
-                  }
-                  setRegisterLoading(true);
-                  try {
-                    const refRaw =
-                      typeof window !== 'undefined'
-                        ? window.localStorage.getItem(
-                            'comunidade_ref_affiliate',
-                          )
-                        : null;
-                    const refCandidate = refRaw ?? '';
-                    const refTrimmed =
-                      refCandidate !== 'nenhum' && refCandidate.trim().length > 0
-                        ? refCandidate.trim()
-                        : undefined;
-
-                    const res = await register({
-                      name: registerName,
-                      password: registerPassword,
-                      affiliateCode: refTrimmed,
-                    });
-                    if (
-                      res.requiresWhatsappVerification &&
-                      res.whatsappOpenUrl &&
-                      res.whatsappVerificationCode &&
-                      res.whatsappRegistrationNumber &&
-                      res.whatsappBrowserSessionToken
-                    ) {
-                      setWhatsappPollError('');
-                      setWhatsappVerifyCode(res.whatsappVerificationCode ?? '');
-                      setWhatsappVerifyOpenUrl(res.whatsappOpenUrl ?? '');
-                      setWhatsappRegistrationNumber(res.whatsappRegistrationNumber ?? '');
-                      setWhatsappBrowserSessionToken(res.whatsappBrowserSessionToken ?? '');
-                      setAuthMode('registerWhatsappVerify');
-                      return;
-                    }
-                  } catch (err: unknown) {
-                    const anyErr = err as any;
-                    const message =
-                      anyErr?.message && String(anyErr.message).trim()
-                        ? String(anyErr.message)
-                        : 'Erro ao criar conta.';
-                    setRegisterError(message);
-                  } finally {
-                    setRegisterLoading(false);
-                  }
-                }}
-              >
-                {registerError && (
-                  <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
-                    {registerError}
-                  </div>
-                )}
-                {registerInfo && !registerError && (
-                  <div className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
-                    {registerInfo}
-                  </div>
-                )}
-                <div className="grid gap-3">
-                  <div>
-                    <label
-                      htmlFor="auth-name"
-                      className="block text-xs font-medium text-zinc-700"
-                    >
-                      Seu nome
-                    </label>
-                    <input
-                      id="auth-name"
-                      type="text"
-                      value={registerName}
-                      onChange={(e) => setRegisterName(e.target.value)}
-                      required
-                      className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-                  <AuthPasswordField
-                    id="auth-password-register"
-                    label="Senha (mín. 6 caracteres)"
-                    value={registerPassword}
-                    onChange={setRegisterPassword}
-                    required
-                    minLength={6}
-                    autoComplete="new-password"
-                    disabled={registerLoading}
-                  />
-                  <AuthPasswordField
-                    id="auth-password-register-2"
-                    label="Confirmar senha"
-                    value={registerPasswordConfirm}
-                    onChange={setRegisterPasswordConfirm}
-                    required
-                    minLength={6}
-                    autoComplete="new-password"
-                    disabled={registerLoading}
-                  />
-                </div>
-                {/* Ativação passa a ser sempre via WhatsApp */}
-                <button
-                  type="submit"
-                  disabled
-                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {registerLoading ? 'A processar…' : 'Criar conta'}
-                </button>
-              </form>
-            ) : authMode === 'registerWhatsappVerify' ? (
-              <RegisterWhatsappVerifyPanel
-                pollError={whatsappPollError}
-                registrationNumber={whatsappRegistrationNumber}
-                verifyCode={whatsappVerifyCode}
-                openUrl={whatsappVerifyOpenUrl}
-                onOpenWhatsApp={() => {
-                  if (whatsappVerifyOpenUrl) {
-                    window.open(
-                      whatsappVerifyOpenUrl,
-                      '_blank',
-                      'noopener,noreferrer',
-                    );
-                  }
-                }}
-                onBackToRegister={() => {
-                  setAuthMode('register');
-                  setWhatsappVerifyCode('');
-                  setWhatsappVerifyOpenUrl('');
-                  setWhatsappRegistrationNumber('');
-                  setWhatsappBrowserSessionToken('');
-                  setWhatsappPollError('');
-                }}
-              />
             ) : authMode === 'forgot' ? (
               <form
                 className="mt-5 space-y-4"

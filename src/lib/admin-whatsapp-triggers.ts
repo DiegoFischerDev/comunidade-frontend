@@ -28,17 +28,4 @@ export const ADMIN_WHATSAPP_TRIGGERS: AdminWhatsappTrigger[] = [
     action:
       "Atalho para entrar/continuar o questionário (receiver aceita qualquer texto que comece com questionario).",
   },
-  {
-    name: "Criar conta",
-    trigger: 'Mensagem exata: "criar conta"',
-    handledBy: "whatsapp-evolution-verify",
-    action: "Fluxo de registo e envio do link de confirmação.",
-  },
-  {
-    name: "Confirmação de cadastro por código",
-    trigger:
-      'Quando a mensagem contém "codigo" + um número de 6 dígitos (ou só 6 dígitos)',
-    handledBy: "whatsapp-evolution-verify",
-    action: "Confirma o cadastro no backend (auth/whatsapp/confirm).",
-  },
 ];

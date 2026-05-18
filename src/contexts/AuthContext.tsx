@@ -39,20 +39,8 @@ type AuthContextValue = {
   loading: boolean;
   isImpersonating: boolean;
   login: (whatsapp: string, password: string) => Promise<void>;
-  /** Após confirmação no WhatsApp, aplica o JWT devolvido pelo polling. */
+  /** Após pagamento confirmado, aplica o JWT devolvido pelo claim da sessão Stripe. */
   loginWithToken: (token: string) => Promise<void>;
-  register: (params: {
-    name: string;
-    password: string;
-    affiliateCode?: string;
-  }) => Promise<{
-    requiresEmailVerification: boolean;
-    requiresWhatsappVerification?: boolean;
-    whatsappVerificationCode?: string;
-    whatsappRegistrationNumber?: string;
-    whatsappOpenUrl?: string;
-    whatsappBrowserSessionToken?: string;
-  }>;
   /** Termina a sessão neste browser (tokens em localStorage são limpos). */
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -193,17 +181,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [loadUser],
   );
 
-  const register = useCallback(
-    async (params: {
-      name: string;
-      password: string;
-      affiliateCode?: string;
-    }) => {
-      return api.auth.register(params);
-    },
-    [],
-  );
-
   const logout = useCallback(() => {
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(ADMIN_BACKUP_TOKEN_KEY);
@@ -258,7 +235,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isImpersonating,
     login,
     loginWithToken,
-    register,
     logout,
     refreshUser,
     impersonateAsUser,

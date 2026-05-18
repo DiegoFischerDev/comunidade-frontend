@@ -25,13 +25,8 @@ export default function PSPPage() {
   function handleOpenMembershipModal() {
     if (typeof window === "undefined") return;
 
-    // Se não estiver autenticado, abre o modal de login/registro
     if (!user) {
-      window.dispatchEvent(
-        new CustomEvent("open-auth-modal", {
-          detail: { mode: "register" },
-        }),
-      );
+      window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
       return;
     }
 

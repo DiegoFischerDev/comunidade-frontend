@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LoginWhatsappFields } from "@/components/auth/LoginWhatsappFields";
 import { useAuth } from "@/contexts/AuthContext";
+import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/lib/auth-ui-events";
 import {
   LOGIN_PASSWORD_STORAGE_KEY,
   persistLoginPasswordToStorage,
@@ -61,11 +62,6 @@ function LoginForm() {
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
-
-  const registroHref =
-    next && isSafeInternalNextPath(next)
-      ? `/registro?next=${encodeURIComponent(next)}`
-      : "/registro";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -125,10 +121,17 @@ function LoginForm() {
         </button>
       </form>
       <p className="mt-4 text-center text-sm text-zinc-600">
-        Não tem conta?{" "}
-        <Link href={registroHref} className="font-medium text-blue-600 hover:underline">
-          Criar conta
-        </Link>
+        Ainda não tem conta?{" "}
+        <button
+          type="button"
+          onClick={() => {
+            window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
+            router.push("/dashboard");
+          }}
+          className="cursor-pointer font-medium text-emerald-700 underline-offset-2 hover:underline"
+        >
+          Ativar membro VIP
+        </button>
       </p>
     </div>
   );
