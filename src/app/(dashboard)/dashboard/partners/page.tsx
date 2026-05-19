@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { api, getAuthToken } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CardButton } from '@/components/ui/CardButton';
+import { formatAdvertisingBalanceEur } from '@/components/house/HousePublicationStatusBadge';
 
 type PartnerRow = {
   id: string;
@@ -12,6 +13,7 @@ type PartnerRow = {
   logoUrl: string | null;
   priority: number;
   createdAt: string;
+  advertisingBalanceEurCents: number;
   user: { id: string; email: string | null; role: string };
   category: { id: string; name: string; slug: string } | null;
 };
@@ -28,6 +30,8 @@ export default function PartnersPage() {
     null,
   );
   const [updatingPriorityPartnerId, setUpdatingPriorityPartnerId] = useState<string | null>(null);
+  const [creditAmountByPartnerId, setCreditAmountByPartnerId] = useState<Record<string, string>>({});
+  const [creditingPartnerId, setCreditingPartnerId] = useState<string | null>(null);
 
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -100,6 +104,7 @@ export default function PartnersPage() {
           logoUrl: result.partner.logoUrl,
           priority: 0,
           createdAt: result.partner.createdAt,
+          advertisingBalanceEurCents: 0,
           user: result.user,
           category: null,
         },
@@ -253,6 +258,7 @@ export default function PartnersPage() {
                 <th className="px-4 py-2 text-left">WhatsApp</th>
                 <th className="px-4 py-2 text-left">Prioridade</th>
                 <th className="px-4 py-2 text-left">Categoria</th>
+                <th className="px-4 py-2 text-left">Saldo publicidade</th>
                 <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
@@ -357,6 +363,72 @@ export default function PartnersPage() {
                         </option>
                       ))}
                     </select>
+                  </td>
+                  <td className="px-4 py-2 align-top">
+                    <p className="font-medium tabular-nums text-zinc-900">
+                      {formatAdvertisingBalanceEur(p.advertisingBalanceEurCents ?? 0)}
+                    </p>
+                    {p.category?.slug === 'relocation' ? (
+                      <div className="mt-2 flex flex-wrap items-center gap-1">
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="€"
+                          value={creditAmountByPartnerId[p.id] ?? ''}
+                          onChange={(e) =>
+                            setCreditAmountByPartnerId((prev) => ({
+                              ...prev,
+                              [p.id]: e.target.value,
+                            }))
+                          }
+                          className="w-16 rounded border border-zinc-300 px-2 py-1 text-xs"
+                        />
+                        <button
+                          type="button"
+                          disabled={creditingPartnerId === p.id}
+                          onClick={async () => {
+                            const raw = (creditAmountByPartnerId[p.id] ?? '').replace(',', '.');
+                            const euros = Number(raw);
+                            if (!Number.isFinite(euros) || euros <= 0) {
+                              setError('Indica um valor válido em euros.');
+                              return;
+                            }
+                            setCreditingPartnerId(p.id);
+                            setError('');
+                            try {
+                              const res = await api.admin.partners.creditAdvertisingBalance(
+                                p.id,
+                                { amountEurCents: Math.round(euros * 100) },
+                              );
+                              setPartners((prev) =>
+                                prev.map((row) =>
+                                  row.id === p.id
+                                    ? {
+                                        ...row,
+                                        advertisingBalanceEurCents: res.balanceEurCents,
+                                      }
+                                    : row,
+                                ),
+                              );
+                              setCreditAmountByPartnerId((prev) => ({ ...prev, [p.id]: '' }));
+                            } catch (err) {
+                              setError(
+                                err instanceof Error
+                                  ? err.message
+                                  : 'Erro ao adicionar saldo.',
+                              );
+                            } finally {
+                              setCreditingPartnerId(null);
+                            }
+                          }}
+                          className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
+                        >
+                          + saldo
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-xs text-zinc-500">—</p>
+                    )}
                   </td>
                   <td className="px-4 py-2">
                     {new Date(p.createdAt).toLocaleString('pt-PT')}

@@ -123,8 +123,8 @@ export default function PSPFullPage() {
         <div className="relative z-10 mt-auto flex w-full flex-col items-center justify-center gap-4 px-4 pb-8 pt-4 text-center">
           <div className="flex w-full max-w-md justify-center">
             <a
-              href="/psp/psp-completo.pdf"
-              download
+              href="/psp/psp_completo_maio.pdf"
+              download="Guia-Portugal-Sem-Perrengue-maio.pdf"
               className="w-full sm:w-auto"
             >
               <CardButton type="button" variant="primary" className="w-full sm:w-auto">

@@ -586,10 +586,24 @@ export const api = {
             logoUrl: string | null;
             priority: number;
             createdAt: string;
+            advertisingBalanceEurCents: number;
             user: { id: string; email: string | null; role: string };
             category: { id: string; name: string; slug: string } | null;
           }[]
         >('/partners', { method: 'GET' }),
+      getAdvertisingBalance: (partnerId: string) =>
+        request<{ balanceEurCents: number }>(
+          `/partners/admin/${encodeURIComponent(partnerId)}/advertising-balance`,
+          { method: 'GET' },
+        ),
+      creditAdvertisingBalance: (
+        partnerId: string,
+        body: { amountEurCents: number; note?: string },
+      ) =>
+        request<{ balanceEurCents: number }>(
+          `/partners/admin/${encodeURIComponent(partnerId)}/advertising-balance/credit`,
+          { method: 'POST', body: JSON.stringify(body) },
+        ),
       create: (input: {
         password: string;
         name: string;
@@ -906,7 +920,9 @@ export const api = {
             businessType: 'RENT' | 'SALE';
             typology: string;
             featured: boolean;
-            status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+            publicationStatus: 'PUBLISHED' | 'HIDDEN';
+            publishedUntil: string | null;
+            lastPublishedAt: string | null;
             availableFrom: string;
             priceEur: string;
             imageUrls: string[];
@@ -939,7 +955,9 @@ export const api = {
           caucoesCount: number;
           rendasEntradaCount: number;
           furnished: boolean;
-          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+          publicationStatus: 'PUBLISHED' | 'HIDDEN';
+          publishedUntil: string | null;
+          lastPublishedAt: string | null;
           featured: boolean;
           whatsappSentAt: string | null;
           whatsappError: string | null;
@@ -1012,7 +1030,9 @@ export const api = {
           caucoesCount: number;
           rendasEntradaCount: number;
           furnished: boolean;
-          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+          publicationStatus: 'PUBLISHED' | 'HIDDEN';
+          publishedUntil: string | null;
+          lastPublishedAt: string | null;
           whatsappSentAt: string | null;
           whatsappError: string | null;
           imageUrls: string[];
@@ -1042,7 +1062,6 @@ export const api = {
           rendasEntradaCount?: string;
           furnished?: boolean;
           coverImageIndex?: number;
-          status?: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
           partnerId?: string;
         },
       ) => {
@@ -1068,7 +1087,6 @@ export const api = {
         if (input.rendasEntradaCount != null) fd.append('rendasEntradaCount', input.rendasEntradaCount);
         if (input.furnished != null) fd.append('furnished', input.furnished ? 'true' : 'false');
         if (input.coverImageIndex != null) fd.append('coverImageIndex', String(input.coverImageIndex));
-        if (input.status != null) fd.append('status', input.status);
         if (input.partnerId != null) fd.append('partnerId', input.partnerId);
         return requestFormData<{
           id: string;
@@ -1084,7 +1102,9 @@ export const api = {
           caucoesCount: number;
           rendasEntradaCount: number;
           furnished: boolean;
-          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+          publicationStatus: 'PUBLISHED' | 'HIDDEN';
+          publishedUntil: string | null;
+          lastPublishedAt: string | null;
           whatsappSentAt: string | null;
           whatsappError: string | null;
           imageUrls: string[];
@@ -1403,6 +1423,22 @@ export const api = {
       delete: (id: string) =>
         request<void>(`/partners/me/services/${id}`, { method: 'DELETE' }),
     },
+    advertising: {
+      getBalance: () =>
+        request<{ balanceEurCents: number }>('/partners/me/advertising-balance', {
+          method: 'GET',
+        }),
+      startTopupCheckout: (body: {
+        amountEurCents: number;
+        paymentMethod: 'card' | 'mbway' | 'pix';
+        successUrl?: string;
+        cancelUrl?: string;
+      }) =>
+        request<{ url: string; sessionId: string }>(
+          '/partners/me/advertising-topup-checkout',
+          { method: 'POST', body: JSON.stringify(body) },
+        ),
+    },
     houses: {
       list: () =>
         request<
@@ -1420,14 +1456,19 @@ export const api = {
             caucoesCount: number;
             rendasEntradaCount: number;
             furnished: boolean;
-            status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+            publicationStatus: 'PUBLISHED' | 'HIDDEN';
+            publishedUntil: string | null;
+            lastPublishedAt: string | null;
             whatsappSentAt: string | null;
             whatsappError: string | null;
+            whatsappSends?: { sentAt: string }[];
             imageUrls: string[];
             coverImageUrl: string | null;
             videoUrl: string | null;
+            videoPosterUrl?: string | null;
             createdAt: string;
             updatedAt: string;
+            _count: { redirectClicks: number };
           }[]
         >('/partners/me/houses', { method: 'GET' }),
       get: (id: string) =>
@@ -1445,18 +1486,22 @@ export const api = {
           caucoesCount: number;
           rendasEntradaCount: number;
           furnished: boolean;
-          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+          publicationStatus: 'PUBLISHED' | 'HIDDEN';
+          publishedUntil: string | null;
+          lastPublishedAt: string | null;
           whatsappSentAt: string | null;
           whatsappError: string | null;
           imageUrls: string[];
           coverImageUrl: string | null;
           videoUrl: string | null;
+          videoPosterUrl?: string | null;
           createdAt: string;
           updatedAt: string;
         }>(`/partners/me/houses/${encodeURIComponent(id)}`, { method: 'GET' }),
       create: (input: {
         images?: File[];
         video?: File;
+        thumbnail?: File;
         title: string;
         description: string;
         businessType?: 'RENT' | 'SALE';
@@ -1471,9 +1516,8 @@ export const api = {
         coverImageIndex?: number;
       }) => {
         const fd = new FormData();
-        if (input.video) {
-          fd.append('video', input.video);
-        }
+        if (input.video) fd.append('video', input.video);
+        if (input.thumbnail) fd.append('thumbnail', input.thumbnail);
         if (input.images?.length) {
           for (const file of input.images) fd.append('images', file);
         }
@@ -1505,7 +1549,9 @@ export const api = {
           caucoesCount: number;
           rendasEntradaCount: number;
           furnished: boolean;
-          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+          publicationStatus: 'PUBLISHED' | 'HIDDEN';
+          publishedUntil: string | null;
+          lastPublishedAt: string | null;
           whatsappSentAt: string | null;
           whatsappError: string | null;
           imageUrls: string[];
@@ -1520,6 +1566,7 @@ export const api = {
         input: {
           images?: File[];
           video?: File;
+          thumbnail?: File;
           removeVideo?: boolean;
           keepImageUrls?: string[];
           title?: string;
@@ -1538,6 +1585,7 @@ export const api = {
       ) => {
         const fd = new FormData();
         if (input.video) fd.append('video', input.video);
+        if (input.thumbnail) fd.append('thumbnail', input.thumbnail);
         if (input.images?.length) {
           for (const file of input.images) fd.append('images', file);
         }
@@ -1571,7 +1619,8 @@ export const api = {
           caucoesCount: number;
           rendasEntradaCount: number;
           furnished: boolean;
-          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+          publicationStatus: 'PUBLISHED' | 'HIDDEN';
+          publishedUntil: string | null;
           whatsappSentAt: string | null;
           whatsappError: string | null;
           imageUrls: string[];
@@ -1581,14 +1630,14 @@ export const api = {
           updatedAt: string;
         }>(`/partners/me/houses/${encodeURIComponent(id)}`, fd, { method: 'PATCH' });
       },
-      updateStatus: (id: string, status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE') =>
+      publish: (id: string) =>
         request<{
-          id: string;
-          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
-        }>(`/partners/me/houses/${id}/status`, {
-          method: 'PATCH',
-          body: JSON.stringify({ status }),
-        }),
+          ok: true;
+          publishedUntil: string;
+          balanceEurCents: number;
+          sentToGroups?: number;
+          failed?: string[];
+        }>(`/partners/me/houses/${encodeURIComponent(id)}/publish`, { method: 'POST' }),
       delete: (id: string) =>
         request<{ ok: true }>(
           `/partners/me/houses/${encodeURIComponent(id)}`,
@@ -1757,7 +1806,8 @@ export const api = {
       request<{
         id: string;
         houseId: number;
-        status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+        publicationStatus: 'PUBLISHED' | 'HIDDEN';
+        publishedUntil: string | null;
         partnerId: string;
         title: string;
         city: string;
@@ -1817,7 +1867,9 @@ export const api = {
           videoPosterUrl: string | null;
           partnerId: string;
           featured: boolean;
-          status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE';
+          publicationStatus: 'PUBLISHED' | 'HIDDEN';
+          publishedUntil: string | null;
+          lastPublishedAt: string | null;
           partner: {
             id: string;
             name: string;

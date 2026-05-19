@@ -15,6 +15,11 @@ export function HouseJsonLd({ house, pageUrl }: Props) {
 
   const primaryImage = absoluteMediaUrlForOg(house.coverImageUrl ?? house.imageUrls?.[0]);
 
+  const isActive =
+    house.publicationStatus === "PUBLISHED" &&
+    house.publishedUntil &&
+    new Date(house.publishedUntil) > new Date();
+
   const payload = {
     "@context": "https://schema.org",
     "@type": "Apartment",
@@ -31,12 +36,9 @@ export function HouseJsonLd({ house, pageUrl }: Props) {
     offers: {
       "@type": "Offer",
       priceCurrency: "EUR",
-      availability:
-        house.status === "AVAILABLE"
-          ? "https://schema.org/InStock"
-          : house.status === "RESERVED"
-            ? "https://schema.org/LimitedAvailability"
-            : "https://schema.org/OutOfStock",
+      availability: isActive
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
       url: pageUrl,
     },
   };

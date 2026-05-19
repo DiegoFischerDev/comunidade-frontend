@@ -32,115 +32,6 @@ import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
 import { SupportTicketRoot } from '@/components/support-ticket';
 import { SiteFooter } from '@/components/site/SiteFooter';
 
-/** Sub-link do menu lateral (indentado, sob “Minha empresa”). */
-function SidebarNavSubLink({
-  href,
-  active,
-  children,
-  badgeCount,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-  badgeCount?: number;
-}) {
-  const showBadge = typeof badgeCount === 'number' && badgeCount > 0;
-  return (
-    <li>
-      <Link
-        href={href}
-        className={`flex items-center justify-between gap-2 rounded-md py-1.5 pl-2 pr-2 text-[13px] leading-snug transition ${
-          active
-            ? 'bg-gradient-to-r from-[#d58901]/12 to-amber-50/90 font-medium text-zinc-900 ring-1 ring-amber-200/70'
-            : 'text-zinc-600 hover:bg-zinc-100/90 hover:text-zinc-900'
-        }`}
-      >
-        <span className="min-w-0">{children}</span>
-        {showBadge ? (
-          <span
-            className="inline-flex min-w-[1.25rem] shrink-0 justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-5 text-white"
-            aria-label={`${badgeCount} pedidos em espera`}
-          >
-            {badgeCount > 99 ? '99+' : badgeCount}
-          </span>
-        ) : null}
-      </Link>
-    </li>
-  );
-}
-
-/**
- * Secção com título navegável + submenu recolhível (chevron).
- * `sectionActive`: qualquer rota dentro do grupo — reabre ao navegar para um subitem.
- */
-function SidebarNavSection({
-  title,
-  href,
-  titleActive,
-  sectionActive,
-  children,
-}: {
-  title: string;
-  href: string;
-  titleActive: boolean;
-  sectionActive: boolean;
-  children: React.ReactNode;
-}) {
-  const [expanded, setExpanded] = useState(true);
-  useEffect(() => {
-    if (sectionActive) setExpanded(true);
-  }, [sectionActive]);
-
-  return (
-    <div className="space-y-1">
-      <div
-        className={`flex items-stretch overflow-hidden rounded-lg ${
-          titleActive
-            ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white shadow-sm'
-            : 'bg-transparent'
-        }`}
-      >
-        <Link
-          href={href}
-          className={`flex min-w-0 flex-1 items-center px-3 py-2 text-sm transition ${
-            titleActive
-              ? 'text-white'
-              : 'text-zinc-800 hover:bg-zinc-100/90 rounded-lg'
-          }`}
-        >
-          <span className="truncate">{title}</span>
-        </Link>
-        <button
-          type="button"
-          onClick={() => setExpanded((e) => !e)}
-          className={`flex w-9 shrink-0 items-center justify-center border-l transition ${
-            titleActive
-              ? 'border-white/20 text-white hover:bg-white/15'
-              : 'border-transparent bg-zinc-100/80 text-zinc-500 hover:bg-zinc-200/80 hover:text-zinc-800'
-          }`}
-          aria-expanded={expanded}
-          aria-label={expanded ? 'Recolher submenu' : 'Expandir submenu'}
-        >
-          <svg
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className={`h-4 w-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
-            aria-hidden
-          >
-            <path
-              fillRule="evenodd"
-              d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </button>
-      </div>
-      {expanded ? (
-        <ul className="relative ml-1.5 space-y-0.5 border-l-2 border-amber-200/40 pl-3">{children}</ul>
-      ) : null}
-    </div>
-  );
-}
 
 function formatWhatsappRegistrationDisplay(digits: string) {
   const d = digits.replace(/\D/g, '');
@@ -358,9 +249,7 @@ export default function DashboardLayout({
   const [resetError, setResetError] = useState('');
   const [resetInfo, setResetInfo] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
-  const [partnerId, setPartnerId] = useState<string | null>(null);
   const [partnerCategorySlug, setPartnerCategorySlug] = useState<string | null>(null);
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -413,7 +302,6 @@ export default function DashboardLayout({
   useEffect(() => {
     if (!mounted || authLoading) return;
     if (!user || user.role !== 'PARTNER') {
-      setPartnerId(null);
       setPartnerCategorySlug(null);
       return;
     }
@@ -421,15 +309,9 @@ export default function DashboardLayout({
     (async () => {
       try {
         const me = await api.partner.me();
-        if (!cancelled) {
-          setPartnerId(me.id);
-          setPartnerCategorySlug(me.category?.slug ?? null);
-        }
+        if (!cancelled) setPartnerCategorySlug(me.category?.slug ?? null);
       } catch {
-        if (!cancelled) {
-          setPartnerId(null);
-          setPartnerCategorySlug(null);
-        }
+        if (!cancelled) setPartnerCategorySlug(null);
       }
     })();
     return () => {
@@ -496,16 +378,6 @@ export default function DashboardLayout({
           : user
             ? 'Sem VIP'
             : 'Anónimo';
-
-  const partnerCompanyTitleActive =
-    pathname === '/dashboard/business' ||
-    pathname.startsWith('/dashboard/casas') ||
-    pathname.startsWith('/dashboard/partner/') ||
-    pathname === '/dashboard/my-sales' ||
-    pathname === '/dashboard/my-services' ||
-    pathname === '/dashboard/commissions';
-
-  const partnerNavSectionActive = user?.role === 'PARTNER' && partnerCompanyTitleActive;
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -627,6 +499,18 @@ export default function DashboardLayout({
           >
             Serviços
           </Link>
+          {user?.role === 'PARTNER' && partnerCategorySlug === 'relocation' ? (
+            <Link
+              href="/dashboard/casas"
+              className={`block rounded-md px-3 py-2 text-sm ${
+                pathname === '/dashboard/casas' || pathname.startsWith('/dashboard/casas/')
+                  ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                  : 'text-zinc-800 hover:bg-zinc-100'
+              }`}
+            >
+              Minhas casas
+            </Link>
+          ) : null}
           {user && user.role !== 'ADMIN' ? (
             <Link
               href="/dashboard/reclame-aqui"
@@ -653,48 +537,6 @@ export default function DashboardLayout({
             </Link>
           )}
 
-          {/* Parceiro: Minha empresa + submenu recolhível */}
-          {user?.role === 'PARTNER' && (
-            <SidebarNavSection
-              title="Minha empresa"
-              href="/dashboard/business"
-              titleActive={partnerCompanyTitleActive}
-              sectionActive={partnerNavSectionActive}
-            >
-              {partnerCategorySlug === 'relocation' ? (
-                <SidebarNavSubLink
-                  href="/dashboard/casas"
-                  active={
-                    pathname === '/dashboard/casas' || pathname.startsWith('/dashboard/casas/')
-                  }
-                >
-                  Minhas casas
-                </SidebarNavSubLink>
-              ) : null}
-              {partnerId ? (
-                <SidebarNavSubLink
-                  href={`/dashboard/partner/${partnerId}`}
-                  active={pathname === `/dashboard/partner/${partnerId}`}
-                >
-                  Minha página
-                </SidebarNavSubLink>
-              ) : null}
-              <SidebarNavSubLink
-                href="/dashboard/my-sales"
-                active={pathname === '/dashboard/my-sales'}
-              >
-                Minhas vendas
-              </SidebarNavSubLink>
-              <SidebarNavSubLink
-                href="/dashboard/my-services"
-                active={
-                  pathname === '/dashboard/my-services' || pathname === '/dashboard/commissions'
-                }
-              >
-                Meus serviços
-              </SidebarNavSubLink>
-            </SidebarNavSection>
-          )}
           {user?.role === 'ADMIN' && (
             <>
               <Link

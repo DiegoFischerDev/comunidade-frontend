@@ -34,7 +34,8 @@ export type PublicHousePageData = {
   /** Foto principal (OG / destaque); fallback: primeira de imageUrls */
   coverImageUrl: string | null;
   videoUrl: string | null;
-  status: "AVAILABLE" | "RESERVED" | "UNAVAILABLE";
+  publicationStatus: "PUBLISHED" | "HIDDEN";
+  publishedUntil: string | null;
   partnerId: string;
   partner: PublicHousePartner;
 };

@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { HouseStatusBadge } from '@/components/house/HouseStatusBadge';
-import { RelocationCityCombobox } from '@/components/relocation/RelocationCityCombobox';
+import { AddHouseModal } from '@/components/house/AddHouseModal';
+import { HousePublicationStatusBadge } from '@/components/house/HousePublicationStatusBadge';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -22,10 +22,9 @@ const BUSINESS_TYPE_LABELS: Record<'RENT' | 'SALE', string> = {
   SALE: 'Venda',
 };
 
-const HOUSE_STATUS_LABELS: Record<'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE', string> = {
-  AVAILABLE: 'Disponível',
-  RESERVED: 'Reservado',
-  UNAVAILABLE: 'Indisponível',
+const PUBLICATION_STATUS_LABELS: Record<'PUBLISHED' | 'HIDDEN', string> = {
+  PUBLISHED: 'Publicado',
+  HIDDEN: 'Oculto',
 };
 
 const TYPOLOGIES = [
@@ -52,17 +51,6 @@ const ENTRADA_COUNT_OPTIONS = Array.from({ length: 13 }, (_, i) => String(i));
 
 function cityLabel(id: string): string {
   return relocationCityDisplayName(id);
-}
-
-function statusSelectClass(status: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE'): string {
-  switch (status) {
-    case 'AVAILABLE':
-      return 'border-emerald-200 bg-emerald-50 text-emerald-950 focus:border-emerald-400 focus:ring-emerald-400';
-    case 'RESERVED':
-      return 'border-amber-200 bg-amber-50 text-amber-950 focus:border-amber-400 focus:ring-amber-400';
-    case 'UNAVAILABLE':
-      return 'border-zinc-200 bg-zinc-50 text-zinc-800 focus:border-zinc-400 focus:ring-zinc-400';
-  }
 }
 
 function adminHouseWhatsAppSendDatesLabel(h: {
@@ -106,14 +94,6 @@ function typologyLabel(id: string): string {
   return TYPOLOGIES.find((t) => t.id === id)?.label ?? id;
 }
 
-function todayLocalDateInputValue(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
 export default function AdminHousesPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -122,8 +102,8 @@ export default function AdminHousesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [updatingStatusHouseId, setUpdatingStatusHouseId] = useState<string | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showHouseModal, setShowHouseModal] = useState(false);
+  const [editHouseId, setEditHouseId] = useState<string | null>(null);
   const [showAddWhatsappGroupModal, setShowAddWhatsappGroupModal] = useState(false);
   const [whatsappGroups, setWhatsappGroups] = useState<WhatsappGroupRow[]>([]);
   const [loadingWhatsappGroups, setLoadingWhatsappGroups] = useState(false);
@@ -135,28 +115,10 @@ export default function AdminHousesPage() {
   const [updatingGroupPurposeId, setUpdatingGroupPurposeId] = useState<string | null>(null);
   const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
   const [sendingWhatsappHouseId, setSendingWhatsappHouseId] = useState<string | null>(null);
-  const [savingCreate, setSavingCreate] = useState(false);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [typology, setTypology] = useState<(typeof TYPOLOGIES)[number]['id']>('T2');
-  const [businessType, setBusinessType] = useState<(typeof BUSINESS_TYPES)[number]['id']>('RENT');
-  const [city, setCity] = useState('');
-  const [availableFrom, setAvailableFrom] = useState(() => todayLocalDateInputValue());
-  const [priceEur, setPriceEur] = useState('');
-  const [relocationFeeEur, setRelocationFeeEur] = useState('');
-  const [caucoesCount, setCaucoesCount] = useState('0');
-  const [rendasEntradaCount, setRendasEntradaCount] = useState('0');
-  const [furnished, setFurnished] = useState(false);
-  const [images, setImages] = useState<File[]>([]);
-  const [coverImageIndex, setCoverImageIndex] = useState(0);
-  const [video, setVideo] = useState<File | null>(null);
-  const [thumbnail, setThumbnail] = useState<File | null>(null);
-  const [relocationPartners, setRelocationPartners] = useState<{ id: string; name: string }[]>([]);
-  const [createAssignedPartnerId, setCreateAssignedPartnerId] = useState('');
 
   const [filterSearch, setFilterSearch] = useState('');
   const [filterBusinessType, setFilterBusinessType] = useState<'ALL' | 'RENT' | 'SALE'>('ALL');
-  const [filterStatus, setFilterStatus] = useState<'ALL' | 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE'>('ALL');
+  const [filterPublication, setFilterPublication] = useState<'ALL' | 'PUBLISHED' | 'HIDDEN'>('ALL');
   const [filterCityContains, setFilterCityContains] = useState('');
   const [filterTypology, setFilterTypology] = useState<string>('ALL');
   const [showUpdatedBanner, setShowUpdatedBanner] = useState(false);
@@ -165,6 +127,12 @@ export default function AdminHousesPage() {
     const q = new URLSearchParams(window.location.search);
     if (q.get('updated') === '1') {
       setShowUpdatedBanner(true);
+      router.replace('/dashboard/admin/houses', { scroll: false });
+    }
+    const editId = q.get('edit')?.trim();
+    if (editId) {
+      setEditHouseId(editId);
+      setShowHouseModal(true);
       router.replace('/dashboard/admin/houses', { scroll: false });
     }
   }, [router]);
@@ -204,22 +172,6 @@ export default function AdminHousesPage() {
     })();
   }, [user, isAdmin, load, loadWhatsappGroups]);
 
-  useEffect(() => {
-    if (!isAdmin) return;
-    (async () => {
-      try {
-        const list = await api.admin.partners.list();
-        const reloc = list
-          .filter((p) => p.category?.slug === 'relocation')
-          .map((p) => ({ id: p.id, name: p.name }))
-          .sort((a, b) => a.name.localeCompare(b.name, 'pt-PT'));
-        setRelocationPartners(reloc);
-      } catch {
-        setRelocationPartners([]);
-      }
-    })();
-  }, [isAdmin]);
-
   const extraRelocationCitiesFromHouses = useMemo(() => {
     const out = new Set<string>();
     for (const h of items) {
@@ -246,7 +198,7 @@ export default function AdminHousesPage() {
           h.partner.name,
           h.priceEur,
           BUSINESS_TYPE_LABELS[h.businessType],
-          HOUSE_STATUS_LABELS[h.status],
+          PUBLICATION_STATUS_LABELS[h.publicationStatus],
           h.partner.category?.name ?? '',
         ]
           .join(' ')
@@ -255,7 +207,9 @@ export default function AdminHousesPage() {
       });
     }
     if (filterBusinessType !== 'ALL') rows = rows.filter((h) => h.businessType === filterBusinessType);
-    if (filterStatus !== 'ALL') rows = rows.filter((h) => h.status === filterStatus);
+    if (filterPublication !== 'ALL') {
+      rows = rows.filter((h) => h.publicationStatus === filterPublication);
+    }
     const cityQ = filterCityContains.trim().toLowerCase();
     if (cityQ) {
       rows = rows.filter((h) => {
@@ -270,7 +224,7 @@ export default function AdminHousesPage() {
     items,
     filterSearch,
     filterBusinessType,
-    filterStatus,
+    filterPublication,
     filterCityContains,
     filterTypology,
   ]);
@@ -279,14 +233,14 @@ export default function AdminHousesPage() {
     return (
       filterSearch.trim() !== '' ||
       filterBusinessType !== 'ALL' ||
-      filterStatus !== 'ALL' ||
+      filterPublication !== 'ALL' ||
       filterCityContains.trim() !== '' ||
       filterTypology !== 'ALL'
     );
   }, [
     filterSearch,
     filterBusinessType,
-    filterStatus,
+    filterPublication,
     filterCityContains,
     filterTypology,
   ]);
@@ -294,33 +248,10 @@ export default function AdminHousesPage() {
   function clearFilters() {
     setFilterSearch('');
     setFilterBusinessType('ALL');
-    setFilterStatus('ALL');
+    setFilterPublication('ALL');
     setFilterCityContains('');
     setFilterTypology('ALL');
   }
-
-  useEffect(() => {
-    setCoverImageIndex((idx) => Math.min(idx, Math.max(images.length - 1, 0)));
-  }, [images.length]);
-
-  const resetCreateForm = () => {
-    setTitle('');
-    setDescription('');
-    setTypology('T2');
-    setBusinessType('RENT');
-    setCity('');
-    setAvailableFrom(todayLocalDateInputValue());
-    setPriceEur('');
-    setRelocationFeeEur('');
-    setCaucoesCount('0');
-    setRendasEntradaCount('0');
-    setFurnished(false);
-    setImages([]);
-    setCoverImageIndex(0);
-    setVideo(null);
-    setThumbnail(null);
-    setCreateAssignedPartnerId('');
-  };
 
   const onDelete = async (id: string) => {
     if (!window.confirm('Eliminar este anúncio e apagar as médias no servidor?')) return;
@@ -422,65 +353,6 @@ export default function AdminHousesPage() {
     }
   };
 
-  const onQuickUpdateStatus = async (
-    id: string,
-    next: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE',
-  ) => {
-    setUpdatingStatusHouseId(id);
-    setError('');
-    const prevItems = items;
-    setItems((cur) => cur.map((h) => (h.id === id ? { ...h, status: next } : h)));
-    try {
-      await api.admin.houses.update(id, { status: next });
-      await load();
-    } catch (err) {
-      setItems(prevItems);
-      setError(err instanceof Error ? err.message : 'Erro ao atualizar estado.');
-      await load();
-    } finally {
-      setUpdatingStatusHouseId(null);
-    }
-  };
-
-  const onCreate = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError('');
-    if (images.length > 6) return setError('Podes enviar no máximo 6 imagens.');
-
-    const cleanRelocation = relocationFeeEur.trim().replace(/\s*€\s*$/i, '').trim();
-
-    setSavingCreate(true);
-    try {
-      await api.admin.houses.create({
-        ...(images.length ? { images } : {}),
-        ...(video ? { video } : {}),
-        ...(thumbnail ? { thumbnail } : {}),
-        title: title.trim(),
-        description: description.trim(),
-        businessType,
-        typology,
-        city: city.trim(),
-        availableFrom,
-        priceEur: priceEur.trim(),
-        relocationFeeEur: cleanRelocation,
-        caucoesCount,
-        rendasEntradaCount,
-        furnished,
-        ...(images.length ? { coverImageIndex } : {}),
-        ...(createAssignedPartnerId.trim()
-          ? { partnerId: createAssignedPartnerId.trim() }
-          : {}),
-      });
-      await load();
-      resetCreateForm();
-      setShowCreateModal(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao criar anúncio.');
-    } finally {
-      setSavingCreate(false);
-    }
-  };
-
   if (!user) return null;
 
   if (!isAdmin) {
@@ -509,7 +381,10 @@ export default function AdminHousesPage() {
           </p>
           <button
             type="button"
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => {
+              setEditHouseId(null);
+              setShowHouseModal(true);
+            }}
             className="inline-flex rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-semibold text-white"
           >
             Adicionar casa
@@ -736,24 +611,24 @@ export default function AdminHousesPage() {
                   </select>
                 </label>
                 <label className="block text-xs font-medium text-zinc-700">
-                  Estado
+                  Publicação
                   <select
-                    value={filterStatus}
+                    value={filterPublication}
                     onChange={(e) =>
-                      setFilterStatus(
-                        e.target.value as 'ALL' | 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE',
+                      setFilterPublication(
+                        e.target.value as 'ALL' | 'PUBLISHED' | 'HIDDEN',
                       )
                     }
                     className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                   >
                     <option value="ALL">Todos</option>
-                    {(Object.keys(HOUSE_STATUS_LABELS) as Array<keyof typeof HOUSE_STATUS_LABELS>).map(
-                      (s) => (
-                        <option key={s} value={s}>
-                          {HOUSE_STATUS_LABELS[s]}
-                        </option>
-                      ),
-                    )}
+                    {(Object.keys(PUBLICATION_STATUS_LABELS) as Array<
+                      keyof typeof PUBLICATION_STATUS_LABELS
+                    >).map((s) => (
+                      <option key={s} value={s}>
+                        {PUBLICATION_STATUS_LABELS[s]}
+                      </option>
+                    ))}
                   </select>
                 </label>
                 <label className="block text-xs font-medium text-zinc-700">
@@ -876,9 +751,12 @@ export default function AdminHousesPage() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Estado</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Publicação</p>
                         <div className="mt-1">
-                          <HouseStatusBadge status={h.status} />
+                          <HousePublicationStatusBadge
+                            publicationStatus={h.publicationStatus}
+                            publishedUntil={h.publishedUntil}
+                          />
                         </div>
                       </div>
                       <div>
@@ -954,8 +832,12 @@ export default function AdminHousesPage() {
                             )}
                           </button>
                         ) : null}
-                        <Link
-                          href={`/dashboard/admin/houses/${encodeURIComponent(h.id)}/edit`}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditHouseId(h.id);
+                            setShowHouseModal(true);
+                          }}
                           title="Editar anúncio"
                           aria-label="Editar anúncio"
                           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50"
@@ -974,7 +856,7 @@ export default function AdminHousesPage() {
                               d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
                             />
                           </svg>
-                        </Link>
+                        </button>
                         <button
                           type="button"
                           title="Eliminar anúncio"
@@ -1104,28 +986,10 @@ export default function AdminHousesPage() {
                         </td>
                         <td className="px-4 py-2 align-top">{h.partner.name}</td>
                         <td className="px-4 py-2 align-top">
-                          <select
-                            value={h.status}
-                            disabled={updatingStatusHouseId === h.id}
-                            onChange={(e) =>
-                              void onQuickUpdateStatus(
-                                h.id,
-                                e.target.value as 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE',
-                              )
-                            }
-                            className={`rounded-md border px-2 py-1 text-xs font-semibold focus:outline-none focus:ring-1 disabled:opacity-60 ${statusSelectClass(
-                              h.status,
-                            )}`}
-                            title={HOUSE_STATUS_LABELS[h.status]}
-                          >
-                            {(Object.keys(HOUSE_STATUS_LABELS) as Array<
-                              keyof typeof HOUSE_STATUS_LABELS
-                            >).map((s) => (
-                              <option key={s} value={s}>
-                                {HOUSE_STATUS_LABELS[s]}
-                              </option>
-                            ))}
-                          </select>
+                          <HousePublicationStatusBadge
+                            publicationStatus={h.publicationStatus}
+                            publishedUntil={h.publishedUntil}
+                          />
                         </td>
                         <td className="whitespace-nowrap px-4 py-2 align-top">
                           {new Date(h.availableFrom).toLocaleDateString('pt-PT')}
@@ -1191,8 +1055,12 @@ export default function AdminHousesPage() {
                                 )}
                               </button>
                             ) : null}
-                            <Link
-                              href={`/dashboard/admin/houses/${encodeURIComponent(h.id)}/edit`}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditHouseId(h.id);
+                                setShowHouseModal(true);
+                              }}
                               title="Editar anúncio"
                               aria-label="Editar anúncio"
                               className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50"
@@ -1211,7 +1079,7 @@ export default function AdminHousesPage() {
                                   d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
                                 />
                               </svg>
-                            </Link>
+                            </button>
                             <button
                               type="button"
                               title="Eliminar anúncio"
@@ -1270,270 +1138,21 @@ export default function AdminHousesPage() {
         </div>
       )}
 
-      {showCreateModal ? (
-        <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/45 p-4">
-          <div className="my-8 w-full max-w-3xl rounded-2xl bg-white p-5 shadow-xl">
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold text-zinc-900">Adicionar casa</h2>
-                <p className="mt-1 text-sm text-zinc-600">
-                  Todos os campos são opcionais: podes guardar um rascunho incompleto e completar depois em
-                  &quot;Editar&quot;. O anúncio fica apenas na plataforma; para WhatsApp, usa &quot;Enviar nos
-                  grupos&quot; na lista (após configurares os grupos).{' '}
-                  {createAssignedPartnerId.trim() ? (
-                    <>
-                      O anúncio fica titulado pelo parceiro escolhido; na página pública, o contacto é o WhatsApp
-                      desse parceiro.
-                    </>
-                  ) : (
-                    <>
-                      Sem parceiro escolhido, o anúncio usa a conta relocation interna do administrador e o contacto
-                      na página pública é o WhatsApp do admin.
-                    </>
-                  )}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCreateModal(false);
-                  resetCreateForm();
-                }}
-                className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
-              >
-                Fechar
-              </button>
-            </div>
+      <AddHouseModal
+        open={showHouseModal}
+        houseId={editHouseId}
+        onClose={() => {
+          setShowHouseModal(false);
+          setEditHouseId(null);
+        }}
+        onSuccess={() => {
+          void load();
+          if (editHouseId) setShowUpdatedBanner(true);
+        }}
+        mode="admin"
+        extraCityOptions={extraRelocationCitiesFromHouses}
+      />
 
-            <form onSubmit={onCreate} className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="text-sm sm:col-span-2">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">
-                    Parceiro relocation (titular do anúncio)
-                  </span>
-                  <select
-                    value={createAssignedPartnerId}
-                    onChange={(e) => setCreateAssignedPartnerId(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                  >
-                    <option value="">Administrador — conta relocation interna</option>
-                    {relocationPartners.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="mt-1 block text-xs text-zinc-500">
-                    Só são listados parceiros com categoria Relocation (definida na área de parceiros).
-                  </span>
-                </label>
-                <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Título</span>
-                  <input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                    placeholder="Ex.: T2 mobilado no Porto"
-                  />
-                </label>
-                <div className="text-sm">
-                  <RelocationCityCombobox
-                    id="admin-house-city"
-                    label="Cidade"
-                    labelClassName="mb-1 block text-xs font-medium text-zinc-700"
-                    value={city}
-                    onChange={setCity}
-                    allowEmpty
-                    allowCustomValue
-                    extraCityOptions={extraRelocationCitiesFromHouses}
-                    placeholder="Pesquisar cidade…"
-                    variant="amber"
-                  />
-                </div>
-                <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Tipologia</span>
-                  <select
-                    value={typology}
-                    onChange={(e) => setTypology(e.target.value as (typeof TYPOLOGIES)[number]['id'])}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                  >
-                    {TYPOLOGIES.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Finalidade</span>
-                  <select
-                    value={businessType}
-                    onChange={(e) => setBusinessType(e.target.value as (typeof BUSINESS_TYPES)[number]['id'])}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                  >
-                    {BUSINESS_TYPES.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Disponível a partir</span>
-                  <input
-                    type="date"
-                    value={availableFrom}
-                    onChange={(e) => setAvailableFrom(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                  />
-                </label>
-                <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">
-                    {businessType === 'SALE' ? 'Preço de venda (EUR)' : 'Renda mensal (EUR)'}
-                  </span>
-                  <input
-                    value={priceEur}
-                    onChange={(e) => setPriceEur(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                  />
-                </label>
-                <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Taxa relocation (EUR)</span>
-                  <input
-                    value={relocationFeeEur}
-                    onChange={(e) => setRelocationFeeEur(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                  />
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="text-sm">
-                    <span className="mb-1 block text-xs font-medium text-zinc-700">Cauções</span>
-                    <select
-                      value={caucoesCount}
-                      onChange={(e) => setCaucoesCount(e.target.value)}
-                      className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                    >
-                      {ENTRADA_COUNT_OPTIONS.map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="text-sm">
-                    <span className="mb-1 block text-xs font-medium text-zinc-700">Rendas antecipadas</span>
-                    <select
-                      value={rendasEntradaCount}
-                      onChange={(e) => setRendasEntradaCount(e.target.value)}
-                      className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                    >
-                      {ENTRADA_COUNT_OPTIONS.map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <label className="mt-5 inline-flex items-center gap-2 text-sm text-zinc-700">
-                  <input
-                    type="checkbox"
-                    checked={furnished}
-                    onChange={(e) => setFurnished(e.target.checked)}
-                    className="h-4 w-4 rounded border-zinc-300"
-                  />
-                  Imóvel mobilado
-                </label>
-              </div>
-
-              <label className="block text-sm">
-                <span className="mb-1 block text-xs font-medium text-zinc-700">Descrição</span>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                />
-              </label>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Fotos (até 6)</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => setImages(Array.from(e.target.files ?? []).slice(0, 6))}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                  />
-                  <span className="mt-1 block text-xs text-zinc-500">{images.length}/6 selecionadas</span>
-                </label>
-                <label className="block text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Vídeo (opcional)</span>
-                  <input
-                    type="file"
-                    accept="video/*"
-                    onChange={(e) => setVideo(e.target.files?.[0] ?? null)}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                  />
-                </label>
-              </div>
-
-              <label className="block text-sm">
-                <span className="mb-1 block text-xs font-medium text-zinc-700">
-                  Thumbnail (opcional)
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setThumbnail(e.target.files?.[0] ?? null)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                />
-                <span className="mt-1 block text-xs text-zinc-500">
-                  Usada apenas no preview da lista e nos cards públicos (quando não houver fotos).
-                </span>
-              </label>
-
-              {images.length > 1 ? (
-                <label className="block text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Foto principal</span>
-                  <select
-                    value={coverImageIndex}
-                    onChange={(e) => setCoverImageIndex(Number(e.target.value) || 0)}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                  >
-                    {images.map((img, idx) => (
-                      <option key={`${img.name}-${idx}`} value={idx}>
-                        Foto {idx + 1} - {img.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
-
-              <div className="flex flex-wrap justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    resetCreateForm();
-                  }}
-                  className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingCreate}
-                  className="rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                >
-                  {savingCreate ? 'A guardar…' : 'Guardar anúncio'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
 
     </div>
   );

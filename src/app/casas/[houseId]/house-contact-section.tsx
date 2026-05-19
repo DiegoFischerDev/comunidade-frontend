@@ -6,28 +6,29 @@ import { useCallback, useState } from "react";
 import { api } from "@/lib/api";
 import { CardButton } from "@/components/ui/CardButton";
 
+function isPublishedActive(
+  publicationStatus: "PUBLISHED" | "HIDDEN",
+  publishedUntil: string | null,
+): boolean {
+  return (
+    publicationStatus === "PUBLISHED" &&
+    !!publishedUntil &&
+    new Date(publishedUntil) > new Date()
+  );
+}
+
 type Props = {
   houseId: string;
   partnerId: string;
-  title: string;
-  city: string;
-  businessType: "RENT" | "SALE";
-  typology: string;
-  priceEur: string;
-  furnished: boolean;
-  status: "AVAILABLE" | "RESERVED" | "UNAVAILABLE";
+  publicationStatus: "PUBLISHED" | "HIDDEN";
+  publishedUntil: string | null;
 };
 
 export function HouseContactSection({
   houseId,
   partnerId,
-  title,
-  city,
-  businessType,
-  typology,
-  priceEur,
-  furnished,
-  status,
+  publicationStatus,
+  publishedUntil,
 }: Props) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -42,12 +43,13 @@ export function HouseContactSection({
         setBusy(false);
         return;
       }
-      if (data.status !== "AVAILABLE") {
+      if (
+        !isPublishedActive(data.publicationStatus, data.publishedUntil)
+      ) {
         setError("Este imóvel já não está disponível.");
         setBusy(false);
         return;
       }
-      // Redireciona pelo `/imovel` → API regista o clique e devolve wa.me com a mensagem certa.
       window.location.assign(`/imovel?id=${encodeURIComponent(String(data.houseId))}`);
     } catch (err) {
       setError(
@@ -57,23 +59,11 @@ export function HouseContactSection({
     }
   }, [houseId, partnerId]);
 
-  if (status === "UNAVAILABLE") {
+  if (!isPublishedActive(publicationStatus, publishedUntil)) {
     return (
       <p className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700">
-        Este anúncio está indisponível. Explora outros imóveis na{" "}
+        Este anúncio não está disponível no momento. Explora outros imóveis na{" "}
         <Link href="/relocation/imoveis" className="font-medium text-amber-800 underline">
-          listagem Relocation
-        </Link>
-        .
-      </p>
-    );
-  }
-
-  if (status === "RESERVED") {
-    return (
-      <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        Este imóvel está <strong className="font-semibold">reservado</strong>. Explora outros anúncios na{" "}
-        <Link href="/relocation/imoveis" className="font-medium text-amber-900 underline">
           listagem Relocation
         </Link>
         .

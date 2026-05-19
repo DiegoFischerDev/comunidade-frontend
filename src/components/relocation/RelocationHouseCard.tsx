@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
 import { CardButton, CardLinkButton } from "@/components/ui/CardButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatHouseEntradaWithTotal } from "@/lib/house-entrance";
@@ -33,20 +32,12 @@ export function RelocationHouseCard({ house: h, showContactButton = true }: Prop
   const cityLabel = relocationCityDisplayName(h.city);
   const typoLabel = RELOCATION_TYPOLOGY_LABELS[h.typology] ?? h.typology;
   const businessTypeLabel = RELOCATION_BUSINESS_TYPE_LABELS[h.businessType] ?? "Arrendamento";
-  const isListedButNotForContact = h.status !== "AVAILABLE";
-
   const handleContactClick = () => {
     openRelocationPartnerWhatsApp(h);
   };
 
   return (
-    <article
-      className={`group flex w-full flex-col overflow-hidden rounded-xl border text-left shadow-sm ring-1 ring-zinc-900/5 transition-shadow duration-200 hover:shadow-md ${
-        isListedButNotForContact
-          ? "border-zinc-200/90 bg-zinc-50/80 opacity-[0.97] hover:border-zinc-300"
-          : "border-zinc-200/90 bg-white hover:border-zinc-300"
-      }`}
-    >
+    <article className="group flex w-full flex-col overflow-hidden rounded-xl border border-zinc-200/90 bg-white text-left shadow-sm ring-1 ring-zinc-900/5 transition-shadow duration-200 hover:border-zinc-300 hover:shadow-md">
       <Link
         href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
         className="relative block aspect-[4/3] w-full cursor-pointer overflow-hidden bg-zinc-100 outline-none ring-inset transition hover:opacity-[0.98] focus-visible:ring-2 focus-visible:ring-amber-500/90 focus-visible:ring-offset-0"
@@ -100,12 +91,9 @@ export function RelocationHouseCard({ house: h, showContactButton = true }: Prop
       </Link>
       <div className="flex flex-1 flex-col gap-3 px-4 pb-1 pt-4">
         <div>
-          <div className="flex flex-wrap items-start gap-x-2 gap-y-1">
-            <h2 className="line-clamp-2 min-w-0 flex-1 text-[15px] font-semibold leading-snug text-zinc-900 sm:text-base">
-              {h.title}
-            </h2>
-            <HouseStatusBadge status={h.status} className="shrink-0 self-start" />
-          </div>
+          <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug text-zinc-900 sm:text-base">
+            {h.title}
+          </h2>
           <p className="mt-1 text-xs text-zinc-500">
             Id: {h.houseId} · {typoLabel} · {cityLabel} · {businessTypeLabel}
           </p>
@@ -138,39 +126,29 @@ export function RelocationHouseCard({ house: h, showContactButton = true }: Prop
         </dl>
       </div>
       <div className="mt-auto border-t border-zinc-100 bg-zinc-50/50 px-4 py-3">
-        {h.status === "AVAILABLE" ? (
-          <div className="flex flex-wrap gap-2 sm:justify-end">
-            <CardLinkButton
-              href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
-              variant="primary"
-              className={
-                showContactButton
-                  ? "min-w-[8rem] flex-1 sm:flex-initial"
-                  : "w-full min-w-0 sm:ml-auto sm:w-auto"
-              }
+        <div className="flex flex-wrap gap-2 sm:justify-end">
+          <CardLinkButton
+            href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
+            variant="primary"
+            className={
+              showContactButton
+                ? "min-w-[8rem] flex-1 sm:flex-initial"
+                : "w-full min-w-0 sm:ml-auto sm:w-auto"
+            }
+          >
+            Ver imóvel
+          </CardLinkButton>
+          {showContactButton ? (
+            <CardButton
+              type="button"
+              variant="navGold"
+              onClick={handleContactClick}
+              className="min-w-[8rem] flex-1 sm:flex-initial"
             >
-              Ver imóvel
-            </CardLinkButton>
-            {showContactButton ? (
-              <CardButton
-                type="button"
-                variant="navGold"
-                onClick={handleContactClick}
-                className="min-w-[8rem] flex-1 sm:flex-initial"
-              >
-                Contactar
-              </CardButton>
-            ) : null}
-          </div>
-        ) : h.status === "RESERVED" ? (
-          <span className="inline-flex w-full items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs text-amber-950 sm:text-sm">
-            Reservado — contacto não disponível
-          </span>
-        ) : (
-          <span className="inline-flex w-full items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2 text-center text-xs text-zinc-600 sm:text-sm">
-            Esse imóvel já não está mais disponível
-          </span>
-        )}
+              Contactar
+            </CardButton>
+          ) : null}
+        </div>
       </div>
     </article>
   );

@@ -6,7 +6,7 @@ import { formatHouseEntradaWithTotal } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { isOurImageHostname } from "@/lib/site-url";
 
-import { HouseStatusBadge } from "@/components/house/HouseStatusBadge";
+import { HousePublicationStatusBadge } from "@/components/house/HousePublicationStatusBadge";
 
 import { HouseContactSection } from "./house-contact-section";
 import { HousePhotoGallery } from "./house-photo-gallery";
@@ -200,7 +200,10 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
                 <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800/90">
                   Relocation · {cityLabel}
                 </p>
-                <HouseStatusBadge status={house.status} />
+                <HousePublicationStatusBadge
+                  publicationStatus={house.publicationStatus}
+                  publishedUntil={house.publishedUntil}
+                />
               </div>
               <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">{house.title}</h1>
               <p className="text-xs font-medium tabular-nums text-zinc-500">Id: {house.houseId}</p>
@@ -244,13 +247,8 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
             <HouseContactSection
               houseId={house.id}
               partnerId={house.partnerId}
-              title={house.title}
-              city={house.city}
-              businessType={house.businessType}
-              typology={house.typology}
-              priceEur={house.priceEur}
-              furnished={house.furnished}
-              status={house.status}
+              publicationStatus={house.publicationStatus}
+              publishedUntil={house.publishedUntil}
             />
           </div>
         </article>

@@ -300,7 +300,6 @@ export default function PublicRelocationHousesListPage() {
 
   const availableListRowsSorted = useMemo(() => {
     return safeRows
-      .filter((h) => h.status === "AVAILABLE")
       .sort((a, b) => {
         const ia = TYPOLOGY_SORT_INDEX.get(a.typology) ?? 999;
         const ib = TYPOLOGY_SORT_INDEX.get(b.typology) ?? 999;
