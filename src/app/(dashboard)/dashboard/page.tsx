@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/lib/auth-ui-events";
 import { OPEN_AUTH_LOGIN_EVENT } from "@/lib/auth-ui-events";
 import { isActiveMember } from "@/lib/membership-access";
+import { COMMUNITY_WHATSAPP_GROUPS_URL } from "@/lib/community-whatsapp-groups";
 import { AffiliateEnrollModal } from "@/components/affiliate/AffiliateEnrollModal";
 import { DashboardIntroVideoModal } from "@/components/dashboard/DashboardIntroVideoModal";
 import { RafaCallCard } from "@/components/RafaCallCard";
@@ -398,6 +399,26 @@ export default function DashboardPage() {
                 priority
               />
             </Link>
+          </section>
+          <section
+            className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
+          >
+            <a
+              href={COMMUNITY_WHATSAPP_GROUPS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+              aria-label="Grupos de ajuda WhatsApp — entrar e participar"
+            >
+              <Image
+                src="/rafa_cards/grupos_whatsapp.png"
+                alt="Grupos de ajuda WhatsApp — comunidade ativa, entre e participe"
+                width={1250}
+                height={1875}
+                className="h-auto w-full object-contain transition group-hover:opacity-95"
+                sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
+              />
+            </a>
           </section>
           {canAccessMemberVipShortcuts ? (
             <section

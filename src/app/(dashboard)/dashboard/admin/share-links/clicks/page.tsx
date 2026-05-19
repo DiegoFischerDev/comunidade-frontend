@@ -156,7 +156,7 @@ export default function AdminShareLinkClicksPage() {
           href="/dashboard/admin/share-links"
           className="text-sm font-medium text-amber-700 hover:underline"
         >
-          ← Voltar a Links WhatsApp
+          ← Voltar a Links rastreados
         </Link>
       </div>
 

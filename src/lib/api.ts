@@ -711,6 +711,7 @@ export const api = {
             title: string;
             whatsappDigits: string;
             whatsappPhrase: string;
+            destinationUrl: string | null;
             ogImageUrl: string | null;
             clickCount: number;
             createdAt: string;
@@ -733,8 +734,9 @@ export const api = {
       },
       createCustom: (body: {
         title: string;
-        whatsapp: string;
-        whatsappPhrase: string;
+        destinationUrl?: string;
+        whatsapp?: string;
+        whatsappPhrase?: string;
       }) =>
         request<{
           id: string;
@@ -742,6 +744,7 @@ export const api = {
           title: string;
           whatsappDigits: string;
           whatsappPhrase: string;
+          destinationUrl: string | null;
           ogImageUrl: string | null;
           createdAt: string;
           entryUrl: string;
@@ -761,6 +764,7 @@ export const api = {
           title?: string;
           whatsapp?: string;
           whatsappPhrase?: string;
+          destinationUrl?: string;
         },
       ) =>
         request<{
@@ -769,6 +773,7 @@ export const api = {
           title: string;
           whatsappDigits: string;
           whatsappPhrase: string;
+          destinationUrl: string | null;
           ogImageUrl: string | null;
           createdAt: string;
           entryUrl: string;

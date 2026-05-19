@@ -17,11 +17,10 @@ import {
 } from "@/components/relocation/relocation-house-shared";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
+import { RELOCATION_HOUSES_WHATSAPP_GROUP_URL } from "@/lib/community-whatsapp-groups";
 
 const RELOCATION_IMOVEIS_PATH = "/relocation/imoveis";
 const LIST_SECTION_TITLE = "Imóveis disponíveis";
-const RELOCATION_HOUSES_WHATSAPP_GROUP_URL =
-  "https://chat.whatsapp.com/Kt4ylOIU0qMBbtfHKlyvVt?mode=gi_t";
 
 const TYPOLOGY_SORT_INDEX = new Map<string, number>(
   RELOCATION_TYPOLOGY_OPTIONS.map((k, i) => [k, i]),

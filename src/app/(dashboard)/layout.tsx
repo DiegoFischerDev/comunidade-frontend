@@ -618,7 +618,7 @@ export default function DashboardLayout({
                     : 'text-zinc-800 hover:bg-zinc-100'
                 }`}
               >
-                Links WhatsApp
+                Links rastreados
               </Link>
               <Link
                 href="/dashboard/admin/recommended-services"

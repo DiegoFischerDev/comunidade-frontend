@@ -101,6 +101,12 @@ function ClickListIcon({ className }: { className?: string }) {
 
 type CustomLinkRow = Overview["customLinks"][number];
 
+type LinkKind = "whatsapp" | "url";
+
+function isTrackedUrlLink(row: { destinationUrl: string | null }): boolean {
+  return Boolean(row.destinationUrl?.trim());
+}
+
 /** Apresentação legível do número guardado (apenas dígitos). */
 function formatWhatsappDigits(digits: string): string {
   const d = String(digits ?? "").replace(/\D/g, "");
@@ -136,6 +142,8 @@ export default function AdminShareLinksPage() {
   const [tab, setTab] = useState<"custom" | "houses">("custom");
 
   const [title, setTitle] = useState("");
+  const [linkKind, setLinkKind] = useState<LinkKind>("whatsapp");
+  const [destinationUrl, setDestinationUrl] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [phrase, setPhrase] = useState("");
   const [creating, setCreating] = useState(false);
@@ -144,6 +152,8 @@ export default function AdminShareLinksPage() {
 
   const [editingRow, setEditingRow] = useState<CustomLinkRow | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [editLinkKind, setEditLinkKind] = useState<LinkKind>("whatsapp");
+  const [editDestinationUrl, setEditDestinationUrl] = useState("");
   const [editWhatsapp, setEditWhatsapp] = useState("");
   const [editPhrase, setEditPhrase] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
@@ -203,12 +213,21 @@ export default function AdminShareLinksPage() {
     setCreating(true);
     setError("");
     try {
-      await api.admin.shareLinks.createCustom({
-        title: title.trim(),
-        whatsapp: whatsapp.trim(),
-        whatsappPhrase: phrase.trim(),
-      });
+      if (linkKind === "url") {
+        await api.admin.shareLinks.createCustom({
+          title: title.trim(),
+          destinationUrl: destinationUrl.trim(),
+        });
+      } else {
+        await api.admin.shareLinks.createCustom({
+          title: title.trim(),
+          whatsapp: whatsapp.trim(),
+          whatsappPhrase: phrase.trim(),
+        });
+      }
       setTitle("");
+      setLinkKind("whatsapp");
+      setDestinationUrl("");
       setWhatsapp("");
       setPhrase("");
       setAddModalOpen(false);
@@ -228,6 +247,9 @@ export default function AdminShareLinksPage() {
   const openEditModal = useCallback((row: CustomLinkRow) => {
     setEditingRow(row);
     setEditTitle(row.title);
+    const urlLink = isTrackedUrlLink(row);
+    setEditLinkKind(urlLink ? "url" : "whatsapp");
+    setEditDestinationUrl(row.destinationUrl?.trim() ?? "");
     setEditWhatsapp(row.whatsappDigits);
     setEditPhrase(row.whatsappPhrase);
     setError("");
@@ -244,11 +266,19 @@ export default function AdminShareLinksPage() {
     setSavingEdit(true);
     setError("");
     try {
-      await api.admin.shareLinks.updateCustom(editingRow.id, {
-        title: editTitle.trim(),
-        whatsapp: editWhatsapp.trim(),
-        whatsappPhrase: editPhrase.trim(),
-      });
+      if (editLinkKind === "url") {
+        await api.admin.shareLinks.updateCustom(editingRow.id, {
+          title: editTitle.trim(),
+          destinationUrl: editDestinationUrl.trim(),
+        });
+      } else {
+        await api.admin.shareLinks.updateCustom(editingRow.id, {
+          title: editTitle.trim(),
+          destinationUrl: "",
+          whatsapp: editWhatsapp.trim(),
+          whatsappPhrase: editPhrase.trim(),
+        });
+      }
       setEditingRow(null);
       await reloadOverview();
     } catch (err) {
@@ -465,6 +495,29 @@ export default function AdminShareLinksPage() {
               </div>
             ) : null}
             <form onSubmit={handleCreate} className="mt-4 grid gap-4 sm:grid-cols-2">
+              <fieldset className="block sm:col-span-2">
+                <legend className="text-sm font-medium text-zinc-700">Tipo de destino</legend>
+                <div className="mt-2 flex flex-wrap gap-4">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
+                    <input
+                      type="radio"
+                      name="add-link-kind"
+                      checked={linkKind === "whatsapp"}
+                      onChange={() => setLinkKind("whatsapp")}
+                    />
+                    WhatsApp
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
+                    <input
+                      type="radio"
+                      name="add-link-kind"
+                      checked={linkKind === "url"}
+                      onChange={() => setLinkKind("url")}
+                    />
+                    Link já pronto
+                  </label>
+                </div>
+              </fieldset>
               <label className="block sm:col-span-2">
                 <span className="text-sm font-medium text-zinc-700">Título</span>
                 <input
@@ -475,28 +528,46 @@ export default function AdminShareLinksPage() {
                   required
                 />
               </label>
-              <label className="block sm:col-span-2">
-                <span className="text-sm font-medium text-zinc-700">WhatsApp do destino</span>
-                <input
-                  className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-                  value={whatsapp}
-                  onChange={(e) => setWhatsapp(e.target.value)}
-                  placeholder="+351 912 345 678"
-                  required
-                  autoComplete="tel"
-                />
-              </label>
-              <label className="block sm:col-span-2">
-                <span className="text-sm font-medium text-zinc-700">Frase pré-preenchida no WhatsApp</span>
-                <textarea
-                  className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-                  rows={3}
-                  value={phrase}
-                  onChange={(e) => setPhrase(e.target.value)}
-                  placeholder="Mensagem que abre ao clicar no link"
-                  required
-                />
-              </label>
+              {linkKind === "url" ? (
+                <label className="block sm:col-span-2">
+                  <span className="text-sm font-medium text-zinc-700">URL de destino</span>
+                  <input
+                    type="url"
+                    className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                    value={destinationUrl}
+                    onChange={(e) => setDestinationUrl(e.target.value)}
+                    placeholder="https://exemplo.com/pagina"
+                    required
+                  />
+                </label>
+              ) : (
+                <>
+                  <label className="block sm:col-span-2">
+                    <span className="text-sm font-medium text-zinc-700">WhatsApp do destino</span>
+                    <input
+                      className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                      value={whatsapp}
+                      onChange={(e) => setWhatsapp(e.target.value)}
+                      placeholder="+351 912 345 678"
+                      required
+                      autoComplete="tel"
+                    />
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className="text-sm font-medium text-zinc-700">
+                      Frase pré-preenchida no WhatsApp
+                    </span>
+                    <textarea
+                      className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                      rows={3}
+                      value={phrase}
+                      onChange={(e) => setPhrase(e.target.value)}
+                      placeholder="Mensagem que abre ao clicar no link"
+                      required
+                    />
+                  </label>
+                </>
+              )}
               <div className="flex flex-wrap justify-end gap-2 sm:col-span-2">
                 <button
                   type="button"
@@ -557,6 +628,29 @@ export default function AdminShareLinksPage() {
               </div>
             ) : null}
             <form onSubmit={(e) => void handleEditSubmit(e)} className="mt-4 grid gap-4 sm:grid-cols-2">
+              <fieldset className="block sm:col-span-2">
+                <legend className="text-sm font-medium text-zinc-700">Tipo de destino</legend>
+                <div className="mt-2 flex flex-wrap gap-4">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
+                    <input
+                      type="radio"
+                      name="edit-link-kind"
+                      checked={editLinkKind === "whatsapp"}
+                      onChange={() => setEditLinkKind("whatsapp")}
+                    />
+                    WhatsApp
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
+                    <input
+                      type="radio"
+                      name="edit-link-kind"
+                      checked={editLinkKind === "url"}
+                      onChange={() => setEditLinkKind("url")}
+                    />
+                    Link já pronto
+                  </label>
+                </div>
+              </fieldset>
               <label className="block sm:col-span-2">
                 <span className="text-sm font-medium text-zinc-700">Título</span>
                 <input
@@ -567,28 +661,46 @@ export default function AdminShareLinksPage() {
                   required
                 />
               </label>
-              <label className="block sm:col-span-2">
-                <span className="text-sm font-medium text-zinc-700">WhatsApp do destino</span>
-                <input
-                  className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-                  value={editWhatsapp}
-                  onChange={(e) => setEditWhatsapp(e.target.value)}
-                  placeholder="+351 912 345 678"
-                  required
-                  autoComplete="tel"
-                />
-              </label>
-              <label className="block sm:col-span-2">
-                <span className="text-sm font-medium text-zinc-700">Frase pré-preenchida no WhatsApp</span>
-                <textarea
-                  className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-                  rows={3}
-                  value={editPhrase}
-                  onChange={(e) => setEditPhrase(e.target.value)}
-                  placeholder="Mensagem que abre ao clicar no link"
-                  required
-                />
-              </label>
+              {editLinkKind === "url" ? (
+                <label className="block sm:col-span-2">
+                  <span className="text-sm font-medium text-zinc-700">URL de destino</span>
+                  <input
+                    type="url"
+                    className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                    value={editDestinationUrl}
+                    onChange={(e) => setEditDestinationUrl(e.target.value)}
+                    placeholder="https://exemplo.com/pagina"
+                    required
+                  />
+                </label>
+              ) : (
+                <>
+                  <label className="block sm:col-span-2">
+                    <span className="text-sm font-medium text-zinc-700">WhatsApp do destino</span>
+                    <input
+                      className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                      value={editWhatsapp}
+                      onChange={(e) => setEditWhatsapp(e.target.value)}
+                      placeholder="+351 912 345 678"
+                      required
+                      autoComplete="tel"
+                    />
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className="text-sm font-medium text-zinc-700">
+                      Frase pré-preenchida no WhatsApp
+                    </span>
+                    <textarea
+                      className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                      rows={3}
+                      value={editPhrase}
+                      onChange={(e) => setEditPhrase(e.target.value)}
+                      placeholder="Mensagem que abre ao clicar no link"
+                      required
+                    />
+                  </label>
+                </>
+              )}
               <div className="sm:col-span-2 rounded-lg border border-zinc-200 bg-zinc-50/80 p-4">
                 <p className="text-sm font-medium text-zinc-800">
                   Imagem ao partilhar o link (WhatsApp)
@@ -712,7 +824,7 @@ export default function AdminShareLinksPage() {
                     </span>
                   ) : null}
                 </th>
-                <th className="px-4 py-3">Whatsapp</th>
+                <th className="px-4 py-3">Destino</th>
                 <th className="px-4 py-3">Link de entrada</th>
                 <th className="whitespace-nowrap px-4 py-3 text-right">Ações</th>
               </tr>
@@ -750,7 +862,19 @@ export default function AdminShareLinksPage() {
                     </td>
                     <td className="px-4 py-3 align-top">
                       <div className="font-medium tabular-nums text-zinc-900">
-                        {formatWhatsappDigits(row.whatsappDigits)}
+                        {isTrackedUrlLink(row) ? (
+                          <a
+                            href={row.destinationUrl!}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block max-w-[min(220px,40vw)] truncate text-sm font-medium text-amber-800 underline"
+                            title={row.destinationUrl ?? undefined}
+                          >
+                            {row.destinationUrl}
+                          </a>
+                        ) : (
+                          formatWhatsappDigits(row.whatsappDigits)
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 align-top">
@@ -782,13 +906,15 @@ export default function AdminShareLinksPage() {
                           )}
                         </button>
                       </div>
-                      <p
-                        className="mt-2 max-w-[min(480px,60vw)] text-xs leading-snug text-zinc-500"
-                        title={row.whatsappPhrase}
-                      >
-                        frase:{" "}
-                        <span className="text-zinc-700">{row.whatsappPhrase}</span>
-                      </p>
+                      {!isTrackedUrlLink(row) && row.whatsappPhrase.trim() ? (
+                        <p
+                          className="mt-2 max-w-[min(480px,60vw)] text-xs leading-snug text-zinc-500"
+                          title={row.whatsappPhrase}
+                        >
+                          frase:{" "}
+                          <span className="text-zinc-700">{row.whatsappPhrase}</span>
+                        </p>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3 align-top text-right">
                       <div className="inline-flex flex-wrap justify-end gap-2">
