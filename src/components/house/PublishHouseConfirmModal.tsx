@@ -2,10 +2,7 @@
 
 import { useState } from "react";
 import { CardButton } from "@/components/ui/CardButton";
-import {
-  formatAdvertisingBalanceEur,
-  HousePublicationStatusBadge,
-} from "@/components/house/HousePublicationStatusBadge";
+import { HousePublicationStatusBadge } from "@/components/house/HousePublicationStatusBadge";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 
@@ -43,7 +40,6 @@ export type HousePublishPreview = {
   id: string;
   houseId: number;
   title: string;
-  description?: string;
   businessType: "RENT" | "SALE";
   typology: string;
   city: string;
@@ -54,6 +50,8 @@ export type HousePublishPreview = {
   videoPosterUrl?: string | null;
   publicationStatus: "PUBLISHED" | "HIDDEN";
   publishedUntil?: string | null;
+  whatsappSentAt: string | null;
+  whatsappSends?: { sentAt: string }[];
 };
 
 type Props = {
@@ -77,6 +75,21 @@ function DetailItem({ label, value }: { label: string; value: string }) {
       <dd className="mt-0.5 text-sm font-medium text-zinc-900">{value}</dd>
     </div>
   );
+}
+
+function whatsAppGroupPublishDates(house: {
+  whatsappSends?: { sentAt: string }[];
+  whatsappSentAt: string | null;
+}): string[] {
+  const fromArray = (house.whatsappSends ?? [])
+    .map((x) => x.sentAt)
+    .filter((x): x is string => typeof x === "string" && x.trim() !== "")
+    .map((iso) => new Date(iso).toLocaleDateString("pt-PT"));
+  if (fromArray.length > 0) return fromArray.reverse();
+  if (house.whatsappSentAt) {
+    return [new Date(house.whatsappSentAt).toLocaleDateString("pt-PT")];
+  }
+  return [];
 }
 
 export function PublishHouseConfirmModal({
@@ -104,7 +117,7 @@ export function PublishHouseConfirmModal({
     house.publishedUntil &&
     new Date(house.publishedUntil) > new Date();
 
-  const descriptionPreview = house.description?.trim();
+  const whatsAppDates = whatsAppGroupPublishDates(house);
 
   async function handleConfirm() {
     setError("");
@@ -186,11 +199,22 @@ export function PublishHouseConfirmModal({
             ) : null}
           </dl>
 
-          {descriptionPreview ? (
-            <p className="border-t border-zinc-200 px-4 py-3 text-sm leading-relaxed text-zinc-600 line-clamp-3">
-              {descriptionPreview}
+          <div className="border-t border-zinc-200 px-4 py-3">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+              Publicado nos grupos WhatsApp
             </p>
-          ) : null}
+            {whatsAppDates.length > 0 ? (
+              <ul className="mt-2 space-y-1 text-sm text-zinc-700">
+                {whatsAppDates.map((date, index) => (
+                  <li key={`${date}-${index}`} className="tabular-nums">
+                    {date}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1 text-sm text-zinc-500">Ainda sem publicações anteriores.</p>
+            )}
+          </div>
         </div>
 
         {insufficient && (

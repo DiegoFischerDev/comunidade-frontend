@@ -379,6 +379,11 @@ export default function DashboardLayout({
             ? 'Sem VIP'
             : 'Anónimo';
 
+  const isRelocationPartner =
+    user?.role === 'PARTNER' && partnerCategorySlug === 'relocation';
+  const isCasasPath =
+    pathname === '/dashboard/casas' || pathname.startsWith('/dashboard/casas/');
+
   const sidebarContent = (
     <div className="flex h-full flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
@@ -445,6 +450,33 @@ export default function DashboardLayout({
 
         {/* Menu principal */}
         <nav className="mt-4 min-h-0 flex-1 space-y-1 overflow-y-auto rounded-lg bg-zinc-50 p-1 pr-1 pb-3">
+          {isRelocationPartner ? (
+            <>
+              <Link
+                href="/relocation/imoveis"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/relocation/imoveis'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Imóveis
+              </Link>
+              <div className="mt-2 border-t border-zinc-200 pt-2">
+                <Link
+                  href="/dashboard/casas"
+                  className={`block rounded-md px-3 py-2 text-sm ${
+                    isCasasPath
+                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                      : 'bg-white font-medium text-zinc-900 hover:bg-zinc-100'
+                  }`}
+                >
+                  Minhas casas
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
           <Link
             href="/dashboard"
             className={`block rounded-md px-3 py-2 text-sm ${
@@ -499,18 +531,6 @@ export default function DashboardLayout({
           >
             Serviços
           </Link>
-          {user?.role === 'PARTNER' && partnerCategorySlug === 'relocation' ? (
-            <Link
-              href="/dashboard/casas"
-              className={`block rounded-md px-3 py-2 text-sm ${
-                pathname === '/dashboard/casas' || pathname.startsWith('/dashboard/casas/')
-                  ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                  : 'text-zinc-800 hover:bg-zinc-100'
-              }`}
-            >
-              Minhas casas
-            </Link>
-          ) : null}
           {user && user.role !== 'ADMIN' ? (
             <Link
               href="/dashboard/reclame-aqui"
@@ -661,6 +681,8 @@ export default function DashboardLayout({
               >
                 Afiliados
               </Link>
+            </>
+          )}
             </>
           )}
         </nav>

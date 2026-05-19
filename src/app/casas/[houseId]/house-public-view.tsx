@@ -246,9 +246,11 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
 
             <HouseContactSection
               houseId={house.id}
+              numericHouseId={house.houseId}
               partnerId={house.partnerId}
               publicationStatus={house.publicationStatus}
               publishedUntil={house.publishedUntil}
+              allowUnpublished={variant === "dashboard"}
             />
           </div>
         </article>

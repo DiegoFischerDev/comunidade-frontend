@@ -19,16 +19,21 @@ function isPublishedActive(
 
 type Props = {
   houseId: string;
+  numericHouseId: number;
   partnerId: string;
   publicationStatus: "PUBLISHED" | "HIDDEN";
   publishedUntil: string | null;
+  /** Pré-visualização no painel (parceiro/admin): contacto mesmo com anúncio oculto. */
+  allowUnpublished?: boolean;
 };
 
 export function HouseContactSection({
   houseId,
+  numericHouseId,
   partnerId,
   publicationStatus,
   publishedUntil,
+  allowUnpublished = false,
 }: Props) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -37,6 +42,12 @@ export function HouseContactSection({
     setBusy(true);
     setError("");
     try {
+      if (allowUnpublished) {
+        window.location.assign(
+          `/imovel?id=${encodeURIComponent(String(numericHouseId))}`,
+        );
+        return;
+      }
       const data = await api.marketplace.houseContact(houseId);
       if (data.partnerId !== partnerId) {
         setError("Este anúncio não corresponde ao parceiro indicado.");
@@ -57,9 +68,9 @@ export function HouseContactSection({
       );
       setBusy(false);
     }
-  }, [houseId, partnerId]);
+  }, [allowUnpublished, houseId, numericHouseId, partnerId]);
 
-  if (!isPublishedActive(publicationStatus, publishedUntil)) {
+  if (!allowUnpublished && !isPublishedActive(publicationStatus, publishedUntil)) {
     return (
       <p className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700">
         Este anúncio não está disponível no momento. Explora outros imóveis na{" "}

@@ -1815,7 +1815,7 @@ export const api = {
         priceEur: string;
         furnished: boolean;
       }>(`/partners/houses/${encodeURIComponent(houseId)}/contact`, { method: 'GET' }),
-    /** Página pública do anúncio (sem auth). */
+    /** Página do anúncio; com JWT, admin/parceiro vê imóveis ocultos. */
     housePublic: (houseId: string) =>
       request<import('@/lib/house-public-server').PublicHousePageData>(
         `/partners/houses/${encodeURIComponent(houseId)}/public`,

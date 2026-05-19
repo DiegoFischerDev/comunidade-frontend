@@ -52,16 +52,27 @@ function formatDatePt(value: string) {
   return d.toLocaleDateString("pt-PT");
 }
 
-function houseWhatsAppSendDatesLabel(h: {
+function getHouseWhatsAppSendDates(h: {
   whatsappSends?: { sentAt: string }[];
   whatsappSentAt: string | null;
-}): string {
+}): string[] {
   const fromArray = (h.whatsappSends ?? [])
     .map((x) => x.sentAt)
     .filter((x): x is string => typeof x === "string" && x.trim() !== "")
     .map((iso) => new Date(iso).toLocaleDateString("pt-PT"));
-  if (fromArray.length > 0) return fromArray.reverse().join("\n");
-  if (h.whatsappSentAt) return new Date(h.whatsappSentAt).toLocaleDateString("pt-PT");
+  if (fromArray.length > 0) return fromArray.reverse();
+  if (h.whatsappSentAt) {
+    return [new Date(h.whatsappSentAt).toLocaleDateString("pt-PT")];
+  }
+  return [];
+}
+
+function houseWhatsAppSendDatesLabel(h: {
+  whatsappSends?: { sentAt: string }[];
+  whatsappSentAt: string | null;
+}): string {
+  const dates = getHouseWhatsAppSendDates(h);
+  if (dates.length > 0) return dates.join("\n");
   return "—";
 }
 
@@ -213,6 +224,7 @@ function PartnerHouseMobileCard({
   onDelete: () => void;
 }) {
   const clicks = house._count?.redirectClicks ?? 0;
+  const whatsAppDates = getHouseWhatsAppSendDates(house);
 
   return (
     <article className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
@@ -225,6 +237,24 @@ function PartnerHouseMobileCard({
             <span className="font-semibold tabular-nums text-zinc-900">{house.priceEur} €</span>
           </p>
         </div>
+      </div>
+
+      <div className="mt-2.5">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Publicado em</p>
+        {whatsAppDates.length > 0 ? (
+          <ul className="mt-1 space-y-0.5 text-sm text-zinc-700">
+            {whatsAppDates.map((date, index) => (
+              <li key={`${date}-${index}`} className="tabular-nums">
+                {date}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-1 text-sm text-zinc-500">—</p>
+        )}
+        {house.whatsappError?.trim() ? (
+          <p className="mt-1 text-xs text-red-600">Falha no envio</p>
+        ) : null}
       </div>
 
       <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
@@ -297,11 +327,9 @@ export function PartnerHousesList({
               <th className="px-4 py-3 text-left font-medium">Tipologia</th>
               <th className="px-4 py-3 text-left font-medium">Disponível em</th>
               <th className="px-4 py-3 text-left font-medium">Preço</th>
-              <th className="px-4 py-3 text-left font-medium">
-                Entrada (taxa relocation, cauções e rendas)
-              </th>
-              <th className="px-4 py-3 text-left font-medium">Enviado em</th>
-              <th className="px-4 py-3 text-left font-medium">Status</th>
+              <th className="px-4 py-3 text-left font-medium">Entrada</th>
+              <th className="px-4 py-3 text-left font-medium">Publicado em</th>
+              <th className="px-4 py-3 text-left font-medium">Status atual</th>
               <th className="px-4 py-3 text-right font-medium">Ações</th>
             </tr>
           </thead>
