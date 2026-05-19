@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CardButton } from "@/components/ui/CardButton";
-import { HousePublicationStatusBadge } from "@/components/house/HousePublicationStatusBadge";
+import {
+  HousePublicationStatusBadge,
+  isActivePublished,
+} from "@/components/house/HousePublicationStatusBadge";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 
@@ -60,6 +63,7 @@ type Props = {
   balanceEurCents: number;
   onClose: () => void;
   onConfirm: () => Promise<void>;
+  onUnpublish?: () => Promise<void>;
 };
 
 function formatDatePt(value: string) {
@@ -98,9 +102,19 @@ export function PublishHouseConfirmModal({
   balanceEurCents,
   onClose,
   onConfirm,
+  onUnpublish,
 }: Props) {
   const [loading, setLoading] = useState(false);
+  const [unpublishing, setUnpublishing] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!open) {
+      setLoading(false);
+      setUnpublishing(false);
+      setError("");
+    }
+  }, [open]);
 
   if (!open || !house) return null;
 
@@ -112,21 +126,42 @@ export function PublishHouseConfirmModal({
         ? resolveUploadsUrl(house.videoPosterUrl)
         : null;
 
-  const alreadyPublished =
-    house.publicationStatus === "PUBLISHED" &&
-    house.publishedUntil &&
-    new Date(house.publishedUntil) > new Date();
+  const activelyPublished = isActivePublished(
+    house.publicationStatus,
+    house.publishedUntil,
+  );
+  const canUnpublish = house.publicationStatus === "PUBLISHED" && Boolean(onUnpublish);
 
   const whatsAppDates = whatsAppGroupPublishDates(house);
+
+  const busy = loading || unpublishing;
 
   async function handleConfirm() {
     setError("");
     setLoading(true);
     try {
       await onConfirm();
+      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível publicar.");
+    } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleUnpublish() {
+    if (!onUnpublish) return;
+    setError("");
+    setUnpublishing(true);
+    try {
+      await onUnpublish();
+      onClose();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Não foi possível remover a publicação.",
+      );
+    } finally {
+      setUnpublishing(false);
     }
   }
 
@@ -147,8 +182,8 @@ export function PublishHouseConfirmModal({
           5 € por publicação · 7 dias no site e WhatsApp
         </p>
         <p className="mt-1 text-sm text-zinc-600">
-          {alreadyPublished
-            ? "Este imóvel será reenviado aos grupos WhatsApp e a visibilidade no site será prolongada."
+          {activelyPublished
+            ? "Podes republicar (5 €) ou remover a publicação para ocultar o anúncio no site."
             : "Este imóvel será publicado no nosso site e nos grupos do WhatsApp."}
         </p>
 
@@ -191,7 +226,7 @@ export function PublishHouseConfirmModal({
             />
             <DetailItem label="Preço" value={`${house.priceEur} €`} />
             <DetailItem label="Disponível em" value={formatDatePt(house.availableFrom)} />
-            {alreadyPublished && house.publishedUntil ? (
+            {activelyPublished && house.publishedUntil ? (
               <DetailItem
                 label="Publicado até"
                 value={formatDatePt(house.publishedUntil)}
@@ -227,17 +262,32 @@ export function PublishHouseConfirmModal({
           <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
         )}
 
-        <div className="mt-6 flex justify-end gap-2">
-          <CardButton type="button" variant="outline" onClick={onClose} disabled={loading}>
+        <div className="mt-6 flex flex-wrap justify-end gap-2">
+          <CardButton type="button" variant="outline" onClick={onClose} disabled={busy}>
             Cancelar
           </CardButton>
+          {canUnpublish ? (
+            <CardButton
+              type="button"
+              variant="outline"
+              onClick={() => void handleUnpublish()}
+              disabled={busy}
+              className="border-red-200 text-red-700 hover:bg-red-50"
+            >
+              {unpublishing ? "A remover…" : "Remover publicação"}
+            </CardButton>
+          ) : null}
           <CardButton
             type="button"
             variant="primary"
-            onClick={handleConfirm}
-            disabled={loading || insufficient}
+            onClick={() => void handleConfirm()}
+            disabled={busy || insufficient}
           >
-            {loading ? "A processar…" : "Pagar e enviar"}
+            {loading
+              ? "A processar…"
+              : activelyPublished
+                ? "Republicar (5 €)"
+                : "Pagar e enviar"}
           </CardButton>
         </div>
       </div>

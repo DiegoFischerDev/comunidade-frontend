@@ -250,6 +250,7 @@ export default function DashboardLayout({
   const [resetInfo, setResetInfo] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [partnerCategorySlug, setPartnerCategorySlug] = useState<string | null>(null);
+  const [partnerDisplayName, setPartnerDisplayName] = useState<string | null>(null);
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -303,15 +304,22 @@ export default function DashboardLayout({
     if (!mounted || authLoading) return;
     if (!user || user.role !== 'PARTNER') {
       setPartnerCategorySlug(null);
+      setPartnerDisplayName(null);
       return;
     }
     let cancelled = false;
     (async () => {
       try {
         const me = await api.partner.me();
-        if (!cancelled) setPartnerCategorySlug(me.category?.slug ?? null);
+        if (!cancelled) {
+          setPartnerCategorySlug(me.category?.slug ?? null);
+          setPartnerDisplayName(me.name?.trim() || null);
+        }
       } catch {
-        if (!cancelled) setPartnerCategorySlug(null);
+        if (!cancelled) {
+          setPartnerCategorySlug(null);
+          setPartnerDisplayName(null);
+        }
       }
     })();
     return () => {
@@ -368,6 +376,12 @@ export default function DashboardLayout({
 
   const rawName = user?.name?.trim() ?? '';
   const firstName = rawName.split(' ')[0] || 'Visitante';
+  const sidebarDisplayName =
+    user?.role === 'PARTNER'
+      ? partnerDisplayName || rawName || firstName
+      : user
+        ? firstName
+        : 'Visitante';
   const roleLabel =
     user?.role === 'ADMIN'
       ? 'Admin'
@@ -703,7 +717,7 @@ export default function DashboardLayout({
               />
             ) : (
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#d58901] text-[16px] font-semibold text-white">
-                {firstName.charAt(0).toUpperCase()}
+                {sidebarDisplayName.charAt(0).toUpperCase()}
               </div>
             )}
             <div className="min-w-0">
@@ -712,7 +726,7 @@ export default function DashboardLayout({
                   user ? 'text-zinc-900' : 'text-zinc-900'
                 }`}
               >
-                {user ? firstName : 'Visitante'}
+                {sidebarDisplayName}
               </p>
               {user ? (
                 user.role === 'ADMIN' || user.role === 'PARTNER' ? (

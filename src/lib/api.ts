@@ -1642,6 +1642,12 @@ export const api = {
           sentToGroups?: number;
           failed?: string[];
         }>(`/partners/me/houses/${encodeURIComponent(id)}/publish`, { method: 'POST' }),
+      unpublish: (id: string) =>
+        request<{
+          ok: true;
+          publicationStatus: 'HIDDEN';
+          publishedUntil: string | null;
+        }>(`/partners/me/houses/${encodeURIComponent(id)}/unpublish`, { method: 'POST' }),
       delete: (id: string) =>
         request<{ ok: true }>(
           `/partners/me/houses/${encodeURIComponent(id)}`,

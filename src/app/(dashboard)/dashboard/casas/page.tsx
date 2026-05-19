@@ -188,15 +188,30 @@ export default function PartnerHousesPage() {
     setPublishingById((s) => ({ ...s, [id]: true }));
     try {
       const res = await api.partner.houses.publish(id);
+      setPublishHouse(null);
+      setPublishingById((s) => ({ ...s, [id]: false }));
       const data = await api.partner.houses.list();
       setRows(data);
       setBalanceEurCents(res.balanceEurCents);
-      setPublishHouse(null);
     } catch (err) {
       setPublishingById((s) => ({ ...s, [id]: false }));
       throw err;
-    } finally {
+    }
+  }
+
+  async function handleUnpublish() {
+    if (!publishHouse) return;
+    const id = publishHouse.id;
+    setPublishingById((s) => ({ ...s, [id]: true }));
+    try {
+      await api.partner.houses.unpublish(id);
+      setPublishHouse(null);
       setPublishingById((s) => ({ ...s, [id]: false }));
+      const data = await api.partner.houses.list();
+      setRows(data);
+    } catch (err) {
+      setPublishingById((s) => ({ ...s, [id]: false }));
+      throw err;
     }
   }
 
@@ -370,6 +385,7 @@ export default function PartnerHousesPage() {
         balanceEurCents={balanceEurCents}
         onClose={() => setPublishHouse(null)}
         onConfirm={handlePublishConfirm}
+        onUnpublish={handleUnpublish}
       />
     </div>
   );
