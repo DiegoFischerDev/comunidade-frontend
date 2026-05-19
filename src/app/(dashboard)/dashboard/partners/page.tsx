@@ -30,8 +30,8 @@ export default function PartnersPage() {
     null,
   );
   const [updatingPriorityPartnerId, setUpdatingPriorityPartnerId] = useState<string | null>(null);
-  const [creditAmountByPartnerId, setCreditAmountByPartnerId] = useState<Record<string, string>>({});
-  const [creditingPartnerId, setCreditingPartnerId] = useState<string | null>(null);
+  const [balanceInputByPartnerId, setBalanceInputByPartnerId] = useState<Record<string, string>>({});
+  const [savingBalancePartnerId, setSavingBalancePartnerId] = useState<string | null>(null);
 
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -373,32 +373,39 @@ export default function PartnersPage() {
                         <input
                           type="text"
                           inputMode="decimal"
-                          placeholder="€"
-                          value={creditAmountByPartnerId[p.id] ?? ''}
+                          placeholder="Novo saldo €"
+                          title="Saldo em euros (ex.: 25 ou 25,50)"
+                          value={
+                            balanceInputByPartnerId[p.id] ??
+                            String((p.advertisingBalanceEurCents ?? 0) / 100)
+                          }
                           onChange={(e) =>
-                            setCreditAmountByPartnerId((prev) => ({
+                            setBalanceInputByPartnerId((prev) => ({
                               ...prev,
                               [p.id]: e.target.value,
                             }))
                           }
-                          className="w-16 rounded border border-zinc-300 px-2 py-1 text-xs"
+                          className="w-20 rounded border border-zinc-300 px-2 py-1 text-xs tabular-nums"
                         />
                         <button
                           type="button"
-                          disabled={creditingPartnerId === p.id}
+                          disabled={savingBalancePartnerId === p.id}
                           onClick={async () => {
-                            const raw = (creditAmountByPartnerId[p.id] ?? '').replace(',', '.');
+                            const displayed =
+                              balanceInputByPartnerId[p.id] ??
+                              String((p.advertisingBalanceEurCents ?? 0) / 100);
+                            const raw = displayed.trim().replace(',', '.');
                             const euros = Number(raw);
-                            if (!Number.isFinite(euros) || euros <= 0) {
-                              setError('Indica um valor válido em euros.');
+                            if (!Number.isFinite(euros) || euros < 0) {
+                              setError('Indica um saldo válido em euros (≥ 0).');
                               return;
                             }
-                            setCreditingPartnerId(p.id);
+                            setSavingBalancePartnerId(p.id);
                             setError('');
                             try {
-                              const res = await api.admin.partners.creditAdvertisingBalance(
+                              const res = await api.admin.partners.setAdvertisingBalance(
                                 p.id,
-                                { amountEurCents: Math.round(euros * 100) },
+                                { balanceEurCents: Math.round(euros * 100) },
                               );
                               setPartners((prev) =>
                                 prev.map((row) =>
@@ -410,20 +417,24 @@ export default function PartnersPage() {
                                     : row,
                                 ),
                               );
-                              setCreditAmountByPartnerId((prev) => ({ ...prev, [p.id]: '' }));
+                              setBalanceInputByPartnerId((prev) => {
+                                const next = { ...prev };
+                                delete next[p.id];
+                                return next;
+                              });
                             } catch (err) {
                               setError(
                                 err instanceof Error
                                   ? err.message
-                                  : 'Erro ao adicionar saldo.',
+                                  : 'Erro ao definir saldo.',
                               );
                             } finally {
-                              setCreditingPartnerId(null);
+                              setSavingBalancePartnerId(null);
                             }
                           }}
                           className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
                         >
-                          + saldo
+                          {savingBalancePartnerId === p.id ? 'A guardar…' : 'Definir'}
                         </button>
                       </div>
                     ) : (

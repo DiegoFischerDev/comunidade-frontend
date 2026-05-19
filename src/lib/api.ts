@@ -604,6 +604,14 @@ export const api = {
           `/partners/admin/${encodeURIComponent(partnerId)}/advertising-balance/credit`,
           { method: 'POST', body: JSON.stringify(body) },
         ),
+      setAdvertisingBalance: (
+        partnerId: string,
+        body: { balanceEurCents: number; note?: string },
+      ) =>
+        request<{ balanceEurCents: number }>(
+          `/partners/admin/${encodeURIComponent(partnerId)}/advertising-balance`,
+          { method: 'PATCH', body: JSON.stringify(body) },
+        ),
       create: (input: {
         password: string;
         name: string;

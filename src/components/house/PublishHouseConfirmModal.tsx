@@ -8,8 +8,11 @@ import {
 } from "@/components/house/HousePublicationStatusBadge";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
-
-const PUBLICATION_COST_CENTS = 500;
+import {
+  HOUSE_PUBLICATION_COST_EUR_CENTS,
+  HOUSE_PUBLICATION_DURATION_DAYS,
+  formatPublicationCostEur,
+} from "@/lib/house-publication";
 
 const CITY_LABELS: Record<string, string> = {
   INTERIOR: "Interior",
@@ -165,7 +168,8 @@ export function PublishHouseConfirmModal({
     }
   }
 
-  const insufficient = balanceEurCents < PUBLICATION_COST_CENTS;
+  const publicationCostLabel = formatPublicationCostEur(HOUSE_PUBLICATION_COST_EUR_CENTS);
+  const insufficient = balanceEurCents < HOUSE_PUBLICATION_COST_EUR_CENTS;
 
   return (
     <div
@@ -179,11 +183,12 @@ export function PublishHouseConfirmModal({
           Publicar imóvel
         </h2>
         <p className="mt-2 text-sm font-medium text-zinc-700">
-          5 € por publicação · 7 dias no site e WhatsApp
+          {publicationCostLabel} por publicação · {HOUSE_PUBLICATION_DURATION_DAYS} dias no site e
+          WhatsApp
         </p>
         <p className="mt-1 text-sm text-zinc-600">
           {activelyPublished
-            ? "Podes republicar (5 €) ou remover a publicação para ocultar o anúncio no site."
+            ? `Podes republicar (${publicationCostLabel}) ou remover a publicação para ocultar o anúncio no site.`
             : "Este imóvel será publicado no nosso site e nos grupos do WhatsApp."}
         </p>
 
@@ -283,11 +288,7 @@ export function PublishHouseConfirmModal({
             onClick={() => void handleConfirm()}
             disabled={busy || insufficient}
           >
-            {loading
-              ? "A processar…"
-              : activelyPublished
-                ? "Republicar (5 €)"
-                : "Pagar e enviar"}
+            {loading ? "A processar…" : `Enviar ${publicationCostLabel}`}
           </CardButton>
         </div>
       </div>

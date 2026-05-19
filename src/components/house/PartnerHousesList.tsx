@@ -334,8 +334,13 @@ export function PartnerHousesList({
           <tbody className="divide-y divide-zinc-100">
             {rows.map((r) => (
               <tr key={r.id} className="align-top">
-                <td className="whitespace-nowrap px-4 py-3 font-mono text-xs tabular-nums text-zinc-600">
-                  {r.houseId}
+                <td className="whitespace-nowrap px-4 py-3 align-top font-mono text-xs tabular-nums text-zinc-600">
+                  <div>{r.houseId}</div>
+                  {r.videoUrl ? (
+                    <span className="mt-1 block w-fit rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-medium text-zinc-700">
+                      Vídeo
+                    </span>
+                  ) : null}
                 </td>
                 <td className="px-4 py-3">
                   <HouseThumb house={r} />
@@ -363,14 +368,7 @@ export function PartnerHousesList({
                   {r._count?.redirectClicks ?? 0}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="font-semibold text-zinc-900">
-                    {r.title}
-                    {r.videoUrl ? (
-                      <span className="ml-2 rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-medium text-zinc-700">
-                        Vídeo
-                      </span>
-                    ) : null}
-                  </div>
+                  <p className="font-semibold text-zinc-900">{r.title}</p>
                 </td>
                 <td className="px-4 py-3 text-zinc-700">{CITY_LABELS[r.city] ?? r.city}</td>
                 <td className="px-4 py-3 text-zinc-700">
