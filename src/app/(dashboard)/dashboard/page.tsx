@@ -107,7 +107,6 @@ export default function DashboardPage() {
 
   function openMembershipOrLogin() {
     if (typeof window === "undefined") return;
-    setIntroVideoOpen(true);
     window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
   }
   const [affiliateModalOpen, setAffiliateModalOpen] = useState(false);

@@ -153,7 +153,7 @@ export function FloatingWhatsAppButton({
                   variant="primary"
                   className="pointer-events-auto !w-[10.5rem] text-sm shadow-lg sm:!w-44 sm:text-base"
                 >
-                  Ativar acesso
+                  Compre agora
                 </CardButton>
               </div>
             </div>

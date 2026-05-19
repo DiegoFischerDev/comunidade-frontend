@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { HousePublicationStatusBadge } from "@/components/house/HousePublicationStatusBadge";
 import { PublishHouseRowButton } from "@/components/house/PublishHouseRowButton";
 import { formatHouseEntradaWithTotal, orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
@@ -231,7 +230,12 @@ function PartnerHouseMobileCard({
       <div className="flex gap-3">
         <HouseThumb house={house} className="h-[72px] w-[96px] shrink-0" />
         <div className="min-w-0 flex-1">
-          <p className="line-clamp-3 font-semibold leading-snug text-zinc-900">{house.title}</p>
+          <p className="line-clamp-3 text-base leading-snug text-zinc-900">
+            <span className="mr-1.5 font-mono text-xs font-medium tabular-nums text-zinc-500">
+              {house.houseId}
+            </span>
+            <span className="font-semibold">{house.title}</span>
+          </p>
           <p className="mt-1 text-sm text-zinc-600">
             {BUSINESS_TYPE_LABELS[house.businessType] ?? "Preço"}:{" "}
             <span className="font-semibold tabular-nums text-zinc-900">{house.priceEur} €</span>
@@ -257,7 +261,7 @@ function PartnerHouseMobileCard({
         ) : null}
       </div>
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+      <div className="mt-2.5 flex items-center justify-between gap-2">
         <HouseEditDeleteActions
           houseId={house.id}
           deleting={deleting}
@@ -265,12 +269,7 @@ function PartnerHouseMobileCard({
           onDelete={onDelete}
           className="shrink-0 justify-start"
         />
-        <HousePublicationStatusBadge
-          publicationStatus={house.publicationStatus}
-          publishedUntil={house.publishedUntil}
-          className="shrink-0"
-        />
-        <p className="shrink-0 text-sm text-zinc-600">
+        <p className="shrink-0 text-right text-sm text-zinc-600">
           <span className="font-semibold tabular-nums text-zinc-900">{clicks}</span>{" "}
           {clicks === 1 ? "click" : "clicks"}
         </p>
@@ -316,41 +315,52 @@ export function PartnerHousesList({
         <table className="min-w-full text-sm">
           <thead className="bg-zinc-50 text-zinc-600">
             <tr>
-              <th className="min-w-[132px] px-3 py-3 text-left font-medium">Publicar</th>
               <th className="whitespace-nowrap px-4 py-3 text-left font-medium">Id</th>
               <th className="w-[76px] px-4 py-3 text-left font-medium">Thumb</th>
-              <th className="px-4 py-3 text-left font-medium">Título</th>
+              <th className="min-w-[132px] px-3 py-3 text-left font-medium">Status atual</th>
+              <th className="px-4 py-3 text-left font-medium">Publicado em</th>
               <th className="whitespace-nowrap px-4 py-3 text-right font-medium tabular-nums">
                 Clicks
               </th>
+              <th className="px-4 py-3 text-left font-medium">Título</th>
               <th className="px-4 py-3 text-left font-medium">Cidade</th>
               <th className="px-4 py-3 text-left font-medium">Tipologia</th>
               <th className="px-4 py-3 text-left font-medium">Disponível em</th>
               <th className="px-4 py-3 text-left font-medium">Preço</th>
               <th className="px-4 py-3 text-left font-medium">Entrada</th>
-              <th className="px-4 py-3 text-left font-medium">Publicado em</th>
-              <th className="px-4 py-3 text-left font-medium">Status atual</th>
               <th className="px-4 py-3 text-right font-medium">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
             {rows.map((r) => (
               <tr key={r.id} className="align-top">
-                <td className="px-3 py-3 align-top">
-                  <PublishHouseRowButton
-                    publicationStatus={r.publicationStatus}
-                    publishedUntil={r.publishedUntil}
-                    loading={publishingById[r.id]}
-                    fullWidth={false}
-                    onClick={() => onPublish(r)}
-                    className="min-w-[120px]"
-                  />
-                </td>
                 <td className="whitespace-nowrap px-4 py-3 font-mono text-xs tabular-nums text-zinc-600">
                   {r.houseId}
                 </td>
                 <td className="px-4 py-3">
                   <HouseThumb house={r} />
+                </td>
+                <td className="px-3 py-3 align-top">
+                  <PublishHouseRowButton
+                    publicationStatus={r.publicationStatus}
+                    publishedUntil={r.publishedUntil}
+                    loading={publishingById[r.id]}
+                    fullWidth
+                    onClick={() => onPublish(r)}
+                    className="min-w-[132px]"
+                  />
+                </td>
+                <td
+                  className="whitespace-pre-line px-4 py-3 align-top text-xs text-zinc-700"
+                  title={r.whatsappError?.trim() ? r.whatsappError : undefined}
+                >
+                  {houseWhatsAppSendDatesLabel(r)}
+                  {r.whatsappError?.trim() ? (
+                    <span className="mt-1 block text-red-600">Falha no envio</span>
+                  ) : null}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums text-zinc-900">
+                  {r._count?.redirectClicks ?? 0}
                 </td>
                 <td className="px-4 py-3">
                   <div className="font-semibold text-zinc-900">
@@ -361,9 +371,6 @@ export function PartnerHousesList({
                       </span>
                     ) : null}
                   </div>
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums text-zinc-900">
-                  {r._count?.redirectClicks ?? 0}
                 </td>
                 <td className="px-4 py-3 text-zinc-700">{CITY_LABELS[r.city] ?? r.city}</td>
                 <td className="px-4 py-3 text-zinc-700">
@@ -376,21 +383,6 @@ export function PartnerHousesList({
                   <div>
                     {formatHouseEntradaWithTotal(r.caucoesCount, r.rendasEntradaCount, r.priceEur)}
                   </div>
-                </td>
-                <td
-                  className="whitespace-pre-line px-4 py-3 align-top text-xs text-zinc-700"
-                  title={r.whatsappError?.trim() ? r.whatsappError : undefined}
-                >
-                  {houseWhatsAppSendDatesLabel(r)}
-                  {r.whatsappError?.trim() ? (
-                    <span className="mt-1 block text-red-600">Falha no envio</span>
-                  ) : null}
-                </td>
-                <td className="px-4 py-3">
-                  <HousePublicationStatusBadge
-                    publicationStatus={r.publicationStatus}
-                    publishedUntil={r.publishedUntil}
-                  />
                 </td>
                 <td className="px-4 py-3 text-right align-top">
                   <HouseEditDeleteActions

@@ -39,7 +39,7 @@ export default function RelocationServicosPage() {
           Serviços que indico
         </h1>
         <p className="mt-1 text-sm text-zinc-600">
-          Parceiros de confiança para imigrar com tranquilidade.
+          Parceiros de confiança para não cair em golpes.
         </p>
       </div>
 
