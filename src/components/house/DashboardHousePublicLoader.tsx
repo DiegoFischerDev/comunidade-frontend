@@ -29,7 +29,7 @@ export function DashboardHousePublicLoader({ houseId }: Props) {
     let cancelled = false;
     void (async () => {
       try {
-        const data = await api.partners.housePublic(houseId);
+        const data = await api.marketplace.housePublic(houseId);
         if (!cancelled) setHouse(data);
       } catch {
         if (!cancelled) setHouse(null);

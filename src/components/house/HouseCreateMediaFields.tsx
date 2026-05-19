@@ -396,7 +396,6 @@ export function HouseCreateMediaFields({
               </div>
             ) : (
               <p className="mt-2 text-xs text-zinc-500">
-                Usada na lista e nos cards públicos quando o anúncio ainda não tem fotos.
               </p>
             )}
           </div>
