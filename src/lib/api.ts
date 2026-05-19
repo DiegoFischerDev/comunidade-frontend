@@ -1430,7 +1430,6 @@ export const api = {
         }),
       startTopupCheckout: (body: {
         amountEurCents: number;
-        paymentMethod: 'card' | 'mbway' | 'pix';
         successUrl?: string;
         cancelUrl?: string;
       }) =>

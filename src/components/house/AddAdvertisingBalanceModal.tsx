@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { CardButton } from "@/components/ui/CardButton";
 import { formatAdvertisingBalanceEur } from "@/components/house/HousePublicationStatusBadge";
@@ -15,9 +15,12 @@ type Props = {
 
 export function AddAdvertisingBalanceModal({ open, onClose, onSuccess }: Props) {
   const [amountEur, setAmountEur] = useState("25");
-  const [method, setMethod] = useState<"card" | "mbway" | "pix">("card");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (open) setError("");
+  }, [open]);
 
   if (!open) return null;
 
@@ -36,10 +39,7 @@ export function AddAdvertisingBalanceModal({ open, onClose, onSuccess }: Props) 
     const amountEurCents = Math.round(euros * 100);
     setLoading(true);
     try {
-      const res = await api.partner.advertising.startTopupCheckout({
-        amountEurCents,
-        paymentMethod: method,
-      });
+      const res = await api.partner.advertising.startTopupCheckout({ amountEurCents });
       onSuccess?.();
       window.location.href = res.url;
     } catch (err) {
@@ -60,7 +60,8 @@ export function AddAdvertisingBalanceModal({ open, onClose, onSuccess }: Props) 
           Adicionar saldo
         </h2>
         <p className="mt-1 text-sm text-zinc-600">
-          Escolhe o valor a carregar na tua conta de publicidade (5 € – 500 €).
+          Escolhe o valor a carregar (5 € – 500 €). O pagamento é feito por{" "}
+          <span className="font-medium text-zinc-800">MB WAY</span>.
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -90,40 +91,16 @@ export function AddAdvertisingBalanceModal({ open, onClose, onSuccess }: Props) 
           placeholder="25"
         />
 
-        <p className="mt-4 text-xs font-medium text-zinc-700">Forma de pagamento</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {(
-            [
-              ["card", "Cartão"],
-              ["mbway", "MB WAY"],
-              ["pix", "Pix"],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setMethod(id)}
-              className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${
-                method === id
-                  ? "border-amber-600 bg-amber-50 text-amber-900"
-                  : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
         {error && (
           <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
         )}
 
         <div className="mt-6 flex justify-end gap-2">
-          <CardButton type="button" variant="secondary" onClick={onClose} disabled={loading}>
+          <CardButton type="button" variant="outline" onClick={onClose} disabled={loading}>
             Cancelar
           </CardButton>
           <CardButton type="button" variant="primary" onClick={handlePay} disabled={loading}>
-            {loading ? "A redirecionar…" : "Pagar"}
+            {loading ? "A redirecionar…" : "Pagar com MB WAY"}
           </CardButton>
         </div>
       </div>

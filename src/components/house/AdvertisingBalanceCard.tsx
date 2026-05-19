@@ -1,0 +1,46 @@
+"use client";
+
+import { CardButton } from "@/components/ui/CardButton";
+import { formatAdvertisingBalanceEur } from "@/components/house/HousePublicationStatusBadge";
+
+type Props = {
+  balanceEurCents: number;
+  onAddBalance: () => void;
+};
+
+export function AdvertisingBalanceCard({ balanceEurCents, onAddBalance }: Props) {
+  const canPublish = balanceEurCents >= 500;
+
+  return (
+    <section
+      className="mt-6 flex max-w-[450px] flex-col gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      aria-labelledby="advertising-balance-heading"
+    >
+      <div className="min-w-0">
+        <p
+          id="advertising-balance-heading"
+          className="text-xs font-medium text-zinc-600"
+        >
+          Saldo de publicidade
+        </p>
+        <p className="text-2xl font-bold tabular-nums text-zinc-900">
+          {formatAdvertisingBalanceEur(balanceEurCents)}
+        </p>
+        <p className="mt-0.5 text-xs text-zinc-500">
+          5 € por publicação · 7 dias no site e WhatsApp
+          {!canPublish ? " · saldo insuficiente para publicar" : ""}
+        </p>
+      </div>
+
+      <CardButton
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onAddBalance}
+        className="w-full shrink-0 font-medium sm:w-auto"
+      >
+        Adicionar saldo
+      </CardButton>
+    </section>
+  );
+}

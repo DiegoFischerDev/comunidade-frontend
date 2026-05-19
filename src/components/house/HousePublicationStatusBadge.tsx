@@ -9,7 +9,7 @@ type Props = {
 const base =
   "inline-flex items-center rounded-full font-semibold tracking-tight";
 
-function isActivePublished(
+export function isActivePublished(
   publicationStatus: PublicationStatus,
   publishedUntil?: string | null,
 ): boolean {
