@@ -344,7 +344,10 @@ export default function PartnerHousesPage() {
             rows={filtered}
             publishingById={publishingById}
             deletingById={deletingById}
-            onPublish={setPublishHouse}
+            onPublish={(house) => {
+              if (Object.values(publishingById).some(Boolean)) return;
+              setPublishHouse(house);
+            }}
             onEdit={(id) => {
               setEditHouseId(id);
               setShowHouseModal(true);

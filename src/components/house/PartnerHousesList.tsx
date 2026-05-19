@@ -210,6 +210,7 @@ function HouseEditDeleteActions({
 function PartnerHouseMobileCard({
   house,
   publishing,
+  publishDisabled,
   deleting,
   onPublish,
   onEdit,
@@ -217,6 +218,7 @@ function PartnerHouseMobileCard({
 }: {
   house: PartnerHouseRow;
   publishing: boolean;
+  publishDisabled: boolean;
   deleting: boolean;
   onPublish: () => void;
   onEdit: () => void;
@@ -280,6 +282,7 @@ function PartnerHouseMobileCard({
           publicationStatus={house.publicationStatus}
           publishedUntil={house.publishedUntil}
           loading={publishing}
+          disabled={publishDisabled}
           onClick={onPublish}
         />
       </div>
@@ -295,6 +298,8 @@ export function PartnerHousesList({
   onEdit,
   onDelete,
 }: Props) {
+  const isPublishingAny = Object.values(publishingById).some(Boolean);
+
   return (
     <>
       <div className="mt-4 space-y-3 md:hidden">
@@ -303,6 +308,7 @@ export function PartnerHousesList({
             key={r.id}
             house={r}
             publishing={Boolean(publishingById[r.id])}
+            publishDisabled={isPublishingAny && !publishingById[r.id]}
             deleting={Boolean(deletingById[r.id])}
             onPublish={() => onPublish(r)}
             onEdit={() => onEdit(r.id)}
@@ -350,6 +356,7 @@ export function PartnerHousesList({
                     publicationStatus={r.publicationStatus}
                     publishedUntil={r.publishedUntil}
                     loading={publishingById[r.id]}
+                    disabled={isPublishingAny && !publishingById[r.id]}
                     fullWidth
                     onClick={() => onPublish(r)}
                     className="min-w-[132px]"

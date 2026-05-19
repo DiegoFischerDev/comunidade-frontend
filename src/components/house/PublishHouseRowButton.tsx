@@ -7,6 +7,7 @@ type Props = {
   publicationStatus: "PUBLISHED" | "HIDDEN";
   publishedUntil?: string | null;
   loading?: boolean;
+  disabled?: boolean;
   fullWidth?: boolean;
   className?: string;
   onClick: () => void;
@@ -56,6 +57,7 @@ export function PublishHouseRowButton({
   publicationStatus,
   publishedUntil,
   loading,
+  disabled,
   fullWidth = true,
   className,
   onClick,
@@ -78,6 +80,7 @@ export function PublishHouseRowButton({
         size="sm"
         fullWidth={fullWidth}
         loading={loading}
+        disabled={disabled}
         onClick={onClick}
         title={title}
         aria-label={title}
@@ -103,6 +106,7 @@ export function PublishHouseRowButton({
       size="sm"
       fullWidth={fullWidth}
       loading={loading}
+      disabled={disabled}
       onClick={onClick}
       title="Publicar imóvel"
       aria-label="Publicar imóvel"

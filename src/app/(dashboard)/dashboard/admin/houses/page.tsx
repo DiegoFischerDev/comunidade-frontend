@@ -335,6 +335,7 @@ export default function AdminHousesPage() {
   };
 
   const onSendHouseToWhatsappGroups = async (houseId: string) => {
+    if (sendingWhatsappHouseId !== null) return;
     setSendingWhatsappHouseId(houseId);
     setError('');
     try {
@@ -789,9 +790,9 @@ export default function AdminHousesPage() {
                             type="button"
                             title="Enviar nos grupos WhatsApp"
                             aria-label="Enviar nos grupos WhatsApp"
-                            disabled={sendingWhatsappHouseId === h.id}
+                            disabled={sendingWhatsappHouseId !== null}
                             onClick={() => void onSendHouseToWhatsappGroups(h.id)}
-                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
+                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {sendingWhatsappHouseId === h.id ? (
                               <svg
@@ -1012,7 +1013,7 @@ export default function AdminHousesPage() {
                                 type="button"
                                 title="Enviar nos grupos WhatsApp"
                                 aria-label="Enviar nos grupos WhatsApp"
-                                disabled={sendingWhatsappHouseId === h.id}
+                                disabled={sendingWhatsappHouseId !== null}
                                 onClick={() => void onSendHouseToWhatsappGroups(h.id)}
                                 className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
                               >
