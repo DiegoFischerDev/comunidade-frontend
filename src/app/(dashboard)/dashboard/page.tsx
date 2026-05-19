@@ -170,7 +170,7 @@ export default function DashboardPage() {
     ? "/rafa_cards/dashboard_afiliados.png"
     : isMember
       ? "/rafa_cards/hero_pc_vip.png"
-      : "/rafa_cards/hero_pc6.png";
+      : "/rafa_cards/hero_pc7.png";
 
   /**
    * Hero: visitante → login; membro VIP → painel de indicações se já for afiliado, senão modal de
