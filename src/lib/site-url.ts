@@ -1,49 +1,106 @@
+function stripNonLocalDevPort(u: URL): void {
+  const isLocal =
+    u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+  if (!isLocal && (u.port === '3000' || u.port === '3001')) {
+    u.port = '';
+  }
+  if (
+    (u.protocol === 'https:' && u.port === '443') ||
+    (u.protocol === 'http:' && u.port === '80')
+  ) {
+    u.port = '';
+  }
+}
+
+/**
+ * Remove portas de desenvolvimento (ex.: :3000) em domínios públicos e portas HTTP(S) padrão.
+ */
+export function normalizePublicSiteOrigin(raw: string): string {
+  const trimmed = String(raw ?? '').trim().replace(/\/$/, '');
+  if (!trimmed) return trimmed;
+  try {
+    const u = new URL(trimmed.includes('://') ? trimmed : `https://${trimmed}`);
+    stripNonLocalDevPort(u);
+    return u.origin;
+  } catch {
+    return trimmed.replace(/:3000(?=\/|$)/, '').replace(/\/$/, '');
+  }
+}
+
+/** URL absoluta de partilha, preservando path e removendo `:3000` indevido. */
+export function normalizePublicShareUrl(fullUrl: string): string {
+  const trimmed = String(fullUrl ?? '').trim();
+  if (!trimmed) return trimmed;
+  try {
+    const u = new URL(trimmed);
+    stripNonLocalDevPort(u);
+    return u.toString();
+  } catch {
+    return trimmed.replace(/:3000(?=\/|$)/, '');
+  }
+}
+
 /**
  * Base URL pública do site (sem barra final).
  * Definir `NEXT_PUBLIC_SITE_URL` em builds de produção (CI / Docker).
  * Em `development` usa `http://localhost:3000`.
  */
 export function getPublicSiteUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '');
+  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (raw) {
-    return raw;
+    return normalizePublicSiteOrigin(raw);
   }
   if (process.env.NODE_ENV === 'development') {
     return 'http://localhost:3000';
   }
-  // Preview Vercel / outro: tentar host público
   if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL.replace(/\/$/, '')}`;
+    return normalizePublicSiteOrigin(
+      `https://${process.env.VERCEL_URL.replace(/\/$/, '')}`,
+    );
   }
-  // Build sem variável: documentação pede a env; usamos evitar crash em ferramentas
   console.warn(
     'NEXT_PUBLIC_SITE_URL is not set; using http://localhost:3000. Set for production metadata and links.',
   );
   return 'http://localhost:3000';
 }
 
+/** URL absoluta para partilhar página pública (`/{slug}` ou `/partner/{id}`). */
+export function buildPublicShareUrl(pathname: string): string {
+  const path = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    const onLocalhost = host === 'localhost' || host === '127.0.0.1';
+    const origin = onLocalhost
+      ? window.location.origin
+      : `${window.location.protocol}//${host}`;
+    return `${origin}${path}`;
+  }
+  return `${getPublicSiteUrl()}${path}`;
+}
+
 /**
- * Em `use client`, quando o build não tinha `NEXT_PUBLIC_SITE_URL`, a partilha
- * pode vir com `http://localhost:...`. Reescreve para a origem atual se o
- * utilizador estiver noutro host (stage, produção, preview).
+ * Em `use client`, corrige links de partilha gerados com `localhost` ou `:3000` no build.
  */
 export function resolveShareUrlForBrowser(fullUrl: string): string {
-  if (typeof window === 'undefined') return fullUrl;
+  const normalized = normalizePublicShareUrl(fullUrl);
+  if (typeof window === 'undefined') return normalized;
   try {
-    const u = new URL(fullUrl);
+    const u = new URL(normalized);
+    const path = `${u.pathname}${u.search}${u.hash}`;
+    const host = window.location.hostname;
+    const onLocalhost = host === 'localhost' || host === '127.0.0.1';
+    if (!onLocalhost) {
+      return `${window.location.protocol}//${host}${path}`;
+    }
     const isPlaceholder =
       u.hostname === 'localhost' || u.hostname === '127.0.0.1';
-    const cur = window.location.hostname;
-    const onLocalhost = cur === 'localhost' || cur === '127.0.0.1';
-    if (isPlaceholder && !onLocalhost) {
-      u.protocol = window.location.protocol;
-      u.host = window.location.host;
-      return u.toString();
+    if (isPlaceholder) {
+      return `${window.location.origin}${path}`;
     }
+    return `${window.location.protocol}//${host}${path}`;
   } catch {
-    return fullUrl;
+    return normalized;
   }
-  return fullUrl;
 }
 
 /**
@@ -54,9 +111,9 @@ export function resolveShareUrlForBrowser(fullUrl: string): string {
 export function getPublicSiteUrlFromRequestHeaders(
   h: Readonly<Headers>,
 ): string {
-  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '');
+  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (fromEnv) {
-    return fromEnv;
+    return normalizePublicSiteOrigin(fromEnv);
   }
   const host =
     h.get('x-forwarded-host')?.split(',')[0]?.trim() ||
@@ -69,7 +126,7 @@ export function getPublicSiteUrlFromRequestHeaders(
   const isLocal =
     host.split(':')[0] === 'localhost' || host.startsWith('127.');
   const protocol = rawProto || (isLocal ? 'http' : 'https');
-  return `${protocol}://${host}`.replace(/\/$/, '');
+  return normalizePublicSiteOrigin(`${protocol}://${host}`);
 }
 
 /**

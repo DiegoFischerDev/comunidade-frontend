@@ -13,7 +13,7 @@ import {
 } from '@/lib/admin-contact-whatsapp';
 import { partnerContactHref } from '@/lib/partner-contact-redirect';
 import type { PartnerPublic } from '@/lib/partner-public-shared';
-import { PARTNER_PUBLIC_API_URL } from '@/lib/partner-public-shared';
+import { absolutePartnerAssetUrl } from '@/lib/partner-public-shared';
 
 type Props = {
   partner: PartnerPublic;
@@ -24,16 +24,8 @@ type Props = {
 export function PartnerPublicPageView({ partner, relocationHouses, sharePageUrl }: Props) {
   const visibleServices = partner.services;
 
-  const heroBgImage =
-    partner.backgroundImageUrl &&
-    (partner.backgroundImageUrl.startsWith('/uploads/')
-      ? `${PARTNER_PUBLIC_API_URL}${partner.backgroundImageUrl}`
-      : partner.backgroundImageUrl);
-
-  const logoSrc =
-    partner.logoUrl && partner.logoUrl.startsWith('/uploads/')
-      ? `${PARTNER_PUBLIC_API_URL}${partner.logoUrl}`
-      : partner.logoUrl;
+  const heroBgImage = absolutePartnerAssetUrl(partner.backgroundImageUrl);
+  const logoSrc = absolutePartnerAssetUrl(partner.logoUrl);
 
   const heroContactHref = partnerContactHref(
     partner.heroContactRedirectPath,

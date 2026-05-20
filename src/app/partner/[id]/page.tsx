@@ -5,7 +5,7 @@ import {
   fetchPartnerPublic,
   fetchRelocationHousesForPartner,
   partnerPublicSharePath,
-  PARTNER_PUBLIC_SITE_URL,
+  getPartnerPublicSiteUrl,
 } from '@/lib/partner-public-shared';
 
 type PageProps = {
@@ -33,7 +33,7 @@ export default async function PartnerLegacyPublicPage({ params }: PageProps) {
       ? await fetchRelocationHousesForPartner(partner.id)
       : [];
 
-  const sharePageUrl = `${PARTNER_PUBLIC_SITE_URL.replace(/\/$/, '')}${partnerPublicSharePath(partner)}`;
+  const sharePageUrl = `${getPartnerPublicSiteUrl()}${partnerPublicSharePath(partner)}`;
 
   return (
     <PartnerPublicPageView

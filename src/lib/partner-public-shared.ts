@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import type { RelocationHouseRow } from '@/components/relocation/relocation-house-shared';
+import { absoluteMediaUrlForOg } from '@/lib/house-public-server';
 import { getPublicSiteUrl } from '@/lib/site-url';
 
 export type PartnerService = {
@@ -52,18 +53,24 @@ export function partnerPublicSharePath(partner: PartnerPublic): string {
 export const PARTNER_PUBLIC_API_URL =
   process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3001';
 
-export const PARTNER_PUBLIC_SITE_URL = getPublicSiteUrl();
+/** Origem pública normalizada (sem `:3000` em produção). */
+export function getPartnerPublicSiteUrl(): string {
+  return getPublicSiteUrl();
+}
 
-export function absolutePartnerOgImage(
+/** Imagem de fundo da hero; se não existir, usa o logo. */
+export function partnerPublicOgImageUrl(partner: PartnerPublic): string | undefined {
+  return (
+    absoluteMediaUrlForOg(partner.backgroundImageUrl) ??
+    absoluteMediaUrlForOg(partner.logoUrl)
+  );
+}
+
+/** URL absoluta de asset do parceiro (hero, logo, catálogo). */
+export function absolutePartnerAssetUrl(
   url: string | null | undefined,
-  apiUrl: string = PARTNER_PUBLIC_API_URL,
-): string | undefined {
-  if (!url?.trim()) return undefined;
-  const u = url.trim();
-  if (u.startsWith('http://') || u.startsWith('https://')) return u;
-  const base = apiUrl.replace(/\/$/, '');
-  if (u.startsWith('/uploads/')) return `${base}${u}`;
-  return undefined;
+): string | null {
+  return absoluteMediaUrlForOg(url) ?? null;
 }
 
 export async function fetchPartnerPublic(lookup: string): Promise<PartnerPublic> {
@@ -120,9 +127,9 @@ export function buildPartnerPublicMetadata(
   const description = `${baseDescription}${servicesSnippet}`;
 
   const path = canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`;
-  const url = `${PARTNER_PUBLIC_SITE_URL.replace(/\/$/, '')}${path}`;
+  const url = `${getPartnerPublicSiteUrl()}${path}`;
 
-  const ogUrl = absolutePartnerOgImage(partner.logoUrl);
+  const ogUrl = partnerPublicOgImageUrl(partner);
   const ogImages = ogUrl
     ? [{ url: ogUrl, width: 1200, height: 630, alt: partner.name }]
     : [];
