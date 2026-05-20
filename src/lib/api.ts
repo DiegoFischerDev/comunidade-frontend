@@ -950,7 +950,12 @@ export const api = {
         sortOrder?: number;
         active?: boolean;
       }) =>
-        request('/recommended-services/admin', {
+        request<{
+          id: string;
+          title: string;
+          sortOrder: number;
+          active: boolean;
+        }>('/recommended-services/admin', {
           method: 'POST',
           body: JSON.stringify(body),
         }),
