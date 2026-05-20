@@ -9,6 +9,8 @@ export type PartnerService = {
   description: string | null;
   price: string | null;
   priceOnRequest: boolean;
+  /** `/link?t=…` quando o admin configurou link rastreado. */
+  contactRedirectPath?: string | null;
 };
 
 export type PartnerPublic = {
@@ -29,6 +31,8 @@ export type PartnerPublic = {
     slug: string;
   } | null;
   services: PartnerService[];
+  /** `/link?t=…` para o botão de contacto na hero. */
+  heroContactRedirectPath?: string | null;
 };
 
 /** Caminho público preferencial: `/{publicSlug}` ou legado `/partner/{id}`. */

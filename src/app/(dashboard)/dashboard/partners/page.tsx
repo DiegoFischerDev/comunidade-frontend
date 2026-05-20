@@ -14,6 +14,12 @@ type PartnerRow = {
   advertisingBalanceEurCents: number;
   user: { id: string; email: string | null; role: string };
   category: { id: string; name: string; slug: string } | null;
+  heroShareLink: {
+    id: string;
+    slug: string;
+    _count: { clicks: number };
+  } | null;
+  services: { id: string; partnerShareLinkId: string | null }[];
 };
 
 export default function PartnersPage() {
@@ -37,6 +43,9 @@ export default function PartnersPage() {
   const [logoUrl, setLogoUrl] = useState('');
   const [creating, setCreating] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [settingUpLinksPartnerId, setSettingUpLinksPartnerId] = useState<string | null>(
+    null,
+  );
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -104,6 +113,8 @@ export default function PartnersPage() {
           advertisingBalanceEurCents: 0,
           user: result.user,
           category: null,
+          heroShareLink: null,
+          services: [],
         },
         ...prev,
       ]);
@@ -273,6 +284,7 @@ export default function PartnersPage() {
                 <th className="px-4 py-2 text-left">WhatsApp</th>
                 <th className="px-4 py-2 text-left">Categoria</th>
                 <th className="px-4 py-2 text-left">Saldo publicidade</th>
+                <th className="px-4 py-2 text-left">Links de contacto</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
             </thead>
@@ -416,6 +428,76 @@ export default function PartnersPage() {
                       <p className="mt-1 text-xs text-zinc-500">—</p>
                     )}
                   </td>
+                  <td className="px-4 py-2 align-top">
+                    {(() => {
+                      const total = p.services.length;
+                      const withLink = p.services.filter(
+                        (s) => s.partnerShareLinkId,
+                      ).length;
+                      const heroClicks = p.heroShareLink?._count.clicks ?? 0;
+                      const configured =
+                        Boolean(p.heroShareLink) &&
+                        (total === 0 || withLink === total);
+                      return (
+                        <div className="min-w-[10rem] space-y-2">
+                          <p className="text-xs text-zinc-600">
+                            {configured ? (
+                              <span className="font-medium text-emerald-800">
+                                Configurado
+                              </span>
+                            ) : (
+                              <span className="text-amber-800">Por configurar</span>
+                            )}
+                          </p>
+                          <p className="text-[11px] leading-snug text-zinc-500">
+                            Hero:{' '}
+                            {p.heroShareLink ? (
+                              <>
+                                <code className="rounded bg-zinc-100 px-1">
+                                  {p.heroShareLink.slug}
+                                </code>
+                                {' · '}
+                                {heroClicks} clique{heroClicks === 1 ? '' : 's'}
+                              </>
+                            ) : (
+                              '—'
+                            )}
+                          </p>
+                          {total > 0 ? (
+                            <p className="text-[11px] text-zinc-500">
+                              Serviços: {withLink}/{total} com link
+                            </p>
+                          ) : null}
+                          <CardButton
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            loading={settingUpLinksPartnerId === p.id}
+                            disabled={settingUpLinksPartnerId !== null}
+                            onClick={async () => {
+                              setSettingUpLinksPartnerId(p.id);
+                              setError('');
+                              try {
+                                await api.admin.partners.setupContactLinks(p.id);
+                                const fresh = await api.admin.partners.list();
+                                setPartners(fresh);
+                              } catch (err) {
+                                setError(
+                                  err instanceof Error
+                                    ? err.message
+                                    : 'Erro ao configurar links de contacto.',
+                                );
+                              } finally {
+                                setSettingUpLinksPartnerId(null);
+                              }
+                            }}
+                          >
+                            {configured ? 'Atualizar links' : 'Gerar links'}
+                          </CardButton>
+                        </div>
+                      );
+                    })()}
+                  </td>
                   <td className="px-4 py-2 text-right">
                     <CardButton
                       type="button"
@@ -471,7 +553,7 @@ export default function PartnersPage() {
               {partners.length === 0 && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-4 py-4 text-center text-sm text-zinc-500"
                   >
                     Nenhum parceiro encontrado.

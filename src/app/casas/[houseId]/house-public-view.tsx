@@ -203,6 +203,7 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
                 <HousePublicationStatusBadge
                   publicationStatus={house.publicationStatus}
                   publishedUntil={house.publishedUntil}
+                  displayVariant="public"
                 />
               </div>
               <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">{house.title}</h1>

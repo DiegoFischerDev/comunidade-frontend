@@ -594,8 +594,54 @@ export const api = {
             advertisingBalanceEurCents: number;
             user: { id: string; email: string | null; role: string };
             category: { id: string; name: string; slug: string } | null;
+            heroShareLink: {
+              id: string;
+              slug: string;
+              _count: { clicks: number };
+            } | null;
+            services: { id: string; partnerShareLinkId: string | null }[];
           }[]
         >('/partners', { method: 'GET' }),
+      getContactLinks: (partnerId: string) =>
+        request<{
+          partnerId: string;
+          hero: {
+            id: string;
+            slug: string;
+            title: string;
+            clickCount: number;
+            redirectPath: string;
+          } | null;
+          services: {
+            id: string;
+            title: string;
+            link: {
+              id: string;
+              slug: string;
+              title: string;
+              clickCount: number;
+              redirectPath: string;
+            } | null;
+          }[];
+          servicesWithLink: number;
+          servicesTotal: number;
+        }>(`/partners/admin/${encodeURIComponent(partnerId)}/contact-links`, {
+          method: 'GET',
+        }),
+      setupContactLinks: (partnerId: string) =>
+        request<{
+          partnerId: string;
+          hero: { slug: string; redirectPath: string };
+          services: {
+            id: string;
+            title: string;
+            slug: string;
+            redirectPath: string;
+          }[];
+        }>(`/partners/admin/${encodeURIComponent(partnerId)}/contact-links/setup`, {
+          method: 'POST',
+          body: JSON.stringify({}),
+        }),
       getAdvertisingBalance: (partnerId: string) =>
         request<{ balanceEurCents: number }>(
           `/partners/admin/${encodeURIComponent(partnerId)}/advertising-balance`,
@@ -1849,7 +1895,9 @@ export const api = {
           description: string | null;
           price: string | null;
           priceOnRequest: boolean;
+          contactRedirectPath?: string | null;
         }[];
+        heroContactRedirectPath?: string | null;
         publicSlug?: string | null;
       }>(`/partners/${id}/public`, { method: 'GET' }),
     houseContact: (houseId: string) =>

@@ -6,6 +6,12 @@ import type { RelocationHouseRow } from '@/components/relocation/relocation-hous
 import { CardLinkButton } from '@/components/ui/CardButton';
 import { PartnerEngagementBar } from '@/components/PartnerEngagementBar';
 import { PartnerCommentsSection } from '@/components/PartnerCommentsSection';
+import {
+  buildAdminWhatsAppUrl,
+  partnerAtendimentoMessage,
+  partnerServiceInterestMessage,
+} from '@/lib/admin-contact-whatsapp';
+import { partnerContactHref } from '@/lib/partner-contact-redirect';
 import type { PartnerPublic } from '@/lib/partner-public-shared';
 import { PARTNER_PUBLIC_API_URL } from '@/lib/partner-public-shared';
 
@@ -28,6 +34,11 @@ export function PartnerPublicPageView({ partner, relocationHouses, sharePageUrl 
     partner.logoUrl && partner.logoUrl.startsWith('/uploads/')
       ? `${PARTNER_PUBLIC_API_URL}${partner.logoUrl}`
       : partner.logoUrl;
+
+  const heroContactHref = partnerContactHref(
+    partner.heroContactRedirectPath,
+    buildAdminWhatsAppUrl(partnerAtendimentoMessage(partner.name)),
+  );
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
@@ -66,7 +77,9 @@ export function PartnerPublicPageView({ partner, relocationHouses, sharePageUrl 
             )}
             <div className="mt-5 flex justify-center sm:justify-start">
               <CardLinkButton
-                href={`/dashboard/partner/${partner.id}`}
+                href={heroContactHref}
+                target="_blank"
+                rel="noopener noreferrer"
                 variant="outline"
                 className="px-5 py-2.5 shadow-sm"
               >
@@ -137,7 +150,14 @@ export function PartnerPublicPageView({ partner, relocationHouses, sharePageUrl 
                 />
                 <div className="mt-4 flex flex-col items-stretch gap-3 sm:items-end">
                   <CardLinkButton
-                    href={`/dashboard/partner/${partner.id}`}
+                    href={partnerContactHref(
+                      service.contactRedirectPath,
+                      buildAdminWhatsAppUrl(
+                        partnerServiceInterestMessage(partner.name, service.title),
+                      ),
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     variant="primary"
                     className="w-full min-w-0 sm:w-auto"
                   >
