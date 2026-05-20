@@ -13,7 +13,10 @@ import {
 } from '@/lib/admin-contact-whatsapp';
 import { partnerContactHref } from '@/lib/partner-contact-redirect';
 import type { PartnerPublic } from '@/lib/partner-public-shared';
-import { absolutePartnerAssetUrl } from '@/lib/partner-public-shared';
+import {
+  absolutePartnerAssetUrl,
+  PARTNER_PUBLIC_API_URL,
+} from '@/lib/partner-public-shared';
 
 type Props = {
   partner: PartnerPublic;
