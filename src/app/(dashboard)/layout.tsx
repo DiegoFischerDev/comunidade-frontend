@@ -252,6 +252,7 @@ export default function DashboardLayout({
   const [resetLoading, setResetLoading] = useState(false);
   const [partnerCategorySlug, setPartnerCategorySlug] = useState<string | null>(null);
   const [partnerDisplayName, setPartnerDisplayName] = useState<string | null>(null);
+  const [partnerId, setPartnerId] = useState<string | null>(null);
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -306,6 +307,7 @@ export default function DashboardLayout({
     if (!user || user.role !== 'PARTNER') {
       setPartnerCategorySlug(null);
       setPartnerDisplayName(null);
+      setPartnerId(null);
       return;
     }
     let cancelled = false;
@@ -315,11 +317,13 @@ export default function DashboardLayout({
         if (!cancelled) {
           setPartnerCategorySlug(me.category?.slug ?? null);
           setPartnerDisplayName(me.name?.trim() || null);
+          setPartnerId(me.id ?? null);
         }
       } catch {
         if (!cancelled) {
           setPartnerCategorySlug(null);
           setPartnerDisplayName(null);
+          setPartnerId(null);
         }
       }
     })();
@@ -399,6 +403,8 @@ export default function DashboardLayout({
   const isCasasPath =
     pathname === '/dashboard/casas' || pathname.startsWith('/dashboard/casas/');
   const isBusinessPath = pathname === '/dashboard/business';
+  const isPartnerMyPagePath =
+    Boolean(partnerId) && pathname === `/dashboard/partner/${partnerId}`;
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -479,9 +485,21 @@ export default function DashboardLayout({
                 Imóveis
               </Link>
               <div className="mt-2 border-t border-zinc-200 pt-2">
+                {partnerId ? (
+                  <Link
+                    href={`/dashboard/partner/${partnerId}`}
+                    className={`block rounded-md px-3 py-2 text-sm ${
+                      isPartnerMyPagePath
+                        ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                        : 'bg-white font-medium text-zinc-900 hover:bg-zinc-100'
+                    }`}
+                  >
+                    Minha página
+                  </Link>
+                ) : null}
                 <Link
                   href="/dashboard/casas"
-                  className={`block rounded-md px-3 py-2 text-sm ${
+                  className={`${partnerId ? 'mt-1 ' : ''}block rounded-md px-3 py-2 text-sm ${
                     isCasasPath
                       ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                       : 'bg-white font-medium text-zinc-900 hover:bg-zinc-100'
@@ -533,31 +551,7 @@ export default function DashboardLayout({
           >
             Início
           </Link>
-          {user?.role === 'PARTNER' ? (
-            <>
-              <Link
-                href="/dashboard/business"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  isBusinessPath
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Minha empresa
-              </Link>
-              <Link
-                href="/dashboard/my-services"
-                className={`mt-1 block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/my-services'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Meus serviços
-              </Link>
-            </>
-          ) : null}
-          {user && (user.role === 'ADMIN' || isActiveMember(user)) ? (
+          {user && user.role !== 'PARTNER' && (user.role === 'ADMIN' || isActiveMember(user)) ? (
             <>
               <Link
                 href="/plano-de-imigracao"
@@ -591,16 +585,18 @@ export default function DashboardLayout({
           >
             Imóveis
           </Link>
-          <Link
-            href="/relocation/servicos"
-            className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/relocation/servicos'
-                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                : 'text-zinc-800 hover:bg-zinc-100'
-            }`}
-          >
-            Serviços
-          </Link>
+          {user?.role !== 'PARTNER' ? (
+            <Link
+              href="/relocation/servicos"
+              className={`block rounded-md px-3 py-2 text-sm ${
+                pathname === '/relocation/servicos'
+                  ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                  : 'text-zinc-800 hover:bg-zinc-100'
+              }`}
+            >
+              Serviços
+            </Link>
+          ) : null}
           {user && user.role !== 'ADMIN' ? (
             <Link
               href="/dashboard/reclame-aqui"
@@ -614,7 +610,7 @@ export default function DashboardLayout({
             </Link>
           ) : null}
 
-          {isActiveMember(user) && (
+          {isActiveMember(user) && user?.role !== 'PARTNER' && (
             <Link
               href="/dashboard/my-referrals"
               className={`block rounded-md px-3 py-2 text-sm ${
@@ -753,6 +749,42 @@ export default function DashboardLayout({
               </Link>
             </>
           )}
+          {user?.role === 'PARTNER' ? (
+            <div className="mt-2 border-t border-zinc-200 pt-2">
+              {partnerId ? (
+                <Link
+                  href={`/dashboard/partner/${partnerId}`}
+                  className={`block rounded-md px-3 py-2 text-sm ${
+                    isPartnerMyPagePath
+                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                      : 'bg-white font-medium text-zinc-900 hover:bg-zinc-100'
+                  }`}
+                >
+                  Minha página
+                </Link>
+              ) : null}
+              <Link
+                href="/dashboard/business"
+                className={`${partnerId ? 'mt-1 ' : ''}block rounded-md px-3 py-2 text-sm ${
+                  isBusinessPath
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                    : 'bg-white font-medium text-zinc-900 hover:bg-zinc-100'
+                }`}
+              >
+                Minha empresa
+              </Link>
+              <Link
+                href="/dashboard/my-services"
+                className={`mt-1 block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/my-services'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                    : 'bg-white font-medium text-zinc-900 hover:bg-zinc-100'
+                }`}
+              >
+                Meus serviços
+              </Link>
+            </div>
+          ) : null}
           <a
             href={COMMUNITY_WHATSAPP_GROUPS_URL}
             target="_blank"

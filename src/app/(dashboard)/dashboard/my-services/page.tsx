@@ -159,8 +159,7 @@ export default function MyServicesPage() {
     <div>
       <h1 className="text-2xl font-semibold text-zinc-900">Meus serviços</h1>
       <p className="mt-2 text-sm text-zinc-600">
-        Cadastre os serviços que serão exibidos no marketplace. A categoria dos
-        serviços será definida pelo time RPM.
+        Cadastre os serviços que serão exibidos no seu site pessoal no google.
       </p>
 
       {error && (
