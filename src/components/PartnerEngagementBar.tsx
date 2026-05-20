@@ -158,12 +158,11 @@ export function PartnerEngagementBar({
       return;
     }
     if (!user) {
-      const el = document.getElementById('guest-partner-comment');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        const ta = el.querySelector('textarea');
-        window.setTimeout(() => ta instanceof HTMLElement && ta.focus(), 400);
-      }
+      window.dispatchEvent(
+        new CustomEvent('partner-open-comment-modal', {
+          detail: { partnerId },
+        }),
+      );
       return;
     }
     openCommentModal();
@@ -174,12 +173,6 @@ export function PartnerEngagementBar({
       const d = (e as CustomEvent<{ partnerId: string }>).detail;
       if (d?.partnerId !== partnerId) return;
       if (!user) {
-        const el = document.getElementById('guest-partner-comment');
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          const ta = el.querySelector('textarea');
-          window.setTimeout(() => ta instanceof HTMLElement && ta.focus(), 400);
-        }
         return;
       }
       setCommentErr(null);

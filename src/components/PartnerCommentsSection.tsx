@@ -467,6 +467,8 @@ export function PartnerCommentsSection({
   const [guestBody, setGuestBody] = useState('');
   const [guestSending, setGuestSending] = useState(false);
   const [guestErr, setGuestErr] = useState<string | null>(null);
+  const [guestModalOpen, setGuestModalOpen] = useState(false);
+  const guestModalBodyRef = useRef<HTMLTextAreaElement>(null);
 
   const tree = useMemo(() => buildTree(items), [items]);
 
@@ -514,6 +516,46 @@ export function PartnerCommentsSection({
       cancelled = true;
     };
   }, [partnerId, user, readOnly]);
+
+  useEffect(() => {
+    if (guestLocked) setGuestModalOpen(false);
+  }, [guestLocked]);
+
+  useEffect(() => {
+    if (user) setGuestModalOpen(false);
+  }, [user]);
+
+  useEffect(() => {
+    if (readOnly || user) return;
+    const onOpen = (e: Event) => {
+      const d = (e as CustomEvent<{ partnerId: string }>).detail;
+      if (d?.partnerId !== partnerId || guestLocked) return;
+      setGuestModalOpen(true);
+    };
+    window.addEventListener('partner-open-comment-modal', onOpen as EventListener);
+    return () =>
+      window.removeEventListener('partner-open-comment-modal', onOpen as EventListener);
+  }, [readOnly, user, partnerId, guestLocked]);
+
+  useEffect(() => {
+    if (!guestModalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setGuestModalOpen(false);
+        setGuestErr(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [guestModalOpen]);
+
+  useEffect(() => {
+    if (!guestModalOpen) return;
+    const t = window.setTimeout(() => {
+      guestModalBodyRef.current?.focus();
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [guestModalOpen]);
 
   useEffect(() => {
     void load();
@@ -588,6 +630,7 @@ export function PartnerCommentsSection({
       setGuestBody('');
       setGuestName('');
       setGuestLocked(true);
+      setGuestModalOpen(false);
       window.dispatchEvent(
         new CustomEvent('partner-comment-created', {
           detail: { partnerId },
@@ -695,13 +738,7 @@ export function PartnerCommentsSection({
               <CardButton
                 type="button"
                 variant="primary"
-                onClick={() => {
-                  window.dispatchEvent(
-                    new CustomEvent('partner-open-comment-modal', {
-                      detail: { partnerId },
-                    }),
-                  );
-                }}
+                onClick={() => setGuestModalOpen(true)}
                 className="mt-3 w-full sm:w-auto"
               >
                 Deixar opinião
@@ -716,56 +753,96 @@ export function PartnerCommentsSection({
         </p>
       )}
 
-      {!readOnly && !user && !guestLocked && (
+      {guestModalOpen && !readOnly && !user && !guestLocked && (
         <div
-          id="guest-partner-comment"
-          className="mb-6 rounded-2xl border border-amber-100 bg-gradient-to-b from-amber-50/90 to-white p-4 shadow-sm sm:p-5"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+          onClick={() => {
+            setGuestModalOpen(false);
+            setGuestErr(null);
+          }}
         >
-          <h3 className="text-sm font-semibold text-zinc-900">Comentar como visitante</h3>
-          <p className="mt-1 text-xs text-zinc-600">
-            Não precisas de conta. É permitido um comentário por dispositivo neste perfil.
-          </p>
-          <label htmlFor="guest-partner-name" className="mt-4 block text-xs font-medium text-zinc-700">
-            Nome (opcional)
-          </label>
-          <input
-            id="guest-partner-name"
-            type="text"
-            value={guestName}
-            onChange={(e) => setGuestName(e.target.value)}
-            maxLength={120}
-            autoComplete="nickname"
-            placeholder="Ex.: Maria"
-            className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-          />
-          <label htmlFor="guest-partner-body" className="mt-3 block text-xs font-medium text-zinc-700">
-            Comentário
-          </label>
-          <textarea
-            id="guest-partner-body"
-            rows={5}
-            value={guestBody}
-            onChange={(e) => setGuestBody(e.target.value)}
-            maxLength={2000}
-            placeholder="Escreve a tua opinião…"
-            className="mt-1.5 min-h-[7rem] w-full resize-y rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-          />
-          {guestErr && (
-            <p className="mt-2 text-xs text-red-600" role="status">
-              {guestErr}
-            </p>
-          )}
-          <div className="mt-3 flex flex-wrap justify-end gap-2">
-            <CardButton
-              type="button"
-              variant="primary"
-              size="sm"
-              onClick={() => void submitGuestComment()}
-              disabled={!guestBody.trim() || guestSending}
-              loading={guestSending}
-            >
-              {guestSending ? 'A enviar…' : 'Publicar'}
-            </CardButton>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="guest-partner-comment-title"
+            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-amber-100 bg-gradient-to-b from-amber-50/90 to-white p-5 shadow-xl sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 pr-2">
+                <h3 id="guest-partner-comment-title" className="text-sm font-semibold text-zinc-900">
+                  Comentar como visitante
+                </h3>
+                <p className="mt-1 text-xs text-zinc-600">
+                  Não precisas de conta. É permitido um comentário por dispositivo neste perfil.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setGuestModalOpen(false);
+                  setGuestErr(null);
+                }}
+                className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50"
+                aria-label="Fechar"
+              >
+                ✕
+              </button>
+            </div>
+            <label htmlFor="guest-partner-name-modal" className="mt-4 block text-xs font-medium text-zinc-700">
+              Nome (opcional)
+            </label>
+            <input
+              id="guest-partner-name-modal"
+              type="text"
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+              maxLength={120}
+              autoComplete="nickname"
+              placeholder="Ex.: Maria"
+              className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            />
+            <label htmlFor="guest-partner-body-modal" className="mt-3 block text-xs font-medium text-zinc-700">
+              Comentário
+            </label>
+            <textarea
+              id="guest-partner-body-modal"
+              ref={guestModalBodyRef}
+              rows={5}
+              value={guestBody}
+              onChange={(e) => setGuestBody(e.target.value)}
+              maxLength={2000}
+              placeholder="Escreve a tua opinião…"
+              className="mt-1.5 min-h-[7rem] w-full resize-y rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            />
+            {guestErr && (
+              <p className="mt-2 text-xs text-red-600" role="status">
+                {guestErr}
+              </p>
+            )}
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              <CardButton
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setGuestModalOpen(false);
+                  setGuestErr(null);
+                }}
+              >
+                Cancelar
+              </CardButton>
+              <CardButton
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={() => void submitGuestComment()}
+                disabled={!guestBody.trim() || guestSending}
+                loading={guestSending}
+              >
+                {guestSending ? 'A enviar…' : 'Publicar'}
+              </CardButton>
+            </div>
           </div>
         </div>
       )}

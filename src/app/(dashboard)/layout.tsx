@@ -499,6 +499,16 @@ export default function DashboardLayout({
                 >
                   Minha empresa
                 </Link>
+                <Link
+                  href="/dashboard/my-services"
+                  className={`mt-1 block rounded-md px-3 py-2 text-sm ${
+                    pathname === '/dashboard/my-services'
+                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                      : 'bg-white font-medium text-zinc-900 hover:bg-zinc-100'
+                  }`}
+                >
+                  Meus serviços
+                </Link>
               </div>
               <a
                 href={COMMUNITY_WHATSAPP_GROUPS_URL}
@@ -524,16 +534,28 @@ export default function DashboardLayout({
             Início
           </Link>
           {user?.role === 'PARTNER' ? (
-            <Link
-              href="/dashboard/business"
-              className={`block rounded-md px-3 py-2 text-sm ${
-                isBusinessPath
-                  ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                  : 'text-zinc-800 hover:bg-zinc-100'
-              }`}
-            >
-              Minha empresa
-            </Link>
+            <>
+              <Link
+                href="/dashboard/business"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  isBusinessPath
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Minha empresa
+              </Link>
+              <Link
+                href="/dashboard/my-services"
+                className={`mt-1 block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/my-services'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Meus serviços
+              </Link>
+            </>
           ) : null}
           {user && (user.role === 'ADMIN' || isActiveMember(user)) ? (
             <>
