@@ -2225,20 +2225,34 @@ export const api = {
       if (commissionIds?.length) {
         commissionIds.forEach((id) => form.append('commissionIds', id));
       }
-      return fetch(`${API_URL}/affiliate/admin/${affiliateId}/pay`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        body: form,
-      }).then(async (res) => {
+      const path = `/affiliate/admin/${affiliateId}/pay`;
+      return (async () => {
+        let res: Response;
+        try {
+          res = await fetch(`${API_URL}${path}`, {
+            method: 'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            body: form,
+          });
+        } catch (e) {
+          rethrowAsUserFacingError(e, path, { isMultipart: true });
+        }
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          const msg = Array.isArray(data.message)
-            ? data.message[0]
-            : data.message || data.error || fallbackHttpErrorMessage(res.status);
-          throw new Error(msg);
+          const raw = Array.isArray((data as { message?: unknown }).message)
+            ? (data as { message: string[] }).message[0]
+            : (data as { message?: string; error?: string }).message ||
+              (data as { error?: string }).error ||
+              fallbackHttpErrorMessagePt(res.status);
+          throw new Error(
+            getUserFacingApiError(
+              Object.assign(new Error(String(raw)), { status: res.status }),
+              { isMultipart: true },
+            ),
+          );
         }
         return data as { paidCount: number; paymentProofUrl: string };
-      });
+      })();
     },
   },
 
