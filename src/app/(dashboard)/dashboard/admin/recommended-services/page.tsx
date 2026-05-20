@@ -1,9 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { CardButton } from "@/components/ui/CardButton";
+import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 
 type Listed = Awaited<ReturnType<typeof api.admin.recommendedServices.list>>[number];
 type AvailableLink = Awaited<
@@ -35,6 +37,7 @@ export default function AdminRecommendedServicesPage() {
   const [editLinkId, setEditLinkId] = useState("");
   const [editActive, setEditActive] = useState(true);
   const [editSort, setEditSort] = useState(0);
+  const [cardImageBusy, setCardImageBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -82,6 +85,37 @@ export default function AdminRecommendedServicesPage() {
     setEditLinkId(row.partnerShareLink.id);
     setEditActive(row.active);
     setEditSort(row.sortOrder);
+  }
+
+  const editingRow = editId ? rows.find((r) => r.id === editId) : null;
+
+  async function handleCardImageSelected(file: File | null) {
+    if (!editId || !file) return;
+    setCardImageBusy(true);
+    setError("");
+    try {
+      await api.admin.recommendedServices.uploadCardImage(editId, file);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao enviar imagem.");
+    } finally {
+      setCardImageBusy(false);
+    }
+  }
+
+  async function handleCardImageRemove() {
+    if (!editId || !editingRow?.cardImageUrl) return;
+    if (!window.confirm("Remover a imagem do card?")) return;
+    setCardImageBusy(true);
+    setError("");
+    try {
+      await api.admin.recommendedServices.deleteCardImage(editId);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao remover imagem.");
+    } finally {
+      setCardImageBusy(false);
+    }
   }
 
   async function handleSaveEdit(e: React.FormEvent) {
@@ -205,6 +239,7 @@ export default function AdminRecommendedServicesPage() {
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-xs uppercase text-zinc-500">
               <tr>
+                <th className="px-3 py-2">Imagem</th>
                 <th className="px-3 py-2">Ordem</th>
                 <th className="px-3 py-2">Título</th>
                 <th className="px-3 py-2">Link</th>
@@ -215,13 +250,35 @@ export default function AdminRecommendedServicesPage() {
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-zinc-500">
+                  <td colSpan={6} className="px-3 py-6 text-center text-zinc-500">
                     Nenhum serviço na lista.
                   </td>
                 </tr>
               ) : (
-                rows.map((r) => (
+                rows.map((r) => {
+                  const thumb = r.cardImageUrl
+                    ? resolveUploadsUrl(r.cardImageUrl)
+                    : null;
+                  return (
                   <tr key={r.id} className="border-b border-zinc-100 last:border-0">
+                    <td className="px-3 py-2">
+                      <div className="relative h-12 w-16 overflow-hidden rounded-md border border-zinc-200 bg-gradient-to-br from-[#1a4d2e] to-[#7cb518]">
+                        {thumb ? (
+                          <Image
+                            src={thumb}
+                            alt=""
+                            fill
+                            className="object-cover"
+                            sizes="64px"
+                            unoptimized
+                          />
+                        ) : (
+                          <span className="flex h-full items-center justify-center text-[10px] text-white/80">
+                            —
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-3 py-2 tabular-nums">{r.sortOrder}</td>
                     <td className="px-3 py-2 font-medium text-zinc-900">{r.title}</td>
                     <td className="px-3 py-2">
@@ -255,7 +312,8 @@ export default function AdminRecommendedServicesPage() {
                       </button>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -307,6 +365,52 @@ export default function AdminRecommendedServicesPage() {
                 />
                 Visível na lista pública
               </label>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-zinc-700">
+                Imagem do card (página pública)
+              </label>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                Proporção 4:3 recomendada. Aparece no topo de cada card em Serviços que indico.
+              </p>
+              {editingRow?.cardImageUrl ? (
+                <div className="relative mt-2 aspect-[4/3] max-w-xs overflow-hidden rounded-lg border border-zinc-200">
+                  <Image
+                    src={resolveUploadsUrl(editingRow.cardImageUrl)}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="320px"
+                    unoptimized
+                  />
+                </div>
+              ) : null}
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <label className="cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-50">
+                  {cardImageBusy ? "A enviar…" : editingRow?.cardImageUrl ? "Substituir imagem" : "Enviar imagem"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    disabled={cardImageBusy}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      void handleCardImageSelected(f ?? null);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+                {editingRow?.cardImageUrl ? (
+                  <button
+                    type="button"
+                    disabled={cardImageBusy}
+                    onClick={() => void handleCardImageRemove()}
+                    className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-800 hover:bg-red-100 disabled:opacity-50"
+                  >
+                    Remover imagem
+                  </button>
+                ) : null}
+              </div>
             </div>
             <div className="flex gap-2 sm:col-span-2">
               <CardButton type="submit" variant="primary" loading={saving}>

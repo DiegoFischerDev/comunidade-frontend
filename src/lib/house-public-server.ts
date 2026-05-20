@@ -5,9 +5,11 @@ const API_URL =
 
 export type PublicHousePartner = {
   id: string;
+  publicSlug?: string | null;
   name: string;
   whatsapp: string;
   logoUrl: string | null;
+  shortDescription?: string | null;
   category: {
     id: string;
     name: string;

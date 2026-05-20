@@ -353,6 +353,7 @@ export const api = {
         {
           id: string;
           title: string;
+          cardImageUrl: string | null;
           slug: string;
           linkTitle: string;
           whatsappPhrase: string;
@@ -919,6 +920,7 @@ export const api = {
           {
             id: string;
             title: string;
+            cardImageUrl: string | null;
             sortOrder: number;
             active: boolean;
             createdAt: string;
@@ -968,6 +970,20 @@ export const api = {
       delete: (id: string) =>
         request<{ ok: true }>(
           `/recommended-services/admin/${encodeURIComponent(id)}`,
+          { method: 'DELETE' },
+        ),
+      uploadCardImage: (id: string, file: File) => {
+        const fd = new FormData();
+        fd.set('file', file);
+        return requestFormData<{ cardImageUrl: string }>(
+          `/recommended-services/admin/${encodeURIComponent(id)}/card-image`,
+          fd,
+          { method: 'POST' },
+        );
+      },
+      deleteCardImage: (id: string) =>
+        request<{ ok: true; cardImageUrl: null }>(
+          `/recommended-services/admin/${encodeURIComponent(id)}/card-image`,
           { method: 'DELETE' },
         ),
     },

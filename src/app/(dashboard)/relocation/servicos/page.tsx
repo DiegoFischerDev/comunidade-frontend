@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { RecommendedServiceCard } from "@/components/relocation/RecommendedServiceCard";
 
 type ServiceRow = Awaited<ReturnType<typeof api.recommendedServices.list>>[number];
 
@@ -33,41 +33,46 @@ export default function RelocationServicosPage() {
   }, []);
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
-      <div>
-        <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
+    <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-6 sm:px-6 sm:py-10">
+      <header className="max-w-2xl">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800/90">
+          Relocation Portugal
+        </p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
           Serviços que indico
         </h1>
-        <p className="mt-1 text-sm text-zinc-600">
+        <p className="mt-2 text-sm leading-relaxed text-zinc-600 sm:text-base">
           Parceiros de confiança para não cair em golpes.
         </p>
-      </div>
+      </header>
 
       {loading ? (
-        <p className="text-sm text-zinc-500">A carregar…</p>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-72 animate-pulse rounded-2xl border border-zinc-200 bg-zinc-100"
+            />
+          ))}
+        </div>
       ) : error ? (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
       ) : rows.length === 0 ? (
-        <p className="text-sm text-zinc-600">Ainda não há serviços publicados.</p>
+        <p className="rounded-xl border border-zinc-200 bg-white px-4 py-8 text-center text-sm text-zinc-600">
+          Ainda não há serviços publicados.
+        </p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((s) => (
-            <li key={s.id}>
-              <Link
-                href={s.redirectPath}
-                className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-white px-4 py-4 shadow-sm transition hover:border-emerald-300 hover:shadow-md"
-              >
-                <div className="min-w-0">
-                  <p className="font-semibold text-zinc-900">{s.title}</p>
-                  {s.linkTitle !== s.title ? (
-                    <p className="mt-0.5 truncate text-xs text-zinc-500">{s.linkTitle}</p>
-                  ) : null}
-                </div>
-                <span className="shrink-0 rounded-full bg-gradient-to-r from-[#1a4d2e] to-[#7cb518] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white">
-                  Contactar
-                </span>
-              </Link>
-            </li>
+            <RecommendedServiceCard
+              key={s.id}
+              service={{
+                id: s.id,
+                title: s.title,
+                cardImageUrl: s.cardImageUrl,
+                redirectPath: s.redirectPath,
+              }}
+            />
           ))}
         </ul>
       )}

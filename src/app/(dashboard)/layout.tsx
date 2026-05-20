@@ -542,16 +542,6 @@ export default function DashboardLayout({
                   Meus serviços
                 </Link>
               </div>
-              <a
-                href={COMMUNITY_WHATSAPP_GROUPS_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-800 hover:bg-zinc-100"
-                aria-label="Grupos de ajuda WhatsApp — entrar e participar"
-              >
-                <WhatsappIcon className="h-5 w-5 shrink-0 text-[#25D366]" />
-                <span>Grupo WhatsApp</span>
-              </a>
             </>
           ) : (
             <>
@@ -802,16 +792,18 @@ export default function DashboardLayout({
               </Link>
             </div>
           ) : null}
-          <a
-            href={COMMUNITY_WHATSAPP_GROUPS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-1 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-800 hover:bg-zinc-100"
-            aria-label="Grupos de ajuda WhatsApp — entrar e participar"
-          >
-            <WhatsappIcon className="h-5 w-5 shrink-0 text-[#25D366]" />
-            <span>Grupo WhatsApp</span>
-          </a>
+          {user?.role !== 'PARTNER' ? (
+            <a
+              href={COMMUNITY_WHATSAPP_GROUPS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-800 hover:bg-zinc-100"
+              aria-label="Grupos de ajuda WhatsApp — entrar e participar"
+            >
+              <WhatsappIcon className="h-5 w-5 shrink-0 text-[#25D366]" />
+              <span>Grupo WhatsApp</span>
+            </a>
+          ) : null}
             </>
           )}
         </nav>

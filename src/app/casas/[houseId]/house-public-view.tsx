@@ -11,6 +11,7 @@ import { HousePublicationStatusBadge } from "@/components/house/HousePublication
 import { HouseContactSection } from "./house-contact-section";
 import { HousePhotoGallery } from "./house-photo-gallery";
 import { relocationCityDisplayName } from "@/lib/relocation-portugal-cities";
+import { partnerPublicPagePath } from "@/lib/partner-public-shared";
 
 const TYPOLOGY_LABELS: Record<string, string> = {
   T0: "T0",
@@ -253,6 +254,49 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
               publishedUntil={house.publishedUntil}
               allowUnpublished={variant === "dashboard"}
             />
+
+            <section className="border-t border-zinc-100 pt-6">
+              <h2 className="text-sm font-semibold text-zinc-900">Anunciante</h2>
+              <p className="mt-1 text-xs text-zinc-600">
+                Este imóvel é anunciado por um parceiro relocation da comunidade.
+              </p>
+              <Link
+                href={partnerPublicPagePath(partner.id, partner.publicSlug)}
+                className="mt-4 flex items-center gap-4 rounded-2xl border border-zinc-200 bg-zinc-50/90 p-4 transition hover:border-amber-200/90 hover:bg-amber-50/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+              >
+                {logoSrc ? (
+                  <Image
+                    src={logoSrc}
+                    alt=""
+                    width={56}
+                    height={56}
+                    className="h-14 w-14 shrink-0 rounded-full border border-zinc-200 bg-white object-contain p-1"
+                    unoptimized={nextImageUnoptimized(logoSrc)}
+                  />
+                ) : (
+                  <div
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#d58901] to-[#f0b23a] text-lg font-semibold text-white"
+                    aria-hidden
+                  >
+                    {partner.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-zinc-900">{partner.name}</p>
+                  {partner.category ? (
+                    <p className="mt-0.5 text-xs text-zinc-600">{partner.category.name}</p>
+                  ) : null}
+                  {partner.shortDescription?.trim() ? (
+                    <p className="mt-1 line-clamp-2 text-sm text-zinc-600">
+                      {partner.shortDescription.trim()}
+                    </p>
+                  ) : null}
+                  <p className="mt-2 text-sm font-medium text-amber-800">
+                    Ver página do parceiro →
+                  </p>
+                </div>
+              </Link>
+            </section>
           </div>
         </article>
       </main>
