@@ -1,3 +1,12 @@
+import {
+  fallbackHttpErrorMessagePt,
+  getUserFacingApiError,
+  inferMultipartContext,
+  inferUserMessageContext,
+  rethrowAsUserFacingError,
+  type HttpErrorLike,
+} from './api-error-message';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 /** JWT atual (partilhado entre abas do mesmo site via `localStorage`). */
@@ -45,12 +54,9 @@ export function clearDeviceSessionToken() {
 
 export const getAuthToken = getToken;
 
-function fallbackHttpErrorMessage(status: number): string {
-  return `Não foi possível concluir o pedido (código ${status}).`;
-}
-
 /** Erros HTTP da API com código de estado (ex.: 413) para o UI decidir mensagens. */
-export type ApiHttpError = Error & { status?: number; code?: string };
+export type ApiHttpError = HttpErrorLike;
+export { getUserFacingApiError } from './api-error-message';
 
 function enrichApiHttpError(
   err: ApiHttpError,
@@ -69,6 +75,8 @@ type RequestOptions = RequestInit & {
   token?: string | null;
   /** UUID v4 persistente no browser (cabeçalho `X-Partner-Device-Id`). */
   partnerDeviceId?: string | null;
+  /** Prefixo da mensagem de erro em português (ex.: «Ao guardar o anúncio»). */
+  userMessageContext?: string;
 };
 
 /** Mensagem antiga da API que não queremos mostrar ao utilizador (ex.: stage ainda no deploy anterior). */
@@ -80,7 +88,12 @@ async function request<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { token = getToken(), partnerDeviceId, ...init } = options;
+  const {
+    token = getToken(),
+    partnerDeviceId,
+    userMessageContext,
+    ...init
+  } = options;
   const method = (init.method ?? 'GET').toString().toUpperCase();
   const headers: HeadersInit = {
     ...(init.headers as Record<string, string>),
@@ -94,18 +107,33 @@ async function request<T>(
   if (partnerDeviceId) {
     (headers as Record<string, string>)['X-Partner-Device-Id'] = partnerDeviceId;
   }
-  const res = await fetch(`${API_URL}${path}`, { ...init, headers });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, { ...init, headers });
+  } catch (e) {
+    rethrowAsUserFacingError(e, path, { context: userMessageContext });
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     let msg = Array.isArray(data.message)
       ? data.message[0]
-      : data.message || data.error || fallbackHttpErrorMessage(res.status);
+      : data.message || data.error || fallbackHttpErrorMessagePt(res.status);
     msg = typeof msg === 'string' ? msg : String(msg);
     if (shouldHideApiMessage(msg)) {
-      const err = new Error('') as ApiHttpError;
+      const err = new Error(
+        getUserFacingApiError(
+          { message: '', status: res.status } as ApiHttpError,
+          { context: userMessageContext },
+        ),
+      ) as ApiHttpError;
       throw enrichApiHttpError(err, res, data);
     }
-    const err = new Error(msg) as ApiHttpError;
+    const err = new Error(
+      getUserFacingApiError(
+        Object.assign(new Error(msg), { status: res.status }),
+        { context: userMessageContext },
+      ),
+    ) as ApiHttpError;
     throw enrichApiHttpError(err, res, data);
   }
   return data as T;
@@ -116,7 +144,7 @@ async function requestFormData<T>(
   formData: FormData,
   options: Omit<RequestOptions, 'body' | 'headers'> & { headers?: HeadersInit } = {},
 ): Promise<T> {
-  const { token = getToken(), ...init } = options;
+  const { token = getToken(), userMessageContext, ...init } = options;
   const headers: HeadersInit = {
     ...(init.headers as Record<string, string>),
   };
@@ -124,23 +152,45 @@ async function requestFormData<T>(
   if (token) {
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
   }
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    method: (init.method ?? 'POST') as any,
-    headers,
-    body: formData,
-  });
+  const msgContext = userMessageContext ?? inferUserMessageContext(path);
+  const isMultipart = inferMultipartContext(path);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...init,
+      method: (init.method ?? 'POST') as RequestInit['method'],
+      headers,
+      body: formData,
+    });
+  } catch (e) {
+    rethrowAsUserFacingError(e, path, {
+      context: msgContext,
+      isMultipart,
+    });
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    let msg = Array.isArray((data as any).message)
-      ? (data as any).message[0]
-      : (data as any).message || (data as any).error || fallbackHttpErrorMessage(res.status);
+    let msg = Array.isArray((data as { message?: unknown }).message)
+      ? (data as { message: string[] }).message[0]
+      : (data as { message?: string; error?: string }).message ||
+        (data as { error?: string }).error ||
+        fallbackHttpErrorMessagePt(res.status);
     msg = typeof msg === 'string' ? msg : String(msg);
     if (shouldHideApiMessage(msg)) {
-      const err = new Error('') as ApiHttpError;
+      const err = new Error(
+        getUserFacingApiError(
+          { message: '', status: res.status } as ApiHttpError,
+          { context: msgContext, isMultipart },
+        ),
+      ) as ApiHttpError;
       throw enrichApiHttpError(err, res, data);
     }
-    const err = new Error(msg) as ApiHttpError;
+    const err = new Error(
+      getUserFacingApiError(
+        Object.assign(new Error(msg), { status: res.status }),
+        { context: msgContext, isMultipart },
+      ),
+    ) as ApiHttpError;
     throw enrichApiHttpError(err, res, data);
   }
   return data as T;

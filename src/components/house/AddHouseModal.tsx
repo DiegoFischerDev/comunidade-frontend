@@ -238,7 +238,7 @@ export function AddHouseModal({
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Erro ao carregar anúncio.');
+          setError(err instanceof Error ? err.message : 'Erro ao carregar o anúncio.');
         }
       } finally {
         if (!cancelled) setLoadingHouse(false);
@@ -395,7 +395,7 @@ export function AddHouseModal({
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao guardar anúncio.');
+      setError(err instanceof Error ? err.message : 'Erro ao guardar o anúncio.');
     } finally {
       setSaving(false);
     }
