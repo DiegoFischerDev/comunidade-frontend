@@ -12,14 +12,24 @@ import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { CardButton } from '@/components/ui/CardButton';
+import { getOrCreatePartnerDeviceId } from '@/lib/partner-device-id';
 
 type Item = {
   id: string;
   body: string;
   createdAt: string;
   parentId: string | null;
-  user: { id: string; name: string };
+  user: { id: string; name: string } | null;
+  guestName: string | null;
+  ownedByRequestDevice: boolean;
 };
+
+function commentAuthorName(it: Item) {
+  if (it.user?.name?.trim()) return it.user.name.trim();
+  const g = it.guestName?.trim();
+  if (g) return g;
+  return 'Visitante';
+}
 
 type TreeNode = Item & { children: TreeNode[] };
 
@@ -168,7 +178,7 @@ function CommentInlineForm({
     <div className="mt-2 max-w-lg animate-in fade-in slide-in-from-top-1 duration-200">
       <div className="overflow-hidden rounded-xl border border-zinc-200/90 bg-zinc-50/90">
         <label className="sr-only" htmlFor={`reply-${node.id}`}>
-          Responder a {node.user.name}
+          Responder a {commentAuthorName(node)}
         </label>
         <textarea
           id={`reply-${node.id}`}
@@ -219,13 +229,16 @@ function CommentInlineForm({
 
 function ReplyRow({ node, isAdmin, userId, deletingId, onDelete, readOnly }: ReplyRowViewProps) {
   const canDelete =
-    !readOnly && (isAdmin || (userId != null && userId === node.user.id));
+    !readOnly &&
+    (isAdmin ||
+      (userId != null && node.user != null && userId === node.user.id) ||
+      node.ownedByRequestDevice);
   return (
     <li className="pt-1.5 first:pt-0.5">
       <div className="min-w-0">
         <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] leading-tight sm:text-sm">
           <span className="font-semibold text-zinc-900">
-            {node.user.name}
+            {commentAuthorName(node)}
           </span>
           <time
             className="text-[11px] text-zinc-400 sm:text-xs"
@@ -291,7 +304,10 @@ function RootCommentThread({
 }: ThreadProps) {
   const replyInputRef = useRef<HTMLTextAreaElement | null>(null);
   const canDelete =
-    !readOnly && (isAdmin || (userId != null && userId === node.user.id));
+    !readOnly &&
+    (isAdmin ||
+      (userId != null && node.user != null && userId === node.user.id) ||
+      node.ownedByRequestDevice);
   const flatReplies = useMemo(
     () => flattenRepliesInThread(node),
     [node],
@@ -312,7 +328,7 @@ function RootCommentThread({
             <header className="min-w-0">
               <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="font-semibold text-zinc-900">
-                  {node.user.name}
+                  {commentAuthorName(node)}
                 </span>
                 <span className="hidden sm:inline" aria-hidden>
                   ·
@@ -446,14 +462,27 @@ export function PartnerCommentsSection({
   const [inlineReplyText, setInlineReplyText] = useState('');
   const [inlineReplySending, setInlineReplySending] = useState(false);
   const [inlineReplyErr, setInlineReplyErr] = useState<string | null>(null);
+  const [guestLocked, setGuestLocked] = useState(false);
+  const [guestName, setGuestName] = useState('');
+  const [guestBody, setGuestBody] = useState('');
+  const [guestSending, setGuestSending] = useState(false);
+  const [guestErr, setGuestErr] = useState<string | null>(null);
 
   const tree = useMemo(() => buildTree(items), [items]);
+
+  const partnerDeviceOpts = useCallback(() => {
+    const id = getOrCreatePartnerDeviceId();
+    return id ? { partnerDeviceId: id } : {};
+  }, []);
 
   const load = useCallback(async () => {
     setError(null);
     setLoading(true);
     try {
-      const res = await api.marketplace.partnerComments(partnerId, { take });
+      const res = await api.marketplace.partnerComments(partnerId, {
+        take,
+        ...partnerDeviceOpts(),
+      });
       setItems(res.items);
       setHasMore(res.hasMore);
     } catch (e) {
@@ -463,7 +492,28 @@ export function PartnerCommentsSection({
     } finally {
       setLoading(false);
     }
-  }, [partnerId, take]);
+  }, [partnerId, take, partnerDeviceOpts]);
+
+  useEffect(() => {
+    if (readOnly || user) {
+      setGuestLocked(false);
+      return;
+    }
+    const id = getOrCreatePartnerDeviceId();
+    if (!id) return;
+    let cancelled = false;
+    void api.marketplace
+      .partnerEngagement(partnerId, { partnerDeviceId: id })
+      .then((r) => {
+        if (!cancelled) setGuestLocked(r.hasDeviceComment);
+      })
+      .catch(() => {
+        if (!cancelled) setGuestLocked(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [partnerId, user, readOnly]);
 
   useEffect(() => {
     void load();
@@ -478,10 +528,19 @@ export function PartnerCommentsSection({
       ).detail;
       if (d?.partnerId !== partnerId) return;
       void load();
+      if (!user && !readOnly) {
+        const id = getOrCreatePartnerDeviceId();
+        if (id) {
+          void api.marketplace
+            .partnerEngagement(partnerId, { partnerDeviceId: id })
+            .then((r) => setGuestLocked(r.hasDeviceComment))
+            .catch(() => {});
+        }
+      }
     };
     window.addEventListener('partner-comment-created', onCreated);
     return () => window.removeEventListener('partner-comment-created', onCreated);
-  }, [partnerId, load]);
+  }, [partnerId, load, user, readOnly]);
 
   const deleteComment = async (commentId: string) => {
     if (!window.confirm('Eliminar este comentário? Esta ação não pode ser anulada.')) {
@@ -490,8 +549,8 @@ export function PartnerCommentsSection({
     setDeletingId(commentId);
     setError(null);
     try {
-      await api.marketplace.deletePartnerComment(partnerId, commentId);
-      const res = await api.marketplace.partnerComments(partnerId, { take });
+      await api.marketplace.deletePartnerComment(partnerId, commentId, partnerDeviceOpts());
+      const res = await api.marketplace.partnerComments(partnerId, { take, ...partnerDeviceOpts() });
       setItems(res.items);
       setHasMore(res.hasMore);
       window.dispatchEvent(
@@ -503,6 +562,43 @@ export function PartnerCommentsSection({
       );
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const submitGuestComment = async () => {
+    const t = guestBody.trim();
+    if (!t || guestSending || guestLocked) return;
+    const deviceId = getOrCreatePartnerDeviceId();
+    if (!deviceId) {
+      setGuestErr('Não foi possível identificar este dispositivo. Ativa cookies/armazenamento local e tenta novamente.');
+      return;
+    }
+    setGuestSending(true);
+    setGuestErr(null);
+    try {
+      const guestTrim = guestName.trim();
+      await api.marketplace.createPartnerComment(
+        partnerId,
+        {
+          body: t,
+          guestName: guestTrim.length > 0 ? guestTrim.slice(0, 120) : undefined,
+        },
+        { partnerDeviceId: deviceId },
+      );
+      setGuestBody('');
+      setGuestName('');
+      setGuestLocked(true);
+      window.dispatchEvent(
+        new CustomEvent('partner-comment-created', {
+          detail: { partnerId },
+        }),
+      );
+    } catch (e) {
+      setGuestErr(
+        e instanceof Error ? e.message : 'Não foi possível publicar o comentário.',
+      );
+    } finally {
+      setGuestSending(false);
     }
   };
 
@@ -573,24 +669,44 @@ export function PartnerCommentsSection({
             O que dizem de {partnerName}
           </h2>
           <p className="mt-1 text-sm text-zinc-500">
-            Avaliações deixadas por membros da Comunidade Rafa Portugal.
+            Comentários de membros da Comunidade e de visitantes (sem conta).
           </p>
-          {!readOnly && (
-            <CardButton
-              type="button"
-              variant="primary"
-              onClick={() => {
-                window.dispatchEvent(
-                  new CustomEvent('partner-open-comment-modal', {
-                    detail: { partnerId },
-                  }),
-                );
-              }}
-              className="mt-3 w-full sm:w-auto"
-            >
-              Quero avaliar
-            </CardButton>
-          )}
+          {!readOnly &&
+            (user ? (
+              <CardButton
+                type="button"
+                variant="primary"
+                onClick={() => {
+                  window.dispatchEvent(
+                    new CustomEvent('partner-open-comment-modal', {
+                      detail: { partnerId },
+                    }),
+                  );
+                }}
+                className="mt-3 w-full sm:w-auto"
+              >
+                Quero avaliar
+              </CardButton>
+            ) : guestLocked ? (
+              <p className="mt-3 text-sm text-zinc-600">
+                Neste dispositivo já deixaste um comentário neste perfil.
+              </p>
+            ) : (
+              <CardButton
+                type="button"
+                variant="primary"
+                onClick={() => {
+                  window.dispatchEvent(
+                    new CustomEvent('partner-open-comment-modal', {
+                      detail: { partnerId },
+                    }),
+                  );
+                }}
+                className="mt-3 w-full sm:w-auto"
+              >
+                Deixar opinião
+              </CardButton>
+            ))}
         </div>
       </div>
 
@@ -598,6 +714,60 @@ export function PartnerCommentsSection({
         <p className="mb-3 text-sm text-red-600" role="status">
           {error}
         </p>
+      )}
+
+      {!readOnly && !user && !guestLocked && (
+        <div
+          id="guest-partner-comment"
+          className="mb-6 rounded-2xl border border-amber-100 bg-gradient-to-b from-amber-50/90 to-white p-4 shadow-sm sm:p-5"
+        >
+          <h3 className="text-sm font-semibold text-zinc-900">Comentar como visitante</h3>
+          <p className="mt-1 text-xs text-zinc-600">
+            Não precisas de conta. É permitido um comentário por dispositivo neste perfil.
+          </p>
+          <label htmlFor="guest-partner-name" className="mt-4 block text-xs font-medium text-zinc-700">
+            Nome (opcional)
+          </label>
+          <input
+            id="guest-partner-name"
+            type="text"
+            value={guestName}
+            onChange={(e) => setGuestName(e.target.value)}
+            maxLength={120}
+            autoComplete="nickname"
+            placeholder="Ex.: Maria"
+            className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+          />
+          <label htmlFor="guest-partner-body" className="mt-3 block text-xs font-medium text-zinc-700">
+            Comentário
+          </label>
+          <textarea
+            id="guest-partner-body"
+            rows={5}
+            value={guestBody}
+            onChange={(e) => setGuestBody(e.target.value)}
+            maxLength={2000}
+            placeholder="Escreve a tua opinião…"
+            className="mt-1.5 min-h-[7rem] w-full resize-y rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+          />
+          {guestErr && (
+            <p className="mt-2 text-xs text-red-600" role="status">
+              {guestErr}
+            </p>
+          )}
+          <div className="mt-3 flex flex-wrap justify-end gap-2">
+            <CardButton
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => void submitGuestComment()}
+              disabled={!guestBody.trim() || guestSending}
+              loading={guestSending}
+            >
+              {guestSending ? 'A enviar…' : 'Publicar'}
+            </CardButton>
+          </div>
+        </div>
       )}
 
       {!loading && items.length === 0 && !error && (

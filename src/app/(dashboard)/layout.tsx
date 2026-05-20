@@ -17,6 +17,7 @@ import {
   OPEN_MEMBERSHIP_MODAL_EVENT,
 } from '@/lib/auth-ui-events';
 import { isActiveMember } from '@/lib/membership-access';
+import { COMMUNITY_WHATSAPP_GROUPS_URL } from '@/lib/community-whatsapp-groups';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   LoginMethodSwitchLink,
@@ -397,6 +398,7 @@ export default function DashboardLayout({
     user?.role === 'PARTNER' && partnerCategorySlug === 'relocation';
   const isCasasPath =
     pathname === '/dashboard/casas' || pathname.startsWith('/dashboard/casas/');
+  const isBusinessPath = pathname === '/dashboard/business';
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -487,7 +489,27 @@ export default function DashboardLayout({
                 >
                   Minhas casas
                 </Link>
+                <Link
+                  href="/dashboard/business"
+                  className={`mt-1 block rounded-md px-3 py-2 text-sm ${
+                    isBusinessPath
+                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                      : 'bg-white font-medium text-zinc-900 hover:bg-zinc-100'
+                  }`}
+                >
+                  Minha empresa
+                </Link>
               </div>
+              <a
+                href={COMMUNITY_WHATSAPP_GROUPS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-800 hover:bg-zinc-100"
+                aria-label="Grupos de ajuda WhatsApp — entrar e participar"
+              >
+                <WhatsappIcon className="h-5 w-5 shrink-0 text-[#25D366]" />
+                <span>Grupo WhatsApp</span>
+              </a>
             </>
           ) : (
             <>
@@ -501,6 +523,18 @@ export default function DashboardLayout({
           >
             Início
           </Link>
+          {user?.role === 'PARTNER' ? (
+            <Link
+              href="/dashboard/business"
+              className={`block rounded-md px-3 py-2 text-sm ${
+                isBusinessPath
+                  ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                  : 'text-zinc-800 hover:bg-zinc-100'
+              }`}
+            >
+              Minha empresa
+            </Link>
+          ) : null}
           {user && (user.role === 'ADMIN' || isActiveMember(user)) ? (
             <>
               <Link

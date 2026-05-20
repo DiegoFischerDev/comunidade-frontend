@@ -13,6 +13,7 @@ export default function BusinessPage() {
   const [success, setSuccess] = useState('');
 
   const [partnerId, setPartnerId] = useState<string | null>(null);
+  const [publicSlug, setPublicSlug] = useState('');
   const [name, setName] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
@@ -68,6 +69,7 @@ export default function BusinessPage() {
       try {
         const data = await api.partner.me();
         setPartnerId(data.id);
+        setPublicSlug(data.publicSlug?.trim() ?? '');
         setName(data.name);
         setWhatsapp(data.whatsapp || '');
         setLogoUrl(data.logoUrl ?? '');
@@ -117,8 +119,12 @@ export default function BusinessPage() {
     setSaving(true);
 
     try {
-      const updated = await api.partner.updateMe(buildPartnerUpdatePayload());
+      const updated = await api.partner.updateMe({
+        ...buildPartnerUpdatePayload(),
+        publicSlug: publicSlug.trim() === '' ? null : publicSlug.trim(),
+      });
 
+      setPublicSlug(updated.publicSlug?.trim() ?? '');
       setName(updated.name);
       setWhatsapp(updated.whatsapp || '');
       setLogoUrl(updated.logoUrl ?? '');
@@ -329,12 +335,15 @@ export default function BusinessPage() {
     <div>
       <h1 className="text-2xl font-semibold text-zinc-900">Minha empresa</h1>
       <p className="mt-2 text-sm text-zinc-600">
-        Ajuste as informações públicas da sua empresa dentro da Comunidade Rafa Portugal.
+        Se você quer ter um site gratuito para que a sua empresa seja exibida no Google, basta
+        preencher as informações abaixo — em especial o{' '}
+        <span className="font-medium text-zinc-800">endereço público da página (URL)</span>, que
+        ativa a página pública quando estiver definido.
       </p>
-      {partnerId && (
+      {partnerId && publicSlug.trim() ? (
         <div className="mt-4">
           <Link
-            href={`/partner/${encodeURIComponent(partnerId)}`}
+            href={`/${encodeURIComponent(publicSlug.trim())}`}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
@@ -342,7 +351,12 @@ export default function BusinessPage() {
             Ver minha página no Google
           </Link>
         </div>
-      )}
+      ) : partnerId ? (
+        <p className="mt-4 text-sm text-amber-800/95">
+          A página pública só fica acessível depois de definires e guardares o endereço público
+          (URL) no formulário abaixo.
+        </p>
+      ) : null}
 
       {error && (
         <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -363,6 +377,27 @@ export default function BusinessPage() {
           className="mt-6 space-y-4 rounded-lg border border-zinc-200 bg-white p-4"
         >
           <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-1 md:col-span-2">
+              <label className="block text-sm font-medium text-zinc-700">
+                Endereço público da página (URL)
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-zinc-500">/</span>
+                <input
+                  type="text"
+                  value={publicSlug}
+                  onChange={(e) => setPublicSlug(e.target.value.toLowerCase())}
+                  placeholder="defina para publicar (ex.: minha-empresa)"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="min-w-[12rem] flex-1 rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <p className="text-xs text-zinc-500">
+                Só letras minúsculas, números e hífens (4–80 caracteres). Enquanto estiver vazio, a
+                página pública não existe. Evita palavras reservadas como «dashboard» ou «casas».
+              </p>
+            </div>
             <div className="space-y-1">
               <label className="block text-sm font-medium text-zinc-700">
                 Nome da empresa

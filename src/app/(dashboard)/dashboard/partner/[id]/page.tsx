@@ -22,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 type PartnerDetails = {
   id: string;
+  publicSlug?: string | null;
   name: string;
   whatsapp: string;
   logoUrl: string | null;
@@ -59,7 +60,9 @@ export default function PartnerPage() {
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
   const siteBase = getPublicSiteUrl();
-  const sharePageUrl = `${siteBase}/partner/${partner?.id ?? params.id}`;
+  const sharePageUrl = partner?.publicSlug?.trim()
+    ? `${siteBase}/${partner.publicSlug.trim()}`
+    : siteBase;
 
   useEffect(() => {
     if (!params?.id) return;

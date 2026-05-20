@@ -65,7 +65,11 @@ function enrichApiHttpError(
   return err;
 }
 
-type RequestOptions = RequestInit & { token?: string | null };
+type RequestOptions = RequestInit & {
+  token?: string | null;
+  /** UUID v4 persistente no browser (cabeçalho `X-Partner-Device-Id`). */
+  partnerDeviceId?: string | null;
+};
 
 /** Mensagem antiga da API que não queremos mostrar ao utilizador (ex.: stage ainda no deploy anterior). */
 function shouldHideApiMessage(text: string): boolean {
@@ -76,7 +80,7 @@ async function request<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { token = getToken(), ...init } = options;
+  const { token = getToken(), partnerDeviceId, ...init } = options;
   const method = (init.method ?? 'GET').toString().toUpperCase();
   const headers: HeadersInit = {
     ...(init.headers as Record<string, string>),
@@ -86,6 +90,9 @@ async function request<T>(
   }
   if (token) {
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+  }
+  if (partnerDeviceId) {
+    (headers as Record<string, string>)['X-Partner-Device-Id'] = partnerDeviceId;
   }
   const res = await fetch(`${API_URL}${path}`, { ...init, headers });
   const data = await res.json().catch(() => ({}));
@@ -584,8 +591,6 @@ export const api = {
             name: string;
             whatsapp: string;
             logoUrl: string | null;
-            priority: number;
-            createdAt: string;
             advertisingBalanceEurCents: number;
             user: { id: string; email: string | null; role: string };
             category: { id: string; name: string; slug: string } | null;
@@ -615,6 +620,7 @@ export const api = {
       create: (input: {
         password: string;
         name: string;
+        email?: string;
         whatsapp: string;
         logoUrl?: string;
       }) =>
@@ -625,7 +631,6 @@ export const api = {
             name: string;
             whatsapp: string;
             logoUrl: string | null;
-            createdAt: string;
           };
         }>('/partners', {
           method: 'POST',
@@ -635,15 +640,13 @@ export const api = {
         request<void>(`/partners/${id}`, { method: 'DELETE' }),
       update: (
         id: string,
-        input: { categoryId?: string | null; priority?: number },
+        input: { categoryId?: string | null },
       ) =>
         request<{
           id: string;
           name: string;
           whatsapp: string;
           logoUrl: string | null;
-          priority: number;
-          createdAt: string;
           user: { id: string; email: string | null; role: string };
           category: { id: string; name: string; slug: string } | null;
         }>(`/partners/admin/${id}`, {
@@ -1324,6 +1327,7 @@ export const api = {
         billingAddress?: string | null;
         billingPostalCode?: string | null;
         category?: { id: string; slug: string; name: string } | null;
+        publicSlug?: string | null;
       }>('/partners/me', { method: 'GET' }),
     updateMe: (input: {
       name?: string;
@@ -1339,6 +1343,7 @@ export const api = {
       billingNif?: string | null;
       billingAddress?: string | null;
       billingPostalCode?: string | null;
+      publicSlug?: string | null;
     }) =>
       request<{
         id: string;
@@ -1356,6 +1361,7 @@ export const api = {
         billingAddress?: string | null;
         billingPostalCode?: string | null;
         category?: { id: string; slug: string; name: string } | null;
+        publicSlug?: string | null;
       }>('/partners/me', {
         method: 'PATCH',
         body: JSON.stringify(input),
@@ -1745,15 +1751,19 @@ export const api = {
           }[];
         }[]
       >('/partners/categories-with-partners', { method: 'GET' }),
-    partnerEngagement: (id: string) =>
+    partnerEngagement: (id: string, opts?: { partnerDeviceId?: string | null }) =>
       request<{
         likeCount: number;
         dislikeCount: number;
         commentCount: number;
         shareCount: number;
         myReaction: 'LIKE' | 'DISLIKE' | null;
-      }>(`/partners/${id}/engagement`, { method: 'GET' }),
-    partnerComments: (id: string, params?: { take?: number }) => {
+        hasDeviceComment: boolean;
+      }>(`/partners/${id}/engagement`, {
+        method: 'GET',
+        partnerDeviceId: opts?.partnerDeviceId,
+      }),
+    partnerComments: (id: string, params?: { take?: number; partnerDeviceId?: string | null }) => {
       const q = new URLSearchParams();
       if (params?.take != null) q.set('take', String(params.take));
       const s = q.toString();
@@ -1763,35 +1773,56 @@ export const api = {
           body: string;
           createdAt: string;
           parentId: string | null;
-          user: { id: string; name: string };
+          user: { id: string; name: string } | null;
+          guestName: string | null;
+          ownedByRequestDevice: boolean;
         }[];
         hasMore: boolean;
         total: number;
-      }>(`/partners/${id}/comments${s ? `?${s}` : ''}`, { method: 'GET' });
+      }>(`/partners/${id}/comments${s ? `?${s}` : ''}`, {
+        method: 'GET',
+        partnerDeviceId: params?.partnerDeviceId,
+      });
     },
-    setPartnerReaction: (id: string, body: { type: 'LIKE' | 'DISLIKE' | null }) =>
+    setPartnerReaction: (
+      id: string,
+      body: { type: 'LIKE' | 'DISLIKE' | null },
+      opts?: { partnerDeviceId?: string | null },
+    ) =>
       request<{ myReaction: 'LIKE' | 'DISLIKE' | null }>(
         `/partners/${id}/engagement/reaction`,
         {
           method: 'PUT',
           body: JSON.stringify(body),
+          partnerDeviceId: opts?.partnerDeviceId,
         },
       ),
     createPartnerComment: (
       id: string,
-      body: { body: string; parentId?: string },
+      body: { body: string; parentId?: string; guestName?: string },
+      opts?: { partnerDeviceId?: string | null },
     ) =>
       request<{
         id: string;
         body: string;
         createdAt: string;
         parentId: string | null;
-        user: { id: string; name: string };
-      }>(`/partners/${id}/comments`, { method: 'POST', body: JSON.stringify(body) }),
-    deletePartnerComment: (partnerId: string, commentId: string) =>
+        user: { id: string; name: string } | null;
+        guestName: string | null;
+        ownedByRequestDevice: boolean;
+      }>(`/partners/${id}/comments`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        partnerDeviceId: opts?.partnerDeviceId,
+      }),
+    deletePartnerComment: (
+      partnerId: string,
+      commentId: string,
+      opts?: { partnerDeviceId?: string | null },
+    ) =>
       request<{ ok: true; partnerId: string }>(
         `/partners/${partnerId}/comments/${commentId}`,
-        { method: 'DELETE' },
+        { method: 'DELETE', partnerDeviceId: opts?.partnerDeviceId },
       ),
     recordPartnerShare: (id: string) =>
       request<{ shareCount: number }>(`/partners/${id}/share`, {
@@ -1819,6 +1850,7 @@ export const api = {
           price: string | null;
           priceOnRequest: boolean;
         }[];
+        publicSlug?: string | null;
       }>(`/partners/${id}/public`, { method: 'GET' }),
     houseContact: (houseId: string) =>
       request<{

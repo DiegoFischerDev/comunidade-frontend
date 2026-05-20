@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { resolveShareUrlForBrowser } from '@/lib/site-url';
 import { CardButton } from '@/components/ui/CardButton';
+import { getOrCreatePartnerDeviceId } from '@/lib/partner-device-id';
 
 export type PartnerEngagementSnapshot = {
   likeCount: number;
@@ -12,6 +13,7 @@ export type PartnerEngagementSnapshot = {
   commentCount: number;
   shareCount: number;
   myReaction: 'LIKE' | 'DISLIKE' | null;
+  hasDeviceComment: boolean;
 };
 
 type Props = {
@@ -28,7 +30,7 @@ type Props = {
   initial?: Pick<
     PartnerEngagementSnapshot,
     'likeCount' | 'dislikeCount' | 'commentCount' | 'shareCount'
-  >;
+  > & { hasDeviceComment?: boolean };
 };
 
 function formatCount(n: number) {
@@ -58,6 +60,7 @@ export function PartnerEngagementBar({
           commentCount: initial.commentCount,
           shareCount: initial.shareCount,
           myReaction: null,
+          hasDeviceComment: initial.hasDeviceComment ?? false,
         }
       : null,
   );
@@ -75,7 +78,10 @@ export function PartnerEngagementBar({
   const load = useCallback(async () => {
     setErr(null);
     try {
-      const d = await api.marketplace.partnerEngagement(partnerId);
+      const deviceId = getOrCreatePartnerDeviceId();
+      const d = await api.marketplace.partnerEngagement(partnerId, {
+        partnerDeviceId: deviceId || undefined,
+      });
       setData(d);
     } catch (e) {
       setErr(
@@ -132,23 +138,15 @@ export function PartnerEngagementBar({
     return () => window.removeEventListener('keydown', onKey);
   }, [commentOpen]);
 
-  useEffect(() => {
-    if (commentOpen && !user) {
-      setCommentOpen(false);
-      setCommentText('');
-      setCommentErr(null);
-    }
-  }, [commentOpen, user]);
-
-  const openAuth = () => {
-    window.dispatchEvent(
-      new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }),
-    );
-  };
-
   const openCommentModal = () => {
     setCommentErr(null);
     setCommentOpen(true);
+  };
+
+  const closeCommentModal = () => {
+    setCommentOpen(false);
+    setCommentText('');
+    setCommentErr(null);
   };
 
   const onCommentButtonClick = () => {
@@ -160,7 +158,12 @@ export function PartnerEngagementBar({
       return;
     }
     if (!user) {
-      openAuth();
+      const el = document.getElementById('guest-partner-comment');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const ta = el.querySelector('textarea');
+        window.setTimeout(() => ta instanceof HTMLElement && ta.focus(), 400);
+      }
       return;
     }
     openCommentModal();
@@ -171,9 +174,12 @@ export function PartnerEngagementBar({
       const d = (e as CustomEvent<{ partnerId: string }>).detail;
       if (d?.partnerId !== partnerId) return;
       if (!user) {
-        window.dispatchEvent(
-          new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }),
-        );
+        const el = document.getElementById('guest-partner-comment');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const ta = el.querySelector('textarea');
+          window.setTimeout(() => ta instanceof HTMLElement && ta.focus(), 400);
+        }
         return;
       }
       setCommentErr(null);
@@ -184,17 +190,8 @@ export function PartnerEngagementBar({
       window.removeEventListener('partner-open-comment-modal', onOpenFromPage);
   }, [partnerId, user]);
 
-  const closeCommentModal = () => {
-    setCommentOpen(false);
-    setCommentText('');
-    setCommentErr(null);
-  };
-
   const submitComment = async () => {
-    if (!user) {
-      openAuth();
-      return;
-    }
+    if (!user) return;
     const t = commentText.trim();
     if (!t || commentSending) return;
     setCommentSending(true);
@@ -221,13 +218,14 @@ export function PartnerEngagementBar({
   };
 
   const applyReaction = async (next: 'LIKE' | 'DISLIKE' | null) => {
-    if (!user) {
-      openAuth();
-      return;
-    }
     setErr(null);
     try {
-      await api.marketplace.setPartnerReaction(partnerId, { type: next });
+      const deviceId = getOrCreatePartnerDeviceId();
+      await api.marketplace.setPartnerReaction(
+        partnerId,
+        { type: next },
+        { partnerDeviceId: user ? undefined : deviceId || undefined },
+      );
       await load();
     } catch (e) {
       setErr(
@@ -238,12 +236,22 @@ export function PartnerEngagementBar({
 
   const onLike = () => {
     if (!data) return;
+    if (!user) {
+      if (data.myReaction) return;
+      void applyReaction('LIKE');
+      return;
+    }
     if (data.myReaction === 'LIKE') void applyReaction(null);
     else void applyReaction('LIKE');
   };
 
   const onDislike = () => {
     if (!data) return;
+    if (!user) {
+      if (data.myReaction) return;
+      void applyReaction('DISLIKE');
+      return;
+    }
     if (data.myReaction === 'DISLIKE') void applyReaction(null);
     else void applyReaction('DISLIKE');
   };
@@ -311,7 +319,15 @@ export function PartnerEngagementBar({
               type="button"
               onClick={onLike}
               className={baseBtn}
-              title={user ? (likeActive ? 'Tirar gosto' : 'Gosto') : 'Entre para reagir'}
+              title={
+                user
+                  ? likeActive
+                    ? 'Tirar gosto'
+                    : 'Gosto'
+                  : likeActive
+                    ? 'Já registou o seu gosto neste dispositivo'
+                    : 'Gosto'
+              }
             >
               <span className="sr-only">Gosto</span>
               <ThumbUpIcon
@@ -330,7 +346,13 @@ export function PartnerEngagementBar({
               onClick={onDislike}
               className={baseBtn}
               title={
-                user ? (dislikeActive ? 'Tirar desgosto' : 'Desgosto') : 'Entre para reagir'
+                user
+                  ? dislikeActive
+                    ? 'Tirar desgosto'
+                    : 'Desgosto'
+                  : dislikeActive
+                    ? 'Já registou o seu desgosto neste dispositivo'
+                    : 'Desgosto'
               }
             >
               <span className="sr-only">Desgosto</span>
@@ -354,7 +376,7 @@ export function PartnerEngagementBar({
                   ? 'Ver comentários'
                   : user
                     ? 'Comentar'
-                    : 'Entre para comentar'
+                    : 'Comentar como visitante'
               }
             >
               <span className="sr-only">

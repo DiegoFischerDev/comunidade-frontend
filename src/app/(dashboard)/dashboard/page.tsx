@@ -164,7 +164,7 @@ export default function DashboardPage() {
     ? "/rafa_cards/dashboard_afiliados_mobile.png"
     : isMember
       ? "/rafa_cards/hero_mobile_vip.png"
-      : "/rafa_cards/hero_mobile7.png";
+      : "/rafa_cards/hero_mobile8.png";
 
   const heroDesktopSrc = hasAffiliateEnrollment
     ? "/rafa_cards/dashboard_afiliados.png"

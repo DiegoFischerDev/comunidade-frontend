@@ -11,8 +11,6 @@ type PartnerRow = {
   name: string;
   whatsapp: string;
   logoUrl: string | null;
-  priority: number;
-  createdAt: string;
   advertisingBalanceEurCents: number;
   user: { id: string; email: string | null; role: string };
   category: { id: string; name: string; slug: string } | null;
@@ -29,12 +27,12 @@ export default function PartnersPage() {
   const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(
     null,
   );
-  const [updatingPriorityPartnerId, setUpdatingPriorityPartnerId] = useState<string | null>(null);
   const [balanceInputByPartnerId, setBalanceInputByPartnerId] = useState<Record<string, string>>({});
   const [savingBalancePartnerId, setSavingBalancePartnerId] = useState<string | null>(null);
 
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [creating, setCreating] = useState(false);
@@ -93,6 +91,7 @@ export default function PartnersPage() {
       const result = await api.admin.partners.create({
         password,
         name,
+        email: email.trim() || undefined,
         whatsapp,
         logoUrl: logoUrl || undefined,
       });
@@ -102,8 +101,6 @@ export default function PartnersPage() {
           name: result.partner.name,
           whatsapp: result.partner.whatsapp,
           logoUrl: result.partner.logoUrl,
-          priority: 0,
-          createdAt: result.partner.createdAt,
           advertisingBalanceEurCents: 0,
           user: result.user,
           category: null,
@@ -112,6 +109,7 @@ export default function PartnersPage() {
       ]);
       setPassword('');
       setName('');
+      setEmail('');
       setWhatsapp('');
       setLogoUrl('');
     } catch (err) {
@@ -202,6 +200,22 @@ export default function PartnersPage() {
         </div>
         <div className="space-y-1">
           <label className="block text-sm font-medium text-zinc-700">
+            E-mail da conta (opcional)
+          </label>
+          <input
+            type="email"
+            autoComplete="off"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="parceiro@exemplo.com"
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+          <p className="text-xs text-zinc-500">
+            Se preencheres, o parceiro poderá usar este e-mail para login e recuperação de senha. Tem de ser único na plataforma.
+          </p>
+        </div>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-zinc-700">
             WhatsApp (com DDI)
           </label>
           <input
@@ -255,11 +269,10 @@ export default function PartnersPage() {
               <tr>
                 <th className="px-4 py-2 text-left">Logo</th>
                 <th className="px-4 py-2 text-left">Nome</th>
+                <th className="px-4 py-2 text-left">E-mail</th>
                 <th className="px-4 py-2 text-left">WhatsApp</th>
-                <th className="px-4 py-2 text-left">Prioridade</th>
                 <th className="px-4 py-2 text-left">Categoria</th>
                 <th className="px-4 py-2 text-left">Saldo publicidade</th>
-                <th className="px-4 py-2 text-left">Criado em</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
             </thead>
@@ -278,52 +291,14 @@ export default function PartnersPage() {
                     )}
                   </td>
                   <td className="px-4 py-2">{p.name}</td>
-                  <td className="px-4 py-2">{p.whatsapp}</td>
-                  <td className="px-4 py-2">
-                    <select
-                      value={String(typeof p.priority === 'number' ? p.priority : 0)}
-                      onChange={async (e) => {
-                        const nextPriority = Math.max(0, parseInt(e.target.value, 10) || 0);
-                        setUpdatingPriorityPartnerId(p.id);
-                        setError('');
-                        try {
-                          const updated = await api.admin.partners.update(p.id, {
-                            priority: nextPriority,
-                          });
-                          setPartners((prev) =>
-                            prev.map((row) =>
-                              row.id === p.id
-                                ? { ...row, priority: updated.priority }
-                                : row,
-                            ),
-                          );
-                        } catch (err) {
-                          setError(
-                            err instanceof Error
-                              ? err.message
-                              : 'Erro ao atualizar prioridade do parceiro.',
-                          );
-                        } finally {
-                          setUpdatingPriorityPartnerId(null);
-                        }
-                      }}
-                      disabled={updatingPriorityPartnerId === p.id}
-                      className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-                      aria-label={`Prioridade do parceiro ${p.name}`}
-                    >
-                      <option value="0">0</option>
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="4">4</option>
-                      <option value="5">5</option>
-                      <option value="6">6</option>
-                      <option value="7">7</option>
-                      <option value="8">8</option>
-                      <option value="9">9</option>
-                      <option value="10">10</option>
-                    </select>
+                  <td className="px-4 py-2 text-zinc-700">
+                    {p.user.email ? (
+                      <span className="break-all">{p.user.email}</span>
+                    ) : (
+                      <span className="text-zinc-400">—</span>
+                    )}
                   </td>
+                  <td className="px-4 py-2">{p.whatsapp}</td>
                   <td className="px-4 py-2">
                     <select
                       value={p.category?.id ?? ''}
@@ -440,9 +415,6 @@ export default function PartnersPage() {
                     ) : (
                       <p className="mt-1 text-xs text-zinc-500">—</p>
                     )}
-                  </td>
-                  <td className="px-4 py-2">
-                    {new Date(p.createdAt).toLocaleString('pt-PT')}
                   </td>
                   <td className="px-4 py-2 text-right">
                     <CardButton

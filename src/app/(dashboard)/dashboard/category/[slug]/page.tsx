@@ -133,6 +133,7 @@ type CategoryWithPartners = {
     logoUrl: string | null;
     backgroundImageUrl: string | null;
     shortDescription: string | null;
+    publicSlug?: string;
     engagement: {
       likeCount: number;
       dislikeCount: number;
@@ -411,7 +412,7 @@ export default function CategoryPage() {
                   </Link>
                   <PartnerEngagementBar
                     partnerId={partner.id}
-                    sharePageUrl={`${siteBase}/partner/${partner.id}`}
+                    sharePageUrl={`${siteBase}/${partner.publicSlug}`}
                     variant="card"
                     initial={partner.engagement}
                     partnerName={partner.name}
