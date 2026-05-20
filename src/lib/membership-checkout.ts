@@ -6,10 +6,65 @@ export type MembershipAmounts = {
   pixCentavos: number;
 };
 
-export const DEFAULT_MEMBERSHIP_AMOUNTS: MembershipAmounts = {
-  eurCents: 2300,
-  pixCentavos: 2300,
-};
+const DEFAULT_EUR_CENTS = 2300;
+const DEFAULT_PIX_CENTAVOS = 13800;
+
+function parsePositiveCents(raw: string | undefined, fallback: number): number {
+  const n = raw ? parseInt(String(raw).trim(), 10) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+/** Valores de fallback alinhados ao backend (`STRIPE_AMOUNT_EUR_CENTS` / `STRIPE_PIX_AMOUNT_BRL`). */
+export function getMembershipAmountsFromEnv(): MembershipAmounts {
+  const eurCents = parsePositiveCents(
+    process.env.STRIPE_AMOUNT_EUR_CENTS ??
+      process.env.NEXT_PUBLIC_STRIPE_AMOUNT_EUR_CENTS,
+    DEFAULT_EUR_CENTS,
+  );
+  const pixCentavos = parsePositiveCents(
+    process.env.STRIPE_PIX_AMOUNT_BRL ??
+      process.env.NEXT_PUBLIC_STRIPE_PIX_AMOUNT_BRL,
+    DEFAULT_PIX_CENTAVOS,
+  );
+  return { eurCents, pixCentavos };
+}
+
+export const DEFAULT_MEMBERSHIP_AMOUNTS: MembershipAmounts =
+  getMembershipAmountsFromEnv();
+
+const MEMBERSHIP_AMOUNTS_API_PATH = '/stripe/membership-amounts';
+
+/** Obtém preços da anuidade no backend (fonte de verdade = env do servidor Stripe). */
+export async function fetchMembershipAmounts(): Promise<MembershipAmounts> {
+  const base = (
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.API_URL ||
+    'http://localhost:3001'
+  ).replace(/\/$/, '');
+
+  try {
+    const res = await fetch(`${base}${MEMBERSHIP_AMOUNTS_API_PATH}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      return getMembershipAmountsFromEnv();
+    }
+    const data = (await res.json()) as Partial<MembershipAmounts>;
+    const eurCents = Number(data.eurCents);
+    const pixCentavos = Number(data.pixCentavos);
+    if (
+      Number.isFinite(eurCents) &&
+      eurCents > 0 &&
+      Number.isFinite(pixCentavos) &&
+      pixCentavos > 0
+    ) {
+      return { eurCents, pixCentavos };
+    }
+    return getMembershipAmountsFromEnv();
+  } catch {
+    return getMembershipAmountsFromEnv();
+  }
+}
 
 export type MembershipPaymentMethod = 'card' | 'mbway' | 'pix';
 

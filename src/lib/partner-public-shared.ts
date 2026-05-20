@@ -36,10 +36,17 @@ export type PartnerPublic = {
 };
 
 /** Caminho público preferencial: `/{publicSlug}` ou legado `/partner/{id}`. */
-export function partnerPublicSharePath(partner: PartnerPublic): string {
-  const s = partner.publicSlug?.trim();
+export function partnerPublicPagePath(
+  partnerId: string,
+  publicSlug?: string | null,
+): string {
+  const s = publicSlug?.trim();
   if (s) return `/${s}`;
-  return `/partner/${partner.id}`;
+  return `/partner/${partnerId}`;
+}
+
+export function partnerPublicSharePath(partner: PartnerPublic): string {
+  return partnerPublicPagePath(partner.id, partner.publicSlug);
 }
 
 export const PARTNER_PUBLIC_API_URL =

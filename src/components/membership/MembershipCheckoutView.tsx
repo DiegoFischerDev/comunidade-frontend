@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { isActiveMember } from '@/lib/membership-access';
 import {
-  DEFAULT_MEMBERSHIP_AMOUNTS,
+  fetchMembershipAmounts,
   formatMembershipBrl,
   formatMembershipEur,
   getMembershipCancelUrl,
@@ -73,14 +73,18 @@ const PAYMENT_OPTIONS: {
   },
 ];
 
-export function MembershipCheckoutView() {
+type Props = {
+  initialAmounts: MembershipAmounts;
+};
+
+export function MembershipCheckoutView({ initialAmounts }: Props) {
   const router = useRouter();
   const { user } = useAuth();
   const needsSignupForm = !user;
   const memberActive = isActiveMember(user);
 
-  const [amounts, setAmounts] = useState<MembershipAmounts | null>(null);
-  const [amountsLoading, setAmountsLoading] = useState(true);
+  const [amounts, setAmounts] = useState<MembershipAmounts>(initialAmounts);
+  const [amountsLoading, setAmountsLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [error, setError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<MembershipPaymentMethod>('pix');
@@ -132,14 +136,12 @@ export function MembershipCheckoutView() {
   useEffect(() => {
     if (memberActive) return;
     setAmountsLoading(true);
-    api.stripe
-      .getMembershipAmounts()
+    void fetchMembershipAmounts()
       .then(setAmounts)
-      .catch(() => setAmounts(DEFAULT_MEMBERSHIP_AMOUNTS))
       .finally(() => setAmountsLoading(false));
   }, [memberActive]);
 
-  const displayAmounts = amounts ?? DEFAULT_MEMBERSHIP_AMOUNTS;
+  const displayAmounts = amounts;
 
   const payLabel = useMemo(() => {
     if (paymentMethod === 'pix') {

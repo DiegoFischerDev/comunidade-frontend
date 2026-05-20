@@ -18,6 +18,7 @@ import {
 } from '@/lib/auth-ui-events';
 import { isActiveMember } from '@/lib/membership-access';
 import { COMMUNITY_WHATSAPP_GROUPS_URL } from '@/lib/community-whatsapp-groups';
+import { partnerPublicPagePath } from '@/lib/partner-public-shared';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   LoginMethodSwitchLink,
@@ -253,6 +254,7 @@ export default function DashboardLayout({
   const [partnerCategorySlug, setPartnerCategorySlug] = useState<string | null>(null);
   const [partnerDisplayName, setPartnerDisplayName] = useState<string | null>(null);
   const [partnerId, setPartnerId] = useState<string | null>(null);
+  const [partnerPublicSlug, setPartnerPublicSlug] = useState<string | null>(null);
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -308,6 +310,7 @@ export default function DashboardLayout({
       setPartnerCategorySlug(null);
       setPartnerDisplayName(null);
       setPartnerId(null);
+      setPartnerPublicSlug(null);
       return;
     }
     let cancelled = false;
@@ -318,12 +321,14 @@ export default function DashboardLayout({
           setPartnerCategorySlug(me.category?.slug ?? null);
           setPartnerDisplayName(me.name?.trim() || null);
           setPartnerId(me.id ?? null);
+          setPartnerPublicSlug(me.publicSlug?.trim() || null);
         }
       } catch {
         if (!cancelled) {
           setPartnerCategorySlug(null);
           setPartnerDisplayName(null);
           setPartnerId(null);
+          setPartnerPublicSlug(null);
         }
       }
     })();
@@ -403,8 +408,14 @@ export default function DashboardLayout({
   const isCasasPath =
     pathname === '/dashboard/casas' || pathname.startsWith('/dashboard/casas/');
   const isBusinessPath = pathname === '/dashboard/business';
+  const partnerStaticPagePath =
+    partnerId && partnerPublicSlug
+      ? partnerPublicPagePath(partnerId, partnerPublicSlug)
+      : null;
   const isPartnerMyPagePath =
-    Boolean(partnerId) && pathname === `/dashboard/partner/${partnerId}`;
+    Boolean(partnerStaticPagePath) &&
+    (pathname === partnerStaticPagePath ||
+      (partnerId ? pathname === `/partner/${partnerId}` : false));
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -485,21 +496,24 @@ export default function DashboardLayout({
                 Imóveis
               </Link>
               <div className="mt-2 border-t border-zinc-200 pt-2">
-                {partnerId ? (
-                  <Link
-                    href={`/dashboard/partner/${partnerId}`}
+                {partnerStaticPagePath ? (
+                  <a
+                    href={partnerStaticPagePath}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className={`block rounded-md px-3 py-2 text-sm ${
                       isPartnerMyPagePath
                         ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                         : 'bg-white font-medium text-zinc-900 hover:bg-zinc-100'
                     }`}
+                    aria-label="Abrir a minha página pública numa nova aba"
                   >
                     Minha página
-                  </Link>
+                  </a>
                 ) : null}
                 <Link
                   href="/dashboard/casas"
-                  className={`${partnerId ? 'mt-1 ' : ''}block rounded-md px-3 py-2 text-sm ${
+                  className={`${partnerStaticPagePath ? 'mt-1 ' : ''}block rounded-md px-3 py-2 text-sm ${
                     isCasasPath
                       ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                       : 'bg-white font-medium text-zinc-900 hover:bg-zinc-100'
@@ -751,21 +765,24 @@ export default function DashboardLayout({
           )}
           {user?.role === 'PARTNER' ? (
             <div className="mt-2 border-t border-zinc-200 pt-2">
-              {partnerId ? (
-                <Link
-                  href={`/dashboard/partner/${partnerId}`}
+              {partnerStaticPagePath ? (
+                <a
+                  href={partnerStaticPagePath}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className={`block rounded-md px-3 py-2 text-sm ${
                     isPartnerMyPagePath
                       ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                       : 'bg-white font-medium text-zinc-900 hover:bg-zinc-100'
                   }`}
+                  aria-label="Abrir a minha página pública numa nova aba"
                 >
                   Minha página
-                </Link>
+                </a>
               ) : null}
               <Link
                 href="/dashboard/business"
-                className={`${partnerId ? 'mt-1 ' : ''}block rounded-md px-3 py-2 text-sm ${
+                className={`${partnerStaticPagePath ? 'mt-1 ' : ''}block rounded-md px-3 py-2 text-sm ${
                   isBusinessPath
                     ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                     : 'bg-white font-medium text-zinc-900 hover:bg-zinc-100'
