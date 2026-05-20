@@ -382,8 +382,7 @@ export default function PublicRelocationHousesListPage() {
                 Grupão de relocation
               </h2>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600 sm:text-[0.9375rem]">
-                Junta-te ao grupo para receberes oportunidades de arrendamento, partilha de
-                experiências e novidades sobre relocation em Portugal.
+                Junta-te ao grupo para receber oportunidades de arrendamento em tempo real.
               </p>
             </div>
           </div>
