@@ -1375,6 +1375,30 @@ export const api = {
         category?: { id: string; slug: string; name: string } | null;
         publicSlug?: string | null;
       }>('/partners/me', { method: 'GET' }),
+    contactLinks: () =>
+      request<{
+        partnerId: string;
+        hero: {
+          id: string;
+          slug: string;
+          title: string;
+          clickCount: number;
+          redirectPath: string;
+        } | null;
+        services: {
+          id: string;
+          title: string;
+          link: {
+            id: string;
+            slug: string;
+            title: string;
+            clickCount: number;
+            redirectPath: string;
+          } | null;
+        }[];
+        servicesWithLink: number;
+        servicesTotal: number;
+      }>('/partners/me/contact-links', { method: 'GET' }),
     updateMe: (input: {
       name?: string;
       whatsapp?: string;

@@ -31,8 +31,20 @@ export default function BusinessPage() {
   const [uploadingBackground, setUploadingBackground] = useState(false);
   const [uploadingCatalogIdx, setUploadingCatalogIdx] = useState<number | null>(null);
   const [uploadingCatalogVideo, setUploadingCatalogVideo] = useState(false);
+  const [pageLinks, setPageLinks] = useState<Awaited<
+    ReturnType<typeof api.partner.contactLinks>
+  > | null>(null);
+  const [pageLinksLoading, setPageLinksLoading] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+  function absoluteRedirectPath(path: string): string {
+    const base =
+      (typeof window !== 'undefined'
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')) || '';
+    return base ? `${base}${path}` : path;
+  }
 
   function buildPartnerUpdatePayload(
     overrides: Partial<{
@@ -87,6 +99,15 @@ export default function BusinessPage() {
         setBillingNif(data.billingNif ?? '');
         setBillingAddress(data.billingAddress ?? '');
         setBillingPostalCode(data.billingPostalCode ?? '');
+        setPageLinksLoading(true);
+        try {
+          const links = await api.partner.contactLinks();
+          setPageLinks(links);
+        } catch {
+          setPageLinks(null);
+        } finally {
+          setPageLinksLoading(false);
+        }
       } catch (err) {
         setError(
           err instanceof Error
@@ -356,6 +377,69 @@ export default function BusinessPage() {
           A página pública só fica acessível depois de definires e guardares o endereço público
           (URL) no formulário abaixo.
         </p>
+      ) : null}
+
+      {partnerId && !loading ? (
+        <section className="mt-6 rounded-lg border border-zinc-200 bg-white p-4">
+          <h2 className="text-sm font-semibold text-zinc-900">
+            Links da minha página
+          </h2>
+          <p className="mt-1 text-xs text-zinc-600">
+            Links rastreados usados na tua página pública (contacto principal e botões dos
+            serviços). Cada clique é contado quando alguém abre o link.
+          </p>
+          {pageLinksLoading ? (
+            <p className="mt-3 text-sm text-zinc-500">A carregar links…</p>
+          ) : !pageLinks?.hero &&
+            !(pageLinks?.services ?? []).some((s) => s.link) ? (
+            <p className="mt-3 text-sm text-zinc-600">
+              Ainda não há links configurados. Pede ao administrador para gerar os links em
+              Parceiros.
+            </p>
+          ) : (
+            <ul className="mt-4 divide-y divide-zinc-100 rounded-lg border border-zinc-100">
+              {pageLinks?.hero ? (
+                <li className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-zinc-900">
+                      Contacto principal (hero)
+                    </p>
+                    <p className="mt-0.5 truncate font-mono text-xs text-zinc-600">
+                      {absoluteRedirectPath(pageLinks.hero.redirectPath)}
+                    </p>
+                  </div>
+                  <p className="shrink-0 text-sm tabular-nums text-zinc-700">
+                    <span className="font-semibold text-zinc-900">
+                      {pageLinks.hero.clickCount}
+                    </span>{' '}
+                    clique{pageLinks.hero.clickCount === 1 ? '' : 's'}
+                  </p>
+                </li>
+              ) : null}
+              {(pageLinks?.services ?? [])
+                .filter((s) => s.link)
+                .map((s) => (
+                  <li
+                    key={s.id}
+                    className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-zinc-900">{s.title}</p>
+                      <p className="mt-0.5 truncate font-mono text-xs text-zinc-600">
+                        {absoluteRedirectPath(s.link!.redirectPath)}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-sm tabular-nums text-zinc-700">
+                      <span className="font-semibold text-zinc-900">
+                        {s.link!.clickCount}
+                      </span>{' '}
+                      clique{s.link!.clickCount === 1 ? '' : 's'}
+                    </p>
+                  </li>
+                ))}
+            </ul>
+          )}
+        </section>
       ) : null}
 
       {error && (
