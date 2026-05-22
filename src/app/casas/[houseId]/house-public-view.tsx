@@ -68,9 +68,16 @@ type Props = {
   apiBaseUrl: string;
   /** `dashboard`: sem cabeçalho público; dentro do layout do painel. */
   variant?: "standalone" | "dashboard";
+  /** Destino de «Ver todos os imóveis» (omissão: catálogo público). */
+  allHousesHref?: string;
 };
 
-export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: Props) {
+export function HousePublicView({
+  house,
+  apiBaseUrl,
+  variant = "standalone",
+  allHousesHref = "/relocation/imoveis",
+}: Props) {
   const { partner } = house;
   const cityLabel = relocationCityDisplayName(house.city);
   const typoLabel = TYPOLOGY_LABELS[house.typology] ?? house.typology;
@@ -141,7 +148,7 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
         {isDashboard ? (
           <nav className="text-sm">
             <Link
-              href="/relocation/imoveis"
+              href={allHousesHref}
               className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
             >
               Ver todos os imóveis

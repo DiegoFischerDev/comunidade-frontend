@@ -20,7 +20,9 @@ type Props = {
 };
 
 export function DashboardHousePublicLoader({ houseId }: Props) {
-  const { loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const allHousesHref =
+    user?.role === "PARTNER" ? "/dashboard/casas" : "/relocation/imoveis";
   const [house, setHouse] = useState<PublicHousePageData | null | undefined>(undefined);
 
   useEffect(() => {
@@ -60,6 +62,7 @@ export function DashboardHousePublicLoader({ houseId }: Props) {
         house={house}
         apiBaseUrl={API_URL.replace(/\/$/, "")}
         variant="dashboard"
+        allHousesHref={allHousesHref}
       />
     </>
   );

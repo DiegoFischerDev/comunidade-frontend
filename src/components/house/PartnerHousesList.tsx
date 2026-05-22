@@ -36,6 +36,35 @@ const BUSINESS_TYPE_LABELS: Record<"RENT" | "SALE", string> = {
   SALE: "Venda",
 };
 
+function HouseBusinessTypeBadge({
+  businessType,
+  className = "mt-1",
+}: {
+  businessType: "RENT" | "SALE";
+  className?: string;
+}) {
+  const base =
+    `inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold ring-1 ${className}`.trim();
+  if (businessType === "SALE") {
+    return (
+      <span className={`${base} bg-violet-100 text-violet-900 ring-violet-200/90`}>Venda</span>
+    );
+  }
+  return (
+    <span className={`${base} bg-emerald-100 text-emerald-900 ring-emerald-200/90`}>
+      Arrenda
+    </span>
+  );
+}
+
+function HouseVideoBadge() {
+  return (
+    <span className="pointer-events-none absolute bottom-0.5 left-0.5 z-10 rounded bg-zinc-900/80 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
+      Vídeo
+    </span>
+  );
+}
+
 type Props = {
   rows: PartnerHouseRow[];
   publishingById: Record<string, boolean>;
@@ -97,6 +126,7 @@ function HouseThumb({
   className?: string;
 }) {
   const { imageSrc, videoSrc } = getHouseListThumbSrc(house);
+  const hasVideo = Boolean(house.videoUrl?.trim());
   return (
     <Link
       href={`/dashboard/casas/${house.houseId}`}
@@ -121,6 +151,7 @@ function HouseThumb({
           —
         </div>
       )}
+      {hasVideo ? <HouseVideoBadge /> : null}
     </Link>
   );
 }
@@ -233,8 +264,9 @@ function PartnerHouseMobileCard({
         <HouseThumb house={house} className="h-[72px] w-[96px] shrink-0" />
         <div className="min-w-0 flex-1">
           <p className="line-clamp-3 text-base leading-snug text-zinc-900">
-            <span className="mr-1.5 font-mono text-xs font-medium tabular-nums text-zinc-500">
+            <span className="mr-1.5 inline-flex flex-wrap items-center gap-1.5 font-mono text-xs font-medium tabular-nums text-zinc-500">
               {house.houseId}
+              <HouseBusinessTypeBadge businessType={house.businessType} className="" />
             </span>
             <span className="font-semibold">{house.title}</span>
           </p>
@@ -342,11 +374,7 @@ export function PartnerHousesList({
               <tr key={r.id} className="align-top">
                 <td className="whitespace-nowrap px-4 py-3 align-top font-mono text-xs tabular-nums text-zinc-600">
                   <div>{r.houseId}</div>
-                  {r.videoUrl ? (
-                    <span className="mt-1 block w-fit rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-medium text-zinc-700">
-                      Vídeo
-                    </span>
-                  ) : null}
+                  <HouseBusinessTypeBadge businessType={r.businessType} />
                 </td>
                 <td className="px-4 py-3">
                   <HouseThumb house={r} />
