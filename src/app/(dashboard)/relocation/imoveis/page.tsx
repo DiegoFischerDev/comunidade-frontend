@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { RelocationCityCombobox } from "@/components/relocation/RelocationCityCombobox";
 import { RelocationHouseCard } from "@/components/relocation/RelocationHouseCard";
 import {
-  RELOCATION_BUSINESS_TYPE_LABELS,
   RELOCATION_BUSINESS_TYPE_OPTIONS,
   RELOCATION_TYPOLOGY_LABELS,
   RELOCATION_TYPOLOGY_OPTIONS,
@@ -37,6 +36,13 @@ function WhatsappBrandIcon({ className }: { className?: string }) {
 
 const RELOCATION_IMOVEIS_PATH = "/relocation/imoveis";
 const LIST_SECTION_TITLE = "Imóveis disponíveis";
+
+type BusinessTypeTab = (typeof RELOCATION_BUSINESS_TYPE_OPTIONS)[number];
+
+const BUSINESS_TYPE_TAB_CLASS: Record<BusinessTypeTab, string> = {
+  RENT: "Arrendamento",
+  SALE: "Venda",
+};
 
 const TYPOLOGY_SORT_INDEX = new Map<string, number>(
   RELOCATION_TYPOLOGY_OPTIONS.map((k, i) => [k, i]),
@@ -100,7 +106,9 @@ export default function PublicRelocationHousesListPage() {
 
   const cidade = searchParams.get("cidade")?.trim() ?? "";
   const tipologia = searchParams.get("tipologia")?.trim() ?? "";
-  const finalidade = searchParams.get("finalidade")?.trim() ?? "";
+  const finalidadeRaw = searchParams.get("finalidade")?.trim() ?? "";
+  const finalidade: BusinessTypeTab =
+    finalidadeRaw === "SALE" ? "SALE" : "RENT";
   const valorMin = searchParams.get("valorMin")?.trim() ?? "";
   const valorMax = searchParams.get("valorMax")?.trim() ?? "";
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
@@ -143,6 +151,14 @@ export default function PublicRelocationHousesListPage() {
   );
 
   useEffect(() => {
+    const f = searchParams.get("finalidade")?.trim();
+    if (f === "RENT" || f === "SALE") return;
+    const q = new URLSearchParams(searchParams.toString());
+    q.set("finalidade", "RENT");
+    router.replace(`${RELOCATION_IMOVEIS_PATH}${q.toString() ? `?${q}` : ""}`);
+  }, [searchParams, router]);
+
+  useEffect(() => {
     let cancelled = false;
     const id = window.setTimeout(() => {
       if (cancelled) return;
@@ -153,7 +169,7 @@ export default function PublicRelocationHousesListPage() {
           const data = await api.marketplace.relocationHouses({
             city: cidade || undefined,
             typology: tipologia || undefined,
-            businessType: (finalidade as "RENT" | "SALE") || undefined,
+            businessType: finalidade,
             minPriceEur: valorMin || undefined,
             maxPriceEur: valorMax || undefined,
             page,
@@ -222,29 +238,6 @@ export default function PublicRelocationHousesListPage() {
           </select>
         </div>
         <div className="min-w-0 flex-1">
-          <label
-            className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500"
-            htmlFor="filter-finalidade"
-          >
-            Finalidade
-          </label>
-          <select
-            id="filter-finalidade"
-            value={finalidade}
-            onChange={(e) =>
-              setRouteFilters({ cidade, tipologia, finalidade: e.target.value, page: 1 })
-            }
-            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-          >
-            <option value="">Todas</option>
-            {RELOCATION_BUSINESS_TYPE_OPTIONS.map((key) => (
-              <option key={key} value={key}>
-                {RELOCATION_BUSINESS_TYPE_LABELS[key] ?? key}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="min-w-0 flex-1">
           <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500">
             Valor (EUR)
           </label>
@@ -291,7 +284,16 @@ export default function PublicRelocationHousesListPage() {
         </div>
         <button
           type="button"
-          onClick={() => router.replace(RELOCATION_IMOVEIS_PATH)}
+          onClick={() =>
+            setRouteFilters({
+              cidade: "",
+              tipologia: "",
+              valorMin: "",
+              valorMax: "",
+              finalidade,
+              page: 1,
+            })
+          }
           className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100"
         >
           Limpar filtros
@@ -398,6 +400,41 @@ export default function PublicRelocationHousesListPage() {
         </div>
       </section>
 
+      <div
+        role="tablist"
+        aria-label="Finalidade do imóvel"
+        className="flex w-full max-w-md rounded-xl border border-zinc-200 bg-zinc-100 p-1 shadow-sm"
+      >
+        {RELOCATION_BUSINESS_TYPE_OPTIONS.map((key) => {
+          const selected = finalidade === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() =>
+                setRouteFilters({
+                  cidade,
+                  tipologia,
+                  finalidade: key,
+                  valorMin,
+                  valorMax,
+                  page: 1,
+                })
+              }
+              className={
+                selected
+                  ? "flex-1 rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition"
+                  : "flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-zinc-600 transition hover:bg-white/80 hover:text-zinc-900"
+              }
+            >
+              {BUSINESS_TYPE_TAB_CLASS[key]}
+            </button>
+          );
+        })}
+      </div>
+
       {filterBar}
 
       {!loading ? (
@@ -406,7 +443,12 @@ export default function PublicRelocationHousesListPage() {
           aria-label="Lista resumida de imóveis disponíveis"
         >
           <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-lg font-semibold text-zinc-900">{LIST_SECTION_TITLE}</h2>
+            <h2 className="text-lg font-semibold text-zinc-900">
+              {LIST_SECTION_TITLE}
+              <span className="ml-2 text-sm font-medium text-zinc-500">
+                · {BUSINESS_TYPE_TAB_CLASS[finalidade]}
+              </span>
+            </h2>
             {isAdmin ? (
               <button
                 type="button"
@@ -419,7 +461,8 @@ export default function PublicRelocationHousesListPage() {
           </div>
           {availableListRowsSorted.length === 0 ? (
             <p className="text-sm text-zinc-600">
-              Nenhum imóvel disponível com estes filtros nesta página.
+              Nenhum imóvel para {BUSINESS_TYPE_TAB_CLASS[finalidade].toLowerCase()} com estes
+              filtros nesta página.
             </p>
           ) : (
             <ul className="list-none space-y-2.5 text-sm leading-relaxed text-zinc-800">
@@ -466,7 +509,8 @@ export default function PublicRelocationHousesListPage() {
         <p className="text-sm text-zinc-600">A carregar imóveis…</p>
       ) : regularRows.length === 0 ? (
         <p className="text-sm text-zinc-600">
-          Nenhum imóvel com estes critérios. Tente alargar os filtros.
+          Nenhum imóvel para {BUSINESS_TYPE_TAB_CLASS[finalidade].toLowerCase()} com estes
+          critérios. Tente alargar os filtros.
         </p>
       ) : (
         <>
