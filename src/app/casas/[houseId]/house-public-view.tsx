@@ -214,17 +214,24 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
                 </dd>
               </div>
               {!isSale ? (
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50/90 px-4 py-3 sm:col-span-2">
-                  <div className="space-y-1.5 text-base text-zinc-900">
-                    <p>
-                      <span className="font-medium text-zinc-800">Taxa relocation:</span>{" "}
+                <>
+                  <div className="rounded-2xl border border-amber-200/90 bg-amber-50/80 px-4 py-3 sm:col-span-2">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-900/75">
+                      Taxa relocation
+                    </dt>
+                    <dd className="mt-1 text-lg font-semibold tabular-nums text-amber-950">
                       {formatRelocationFeeEur(house.relocationFeeEur)}
-                    </p>
-                    <p>
-                      <span className="font-medium text-zinc-800">Entrada:</span> {entrada}
-                    </p>
+                    </dd>
                   </div>
-                </div>
+                  <div className="rounded-2xl border border-sky-200/90 bg-sky-50/80 px-4 py-3 sm:col-span-2">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-sky-900/75">
+                      Entrada
+                    </dt>
+                    <dd className="mt-1 text-base font-semibold leading-snug text-sky-950">
+                      {entrada}
+                    </dd>
+                  </div>
+                </>
               ) : null}
             </dl>
 

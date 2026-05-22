@@ -10,11 +10,18 @@ import {
   type Ref,
 } from "react";
 
+const CAROUSEL_NAV_BTN_BASE =
+  "absolute z-[26] top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border-0 bg-gradient-to-r from-[#d58901] to-[#f0b23a] p-0 text-white shadow-md outline-none transition-all duration-200 ease-in-out md:h-12 md:w-12 " +
+  "hover:brightness-110 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 " +
+  "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40";
+
+/** Setas discretas (dashboard): opacidade reduzida até hover. */
 export const HORIZONTAL_CAROUSEL_NAV_BTN =
-  "absolute z-[26] top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border-0 bg-gradient-to-r from-[#d58901] to-[#f0b23a] p-0 text-white shadow-sm outline-none transition-all duration-300 ease-in-out md:h-12 md:w-12 " +
-  "opacity-50 sm:opacity-0 sm:group-hover:opacity-50 sm:group-focus-within:opacity-50 " +
-  "hover:bg-none hover:bg-[#d58901] hover:opacity-100 focus-visible:bg-none focus-visible:bg-[#d58901] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 " +
-  "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-30";
+  `${CAROUSEL_NAV_BTN_BASE} opacity-50 sm:opacity-0 sm:group-hover:opacity-50 sm:group-focus-within:opacity-50 hover:opacity-100 focus-visible:opacity-100`;
+
+/** Setas sempre visíveis e em destaque (ex.: fotos de imóveis). */
+export const HORIZONTAL_CAROUSEL_NAV_BTN_PROMINENT =
+  `${CAROUSEL_NAV_BTN_BASE} opacity-100`;
 
 export const HORIZONTAL_CAROUSEL_TRACK =
   "flex snap-x snap-mandatory gap-0 overflow-x-auto scroll-smooth pb-0 pt-0 [-webkit-overflow-scrolling:touch] overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden";
@@ -38,6 +45,12 @@ type HorizontalSnapCarouselProps = {
   hideNavWhenSingle?: boolean;
   /** Ref opcional no contentor com scroll (ex.: contador de slides). */
   trackRef?: Ref<HTMLDivElement>;
+  /** `prominent`: setas sempre opacas e coloridas; `subtle`: estilo do dashboard. */
+  navStyle?: "subtle" | "prominent";
+  /** Chamado quando o utilizador usa as setas (ex.: pausar auto-avanço). */
+  onNavInteract?: () => void;
+  /** Na última volta à primeira (e vice-versa); setas sempre ativas. */
+  loop?: boolean;
 };
 
 export function HorizontalSnapCarousel({
@@ -48,7 +61,14 @@ export function HorizontalSnapCarousel({
   trackClassName = "",
   hideNavWhenSingle = true,
   trackRef: externalTrackRef,
+  navStyle = "subtle",
+  onNavInteract,
+  loop = false,
 }: HorizontalSnapCarouselProps) {
+  const navBtnClass =
+    navStyle === "prominent"
+      ? HORIZONTAL_CAROUSEL_NAV_BTN_PROMINENT
+      : HORIZONTAL_CAROUSEL_NAV_BTN;
   const internalTrackRef = useRef<HTMLDivElement | null>(null);
   const setTrackRef = useCallback(
     (el: HTMLDivElement | null) => {
@@ -65,13 +85,18 @@ export function HorizontalSnapCarousel({
   const [canNext, setCanNext] = useState(slideCount > 1);
 
   const updateArrows = useCallback(() => {
+    if (loop && slideCount > 1) {
+      setCanPrev(true);
+      setCanNext(true);
+      return;
+    }
     const el = internalTrackRef.current;
     if (!el) return;
     const { scrollLeft, scrollWidth, clientWidth } = el;
     const epsilon = 8;
     setCanPrev(scrollLeft > epsilon);
     setCanNext(scrollLeft < scrollWidth - clientWidth - epsilon);
-  }, []);
+  }, [loop, slideCount]);
 
   useEffect(() => {
     const el = internalTrackRef.current;
@@ -86,12 +111,28 @@ export function HorizontalSnapCarousel({
     };
   }, [updateArrows, slideCount]);
 
-  const scrollByDir = useCallback((dir: 1 | -1) => {
-    const el = internalTrackRef.current;
-    if (!el) return;
-    const step = getCarouselScrollStep(el);
-    el.scrollBy({ left: dir * step, behavior: "smooth" });
-  }, []);
+  const scrollByDir = useCallback(
+    (dir: 1 | -1) => {
+      onNavInteract?.();
+      const el = internalTrackRef.current;
+      if (!el) return;
+      const step = getCarouselScrollStep(el);
+      if (loop && slideCount > 1) {
+        const current = Math.round(el.scrollLeft / step);
+        const nextIndex = (current + dir + slideCount) % slideCount;
+        const wraps =
+          (dir === 1 && current >= slideCount - 1) ||
+          (dir === -1 && current <= 0);
+        el.scrollTo({
+          left: nextIndex * step,
+          behavior: wraps ? "auto" : "smooth",
+        });
+        return;
+      }
+      el.scrollBy({ left: dir * step, behavior: "smooth" });
+    },
+    [loop, slideCount, onNavInteract],
+  );
 
   const showNav = slideCount > 1 || !hideNavWhenSingle;
 
@@ -105,7 +146,7 @@ export function HorizontalSnapCarousel({
             aria-disabled={!canPrev}
             disabled={!canPrev}
             onClick={() => scrollByDir(-1)}
-            className={`${HORIZONTAL_CAROUSEL_NAV_BTN} left-2 md:left-3`}
+            className={`${navBtnClass} left-2 md:left-3`}
           >
             <svg
               aria-hidden
@@ -128,7 +169,7 @@ export function HorizontalSnapCarousel({
             aria-disabled={!canNext}
             disabled={!canNext}
             onClick={() => scrollByDir(1)}
-            className={`${HORIZONTAL_CAROUSEL_NAV_BTN} right-2 md:right-3`}
+            className={`${navBtnClass} right-2 md:right-3`}
           >
             <svg
               aria-hidden
