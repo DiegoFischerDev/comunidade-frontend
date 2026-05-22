@@ -2,14 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 
 import type { PublicHousePageData } from "@/lib/house-public-server";
-import { formatHouseEntradaWithTotal } from "@/lib/house-entrance";
+import { formatHouseEntradaWithTotal, orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { isOurImageHostname } from "@/lib/site-url";
 
 import { HousePublicationStatusBadge } from "@/components/house/HousePublicationStatusBadge";
 
 import { HouseContactSection } from "./house-contact-section";
-import { HousePhotoGallery } from "./house-photo-gallery";
+import { HouseImageCarousel } from "./house-image-carousel";
 import { relocationCityDisplayName } from "@/lib/relocation-portugal-cities";
 import { partnerPublicPagePath } from "@/lib/partner-public-shared";
 
@@ -74,20 +74,21 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
   const { partner } = house;
   const cityLabel = relocationCityDisplayName(house.city);
   const typoLabel = TYPOLOGY_LABELS[house.typology] ?? house.typology;
-  const entrada = formatHouseEntradaWithTotal(
-    house.caucoesCount,
-    house.rendasEntradaCount,
-    house.priceEur,
-  );
+  const isSale = house.businessType === "SALE";
+  const entrada = !isSale
+    ? formatHouseEntradaWithTotal(
+        house.caucoesCount,
+        house.rendasEntradaCount,
+        house.priceEur,
+      )
+    : null;
 
   const videoSrc = house.videoUrl ? resolveUploadsUrl(house.videoUrl) : null;
-  const rawUrls = house.imageUrls ?? [];
-  const rawCover =
-    house.coverImageUrl && rawUrls.includes(house.coverImageUrl)
-      ? house.coverImageUrl
-      : rawUrls[0] ?? null;
-  const photos = rawUrls.map(resolveUploadsUrl).filter(Boolean);
-  const heroImageSrc = rawCover ? resolveUploadsUrl(rawCover) : null;
+  const orderedUrls = orderHouseImagesWithCoverFirst(
+    house.imageUrls ?? [],
+    house.coverImageUrl,
+  );
+  const photos = orderedUrls.map(resolveUploadsUrl).filter(Boolean);
 
   const logoSrc =
     partner.logoUrl && partner.logoUrl.startsWith("/uploads/")
@@ -148,14 +149,14 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
           </nav>
         ) : null}
         <article className="overflow-hidden rounded-3xl border border-zinc-200/90 bg-white shadow-xl shadow-zinc-200/50">
-          <div
-            className={`relative w-full bg-zinc-100 ${
-              !heroImageSrc && videoSrc
-                ? "flex min-h-[min(50vh,420px)] items-center justify-center bg-black"
-                : "aspect-[16/10] sm:aspect-[2/1]"
-            }`}
-          >
-            {!heroImageSrc && videoSrc ? (
+          {photos.length > 0 ? (
+            <HouseImageCarousel photos={photos} />
+          ) : !videoSrc ? (
+            <div className="flex min-h-[200px] w-full items-center justify-center bg-zinc-100 text-sm text-zinc-500 aspect-[16/10] sm:aspect-[2/1]">
+              Sem fotos nem vídeo
+            </div>
+          ) : (
+            <div className="relative flex min-h-[min(50vh,420px)] w-full items-center justify-center bg-black">
               <video
                 src={videoSrc}
                 className="max-h-[min(85vh,920px)] w-auto max-w-full object-contain"
@@ -163,24 +164,10 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
                 playsInline
                 preload="metadata"
               />
-            ) : heroImageSrc ? (
-              <Image
-                src={heroImageSrc}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="100vw"
-                priority
-                unoptimized={nextImageUnoptimized(heroImageSrc)}
-              />
-            ) : (
-              <div className="flex h-full min-h-[200px] items-center justify-center text-sm text-zinc-500">
-                Sem fotos nem vídeo
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {heroImageSrc && videoSrc ? (
+          {photos.length > 0 && videoSrc ? (
             <div className="flex flex-col border-t border-zinc-100 bg-black px-4 py-4 sm:px-6">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Vídeo</p>
               <div className="flex w-full justify-center">
@@ -226,20 +213,20 @@ export function HousePublicView({ house, apiBaseUrl, variant = "standalone" }: P
                   {formatPriceByBusinessType(house.priceEur, house.businessType)}
                 </dd>
               </div>
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-50/90 px-4 py-3 sm:col-span-2">
-                <div className="space-y-1.5 text-base text-zinc-900">
-                  <p>
-                    <span className="font-medium text-zinc-800">Taxa relocation:</span>{" "}
-                    {formatRelocationFeeEur(house.relocationFeeEur)}
-                  </p>
-                  <p>
-                    <span className="font-medium text-zinc-800">Entrada:</span> {entrada}
-                  </p>
+              {!isSale ? (
+                <div className="rounded-2xl border border-zinc-200 bg-zinc-50/90 px-4 py-3 sm:col-span-2">
+                  <div className="space-y-1.5 text-base text-zinc-900">
+                    <p>
+                      <span className="font-medium text-zinc-800">Taxa relocation:</span>{" "}
+                      {formatRelocationFeeEur(house.relocationFeeEur)}
+                    </p>
+                    <p>
+                      <span className="font-medium text-zinc-800">Entrada:</span> {entrada}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : null}
             </dl>
-
-            {photos.length > 0 ? <HousePhotoGallery photos={photos} /> : null}
 
             <section>
               <h2 className="text-sm font-semibold text-zinc-900">Descrição</h2>

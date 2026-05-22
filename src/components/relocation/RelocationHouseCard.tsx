@@ -24,14 +24,22 @@ type Props = {
   house: RelocationHouseRow;
   /** Quando false, oculta o botão WhatsApp "Contactar" (ex.: página pública do parceiro). */
   showContactButton?: boolean;
+  /** Destino do card (omissão: página no dashboard). */
+  detailHref?: string;
 };
 
-export function RelocationHouseCard({ house: h, showContactButton = true }: Props) {
+export function RelocationHouseCard({
+  house: h,
+  showContactButton = true,
+  detailHref,
+}: Props) {
   const { user } = useAuth();
   const { videoSrc, primaryImageSrc, videoPosterSrc } = getRelocationHouseMedia(h);
   const cityLabel = relocationCityDisplayName(h.city);
   const typoLabel = RELOCATION_TYPOLOGY_LABELS[h.typology] ?? h.typology;
   const businessTypeLabel = RELOCATION_BUSINESS_TYPE_LABELS[h.businessType] ?? "Arrendamento";
+  const listingHref =
+    detailHref ?? `/dashboard/casas/${encodeURIComponent(h.id)}`;
   const handleContactClick = () => {
     openRelocationPartnerWhatsApp(h);
   };
@@ -39,7 +47,7 @@ export function RelocationHouseCard({ house: h, showContactButton = true }: Prop
   return (
     <article className="group flex w-full flex-col overflow-hidden rounded-xl border border-zinc-200/90 bg-white text-left shadow-sm ring-1 ring-zinc-900/5 transition-shadow duration-200 hover:border-zinc-300 hover:shadow-md">
       <Link
-        href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
+        href={listingHref}
         className="relative block aspect-[4/3] w-full cursor-pointer overflow-hidden bg-zinc-100 outline-none ring-inset transition hover:opacity-[0.98] focus-visible:ring-2 focus-visible:ring-amber-500/90 focus-visible:ring-offset-0"
         aria-label={`Ver imóvel: ${h.title}`}
       >
@@ -110,25 +118,27 @@ export function RelocationHouseCard({ house: h, showContactButton = true }: Prop
 
         <p className="text-xs text-zinc-500">{relocationAvailabilityLabel(h.availableFrom)}</p>
 
-        <dl className="space-y-2 text-xs">
-          <div className="flex items-start justify-between gap-3">
-            <dt className="shrink-0 text-zinc-500">Taxa relocation</dt>
-            <dd className="text-right font-medium tabular-nums text-zinc-800">
-              {formatRelocationFeeEur(h.relocationFeeEur)}
-            </dd>
-          </div>
-          <div className="flex items-start justify-between gap-3">
-            <dt className="shrink-0 text-zinc-500">Entrada</dt>
-            <dd className="text-right font-medium text-zinc-800">
-              {formatHouseEntradaWithTotal(h.caucoesCount, h.rendasEntradaCount, h.priceEur)}
-            </dd>
-          </div>
-        </dl>
+        {h.businessType !== "SALE" ? (
+          <dl className="space-y-2 text-xs">
+            <div className="flex items-start justify-between gap-3">
+              <dt className="shrink-0 text-zinc-500">Taxa relocation</dt>
+              <dd className="text-right font-medium tabular-nums text-zinc-800">
+                {formatRelocationFeeEur(h.relocationFeeEur)}
+              </dd>
+            </div>
+            <div className="flex items-start justify-between gap-3">
+              <dt className="shrink-0 text-zinc-500">Entrada</dt>
+              <dd className="text-right font-medium text-zinc-800">
+                {formatHouseEntradaWithTotal(h.caucoesCount, h.rendasEntradaCount, h.priceEur)}
+              </dd>
+            </div>
+          </dl>
+        ) : null}
       </div>
       <div className="mt-auto border-t border-zinc-100 bg-zinc-50/50 px-4 py-3">
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <CardLinkButton
-            href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
+            href={listingHref}
             variant="primary"
             className={
               showContactButton

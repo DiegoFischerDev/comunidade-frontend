@@ -90,18 +90,50 @@ export async function fetchPartnerPublic(lookup: string): Promise<PartnerPublic>
   return res.json();
 }
 
+type RelocationHousesListResponse = {
+  items?: RelocationHouseRow[];
+  total?: number;
+  page?: number;
+  pageSize?: number;
+};
+
+/** Imóveis relocation publicados e dentro da janela de publicação do parceiro. */
 export async function fetchRelocationHousesForPartner(
   partnerId: string,
 ): Promise<RelocationHouseRow[]> {
-  const res = await fetch(
-    `${PARTNER_PUBLIC_API_URL}/partners/relocation/houses?partnerId=${encodeURIComponent(partnerId)}`,
-    { cache: 'no-store' },
-  );
-  if (!res.ok) {
-    return [];
+  const pageSize = 10;
+  const all: RelocationHouseRow[] = [];
+  let page = 1;
+
+  while (true) {
+    const qs = new URLSearchParams({
+      partnerId,
+      page: String(page),
+      pageSize: String(pageSize),
+    });
+    const res = await fetch(
+      `${PARTNER_PUBLIC_API_URL}/partners/relocation/houses?${qs}`,
+      { cache: 'no-store' },
+    );
+    if (!res.ok) {
+      return page === 1 ? [] : all;
+    }
+
+    const data = (await res.json()) as RelocationHouseRow[] | RelocationHousesListResponse;
+    const items = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.items)
+        ? data.items
+        : [];
+    all.push(...items);
+
+    const total =
+      !Array.isArray(data) && typeof data?.total === 'number' ? data.total : items.length;
+    if (all.length >= total || items.length < pageSize) break;
+    page += 1;
   }
-  const data = (await res.json()) as RelocationHouseRow[];
-  return Array.isArray(data) ? data : [];
+
+  return all;
 }
 
 export function buildPartnerPublicMetadata(
