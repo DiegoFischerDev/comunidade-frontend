@@ -11,6 +11,7 @@ import {
   RAFA_CALL_CHECKOUT_PATH,
 } from '@/lib/auth-ui-events';
 import { CardButton } from '@/components/ui/CardButton';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 
 type RafacallStatusPayload = Awaited<ReturnType<typeof api.rafacall.status>>;
 type RafacallBookingPayload = Awaited<ReturnType<typeof api.rafacall.booking>>['booking'];
@@ -510,16 +511,19 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
         )}
       </div>
 
-      {schedOpen && (
-        <div
-          className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/40 p-4"
-          onClick={closeSched}
-          role="presentation"
-        >
+      {schedOpen ? (
+        <ModalPortal>
           <div
-            className="relative my-8 w-full max-w-6xl rounded-2xl bg-white p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[100] flex items-end justify-center overflow-y-auto bg-black/50 p-3 sm:items-center sm:p-4"
+            onClick={closeSched}
+            role="presentation"
           >
+            <div
+              className="relative mb-0 w-full max-w-6xl max-h-[min(92dvh,100%)] overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:my-8"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-zinc-900">
@@ -705,20 +709,25 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
                 </div>
               </div>
             ) : null}
+            </div>
           </div>
-        </div>
-      )}
+        </ModalPortal>
+      ) : null}
 
-      {payOpen && (
-        <div
-          className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/40 p-4"
-          onClick={closePayModal}
-          role="presentation"
-        >
+      {payOpen ? (
+        <ModalPortal>
           <div
-            className="relative my-8 w-full max-w-3xl rounded-2xl bg-white p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[100] flex items-end justify-center overflow-y-auto bg-black/50 p-3 sm:items-center sm:p-4"
+            onClick={closePayModal}
+            role="presentation"
           >
+            <div
+              className="relative mb-0 w-full max-w-3xl max-h-[min(92dvh,100%)] overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:my-8"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="rafacall-pay-modal-title"
+            >
             <button
               type="button"
               onClick={closePayModal}
@@ -747,7 +756,10 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
                 />
               </div>
               <div className="bg-white px-4 pb-4 pt-2 text-center">
-                <h3 className="text-lg font-bold tracking-tight text-zinc-900">
+                <h3
+                  id="rafacall-pay-modal-title"
+                  className="text-lg font-bold tracking-tight text-zinc-900"
+                >
                   Converse com a Rafa sobre a sua imigração
                 </h3>
                 <p className="mt-1 text-sm font-medium text-zinc-600">
@@ -787,9 +799,10 @@ Se você quer dar esse passo com mais clareza e confiança, essa conversa é pra
                 Cancelar
               </CardButton>
             </div>
+            </div>
           </div>
-        </div>
-      )}
+        </ModalPortal>
+      ) : null}
     </>
   );
 }

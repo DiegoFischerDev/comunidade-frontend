@@ -1026,18 +1026,6 @@ export default function ChecklistPage() {
             <p className="mt-1 text-sm text-zinc-600">
               Organize teu plano e acompanhe as etapas do processo até se regularizar em Portugal.
             </p>
-            <p className="mt-1 text-xs text-zinc-500 print:hidden">
-              As tuas respostas ficam guardadas apenas neste browser — não estão ligadas à tua conta.
-              {localSavedAt ? (
-                <span className="mt-0.5 block tabular-nums">
-                  Última gravação local:{" "}
-                  {new Date(localSavedAt).toLocaleString("pt-PT", {
-                    dateStyle: "short",
-                    timeStyle: "short",
-                  })}
-                </span>
-              ) : null}
-            </p>
           </div>
           <div
             className="w-full print:hidden sm:ml-auto sm:max-w-[32rem] sm:shrink-0"
