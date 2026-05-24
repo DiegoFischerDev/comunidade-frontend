@@ -13,7 +13,7 @@ export const WHATSAPP_GROUP_RELOCACAO_URL =
 /** Imóveis para venda. */
 export const WHATSAPP_GROUP_IMOVEIS_VENDA_URL =
   process.env.NEXT_PUBLIC_WHATSAPP_GROUP_IMOVEIS_VENDA_URL?.trim() ||
-  "https://chat.whatsapp.com/L5Lo18rPzut7lF6BFO0i67?mode=gi_t";
+  "https://chat.whatsapp.com/EneiignxdnuHVy17rh5MTX";
 
 /** @deprecated Use `WHATSAPP_GROUP_DUVIDAS_GERAL_URL`. */
 export const COMMUNITY_WHATSAPP_GROUPS_URL = WHATSAPP_GROUP_DUVIDAS_GERAL_URL;
