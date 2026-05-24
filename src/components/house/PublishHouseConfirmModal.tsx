@@ -8,6 +8,7 @@ import {
 } from "@/components/house/HousePublicationStatusBadge";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
+import { formatHouseEurFieldDisplay } from "@/lib/format-eur-pt";
 import {
   HOUSE_PUBLICATION_COST_EUR_CENTS,
   HOUSE_PUBLICATION_DURATION_DAYS,
@@ -229,7 +230,10 @@ export function PublishHouseConfirmModal({
               label="Negócio"
               value={BUSINESS_TYPE_LABELS[house.businessType] ?? house.businessType}
             />
-            <DetailItem label="Preço" value={`${house.priceEur} €`} />
+            <DetailItem
+              label="Preço"
+              value={formatHouseEurFieldDisplay(house.priceEur)}
+            />
             <DetailItem label="Disponível em" value={formatDatePt(house.availableFrom)} />
             {activelyPublished && house.publishedUntil ? (
               <DetailItem

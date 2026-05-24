@@ -1,7 +1,12 @@
 "use client";
 
 import { CardButton } from "@/components/ui/CardButton";
-import { formatAdvertisingBalanceEur } from "@/components/house/HousePublicationStatusBadge";
+import { formatEurWholeFromCents } from "@/lib/format-eur-pt";
+import {
+  HOUSE_PUBLICATION_COST_EUR_CENTS,
+  HOUSE_PUBLICATION_DURATION_DAYS,
+  formatPublicationCostEur,
+} from "@/lib/house-publication";
 
 type Props = {
   balanceEurCents: number;
@@ -9,7 +14,7 @@ type Props = {
 };
 
 export function AdvertisingBalanceCard({ balanceEurCents, onAddBalance }: Props) {
-  const canPublish = balanceEurCents >= 500;
+  const canPublish = balanceEurCents >= HOUSE_PUBLICATION_COST_EUR_CENTS;
 
   return (
     <section
@@ -24,10 +29,11 @@ export function AdvertisingBalanceCard({ balanceEurCents, onAddBalance }: Props)
           Saldo de publicidade
         </p>
         <p className="text-2xl font-bold tabular-nums text-zinc-900">
-          {formatAdvertisingBalanceEur(balanceEurCents)}
+          {formatEurWholeFromCents(balanceEurCents)}
         </p>
         <p className="mt-0.5 text-xs text-zinc-500">
-          5 € por publicação · 7 dias no site e WhatsApp
+          {formatPublicationCostEur()} por publicação · {HOUSE_PUBLICATION_DURATION_DAYS}{" "}
+          dias no site e WhatsApp
           {!canPublish ? " · saldo insuficiente para publicar" : ""}
         </p>
       </div>

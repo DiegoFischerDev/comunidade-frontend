@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { PublishHouseRowButton } from "@/components/house/PublishHouseRowButton";
+import { formatHouseEurFieldDisplay } from "@/lib/format-eur-pt";
 import { formatHouseEntradaWithTotal, orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { api } from "@/lib/api";
@@ -272,7 +273,9 @@ function PartnerHouseMobileCard({
           </p>
           <p className="mt-1 text-sm text-zinc-600">
             {BUSINESS_TYPE_LABELS[house.businessType] ?? "Preço"}:{" "}
-            <span className="font-semibold tabular-nums text-zinc-900">{house.priceEur} €</span>
+            <span className="font-semibold tabular-nums text-zinc-900">
+              {formatHouseEurFieldDisplay(house.priceEur)}
+            </span>
           </p>
         </div>
       </div>
@@ -410,11 +413,20 @@ export function PartnerHousesList({
                   {TYPOLOGY_LABELS[r.typology] ?? r.typology}
                 </td>
                 <td className="px-4 py-3 text-zinc-700">{formatDatePt(r.availableFrom)}</td>
-                <td className="px-4 py-3 text-zinc-700">{r.priceEur}</td>
                 <td className="px-4 py-3 text-zinc-700">
-                  <div className="text-xs text-zinc-500">Taxa: {r.relocationFeeEur} €</div>
+                  {formatHouseEurFieldDisplay(r.priceEur)}
+                </td>
+                <td className="px-4 py-3 text-zinc-700">
+                  <div className="text-xs text-zinc-500">
+                    Taxa: {formatHouseEurFieldDisplay(r.relocationFeeEur)}
+                  </div>
                   <div>
-                    {formatHouseEntradaWithTotal(r.caucoesCount, r.rendasEntradaCount, r.priceEur)}
+                    {formatHouseEntradaWithTotal(
+                      r.caucoesCount,
+                      r.rendasEntradaCount,
+                      r.priceEur,
+                      { wholeEuros: true },
+                    )}
                   </div>
                 </td>
                 <td className="px-4 py-3 text-right align-top">

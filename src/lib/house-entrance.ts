@@ -42,6 +42,7 @@ export function formatHouseEntradaWithTotal(
   caucoes: number,
   rendas: number,
   priceEur: string,
+  options?: { wholeEuros?: boolean },
 ): string {
   const parts = formatHouseEntradaShort(caucoes, rendas);
   const rent = parseHouseMonthlyRentEurNumeric(priceEur);
@@ -52,7 +53,7 @@ export function formatHouseEntradaWithTotal(
   const total = units * rent;
   const totalStr = total.toLocaleString("pt-PT", {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: options?.wholeEuros ? 0 : 2,
   });
   return `${parts} = Total ${totalStr} €`;
 }

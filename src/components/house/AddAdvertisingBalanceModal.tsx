@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { CardButton } from "@/components/ui/CardButton";
-import { formatAdvertisingBalanceEur } from "@/components/house/HousePublicationStatusBadge";
+import { formatEurWholeFromCents } from "@/lib/format-eur-pt";
 
 const PRESETS_EUR = [10, 25, 50, 100];
 
@@ -76,7 +76,7 @@ export function AddAdvertisingBalanceModal({ open, onClose, onSuccess }: Props) 
                   : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"
               }`}
             >
-              {formatAdvertisingBalanceEur(v * 100)}
+              {formatEurWholeFromCents(v * 100)}
             </button>
           ))}
         </div>
