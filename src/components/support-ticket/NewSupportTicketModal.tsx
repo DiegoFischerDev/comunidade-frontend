@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { CardButton } from '@/components/ui/CardButton';
 
 export type NewSupportTicketModalProps = {
@@ -10,6 +11,14 @@ export type NewSupportTicketModalProps = {
   sending: boolean;
   sent: boolean;
   error: string;
+  /** Visitante sem conta: pede nome e WhatsApp antes da mensagem. */
+  collectGuestContact?: boolean;
+  guestName?: string;
+  guestWhatsapp?: string;
+  onGuestNameChange?: (value: string) => void;
+  onGuestWhatsappChange?: (value: string) => void;
+  guestNameError?: string;
+  guestWhatsappError?: string;
 };
 
 const SUBTITLE =
@@ -28,6 +37,13 @@ export function NewSupportTicketModal({
   sending,
   sent,
   error,
+  collectGuestContact = false,
+  guestName = '',
+  guestWhatsapp = '',
+  onGuestNameChange,
+  onGuestWhatsappChange,
+  guestNameError,
+  guestWhatsappError,
 }: NewSupportTicketModalProps) {
   if (!open) return null;
 
@@ -81,6 +97,37 @@ export function NewSupportTicketModal({
         {sent ? (
           <div className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
             Mensagem enviada. Obrigado por compartilhar com a gente!
+          </div>
+        ) : null}
+
+        {collectGuestContact && !sent ? (
+          <div className="mt-4 space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-zinc-700" htmlFor="new-ticket-guest-name">
+                Nome
+              </label>
+              <input
+                id="new-ticket-guest-name"
+                type="text"
+                value={guestName}
+                onChange={(e) => onGuestNameChange?.(e.target.value)}
+                disabled={sending}
+                autoComplete="name"
+                className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+                placeholder="O teu nome"
+              />
+              {guestNameError ? (
+                <p className="mt-1 text-xs text-red-600">{guestNameError}</p>
+              ) : null}
+            </div>
+            <LoginWhatsappFields
+              idPrefix="new-ticket-guest"
+              label="Telefone / WhatsApp"
+              value={guestWhatsapp}
+              error={guestWhatsappError}
+              onChange={(v) => onGuestWhatsappChange?.(v)}
+              disabled={sending}
+            />
           </div>
         ) : null}
 

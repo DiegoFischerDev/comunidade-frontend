@@ -13,6 +13,7 @@ import Image from 'next/image';
 import { getAuthToken, clearAuthToken, api } from '@/lib/api';
 import {
   MEMBERSHIP_CHECKOUT_PATH,
+  RAFA_CALL_CHECKOUT_PATH,
   OPEN_AUTH_LOGIN_EVENT,
   OPEN_MEMBERSHIP_MODAL_EVENT,
 } from '@/lib/auth-ui-events';
@@ -212,9 +213,8 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  /** Início do dashboard: hero em full-bleed; padding move-se para a página. */
-  const isDashboardHome = pathname === '/dashboard';
-  const isMembershipCheckout = pathname === MEMBERSHIP_CHECKOUT_PATH;
+  const isStandaloneCheckout =
+    pathname === MEMBERSHIP_CHECKOUT_PATH || pathname === RAFA_CALL_CHECKOUT_PATH;
   const {
     user,
     logout,
@@ -601,7 +601,7 @@ export default function DashboardLayout({
               Serviços
             </Link>
           ) : null}
-          {user && user.role !== 'ADMIN' ? (
+          {user?.role !== 'ADMIN' ? (
             <Link
               href="/dashboard/reclame-aqui"
               className={`block rounded-md px-3 py-2 text-sm ${
@@ -909,7 +909,7 @@ export default function DashboardLayout({
     </div>
   );
 
-  if (isMembershipCheckout) {
+  if (isStandaloneCheckout) {
     return (
       <>
         {children}
@@ -1153,19 +1153,6 @@ export default function DashboardLayout({
                 >
                   {loginLoading ? 'Entrando…' : 'Entrar'}
                 </button>
-                <p className="text-center text-sm text-zinc-600">
-                  Ainda não tem conta?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsAuthModalOpen(false);
-                      window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
-                    }}
-                    className="cursor-pointer font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
-                  >
-                    Criar conta
-                  </button>
-                </p>
               </form>
             ) : authMode === 'forgot' ? (
               <form
@@ -1344,13 +1331,7 @@ export default function DashboardLayout({
         </div>
       )}
 
-      <main
-        className={
-          isDashboardHome
-            ? 'flex-1 px-0 pt-16 pb-4 text-zinc-900 md:pt-6 md:pb-6'
-            : 'flex-1 p-4 pt-16 text-zinc-900 md:p-6 md:pt-6'
-        }
-      >
+      <main className="flex-1 p-4 pt-16 text-zinc-900 md:p-6 md:pt-6">
         {children}
       </main>
 

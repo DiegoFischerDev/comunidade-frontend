@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
-import { OPEN_MEMBERSHIP_MODAL_EVENT } from '@/components/FloatingWhatsAppButton';
-import { OPEN_AUTH_LOGIN_EVENT } from '@/lib/auth-ui-events';
 import { NewSupportTicketModal } from '@/components/support-ticket';
 import { CardButton } from '@/components/ui/CardButton';
 
@@ -42,15 +40,19 @@ function canUserEditTicket(t: Payload['items'][number]): boolean {
 
 export default function ReclameAquiUserPage() {
   const { user } = useAuth();
-  const isMember = user?.tier === 'MEMBER';
 
   const [data, setData] = useState<Payload | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(user));
   const [error, setError] = useState('');
 
   const [creating, setCreating] = useState(false);
   const [createMsg, setCreateMsg] = useState('');
   const [createSending, setCreateSending] = useState(false);
+  const [createSent, setCreateSent] = useState(false);
+  const [guestName, setGuestName] = useState('');
+  const [guestWhatsapp, setGuestWhatsapp] = useState('');
+  const [guestNameError, setGuestNameError] = useState('');
+  const [guestWhatsappError, setGuestWhatsappError] = useState('');
 
   const [editing, setEditing] = useState<Payload['items'][number] | null>(null);
   const [editMsg, setEditMsg] = useState('');
@@ -58,7 +60,7 @@ export default function ReclameAquiUserPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!isMember) return;
+    if (!user) return;
     setLoading(true);
     setError('');
     try {
@@ -70,7 +72,7 @@ export default function ReclameAquiUserPage() {
     } finally {
       setLoading(false);
     }
-  }, [isMember]);
+  }, [user]);
 
   useEffect(() => {
     void load();
@@ -78,7 +80,58 @@ export default function ReclameAquiUserPage() {
 
   const items = useMemo(() => data?.items ?? [], [data?.items]);
 
+  const resetCreateForm = useCallback(() => {
+    setCreateMsg('');
+    setGuestName('');
+    setGuestWhatsapp('');
+    setGuestNameError('');
+    setGuestWhatsappError('');
+    setCreateSent(false);
+  }, []);
+
   const handleCreateSend = useCallback(async () => {
+    if (!user) {
+      const name = guestName.trim();
+      const wa = guestWhatsapp.replace(/\D/g, '');
+      let hasError = false;
+      if (!name) {
+        setGuestNameError('Informe o seu nome.');
+        hasError = true;
+      } else {
+        setGuestNameError('');
+      }
+      if (wa.length < 8) {
+        setGuestWhatsappError('Informe um WhatsApp válido.');
+        hasError = true;
+      } else {
+        setGuestWhatsappError('');
+      }
+      if (!createMsg.trim()) {
+        setError('Escreve a tua mensagem antes de enviar.');
+        hasError = true;
+      }
+      if (hasError) return;
+
+      setCreateSending(true);
+      setError('');
+      try {
+        await api.support.createGuestTicket({
+          name,
+          whatsapp: guestWhatsapp,
+          message: createMsg.trim(),
+        });
+        setCreateSent(true);
+        setCreateMsg('');
+        setGuestName('');
+        setGuestWhatsapp('');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Não foi possível enviar.');
+      } finally {
+        setCreateSending(false);
+      }
+      return;
+    }
+
     if (!createMsg.trim()) {
       setError('Escreve a tua mensagem antes de enviar.');
       return;
@@ -95,39 +148,65 @@ export default function ReclameAquiUserPage() {
     } finally {
       setCreateSending(false);
     }
-  }, [createMsg, load]);
+  }, [user, guestName, guestWhatsapp, createMsg, load, resetCreateForm]);
 
   if (!user) {
     return (
       <div className="mx-auto w-full max-w-[820px]">
-        <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
-        <p className="mt-2 text-zinc-600">Faça login para solicitar suporte.</p>
-        <div className="mt-4 flex">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
+          <p className="mt-2 text-sm text-zinc-600">
+            Queremos ouvir-te e resolver o teu problema. Podes abrir um pedido sem criar conta — indica
+            o teu nome e WhatsApp para te contactarmos.
+          </p>
+        </div>
+
+        {error ? (
+          <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+        ) : null}
+
+        <div className="mt-6 flex justify-center">
           <CardButton
             type="button"
-            onClick={() => window.dispatchEvent(new Event(OPEN_AUTH_LOGIN_EVENT))}
+            onClick={() => {
+              setError('');
+              resetCreateForm();
+              setCreating(true);
+            }}
             variant="primary"
           >
-            Fazer login
+            Abrir pedido
           </CardButton>
         </div>
-      </div>
-    );
-  }
-  if (!isMember) {
-    return (
-      <div className="mx-auto w-full max-w-[820px]">
-        <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
-        <p className="mt-2 text-zinc-600">Aqui podes abrir um ticket (elogio/reclamação/bug). Se tens qualquer problema, queremos te ouvir.</p>
-        <div className="mt-4 flex">
-          <CardButton
-            type="button"
-            onClick={() => window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT))}
-            variant="primary"
-          >
-            Tornar-se membro VIP
-          </CardButton>
-        </div>
+
+        <NewSupportTicketModal
+          open={creating}
+          onClose={() => {
+            if (createSending) return;
+            setCreating(false);
+            setError('');
+            resetCreateForm();
+          }}
+          message={createMsg}
+          onMessageChange={setCreateMsg}
+          onSend={handleCreateSend}
+          sending={createSending}
+          sent={createSent}
+          error={error}
+          collectGuestContact
+          guestName={guestName}
+          guestWhatsapp={guestWhatsapp}
+          onGuestNameChange={(v) => {
+            setGuestName(v);
+            setGuestNameError('');
+          }}
+          onGuestWhatsappChange={(v) => {
+            setGuestWhatsapp(v);
+            setGuestWhatsappError('');
+          }}
+          guestNameError={guestNameError}
+          guestWhatsappError={guestWhatsappError}
+        />
       </div>
     );
   }
@@ -137,7 +216,8 @@ export default function ReclameAquiUserPage() {
       <div className="text-center">
         <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
         <p className="mt-2 text-sm text-zinc-600">
-        Queremos te ouvir e resolver o seu problema. Encontrou algum bug, teve uma experiência ruim ou quer compartilhar um elogio? Conta pra gente — estamos aqui pra ajudar.
+          Queremos te ouvir e resolver o seu problema. Encontrou algum bug, teve uma experiência ruim ou
+          quer compartilhar um elogio? Conta pra gente — estamos aqui pra ajudar.
         </p>
       </div>
 
@@ -169,120 +249,25 @@ export default function ReclameAquiUserPage() {
             </p>
           ) : (
             <>
-          {/* Mobile: cards */}
-          <div className="mt-4 space-y-3 md:hidden">
-            {items.map((t) => (
-              <div key={t.id} className="rounded-2xl border border-zinc-200 bg-white p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-zinc-500">{prettyDtPt(t.createdAt)}</p>
-                    <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(t.status)}`}
-                      >
-                        {statusLabel(t.status)}
-                      </span>
-                      {t.status === 'DONE' ? (
-                        <span className="text-xs text-zinc-500">Finalizado</span>
-                      ) : null}
-                    </div>
-                  </div>
-                  {t.status !== 'DONE' ? (
-                    <div className="flex shrink-0 items-center gap-2">
-                      {canUserEditTicket(t) ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditing(t);
-                            setEditMsg(t.message);
-                            setError('');
-                          }}
-                          className="cursor-pointer rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-200"
-                        >
-                          Editar
-                        </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        disabled={deletingId === t.id}
-                        onClick={async () => {
-                          const ok = window.confirm('Excluir este ticket? Esta ação não pode ser desfeita.');
-                          if (!ok) return;
-                          setDeletingId(t.id);
-                          setError('');
-                          try {
-                            await api.support.deleteMyTicket(t.id);
-                            await load();
-                          } catch (e) {
-                            setError(e instanceof Error ? e.message : 'Não foi possível excluir.');
-                          } finally {
-                            setDeletingId(null);
-                          }
-                        }}
-                        className="cursor-pointer rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
-                      >
-                        {deletingId === t.id ? 'Excluindo…' : 'Excluir'}
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="mt-3 grid gap-3">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-                      Mensagem
-                    </p>
-                    <div className="mt-1 whitespace-pre-wrap text-sm text-zinc-800">{t.message}</div>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-                      Resposta do admin
-                    </p>
-                    <div className="mt-1 whitespace-pre-wrap text-sm text-zinc-700">
-                      {t.adminReply || '—'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Desktop: table */}
-          <div className="mt-4 hidden overflow-x-auto rounded-lg border border-zinc-200 bg-white md:block">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                <tr>
-                  <th className="px-4 py-3">Data</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Mensagem</th>
-                  <th className="px-4 py-3">Resposta do admin</th>
-                  <th className="px-4 py-3 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
+              <div className="mt-4 space-y-3 md:hidden">
                 {items.map((t) => (
-                  <tr key={t.id} className="text-zinc-800">
-                    <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-900">
-                      {prettyDtPt(t.createdAt)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(t.status)}`}
-                      >
-                        {statusLabel(t.status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="whitespace-pre-wrap text-zinc-800">{t.message}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="whitespace-pre-wrap text-zinc-700">{t.adminReply || '—'}</div>
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
-                      {t.status === 'DONE' ? (
-                        <span className="text-xs text-zinc-500">—</span>
-                      ) : (
-                        <>
+                  <div key={t.id} className="rounded-2xl border border-zinc-200 bg-white p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-zinc-500">{prettyDtPt(t.createdAt)}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(t.status)}`}
+                          >
+                            {statusLabel(t.status)}
+                          </span>
+                          {t.status === 'DONE' ? (
+                            <span className="text-xs text-zinc-500">Finalizado</span>
+                          ) : null}
+                        </div>
+                      </div>
+                      {t.status !== 'DONE' ? (
+                        <div className="flex shrink-0 items-center gap-2">
                           {canUserEditTicket(t) ? (
                             <button
                               type="button"
@@ -291,7 +276,7 @@ export default function ReclameAquiUserPage() {
                                 setEditMsg(t.message);
                                 setError('');
                               }}
-                              className="mr-2 cursor-pointer rounded bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
+                              className="cursor-pointer rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-200"
                             >
                               Editar
                             </button>
@@ -310,23 +295,122 @@ export default function ReclameAquiUserPage() {
                                 await api.support.deleteMyTicket(t.id);
                                 await load();
                               } catch (e) {
-                                setError(e instanceof Error ? e.message : 'Não foi possível excluir.');
+                                setError(
+                                  e instanceof Error ? e.message : 'Não foi possível excluir.',
+                                );
                               } finally {
                                 setDeletingId(null);
                               }
                             }}
-                            className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+                            className="cursor-pointer rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
                           >
                             {deletingId === t.id ? 'Excluindo…' : 'Excluir'}
                           </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-3 grid gap-3">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                          Mensagem
+                        </p>
+                        <div className="mt-1 whitespace-pre-wrap text-sm text-zinc-800">{t.message}</div>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                          Resposta do admin
+                        </p>
+                        <div className="mt-1 whitespace-pre-wrap text-sm text-zinc-700">
+                          {t.adminReply || '—'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+
+              <div className="mt-4 hidden overflow-x-auto rounded-lg border border-zinc-200 bg-white md:block">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                    <tr>
+                      <th className="px-4 py-3">Data</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Mensagem</th>
+                      <th className="px-4 py-3">Resposta do admin</th>
+                      <th className="px-4 py-3 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100">
+                    {items.map((t) => (
+                      <tr key={t.id} className="text-zinc-800">
+                        <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-900">
+                          {prettyDtPt(t.createdAt)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(t.status)}`}
+                          >
+                            {statusLabel(t.status)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="whitespace-pre-wrap text-zinc-800">{t.message}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="whitespace-pre-wrap text-zinc-700">{t.adminReply || '—'}</div>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-right">
+                          {t.status === 'DONE' ? (
+                            <span className="text-xs text-zinc-500">—</span>
+                          ) : (
+                            <>
+                              {canUserEditTicket(t) ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditing(t);
+                                    setEditMsg(t.message);
+                                    setError('');
+                                  }}
+                                  className="mr-2 cursor-pointer rounded bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
+                                >
+                                  Editar
+                                </button>
+                              ) : null}
+                              <button
+                                type="button"
+                                disabled={deletingId === t.id}
+                                onClick={async () => {
+                                  const ok = window.confirm(
+                                    'Excluir este ticket? Esta ação não pode ser desfeita.',
+                                  );
+                                  if (!ok) return;
+                                  setDeletingId(t.id);
+                                  setError('');
+                                  try {
+                                    await api.support.deleteMyTicket(t.id);
+                                    await load();
+                                  } catch (e) {
+                                    setError(
+                                      e instanceof Error ? e.message : 'Não foi possível excluir.',
+                                    );
+                                  } finally {
+                                    setDeletingId(null);
+                                  }
+                                }}
+                                className="cursor-pointer rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+                              >
+                                {deletingId === t.id ? 'Excluindo…' : 'Excluir'}
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </>
           )}
         </>
@@ -423,4 +507,3 @@ export default function ReclameAquiUserPage() {
     </div>
   );
 }
-

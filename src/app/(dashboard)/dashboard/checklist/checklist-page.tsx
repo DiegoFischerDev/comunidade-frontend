@@ -3,50 +3,16 @@
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
-import { api } from "@/lib/api";
 import { CardButton } from "@/components/ui/CardButton";
 import { FlagBr, FlagPt } from "@/components/CountryFlags";
-import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/components/FloatingWhatsAppButton";
-
-type VisaType =
-  | ""
-  | "ESTUDO"
-  | "TRABALHO"
-  | "D8_NOMADE"
-  | "D7_PASSIVO"
-  | "D2_EMPREENDEDOR"
-  | "REAGRUPAMENTO";
-
-type CityKey =
-  | ""
-  | "INTERIOR"
-  | "LISBOA"
-  | "PORTO"
-  | "BRAGA"
-  | "COIMBRA"
-  | "AVEIRO"
-  | "FARO"
-  | "ALGARVE"
-  | "EVORA"
-  | "VISEU";
-
-type ChecklistData = {
-  meta?: {
-    visaType?: VisaType;
-    cidade?: CityKey;
-    cidadePlanoB?: CityKey;
-    agregadoFamiliar?: "" | "1" | "2" | "3" | "4" | "5+";
-    numQuartos?: "" | "0" | "1" | "2" | "3" | "4+";
-    profissoesPossiveis?: string[];
-    precisaCarro?: boolean | null;
-    dataViagem?: string; // yyyy-mm-dd
-    notas?: string;
-  };
-  checks?: Record<string, boolean>;
-};
-
-const TEMPLATE_VERSION = 1;
+import {
+  getImmigrationPlanLocalSavedAt,
+  loadImmigrationPlanLocal,
+  persistImmigrationPlanLocal,
+  type ImmigrationPlanCityKey as CityKey,
+  type ImmigrationPlanData as ChecklistData,
+  type ImmigrationPlanVisaType as VisaType,
+} from "@/lib/immigration-plan-local-storage";
 
 type ChecklistDoc = { key: string; label: string };
 type ChecklistItem = {
@@ -895,17 +861,11 @@ function planFormProgress(meta: ChecklistData["meta"] | undefined): { pct: numbe
 }
 
 export default function ChecklistPage() {
-  const { user } = useAuth();
   const searchParams = useSearchParams();
-  const isMember = user?.tier === "MEMBER";
-  const isVisitor = Boolean(user && !isMember);
-
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
 
   const [data, setData] = useState<ChecklistData>({ meta: {}, checks: {} });
-  const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+  const [localSavedAt, setLocalSavedAt] = useState<string | null>(null);
   const [saveError, setSaveError] = useState("");
   const [saveOk, setSaveOk] = useState("");
   const [openDetails, setOpenDetails] = useState<Record<string, boolean>>({});
@@ -924,41 +884,15 @@ export default function ChecklistPage() {
     semInfoPlanoImigracao ? "???" : formatEur(value);
 
   useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      setLoadError("");
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    setLoadError("");
-    api.checklist
-      .me()
-      .then((res) => {
-        if (cancelled) return;
-        const next: ChecklistData = {
-          meta: (res.data as any)?.meta ?? {},
-          checks: (res.data as any)?.checks ?? {},
-        };
-        setData(next);
-        setSavedAt(res.updatedAt);
-      })
-      .catch((e) => {
-        if (cancelled) return;
-        setLoadError(e instanceof Error ? e.message : "Não foi possível carregar o checklist.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id]);
+    setData(loadImmigrationPlanLocal());
+    setLocalSavedAt(getImmigrationPlanLocalSavedAt());
+    setHydrated(true);
+  }, []);
 
   // Mobile browsers (especialmente iOS) podem falhar/ignorar `window.print()` quando chamado direto no onClick.
   // Estratégia: navegar para `?print=1&panel=…` e disparar o print no efeito (panel garante a vista certa após reload).
   useEffect(() => {
-    if (!user) return;
+    if (!hydrated) return;
     if (typeof window === "undefined") return;
     if (searchParams.get("print") !== "1") return;
     const raw = searchParams.get("panel");
@@ -986,81 +920,28 @@ export default function ChecklistPage() {
       }
     }, 320);
     return () => window.clearTimeout(t);
-  }, [searchParams, user]);
-
-  function openLoginModal() {
-    if (typeof window === "undefined") return;
-    window.dispatchEvent(new CustomEvent("open-auth-modal", { detail: { mode: "login" } }));
-  }
-
-  function openVipModal() {
-    if (typeof window === "undefined") return;
-    window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
-  }
-
-  function requireLogin(): boolean {
-    if (user) return true;
-    openLoginModal();
-    return false;
-  }
-
-  function guardGuestInteraction(
-    e:
-      | React.MouseEvent<HTMLElement>
-      | React.FocusEvent<HTMLElement>
-      | React.KeyboardEvent<HTMLElement>,
-  ) {
-    if (user) return;
-    e.preventDefault();
-    e.stopPropagation();
-    openLoginModal();
-  }
+  }, [searchParams, hydrated]);
 
   function queueSave(next: ChecklistData) {
-    if (!user) return;
     dirtyRef.current = true;
     setSaveError("");
     setSaveOk("");
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
-    saveTimer.current = window.setTimeout(async () => {
+    saveTimer.current = window.setTimeout(() => {
       if (!dirtyRef.current) return;
-      setSaving(true);
       try {
-        const res = await api.checklist.updateMe({ data: next as any, version: TEMPLATE_VERSION });
-        setSavedAt(res.updatedAt);
+        const savedAt = persistImmigrationPlanLocal(next);
+        setLocalSavedAt(savedAt);
         dirtyRef.current = false;
+        setSaveOk("Guardado neste dispositivo ✓");
+        window.setTimeout(() => setSaveOk(""), 2500);
       } catch (e) {
-        setSaveError(e instanceof Error ? e.message : "Erro ao salvar.");
-      } finally {
-        setSaving(false);
+        setSaveError(e instanceof Error ? e.message : "Não foi possível guardar localmente.");
       }
-    }, 2000);
-  }
-
-  async function saveNow() {
-    if (!requireLogin()) return;
-    if (saveTimer.current) window.clearTimeout(saveTimer.current);
-    dirtyRef.current = false;
-    setSaveError("");
-    setSaveOk("");
-    setSaving(true);
-    try {
-      const res = await api.checklist.updateMe({ data: data as any, version: TEMPLATE_VERSION });
-      setSavedAt(res.updatedAt);
-      setSaveOk("Plano salvo! ✅");
-      window.setTimeout(() => setSaveOk(""), 2000);
-    } catch (e) {
-      setSaveError(e instanceof Error ? e.message : "Erro ao salvar.");
-    } finally {
-      setSaving(false);
-    }
+    }, 500);
   }
 
   function toggleMetaArray(key: "profissoesPossiveis", value: string) {
-    if (!user) {
-      openLoginModal();
-      return;
-    }
     setData((prev) => {
       const cur = (prev.meta?.[key] ?? []) as string[];
       const nextArr = cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value];
@@ -1071,10 +952,6 @@ export default function ChecklistPage() {
   }
 
   function setMeta<K extends keyof NonNullable<ChecklistData["meta"]>>(key: K, value: any) {
-    if (!user) {
-      openLoginModal();
-      return;
-    }
     setData((prev) => {
       const next: ChecklistData = {
         ...prev,
@@ -1086,10 +963,6 @@ export default function ChecklistPage() {
   }
 
   function toggle(id: string) {
-    if (!user) {
-      openLoginModal();
-      return;
-    }
     setData((prev) => {
       const checks = { ...(prev.checks ?? {}) };
       checks[id] = !checks[id];
@@ -1100,14 +973,6 @@ export default function ChecklistPage() {
   }
 
   function toggleDetails(id: string) {
-    if (!user) {
-      openLoginModal();
-      return;
-    }
-    if (!isMember) {
-      openVipModal();
-      return;
-    }
     setOpenDetails((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
@@ -1116,7 +981,6 @@ export default function ChecklistPage() {
    * Mobile: recarrega com ?print=1&panel=… (o efeito aplica o mesmo scope antes do print).
    */
   function triggerPrint(forPanel: "plan" | "brasil" | "portugal" = "plan") {
-    if (!requireLogin()) return;
     if (typeof window === "undefined") return;
     const isMobile = window.matchMedia ? window.matchMedia("(max-width: 1023px)").matches : window.innerWidth < 1024;
     if (isMobile) {
@@ -1161,6 +1025,18 @@ export default function ChecklistPage() {
             </h1>
             <p className="mt-1 text-sm text-zinc-600">
               Organize teu plano e acompanhe as etapas do processo até se regularizar em Portugal.
+            </p>
+            <p className="mt-1 text-xs text-zinc-500 print:hidden">
+              As tuas respostas ficam guardadas apenas neste browser — não estão ligadas à tua conta.
+              {localSavedAt ? (
+                <span className="mt-0.5 block tabular-nums">
+                  Última gravação local:{" "}
+                  {new Date(localSavedAt).toLocaleString("pt-PT", {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  })}
+                </span>
+              ) : null}
             </p>
           </div>
           <div
@@ -1295,10 +1171,7 @@ export default function ChecklistPage() {
                 <div className="relative mt-3 rounded-xl bg-white px-3 py-3 text-xs text-zinc-700 ring-1 ring-zinc-200">
                   <p className="font-semibold text-zinc-900">Detalhe dos custos estimados</p>
 
-                  <div
-                    className={!isMember ? "mt-2 blur-sm select-none pointer-events-none" : "mt-2"}
-                    aria-hidden={!isMember}
-                  >
+                  <div className="mt-2">
                     <ul className="space-y-1">
                       <li className="flex items-center justify-between gap-3">
                         <span className="text-zinc-600">Moradia (arrendamento)</span>
@@ -1351,18 +1224,6 @@ export default function ChecklistPage() {
                         : "Estes valores são referências de 2026 e variam por bairro, época e perfil. Ajuste a cidade, nº de quartos e agregado familiar para refinar."}
                     </p>
                   </div>
-
-                  {!isMember ? (
-                    <div className="pointer-events-none absolute inset-x-3 bottom-3 top-9 flex items-center justify-center">
-                      <button
-                        type="button"
-                        onClick={() => openVipModal()}
-                        className="pointer-events-auto cursor-pointer rounded-full border-0 bg-zinc-900/80 px-3 py-1 text-[11px] font-semibold text-white shadow-sm outline-none ring-offset-2 hover:bg-zinc-900 focus-visible:ring-2 focus-visible:ring-amber-400"
-                      >
-                        Exclusivo para membros VIP
-                      </button>
-                    </div>
-                  ) : null}
                 </div>
               </div>
 
@@ -1371,8 +1232,6 @@ export default function ChecklistPage() {
                 <select
                   value={data.meta?.visaType ?? ""}
                   onChange={(e) => setMeta("visaType", e.target.value as VisaType)}
-                  onMouseDown={guardGuestInteraction}
-                  onFocus={guardGuestInteraction}
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                 >
                   <option value="">Selecionar…</option>
@@ -1390,8 +1249,6 @@ export default function ChecklistPage() {
                 <select
                   value={data.meta?.cidade ?? ""}
                   onChange={(e) => setMeta("cidade", e.target.value as CityKey)}
-                  onMouseDown={guardGuestInteraction}
-                  onFocus={guardGuestInteraction}
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                 >
                   {CITY_OPTIONS.map((c) => (
@@ -1407,8 +1264,6 @@ export default function ChecklistPage() {
                 <select
                   value={data.meta?.cidadePlanoB ?? ""}
                   onChange={(e) => setMeta("cidadePlanoB", e.target.value as CityKey)}
-                  onMouseDown={guardGuestInteraction}
-                  onFocus={guardGuestInteraction}
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                 >
                   {CITY_OPTIONS.map((c) => (
@@ -1424,8 +1279,6 @@ export default function ChecklistPage() {
                 <select
                   value={data.meta?.agregadoFamiliar ?? ""}
                   onChange={(e) => setMeta("agregadoFamiliar", e.target.value)}
-                  onMouseDown={guardGuestInteraction}
-                  onFocus={guardGuestInteraction}
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                 >
                   <option value="">Selecionar…</option>
@@ -1442,8 +1295,6 @@ export default function ChecklistPage() {
                 <select
                   value={data.meta?.numQuartos ?? ""}
                   onChange={(e) => setMeta("numQuartos", e.target.value)}
-                  onMouseDown={guardGuestInteraction}
-                  onFocus={guardGuestInteraction}
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                 >
                   <option value="">Selecionar…</option>
@@ -1475,14 +1326,12 @@ export default function ChecklistPage() {
                         key={p}
                         className={`flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2 text-sm ${
                           checked ? "border-emerald-200 bg-emerald-50" : "border-zinc-200 bg-white hover:bg-zinc-50"
-                        } ${!user ? "opacity-70" : ""}`}
+                        }`}
                       >
                         <input
                           type="checkbox"
                           checked={checked}
                           onChange={() => toggleMetaArray("profissoesPossiveis", p)}
-                          onMouseDown={guardGuestInteraction}
-                          onFocus={guardGuestInteraction}
                           className="mt-0.5 h-5 w-5 shrink-0 accent-emerald-600"
                         />
                         <span className="text-zinc-800">{p}</span>
@@ -1510,7 +1359,7 @@ export default function ChecklistPage() {
                           selected
                             ? "border-emerald-200 bg-emerald-50 text-emerald-900"
                             : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
-                        } ${!user ? "opacity-70" : ""}`}
+                        }`}
                       >
                         {opt.label}
                       </button>
@@ -1526,8 +1375,6 @@ export default function ChecklistPage() {
                     type="date"
                     value={data.meta?.dataViagem ?? ""}
                     onChange={(e) => setMeta("dataViagem", e.target.value)}
-                    onMouseDown={guardGuestInteraction}
-                    onFocus={guardGuestInteraction}
                     className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                   />
                 </div>
@@ -1539,8 +1386,6 @@ export default function ChecklistPage() {
                   rows={4}
                   value={data.meta?.notas ?? ""}
                   onChange={(e) => setMeta("notas", e.target.value)}
-                  onMouseDown={guardGuestInteraction}
-                  onFocus={guardGuestInteraction}
                   placeholder="Links, contatos, lembretes…"
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                 />
@@ -1563,15 +1408,6 @@ export default function ChecklistPage() {
 
         <div className="space-y-4">
           {activePanel === "brasil" || activePanel === "portugal" ? (
-            loading ? (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
-                Carregando teu checklist…
-              </div>
-            ) : loadError ? (
-              <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
-                {loadError}
-              </div>
-            ) : (
             (() => {
               const sectionsBrasil = SECTIONS.filter((s) => s.phase === "BRASIL");
               const sectionsPortugal = SECTIONS.filter((s) => s.phase === "PORTUGAL");
@@ -1723,7 +1559,6 @@ export default function ChecklistPage() {
                 </div>
               );
             })()
-            )
           ) : null}
         </div>
       </div>

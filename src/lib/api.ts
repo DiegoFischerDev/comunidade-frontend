@@ -299,6 +299,41 @@ export const api = {
         body: JSON.stringify(params),
         token: null,
       }),
+    createGuestRafacallCheckout: (params: {
+      name: string;
+      email: string;
+      whatsapp: string;
+      password: string;
+      passwordConfirm: string;
+      successUrl: string;
+      cancelUrl: string;
+      paymentMethod: 'card' | 'mbway' | 'pix';
+    }) =>
+      request<{ url: string }>('/stripe/create-guest-rafacall-checkout', {
+        method: 'POST',
+        body: JSON.stringify(params),
+        token: null,
+      }),
+    claimGuestRafacall: (sessionId: string) =>
+      request<
+        | { status: 'pending' }
+        | {
+            status: 'ready';
+            token: string;
+            user: {
+              id: string;
+              email: string | null;
+              role: string;
+              whatsapp: string;
+            };
+          }
+        | { status: 'expired' }
+        | { status: 'consumed' }
+        | { status: 'invalid' }
+      >(`/stripe/claim-guest-rafacall?session_id=${encodeURIComponent(sessionId)}`, {
+        method: 'GET',
+        token: null,
+      }),
     claimGuestMembership: (sessionId: string) =>
       request<
         | { status: 'pending' }
@@ -2257,6 +2292,12 @@ export const api = {
   },
 
   support: {
+    createGuestTicket: (params: { name: string; whatsapp: string; message: string }) =>
+      request<{ id: string; message: string; createdAt: string }>(`/support/tickets/guest`, {
+        method: 'POST',
+        body: JSON.stringify(params),
+        token: null,
+      }),
     createTicket: (message: string) =>
       request<{ id: string; message: string; createdAt: string }>(`/support/tickets`, {
         method: 'POST',
