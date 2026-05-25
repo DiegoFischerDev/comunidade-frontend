@@ -202,11 +202,8 @@ export function FinanciamentoQuizView() {
     <div className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
-          Financiar casa em Portugal
+          Financiamento de casa em Portugal
         </h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          Questionário gratuito para descobrir se tem viabilidade de crédito habitação.
-        </p>
       </header>
 
       <div
@@ -214,18 +211,7 @@ export function FinanciamentoQuizView() {
         className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
       >
         {phase === 'intro' ? (
-          <IntroPanel
-            whatsapp={whatsapp}
-            setWhatsapp={(v) => {
-              setWhatsapp(v);
-              if (whatsappError) setWhatsappError('');
-              if (introError) setIntroError('');
-            }}
-            whatsappError={whatsappError}
-            loading={introChecking}
-            error={introError}
-            onSubmit={handleIntroSubmit}
-          />
+          <IntroPanel onStart={() => setPhase('quiz')} />
         ) : phase === 'quiz' ? (
           <QuizPanel
             currentStep={currentStep}
@@ -271,6 +257,21 @@ export function FinanciamentoQuizView() {
         )}
       </div>
 
+      {phase === 'intro' ? (
+        <AtendimentoPanel
+          whatsapp={whatsapp}
+          setWhatsapp={(v) => {
+            setWhatsapp(v);
+            if (whatsappError) setWhatsappError('');
+            if (introError) setIntroError('');
+          }}
+          whatsappError={whatsappError}
+          loading={introChecking}
+          error={introError}
+          onSubmit={handleIntroSubmit}
+        />
+      ) : null}
+
       <p className="text-center text-xs text-zinc-500">
         Os resultados são indicativos e não substituem a análise de um gestor de crédito.
       </p>
@@ -280,7 +281,43 @@ export function FinanciamentoQuizView() {
 
 // ===== Sub-painéis =====
 
-function IntroPanel({
+function IntroPanel({ onStart }: { onStart: () => void }) {
+  return (
+    <div className="px-6 py-10 sm:px-10 sm:py-14">
+      <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
+        Questionário gratuito
+      </p>
+      <h2 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+        Rafa, Consigo financiar uma casa em Portugal?
+      </h2>
+      <p className="mt-4 text-base leading-relaxed text-zinc-700">
+        Descobre, em termos gerais, se tens viabilidade para crédito
+        habitação
+      </p>
+
+      <ul className="mt-6 space-y-3 text-sm text-zinc-700">
+        <Bullet>Apenas 4 a 6 perguntas, todas simples (Sim/Não).</Bullet>
+        <Bullet>Resultado imediato, com um exemplo prático.</Bullet>
+      </ul>
+
+      <button
+        type="button"
+        onClick={onStart}
+        className="mt-8 inline-flex w-full items-center justify-center rounded-xl bg-amber-600 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+      >
+        Começar questionário
+      </button>
+    </div>
+  );
+}
+
+/**
+ * Container alternativo, mostrado abaixo do quiz, para utilizadores que querem ir direto
+ * para o atendimento com a gestora de crédito. Pede o WhatsApp e:
+ *  - se já houver lead → encaminha para a página de upload (`/financiamento/documentos`).
+ *  - se não houver → abre o quiz, mantendo o WhatsApp já preenchido para o final.
+ */
+function AtendimentoPanel({
   whatsapp,
   setWhatsapp,
   whatsappError,
@@ -302,44 +339,24 @@ function IntroPanel({
         e.preventDefault();
         if (!loading) onSubmit();
       }}
-      className="px-6 py-10 sm:px-10 sm:py-14"
+      className="overflow-hidden rounded-2xl border border-zinc-200 bg-white px-6 py-8 shadow-sm sm:px-10 sm:py-10"
     >
-      <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
-        Questionário gratuito
+      <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+        Atendimento gratuito
       </p>
-      <h2 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
-        Consigo financiar uma casa em Portugal?
+      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+        Quero iniciar o meu atendimento com a gestora de crédito
       </h2>
-      <p className="mt-4 text-base leading-relaxed text-zinc-700">
-        Em menos de 1 minuto descobre, em termos gerais, se tem viabilidade para crédito
-        habitação — e que percentagem do imóvel costuma ser financiada para o teu perfil.
-      </p>
 
-      <ul className="mt-6 space-y-3 text-sm text-zinc-700">
-        <Bullet>Apenas 4 a 6 perguntas, todas simples (Sim/Não).</Bullet>
-        <Bullet>Resultado imediato, com um exemplo prático.</Bullet>
-        <Bullet>
-          Se já respondeste antes, retomamos no envio de documentos com a tua gestora.
-        </Bullet>
-      </ul>
 
-      <div className="mt-7 rounded-xl border border-amber-200 bg-amber-50/60 p-5">
-        <p className="text-sm font-semibold text-amber-900">
-          Indica o teu WhatsApp para começar
-        </p>
-        <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
-          Se já tiveres respondido, vamos diretamente para o envio de documentos. Caso
-          contrário, abrimos o questionário.
-        </p>
-        <div className="mt-4">
-          <LoginWhatsappFields
-            idPrefix="financiamento-intro"
-            value={whatsapp}
-            onChange={setWhatsapp}
-            disabled={loading}
-            error={whatsappError}
-          />
-        </div>
+      <div className="mt-5">
+        <LoginWhatsappFields
+          idPrefix="financiamento-atendimento"
+          value={whatsapp}
+          onChange={setWhatsapp}
+          disabled={loading}
+          error={whatsappError}
+        />
       </div>
 
       {error ? (
@@ -351,10 +368,13 @@ function IntroPanel({
       <button
         type="submit"
         disabled={loading}
-        className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-amber-600 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? 'A verificar…' : 'Começar agora'}
+        {loading ? 'A verificar…' : 'Solicitrar atendimento'}
       </button>
+      <p className="mt-2 text-center text-[11px] text-zinc-500">
+        O serviço da gestora é gratuito — quem paga a comissão são os bancos.
+      </p>
     </form>
   );
 }
