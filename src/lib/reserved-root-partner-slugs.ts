@@ -17,6 +17,7 @@ const RESERVED = new Set(
     'plano-de-imigracao',
     'relocation',
     'servicos',
+    'agendamento',
     'favicon.ico',
     'robots.txt',
     'sitemap.xml',

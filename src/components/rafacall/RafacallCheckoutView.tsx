@@ -3,7 +3,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { KiwiFloatInput } from '@/components/membership/KiwiFloatInput';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,10 +15,8 @@ import {
   getRafacallSuccessUrl,
   RAFA_CALL_PRODUCT_SUBTITLE,
   RAFA_CALL_PRODUCT_TITLE,
-  validateRafacallSignupFields,
   type RafacallAmounts,
   type RafacallPaymentMethod,
-  type SignupFieldKey,
 } from '@/lib/rafacall-checkout';
 
 function LockIcon({ className = 'h-5 w-5' }: { className?: string }) {
@@ -74,36 +71,25 @@ type Props = {
   initialAmounts: RafacallAmounts;
 };
 
+type FieldKey = 'name' | 'whatsapp';
+
 export function RafacallCheckoutView({ initialAmounts }: Props) {
-  const router = useRouter();
   const { user } = useAuth();
-  const needsSignupForm = !user;
 
   const [amounts, setAmounts] = useState<RafacallAmounts>(initialAmounts);
   const [amountsLoading, setAmountsLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [error, setError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<RafacallPaymentMethod>('pix');
-  const [schedulingUnlocked, setSchedulingUnlocked] = useState<boolean | null>(null);
 
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [emailConfirm, setEmailConfirm] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
-  const [password, setPassword] = useState('');
-  const [passwordConfirm, setPasswordConfirm] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<SignupFieldKey, string>>>({});
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
 
-  const fieldRefs = {
-    name: useRef<HTMLDivElement>(null),
-    email: useRef<HTMLDivElement>(null),
-    emailConfirm: useRef<HTMLDivElement>(null),
-    whatsapp: useRef<HTMLDivElement>(null),
-    password: useRef<HTMLDivElement>(null),
-    passwordConfirm: useRef<HTMLDivElement>(null),
-  };
+  const nameRef = useRef<HTMLDivElement>(null);
+  const whatsappRef = useRef<HTMLDivElement>(null);
 
-  function clearFieldError(key: SignupFieldKey) {
+  function clearFieldError(key: FieldKey) {
     setFieldErrors((prev) => {
       if (!prev[key]) return prev;
       const next = { ...prev };
@@ -112,8 +98,8 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
     });
   }
 
-  function scrollToInvalidField(key: SignupFieldKey) {
-    const container = fieldRefs[key].current;
+  function scrollToInvalidField(key: FieldKey) {
+    const container = (key === 'name' ? nameRef : whatsappRef).current;
     if (!container) return;
     container.scrollIntoView({ behavior: 'smooth', block: 'center' });
     const focusable = container.querySelector<HTMLElement>(
@@ -124,8 +110,8 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
 
   useEffect(() => {
     if (user) {
-      setName(user.name ?? '');
-      setEmail(user.email ?? '');
+      setName((prev) => prev || user.name || '');
+      setWhatsapp((prev) => prev || user.whatsapp || '');
     }
   }, [user]);
 
@@ -135,25 +121,6 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
       .then(setAmounts)
       .finally(() => setAmountsLoading(false));
   }, []);
-
-  useEffect(() => {
-    if (!user) {
-      setSchedulingUnlocked(null);
-      return;
-    }
-    let cancelled = false;
-    void api.rafacall
-      .status()
-      .then((s) => {
-        if (!cancelled) setSchedulingUnlocked(s.schedulingUnlocked);
-      })
-      .catch(() => {
-        if (!cancelled) setSchedulingUnlocked(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
 
   const displayAmounts = amounts;
 
@@ -172,26 +139,22 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
   async function handlePay() {
     if (checkoutLoading || typeof window === 'undefined') return;
 
-    if (schedulingUnlocked) {
-      router.push('/dashboard?openRafaCall=1');
-      return;
+    const errors: Partial<Record<FieldKey, string>> = {};
+    let firstInvalid: FieldKey | null = null;
+    if (!name.trim()) {
+      errors.name = 'Informe o seu nome.';
+      firstInvalid = firstInvalid ?? 'name';
     }
-
-    if (needsSignupForm) {
-      const { errors, firstInvalid } = validateRafacallSignupFields({
-        name,
-        email,
-        emailConfirm,
-        whatsapp,
-        password,
-        passwordConfirm,
-      });
-      if (firstInvalid) {
-        setFieldErrors(errors);
-        setError('Corrija os campos assinalados antes de continuar.');
-        scrollToInvalidField(firstInvalid);
-        return;
-      }
+    const waDigits = whatsapp.replace(/\D/g, '');
+    if (waDigits.length < 8) {
+      errors.whatsapp = 'WhatsApp inválido.';
+      firstInvalid = firstInvalid ?? 'whatsapp';
+    }
+    if (firstInvalid) {
+      setFieldErrors(errors);
+      setError('Corrija os campos assinalados antes de continuar.');
+      scrollToInvalidField(firstInvalid);
+      return;
     }
 
     setFieldErrors({});
@@ -202,45 +165,18 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
     const cancelUrl = getRafacallCancelUrl();
 
     try {
-      const { url } = needsSignupForm
-        ? await api.stripe.createGuestRafacallCheckout({
-            name: name.trim(),
-            email: email.trim(),
-            whatsapp,
-            password,
-            passwordConfirm,
-            successUrl,
-            cancelUrl,
-            paymentMethod,
-          })
-        : paymentMethod === 'pix'
-          ? await api.stripe.createRafaCallUnlockPixSession({ successUrl, cancelUrl })
-          : paymentMethod === 'mbway'
-            ? await api.stripe.createRafaCallUnlockMbWaySession({ successUrl, cancelUrl })
-            : await api.stripe.createRafaCallUnlockSession({ successUrl, cancelUrl });
-
+      const { url } = await api.stripe.createGuestRafacallSession({
+        name: name.trim(),
+        whatsapp: waDigits,
+        successUrl,
+        cancelUrl,
+        paymentMethod,
+      });
       window.location.assign(url);
     } catch (e) {
       setCheckoutLoading(false);
       setError(e instanceof Error ? e.message : 'Erro ao iniciar o pagamento.');
     }
-  }
-
-  if (user && schedulingUnlocked === true) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <h1 className="text-xl font-bold text-zinc-900">Já podes agendar</h1>
-        <p className="mt-2 text-sm text-zinc-600">
-          O teu pagamento da chamada com a Rafa já está confirmado. Escolhe data e hora no dashboard.
-        </p>
-        <Link
-          href="/dashboard?openRafaCall=1"
-          className="mt-6 inline-block rounded-md bg-[#28b463] px-6 py-3 text-sm font-semibold text-white hover:opacity-90"
-        >
-          Agendar agora
-        </Link>
-      </div>
-    );
   }
 
   return (
@@ -271,111 +207,40 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
               <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
             ) : null}
 
-            {needsSignupForm ? (
-              <div className="w-full pt-2">
-                <p className="mb-3 text-sm text-zinc-600">
-                  Cria a tua conta e paga a taxa de agendamento. Depois escolhes data e hora da
-                  videochamada com a Rafa.
-                </p>
-                <div ref={fieldRefs.name}>
-                  <KiwiFloatInput
-                    id="rafacall-checkout-name"
-                    label="Nome"
-                    name="fullname"
-                    autoComplete="name"
-                    value={name}
-                    error={fieldErrors.name}
-                    onChange={(e) => {
-                      setName(e.target.value);
-                      clearFieldError('name');
-                    }}
-                    disabled={checkoutLoading}
-                  />
-                </div>
-                <div ref={fieldRefs.email}>
-                  <KiwiFloatInput
-                    id="rafacall-checkout-email"
-                    label="E-mail"
-                    type="email"
-                    name="email"
-                    autoComplete="email"
-                    value={email}
-                    error={fieldErrors.email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      clearFieldError('email');
-                    }}
-                    disabled={checkoutLoading}
-                  />
-                </div>
-                <div ref={fieldRefs.emailConfirm}>
-                  <KiwiFloatInput
-                    id="rafacall-checkout-email-confirm"
-                    label="Confirmar e-mail"
-                    type="email"
-                    name="email_confirm"
-                    autoComplete="email"
-                    value={emailConfirm}
-                    error={fieldErrors.emailConfirm}
-                    onChange={(e) => {
-                      setEmailConfirm(e.target.value);
-                      clearFieldError('emailConfirm');
-                    }}
-                    disabled={checkoutLoading}
-                  />
-                </div>
-                <div className="pb-3" ref={fieldRefs.whatsapp}>
-                  <LoginWhatsappFields
-                    idPrefix="rafacall-checkout"
-                    label="Telefone / WhatsApp"
-                    value={whatsapp}
-                    error={fieldErrors.whatsapp}
-                    onChange={(v) => {
-                      setWhatsapp(v);
-                      clearFieldError('whatsapp');
-                    }}
-                    disabled={checkoutLoading}
-                  />
-                </div>
-                <div ref={fieldRefs.password}>
-                  <KiwiFloatInput
-                    id="rafacall-checkout-password"
-                    label="Senha (mín. 6 caracteres)"
-                    type="password"
-                    autoComplete="new-password"
-                    minLength={6}
-                    value={password}
-                    error={fieldErrors.password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      clearFieldError('password');
-                    }}
-                    disabled={checkoutLoading}
-                  />
-                </div>
-                <div ref={fieldRefs.passwordConfirm}>
-                  <KiwiFloatInput
-                    id="rafacall-checkout-password-confirm"
-                    label="Confirmar senha"
-                    type="password"
-                    autoComplete="new-password"
-                    minLength={6}
-                    value={passwordConfirm}
-                    error={fieldErrors.passwordConfirm}
-                    onChange={(e) => {
-                      setPasswordConfirm(e.target.value);
-                      clearFieldError('passwordConfirm');
-                    }}
-                    disabled={checkoutLoading}
-                  />
-                </div>
-              </div>
-            ) : (
-              <p className="pb-4 text-sm text-zinc-600">
-                Olá, <span className="font-semibold text-zinc-900">{user?.name}</span>. Escolhe a
-                forma de pagamento para desbloquear o agendamento da chamada com a Rafa.
+            <div className="w-full pt-2">
+              <p className="mb-3 text-sm text-zinc-600">
+                Para agendar a tua chamada com a Rafa preenche o nome e o número de WhatsApp.
+                Vamos enviar a confirmação e o link para gerir o teu agendamento para esse WhatsApp.
               </p>
-            )}
+              <div ref={nameRef}>
+                <KiwiFloatInput
+                  id="rafacall-checkout-name"
+                  label="Nome"
+                  name="fullname"
+                  autoComplete="name"
+                  value={name}
+                  error={fieldErrors.name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    clearFieldError('name');
+                  }}
+                  disabled={checkoutLoading}
+                />
+              </div>
+              <div className="pb-3" ref={whatsappRef}>
+                <LoginWhatsappFields
+                  idPrefix="rafacall-checkout"
+                  label="WhatsApp"
+                  value={whatsapp}
+                  error={fieldErrors.whatsapp}
+                  onChange={(v) => {
+                    setWhatsapp(v);
+                    clearFieldError('whatsapp');
+                  }}
+                  disabled={checkoutLoading}
+                />
+              </div>
+            </div>
 
             <div className="mt-6 flex flex-col justify-center">
               <div className="mb-4 flex w-full sm:py-2">
@@ -475,8 +340,8 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
 
               <p className="bottom-0 pt-3 text-center text-[11px] leading-relaxed text-zinc-500">
                 Ao clicar em &quot;{payLabel}&quot;, confirmas o pagamento da taxa de agendamento.
-                Após a confirmação, podes escolher data e hora da videochamada no dashboard. O
-                pagamento é processado pela <span className="font-semibold">Stripe</span>.
+                Após a confirmação, escolhes data e hora da videochamada e recebes o link de gestão
+                no WhatsApp. O pagamento é processado pela <span className="font-semibold">Stripe</span>.
               </p>
             </div>
           </div>

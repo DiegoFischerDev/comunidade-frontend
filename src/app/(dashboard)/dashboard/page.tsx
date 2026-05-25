@@ -150,7 +150,9 @@ export default function DashboardPage() {
   return (
     <div className="space-y-0">
       <section className="w-full -mt-12 py-8 md:-mt-4 md:py-10">
-        <h1 className="sr-only">Comunidade Rafa Portugal — Início</h1>
+        <h1 className="mb-4 px-4 text-center text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl md:mb-6 md:px-0">
+          Bem-vindo à comunidade Rafa Portugal
+        </h1>
         <DashboardWelcomeVideoPlayer
           className="shadow-sm ring-1 ring-zinc-900/5 md:rounded-xl"
           title="Vídeo de boas-vindas — Comunidade Rafa Portugal"

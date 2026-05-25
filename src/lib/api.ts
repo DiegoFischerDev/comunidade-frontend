@@ -373,6 +373,32 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(params),
       }),
+    /**
+     * Fluxo guest v2 do RafaCall — só Nome + WhatsApp, sem criar conta.
+     */
+    createGuestRafacallSession: (params: {
+      name: string;
+      whatsapp: string;
+      successUrl: string;
+      cancelUrl: string;
+      paymentMethod: 'card' | 'mbway' | 'pix';
+    }) =>
+      request<{ url: string }>('/stripe/create-guest-rafacall-session', {
+        method: 'POST',
+        body: JSON.stringify(params),
+        token: null,
+      }),
+    claimGuestRafacallSession: (sessionId: string) =>
+      request<
+        | { status: 'pending' }
+        | { status: 'ready'; unlockId: string; name: string; whatsapp: string }
+        | { status: 'expired' }
+        | { status: 'consumed' }
+        | { status: 'invalid' }
+      >(`/stripe/claim-guest-rafacall-session?session_id=${encodeURIComponent(sessionId)}`, {
+        method: 'GET',
+        token: null,
+      }),
   },
   rafacall: {
     status: () =>
@@ -431,6 +457,91 @@ export const api = {
         id: string;
         status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
       }>('/rafacall/cancel', { method: 'POST', body: JSON.stringify(body) }),
+    // ===== Fluxo guest (sem auth) =====
+    guestUnlock: (id: string) =>
+      request<{
+        id: string;
+        name: string;
+        whatsapp: string;
+        paid: boolean;
+        consumed: boolean;
+        expired: boolean;
+        consumedBookingId: string | null;
+      }>(`/rafacall/guest/unlock/${encodeURIComponent(id)}`, {
+        method: 'GET',
+        token: null,
+      }),
+    guestAvailability: (params: { from: string; to: string; tz: string; excludeBookingId?: string }) => {
+      const q = new URLSearchParams({
+        from: params.from,
+        to: params.to,
+        tz: params.tz,
+      });
+      if (params.excludeBookingId) q.set('excludeBookingId', params.excludeBookingId);
+      return request<{
+        tz: string;
+        days: {
+          date: string;
+          slots: { startsAt: string; endsAt: string }[];
+          adminBlockedSlots: { startsAt: string; endsAt: string }[];
+        }[];
+      }>(`/rafacall/guest/availability?${q.toString()}`, { method: 'GET', token: null });
+    },
+    guestBook: (body: { unlockId: string; startsAtUtcIso: string; tz: string }) =>
+      request<{
+        id: string;
+        status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+        startsAt: string;
+        endsAt: string;
+        timezone: string;
+      }>('/rafacall/guest/book', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        token: null,
+      }),
+    guestBooking: (id: string, whatsapp: string) => {
+      const q = new URLSearchParams({ whatsapp });
+      return request<{
+        id: string;
+        status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+        startsAt: string;
+        endsAt: string;
+        timezone: string;
+        name: string | null;
+        whatsapp: string | null;
+      }>(`/rafacall/guest/booking/${encodeURIComponent(id)}?${q.toString()}`, {
+        method: 'GET',
+        token: null,
+      });
+    },
+    guestReschedule: (body: {
+      bookingId: string;
+      whatsapp: string;
+      newStartsAtUtcIso: string;
+      tz: string;
+    }) =>
+      request<{
+        id: string;
+        status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+        startsAt: string;
+        endsAt: string;
+        timezone: string;
+        name: string | null;
+        whatsapp: string | null;
+      }>('/rafacall/guest/reschedule', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        token: null,
+      }),
+    guestCancel: (body: { bookingId: string; whatsapp: string; reason?: string | null }) =>
+      request<{
+        id: string;
+        status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+      }>('/rafacall/guest/cancel', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        token: null,
+      }),
   },
   recommendedServices: {
     list: () =>

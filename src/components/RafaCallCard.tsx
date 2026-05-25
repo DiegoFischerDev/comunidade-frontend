@@ -6,12 +6,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import {
-  OPEN_AUTH_LOGIN_EVENT,
   OPEN_RAFA_CALL_SCHEDULE_EVENT,
   RAFA_CALL_CHECKOUT_PATH,
 } from '@/lib/auth-ui-events';
 import { CardButton } from '@/components/ui/CardButton';
 import { ModalPortal } from '@/components/ui/ModalPortal';
+import {
+  rafacallGuestManageUrl,
+  readRafacallGuestBooking,
+  type RafacallGuestBookingStored,
+} from '@/lib/rafacall-guest-storage';
 
 type RafacallStatusPayload = Awaited<ReturnType<typeof api.rafacall.status>>;
 type RafacallBookingPayload = Awaited<ReturnType<typeof api.rafacall.booking>>['booking'];
@@ -138,6 +142,7 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
     RafacallStatusPayload | null | undefined
   >(undefined);
   const [booking, setBooking] = useState<RafacallBookingPayload | null | undefined>(undefined);
+  const [guestBooking, setGuestBooking] = useState<RafacallGuestBookingStored | null>(null);
   const [amounts, setAmounts] = useState<{ eurCents: number; pixCentavos: number } | null>(
     null,
   );
@@ -150,6 +155,10 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
   const [schedError, setSchedError] = useState('');
   const [availability, setAvailability] = useState<AvailabilityPayload | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
+
+  const refreshGuestBookingFromStorage = useCallback(() => {
+    setGuestBooking(readRafacallGuestBooking());
+  }, []);
 
   const refreshRafacallStatus = useCallback(async () => {
     if (!user || !token) {
@@ -169,22 +178,21 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
   }, [user, token]);
 
   useEffect(() => {
+    refreshGuestBookingFromStorage();
+  }, [refreshGuestBookingFromStorage]);
+
+  useEffect(() => {
     void refreshRafacallStatus();
   }, [refreshRafacallStatus]);
 
   useEffect(() => {
-    if (!user || !token) return;
     const onFocus = () => {
-      void refreshRafacallStatus();
+      refreshGuestBookingFromStorage();
+      if (user && token) void refreshRafacallStatus();
     };
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
-  }, [user, token, refreshRafacallStatus]);
-
-  const openLogin = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    window.dispatchEvent(new Event(OPEN_AUTH_LOGIN_EVENT));
-  }, []);
+  }, [user, token, refreshRafacallStatus, refreshGuestBookingFromStorage]);
 
   const closePayModal = useCallback(() => {
     setPayOpen(false);
@@ -212,7 +220,8 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
 
   const openScheduler = useCallback(async () => {
     if (!user || !token) {
-      openLogin();
+      // Guest sem booking ainda: ir direto ao checkout (novo fluxo).
+      router.push(RAFA_CALL_CHECKOUT_PATH);
       return;
     }
     setSchedOpen(true);
@@ -244,11 +253,14 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
     } finally {
       setSchedLoading(false);
     }
-  }, [user, token, openLogin]);
+  }, [user, token, router]);
 
   const openCancelModal = useCallback(async () => {
     if (!user || !token) {
-      openLogin();
+      // Guests gerem o agendamento na página dedicada.
+      if (guestBooking) {
+        router.push(rafacallGuestManageUrl(guestBooking.bookingId));
+      }
       return;
     }
     setSchedOpen(true);
@@ -263,9 +275,14 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
     } finally {
       setSchedLoading(false);
     }
-  }, [user, token, openLogin]);
+  }, [user, token, guestBooking, router]);
 
   const handleAgendar = useCallback(async () => {
+    // Se temos um agendamento guest neste dispositivo, abrir a página de gestão.
+    if (guestBooking) {
+      router.push(rafacallGuestManageUrl(guestBooking.bookingId));
+      return;
+    }
     if (!user || !token) {
       openIntroModal();
       return;
@@ -285,7 +302,7 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
     } finally {
       setStatusLoading(false);
     }
-  }, [user, token, openIntroModal, openScheduler]);
+  }, [guestBooking, router, user, token, openIntroModal, openScheduler]);
 
   useEffect(() => {
     if (searchParams.get('openRafaCall') !== '1') return;
@@ -386,23 +403,29 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
     }
   }, [booking, refreshRafacallStatus]);
 
-  const hasBookedSlot = Boolean(
+  const hasGuestBooked = Boolean(guestBooking);
+  const hasUserBookedSlot = Boolean(
     rafacallStatus &&
       rafacallStatus.schedulingUnlocked &&
       isActiveRafacallSlot(rafacallStatus.slotEndsAt),
   );
-  const scheduleTz = useMemo(
-    () => (booking?.timezone ? booking.timezone.trim() : '') || resolvedUserTz(),
-    [booking?.timezone],
-  );
-  const scheduleLines =
-    hasBookedSlot && rafacallStatus
-      ? formatRafacallScheduledPt(
-          rafacallStatus.slotStartsAt,
-          rafacallStatus.slotEndsAt,
-          scheduleTz,
-        )
-      : null;
+  const hasBookedSlot = hasGuestBooked || hasUserBookedSlot;
+  const scheduleTz = useMemo(() => {
+    if (guestBooking?.timezone) return guestBooking.timezone;
+    if (booking?.timezone) return booking.timezone.trim() || resolvedUserTz();
+    return resolvedUserTz();
+  }, [guestBooking?.timezone, booking?.timezone]);
+  const scheduleLines = hasBookedSlot
+    ? formatRafacallScheduledPt(
+        guestBooking?.startsAt ?? rafacallStatus?.slotStartsAt ?? null,
+        guestBooking?.endsAt ?? rafacallStatus?.slotEndsAt ?? null,
+        scheduleTz,
+      )
+    : null;
+  const goToGuestManage = useCallback(() => {
+    if (!guestBooking) return;
+    router.push(rafacallGuestManageUrl(guestBooking.bookingId));
+  }, [guestBooking, router]);
   const memberStatusLoading =
     Boolean(user && token && rafacallStatus === undefined);
   const inCarousel = Boolean(carouselImageSizes);
@@ -467,7 +490,7 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
               <div className="flex w-full flex-row items-stretch gap-2">
                 <CardButton
                   type="button"
-                  onClick={() => void openScheduler()}
+                  onClick={hasGuestBooked ? goToGuestManage : () => void openScheduler()}
                   loading={statusLoading}
                   variant="secondary"
                   className="min-w-0 flex-1"
@@ -476,7 +499,7 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
                 </CardButton>
                 <CardButton
                   type="button"
-                  onClick={() => void openCancelModal()}
+                  onClick={hasGuestBooked ? goToGuestManage : () => void openCancelModal()}
                   loading={statusLoading}
                   variant="tertiary"
                   className="min-w-0 flex-1"

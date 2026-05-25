@@ -529,21 +529,11 @@ export default function DashboardLayout({
             </>
           ) : (
             <>
-          {isActiveMember(user) && user?.role !== 'PARTNER' && (
-            <Link
-              href="/dashboard/my-referrals"
-              className={`block rounded-md px-3 py-2 text-sm ${
-                pathname === '/dashboard/my-referrals'
-                  ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                  : 'text-zinc-800 hover:bg-zinc-100'
-              }`}
-            >
-              Minhas indicações
-            </Link>
-          )}
-
           {user?.role === 'ADMIN' && (
-            <>
+            <div className="mt-2 border-t border-zinc-200 pt-2">
+              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                Menu de admin
+              </p>
               <Link
                 href="/dashboard/users"
                 className={`block rounded-md px-3 py-2 text-sm ${
@@ -573,16 +563,6 @@ export default function DashboardLayout({
                 }`}
               >
                 Reclame aqui
-              </Link>
-              <Link
-                href="/dashboard/admin/sales"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/admin/sales'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Todas as vendas
               </Link>
               <Link
                 href="/dashboard/admin/houses"
@@ -635,7 +615,7 @@ export default function DashboardLayout({
               >
                 Parceiros
               </Link>
-            </>
+            </div>
           )}
           {user?.role === 'PARTNER' && !isRelocationPartner ? (
             <div className="mt-2 border-t border-zinc-200 pt-2">
