@@ -1946,6 +1946,23 @@ export const api = {
           body: JSON.stringify(body),
         }),
     },
+    leads: {
+      /** Leads atribuídos ao parceiro autenticado (cronológico descendente). */
+      list: () =>
+        request<{
+          items: {
+            id: string;
+            name: string;
+            whatsapp: string;
+            email: string;
+            comment: string | null;
+            outcomeKey: string | null;
+            docsSentAt: string | null;
+            submissionsCount: number;
+            createdAt: string;
+          }[];
+        }>('/leads/me', { method: 'GET' }),
+    },
   },
   marketplace: {
     partnerEngagement: (id: string, opts?: { partnerDeviceId?: string | null }) =>
@@ -2342,6 +2359,36 @@ export const api = {
       }),
     deleteMyTicket: (id: string) =>
       request<{ ok: true }>(`/support/tickets/me/${id}`, { method: 'DELETE' }),
+  },
+
+  leadDocuments: {
+    /** Confirma o WhatsApp do lead e devolve dados para a página de upload (parceiro + lead). */
+    verify: (leadId: string, params: { whatsapp: string }) =>
+      request<{
+        lead: { id: string; name: string; email: string };
+        partner: {
+          id: string;
+          name: string;
+          whatsapp: string;
+          logoUrl: string | null;
+          shortDescription: string | null;
+          email: string | null;
+        };
+        docsSentAt: string | null;
+        lastSubmissionAt: string | null;
+        submissionsCount: number;
+      }>(`/lead-documents/${leadId}/verify`, {
+        method: 'POST',
+        body: JSON.stringify(params),
+        token: null,
+      }),
+    /** Envia o formulário multipart (ficheiros + dados declarados) ao backend. */
+    submit: (leadId: string, formData: FormData) =>
+      requestFormData<{ ok: true; documentCount: number }>(
+        `/lead-documents/${leadId}/submit`,
+        formData,
+        { token: null },
+      ),
   },
 
   financingQuiz: {
