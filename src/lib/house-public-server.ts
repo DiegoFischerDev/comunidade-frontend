@@ -10,11 +10,7 @@ export type PublicHousePartner = {
   whatsapp: string;
   logoUrl: string | null;
   shortDescription?: string | null;
-  category: {
-    id: string;
-    name: string;
-    slug: string;
-  } | null;
+  categorySlug?: string | null;
 };
 
 export type PublicHousePageData = {

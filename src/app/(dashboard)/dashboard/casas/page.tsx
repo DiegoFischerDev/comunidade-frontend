@@ -117,7 +117,7 @@ export default function PartnerHousesPage() {
     (async () => {
       try {
         const me = await api.partner.me();
-        const ok = me.category?.slug === "relocation";
+        const ok = me.categorySlug === "relocation";
         if (!cancelled) setCanManageHouses(ok);
         if (!ok) return;
         const [data, balance] = await Promise.all([

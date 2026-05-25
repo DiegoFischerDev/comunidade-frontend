@@ -203,7 +203,7 @@ export function AddHouseModal({
       try {
         const list = await api.admin.partners.list();
         const reloc = list
-          .filter((p) => p.category?.slug === 'relocation')
+          .filter((p) => p.categorySlug === 'relocation')
           .map((p) => ({ id: p.id, name: p.name }))
           .sort((a, b) => a.name.localeCompare(b.name, 'pt-PT'));
         if (!cancelled) setRelocationPartners(reloc);

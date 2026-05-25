@@ -794,7 +794,7 @@ export const api = {
             logoUrl: string | null;
             advertisingBalanceEurCents: number;
             user: { id: string; email: string | null; role: string };
-            category: { id: string; name: string; slug: string } | null;
+            categorySlug: string | null;
             heroShareLink: {
               id: string;
               slug: string;
@@ -887,7 +887,7 @@ export const api = {
         request<void>(`/partners/${id}`, { method: 'DELETE' }),
       update: (
         id: string,
-        input: { categoryId?: string | null },
+        input: { categorySlug?: string | null },
       ) =>
         request<{
           id: string;
@@ -895,20 +895,11 @@ export const api = {
           whatsapp: string;
           logoUrl: string | null;
           user: { id: string; email: string | null; role: string };
-          category: { id: string; name: string; slug: string } | null;
+          categorySlug: string | null;
         }>(`/partners/admin/${id}`, {
           method: 'PATCH',
           body: JSON.stringify(input),
         }),
-      listCategories: () =>
-        request<
-          {
-            id: string;
-            slug: string;
-            name: string;
-            sortOrder: number;
-          }[]
-        >('/partners/admin/categories', { method: 'GET' }),
     },
     services: {
       listGrouped: () =>
@@ -1218,7 +1209,7 @@ export const api = {
             partner: {
               id: string;
               name: string;
-              category: { slug: string; name: string } | null;
+              categorySlug: string | null;
             };
             _count: { redirectClicks: number };
           }[]
@@ -1253,7 +1244,7 @@ export const api = {
           partner: {
             id: string;
             name: string;
-            category: { slug: string; name: string } | null;
+            categorySlug: string | null;
           };
         }>(`/partners/admin/houses/${encodeURIComponent(houseId)}`, { method: 'GET' }),
       create: (input: {
@@ -1474,67 +1465,6 @@ export const api = {
           { method: 'DELETE' },
         ),
     },
-    categories: {
-      list: () =>
-        request<
-          {
-            id: string;
-            slug: string;
-            name: string;
-            shortDescription?: string;
-            fullDescription?: string;
-            backgroundImageUrl?: string;
-            sortOrder: number;
-          }[]
-        >('/partners/admin/categories', { method: 'GET' }),
-      create: (input: {
-        slug: string;
-        name: string;
-        shortDescription?: string;
-        fullDescription?: string;
-        backgroundImageUrl?: string;
-        sortOrder?: number;
-      }) =>
-        request<{
-          id: string;
-          slug: string;
-          name: string;
-          shortDescription?: string;
-          fullDescription?: string;
-          backgroundImageUrl?: string;
-          sortOrder: number;
-        }>('/partners/admin/categories', {
-          method: 'POST',
-          body: JSON.stringify(input),
-        }),
-      update: (
-        id: string,
-        input: {
-          slug?: string;
-          name?: string;
-          shortDescription?: string;
-          fullDescription?: string;
-          backgroundImageUrl?: string;
-          sortOrder?: number;
-        },
-      ) =>
-        request<{
-          id: string;
-          slug: string;
-          name: string;
-          shortDescription?: string;
-          fullDescription?: string;
-          backgroundImageUrl?: string;
-          sortOrder: number;
-        }>(`/partners/admin/categories/${id}`, {
-          method: 'PATCH',
-          body: JSON.stringify(input),
-        }),
-      delete: (id: string) =>
-        request<void>(`/partners/admin/categories/${id}`, {
-          method: 'DELETE',
-        }),
-    },
     support: {
       tickets: (take?: number) => {
         const q = take ? `?take=${encodeURIComponent(String(take))}` : '';
@@ -1593,7 +1523,7 @@ export const api = {
         billingNif?: string | null;
         billingAddress?: string | null;
         billingPostalCode?: string | null;
-        category?: { id: string; slug: string; name: string } | null;
+        categorySlug?: string | null;
         publicSlug?: string | null;
       }>('/partners/me', { method: 'GET' }),
     contactLinks: () =>
@@ -1651,7 +1581,7 @@ export const api = {
         billingNif?: string | null;
         billingAddress?: string | null;
         billingPostalCode?: string | null;
-        category?: { id: string; slug: string; name: string } | null;
+        categorySlug?: string | null;
         publicSlug?: string | null;
       }>('/partners/me', {
         method: 'PATCH',
@@ -1675,7 +1605,7 @@ export const api = {
         billingNif?: string | null;
         billingAddress?: string | null;
         billingPostalCode?: string | null;
-        category?: { id: string; slug: string; name: string } | null;
+        categorySlug?: string | null;
       }>('/partners/me/catalog-video', fd, { method: 'POST' });
     },
     services: {
@@ -2018,30 +1948,6 @@ export const api = {
     },
   },
   marketplace: {
-    categoriesWithPartners: () =>
-      request<
-        {
-          id: string;
-          slug: string;
-          name: string;
-          shortDescription?: string;
-          fullDescription?: string;
-          backgroundImageUrl?: string;
-          partners: {
-            id: string;
-            name: string;
-            logoUrl: string | null;
-            backgroundImageUrl: string | null;
-            shortDescription: string | null;
-            engagement: {
-              likeCount: number;
-              dislikeCount: number;
-              commentCount: number;
-              shareCount: number;
-            };
-          }[];
-        }[]
-      >('/partners/categories-with-partners', { method: 'GET' }),
     partnerEngagement: (id: string, opts?: { partnerDeviceId?: string | null }) =>
       request<{
         likeCount: number;
@@ -2132,7 +2038,7 @@ export const api = {
         catalogImageUrls: string[];
         catalogVideoUrl?: string | null;
         instagram: string | null;
-        category?: { id: string; name: string; slug: string } | null;
+        categorySlug?: string | null;
         user: { email: string };
         services: {
           id: string;
@@ -2226,13 +2132,6 @@ export const api = {
         pageSize: number;
       }>(`/partners/relocation/houses${qs ? `?${qs}` : ''}`, { method: 'GET' });
     },
-    /** Público: sem Bearer (evita 401 com JWT expirado em rotas @Public). */
-    relocationCategory: () =>
-      request<{
-        slug: string;
-        name: string;
-        backgroundImageUrl: string | null;
-      }>('/partners/relocation/category', { method: 'GET', token: null }),
     },
   checklist: {
     me: () =>

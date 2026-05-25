@@ -5,6 +5,7 @@ import { api, getAuthToken } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CardButton } from '@/components/ui/CardButton';
 import { formatAdvertisingBalanceEur } from '@/components/house/HousePublicationStatusBadge';
+import { PARTNER_CATEGORIES, partnerCategoryName } from '@/lib/partner-categories';
 
 type PartnerRow = {
   id: string;
@@ -13,7 +14,7 @@ type PartnerRow = {
   logoUrl: string | null;
   advertisingBalanceEurCents: number;
   user: { id: string; email: string | null; role: string };
-  category: { id: string; name: string; slug: string } | null;
+  categorySlug: string | null;
   heroShareLink: {
     id: string;
     slug: string;
@@ -27,9 +28,6 @@ export default function PartnersPage() {
   const [partners, setPartners] = useState<PartnerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [categories, setCategories] = useState<
-    { id: string; slug: string; name: string }[]
-  >([]);
   const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(
     null,
   );
@@ -65,12 +63,8 @@ export default function PartnersPage() {
     }
     (async () => {
       try {
-        const [partnersData, categoriesData] = await Promise.all([
-          api.admin.partners.list(),
-          api.admin.partners.listCategories(),
-        ]);
+        const partnersData = await api.admin.partners.list();
         setPartners(partnersData);
-        setCategories(categoriesData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar parceiros.');
       } finally {
@@ -112,7 +106,7 @@ export default function PartnersPage() {
           logoUrl: result.partner.logoUrl,
           advertisingBalanceEurCents: 0,
           user: result.user,
-          category: null,
+          categorySlug: null,
           heroShareLink: null,
           services: [],
         },
@@ -313,20 +307,20 @@ export default function PartnersPage() {
                   <td className="px-4 py-2">{p.whatsapp}</td>
                   <td className="px-4 py-2">
                     <select
-                      value={p.category?.id ?? ''}
+                      value={p.categorySlug ?? ''}
                       onChange={async (e) => {
-                        const newCategoryId = e.target.value || null;
+                        const newCategorySlug = e.target.value || null;
                         setUpdatingCategoryId(p.id);
                         setError('');
                         try {
                           const updated = await api.admin.partners.update(
                             p.id,
-                            { categoryId: newCategoryId },
+                            { categorySlug: newCategorySlug },
                           );
                           setPartners((prev) =>
                             prev.map((row) =>
                               row.id === p.id
-                                ? { ...row, category: updated.category }
+                                ? { ...row, categorySlug: updated.categorySlug }
                                 : row,
                             ),
                           );
@@ -344,8 +338,8 @@ export default function PartnersPage() {
                       className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     >
                       <option value="">Sem categoria</option>
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.id}>
+                      {PARTNER_CATEGORIES.map((c) => (
+                        <option key={c.slug} value={c.slug}>
                           {c.name}
                         </option>
                       ))}
@@ -355,7 +349,7 @@ export default function PartnersPage() {
                     <p className="font-medium tabular-nums text-zinc-900">
                       {formatAdvertisingBalanceEur(p.advertisingBalanceEurCents ?? 0)}
                     </p>
-                    {p.category?.slug === 'relocation' ? (
+                    {p.categorySlug === 'relocation' ? (
                       <div className="mt-2 flex flex-wrap items-center gap-1">
                         <input
                           type="text"
@@ -524,7 +518,7 @@ export default function PartnersPage() {
                       onClick={async () => {
                         if (
                           !window.confirm(
-                            `Tem certeza que deseja remover este parceiro? Esta ação é irreversível.\n\nNome: ${p.name}\nWhatsApp: ${p.whatsapp}\nCategoria: ${p.category?.name ?? '—'}`,
+                            `Tem certeza que deseja remover este parceiro? Esta ação é irreversível.\n\nNome: ${p.name}\nWhatsApp: ${p.whatsapp}\nCategoria: ${partnerCategoryName(p.categorySlug) ?? '—'}`,
                           )
                         ) {
                           return;

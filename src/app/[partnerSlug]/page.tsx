@@ -37,7 +37,7 @@ export default async function PartnerRootSlugPage({ params }: PageProps) {
   }
 
   const relocationHouses =
-    partner.category?.slug === 'relocation'
+    partner.categorySlug === 'relocation'
       ? await fetchRelocationHousesForPartner(partner.id)
       : [];
 

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import type { RelocationHouseRow } from '@/components/relocation/relocation-house-shared';
 import { absoluteMediaUrlForOg } from '@/lib/house-public-server';
 import { getPublicSiteUrl } from '@/lib/site-url';
+import { partnerCategoryName } from '@/lib/partner-categories';
 
 export type PartnerService = {
   id: string;
@@ -26,11 +27,7 @@ export type PartnerPublic = {
   backgroundImageUrl: string | null;
   catalogImageUrls?: string[];
   catalogVideoUrl?: string | null;
-  category: {
-    id: string;
-    name: string;
-    slug: string;
-  } | null;
+  categorySlug?: string | null;
   services: PartnerService[];
   /** `/link?t=…` para o botão de contacto na hero. */
   heroContactRedirectPath?: string | null;
@@ -140,7 +137,7 @@ export function buildPartnerPublicMetadata(
   partner: PartnerPublic,
   canonicalPath: string,
 ): Metadata {
-  const categoryName = partner.category?.name ?? 'Serviços';
+  const categoryName = partnerCategoryName(partner.categorySlug) ?? 'Serviços';
 
   const serviceTitles = partner.services
     .map((s) => s.title)

@@ -13,6 +13,7 @@ import {
 } from '@/lib/relocation-portugal-cities';
 import { orderHouseImagesWithCoverFirst } from '@/lib/house-entrance';
 import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
+import { partnerCategoryName } from '@/lib/partner-categories';
 
 type AdminHouseRow = Awaited<ReturnType<typeof api.admin.houses.list>>[number];
 type WhatsappGroupRow = Awaited<ReturnType<typeof api.admin.houseWhatsappGroups.list>>[number];
@@ -199,7 +200,7 @@ export default function AdminHousesPage() {
           h.priceEur,
           BUSINESS_TYPE_LABELS[h.businessType],
           PUBLICATION_STATUS_LABELS[h.publicationStatus],
-          h.partner.category?.name ?? '',
+          partnerCategoryName(h.partner.categorySlug) ?? '',
         ]
           .join(' ')
           .toLowerCase();
@@ -766,18 +767,18 @@ export default function AdminHousesPage() {
                         </p>
                         <p
                           className={`mt-0.5 whitespace-pre-line text-sm ${
-                            h.partner.category?.slug === 'relocation' &&
+                            h.partner.categorySlug === 'relocation' &&
                             sendingWhatsappHouseId === h.id
                               ? 'font-medium text-emerald-800'
                               : 'text-zinc-800'
                           }`}
                           title={
-                            h.partner.category?.slug === 'relocation' && h.whatsappError?.trim()
+                            h.partner.categorySlug === 'relocation' && h.whatsappError?.trim()
                               ? h.whatsappError
                               : undefined
                           }
                         >
-                          {h.partner.category?.slug !== 'relocation'
+                          {h.partner.categorySlug !== 'relocation'
                             ? '—'
                             : sendingWhatsappHouseId === h.id
                               ? 'Enviando...'
@@ -785,7 +786,7 @@ export default function AdminHousesPage() {
                         </p>
                       </div>
                       <div className="flex flex-nowrap items-center justify-center gap-2 border-t border-zinc-100 pt-3">
-                        {h.partner.category?.slug === 'relocation' ? (
+                        {h.partner.categorySlug === 'relocation' ? (
                           <button
                             type="button"
                             title="Enviar nos grupos WhatsApp"
@@ -1002,13 +1003,13 @@ export default function AdminHousesPage() {
                           className="whitespace-pre-line px-4 py-2 align-top text-xs text-zinc-700"
                           title={h.whatsappError?.trim() ? h.whatsappError : undefined}
                         >
-                          {h.partner.category?.slug === 'relocation'
+                          {h.partner.categorySlug === 'relocation'
                             ? adminHouseWhatsAppSendDatesLabel(h)
                             : '—'}
                         </td>
                         <td className="px-4 py-2 text-right align-top">
                           <div className="flex flex-wrap items-center justify-end gap-2">
-                            {h.partner.category?.slug === 'relocation' ? (
+                            {h.partner.categorySlug === 'relocation' ? (
                               <button
                                 type="button"
                                 title="Enviar nos grupos WhatsApp"

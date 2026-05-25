@@ -12,6 +12,7 @@ import { HouseContactSection } from "./house-contact-section";
 import { HouseImageCarousel } from "./house-image-carousel";
 import { relocationCityDisplayName } from "@/lib/relocation-portugal-cities";
 import { partnerPublicPagePath } from "@/lib/partner-public-shared";
+import { partnerCategoryName } from "@/lib/partner-categories";
 
 const TYPOLOGY_LABELS: Record<string, string> = {
   T0: "T0",
@@ -284,8 +285,10 @@ export function HousePublicView({
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-zinc-900">{partner.name}</p>
-                  {partner.category ? (
-                    <p className="mt-0.5 text-xs text-zinc-600">{partner.category.name}</p>
+                  {partnerCategoryName(partner.categorySlug) ? (
+                    <p className="mt-0.5 text-xs text-zinc-600">
+                      {partnerCategoryName(partner.categorySlug)}
+                    </p>
                   ) : null}
                   {partner.shortDescription?.trim() ? (
                     <p className="mt-1 line-clamp-2 text-sm text-zinc-600">

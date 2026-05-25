@@ -29,7 +29,7 @@ export default async function PartnerLegacyPublicPage({ params }: PageProps) {
   }
 
   const relocationHouses =
-    partner.category?.slug === 'relocation'
+    partner.categorySlug === 'relocation'
       ? await fetchRelocationHousesForPartner(partner.id)
       : [];
 

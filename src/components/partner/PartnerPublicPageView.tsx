@@ -17,6 +17,7 @@ import {
   absolutePartnerAssetUrl,
   PARTNER_PUBLIC_API_URL,
 } from '@/lib/partner-public-shared';
+import { partnerCategoryName } from '@/lib/partner-categories';
 
 type Props = {
   partner: PartnerPublic;
@@ -62,7 +63,7 @@ export function PartnerPublicPageView({ partner, relocationHouses, sharePageUrl 
           )}
           <div>
             <p className="text-xs uppercase tracking-wide text-red-100/95">
-              {partner.category?.name ?? 'Parceiro'}
+              {partnerCategoryName(partner.categorySlug) ?? 'Parceiro'}
             </p>
             <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">{partner.name}</h1>
             {partner.shortDescription && (
@@ -165,7 +166,7 @@ export function PartnerPublicPageView({ partner, relocationHouses, sharePageUrl 
         )}
       </section>
 
-      {partner.category?.slug === 'relocation' && (
+      {partner.categorySlug === 'relocation' && (
         <section className="space-y-4">
           <h2 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
             Imóveis

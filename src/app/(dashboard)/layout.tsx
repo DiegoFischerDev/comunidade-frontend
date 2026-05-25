@@ -300,7 +300,7 @@ export default function DashboardLayout({
       try {
         const me = await api.partner.me();
         if (!cancelled) {
-          setPartnerCategorySlug(me.category?.slug ?? null);
+          setPartnerCategorySlug(me.categorySlug ?? null);
           setPartnerDisplayName(me.name?.trim() || null);
           setPartnerId(me.id ?? null);
           setPartnerPublicSlug(me.publicSlug?.trim() || null);
@@ -594,16 +594,6 @@ export default function DashboardLayout({
                 }`}
               >
                 Links rastreados
-              </Link>
-              <Link
-                href="/dashboard/categories"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/categories'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Categorias
               </Link>
               <Link
                 href="/dashboard/partners"

@@ -20,6 +20,7 @@ import {
 import { partnerContactHref } from '@/lib/partner-contact-redirect';
 import { getPublicSiteUrl } from '@/lib/site-url';
 import { useAuth } from '@/contexts/AuthContext';
+import { partnerCategoryName } from '@/lib/partner-categories';
 
 type PartnerDetails = {
   id: string;
@@ -33,11 +34,7 @@ type PartnerDetails = {
   catalogImageUrls?: string[];
   catalogVideoUrl?: string | null;
   instagram?: string | null;
-  category?: {
-    id: string;
-    name: string;
-    slug: string;
-  } | null;
+  categorySlug?: string | null;
   user: { email: string };
   services: {
     id: string;
@@ -94,7 +91,7 @@ export default function PartnerPage() {
   }, [params?.id]);
 
   useEffect(() => {
-    if (!partner?.category || partner.category.slug !== 'relocation') {
+    if (!partner || partner.categorySlug !== 'relocation') {
       setRelocationPreview([]);
       setRelocationHousesLoading(false);
       return;
@@ -118,7 +115,7 @@ export default function PartnerPage() {
     return () => {
       cancelled = true;
     };
-  }, [partner?.id, partner?.category?.slug]);
+  }, [partner?.id, partner?.categorySlug]);
 
   if (loading) {
     return <p className="text-sm text-zinc-600">Carregando parceiro…</p>;
@@ -203,7 +200,7 @@ export default function PartnerPage() {
             )}
             <div>
               <p className="text-xs uppercase tracking-wide text-red-100/95">
-                {partner.category?.name ?? 'Parceiro'}
+                {partnerCategoryName(partner.categorySlug) ?? 'Parceiro'}
               </p>
               <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
                 {partner.name}
@@ -322,7 +319,7 @@ export default function PartnerPage() {
         )}
       </section>
 
-      {partner.category?.slug === 'relocation' && (
+      {partner.categorySlug === 'relocation' && (
         <section className="space-y-4">
           <h2 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
             Imóveis
