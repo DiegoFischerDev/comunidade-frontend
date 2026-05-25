@@ -460,81 +460,34 @@ function GatePanel(props: {
 }
 
 function PartnerCard({ partner }: { partner: PartnerInfo }) {
-  const wa = digitsOnly(partner.whatsapp);
   const initial = (partner.name?.trim()?.charAt(0) ?? 'P').toUpperCase();
   return (
-    <section className="overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-b from-amber-50 via-white to-white shadow-sm">
-      <div className="border-b border-amber-100 px-6 py-3 text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-700">
-          A tua gestora de crédito
-        </p>
-      </div>
-      <div className="px-6 py-8 text-center sm:px-10 sm:py-10">
+    <section className="px-2 py-4 text-center sm:px-6 sm:py-6">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-700">
+        A tua gestora de crédito
+      </p>
+      <div className="mt-4">
         {partner.logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={partner.logoUrl}
             alt={partner.name}
-            className="mx-auto h-32 w-32 rounded-2xl border border-amber-200 bg-white object-contain p-3 shadow-sm sm:h-40 sm:w-40"
+            className="mx-auto block h-auto w-full max-w-md object-contain sm:max-w-lg"
           />
         ) : (
-          <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-2xl border border-amber-200 bg-white text-4xl font-semibold text-amber-700 shadow-sm sm:h-40 sm:w-40">
+          <div className="mx-auto flex aspect-square w-full max-w-md items-center justify-center text-7xl font-semibold text-amber-700 sm:max-w-lg">
             {initial}
           </div>
         )}
-        <h3 className="mt-5 text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
-          {partner.name}
-        </h3>
-        {partner.shortDescription ? (
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-zinc-600">
-            {partner.shortDescription}
-          </p>
-        ) : null}
-
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
-          {wa ? (
-            <a
-              href={`https://wa.me/${wa}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="h-4 w-4"
-                aria-hidden
-              >
-                <path d="M19.05 4.91A10 10 0 0 0 4.1 18.39L2 22l3.7-1.97a10 10 0 0 0 13.35-15.12Zm-7.04 15.31a8.34 8.34 0 0 1-4.25-1.16l-.3-.18-2.2 1.17.59-2.27-.2-.3a8.36 8.36 0 1 1 6.36 2.74Zm4.6-6.21c-.25-.13-1.5-.74-1.73-.83-.23-.08-.4-.13-.57.13-.16.25-.65.83-.8 1-.14.16-.3.19-.55.06-.25-.13-1.07-.39-2.04-1.25-.75-.67-1.26-1.5-1.4-1.75-.15-.25-.02-.39.11-.51.12-.12.25-.3.38-.45.13-.15.16-.25.25-.42.08-.16.04-.31-.02-.44-.06-.13-.57-1.38-.78-1.89-.21-.5-.42-.43-.57-.43h-.49c-.16 0-.42.06-.65.31s-.86.84-.86 2.05.88 2.39 1 2.55c.13.16 1.74 2.66 4.22 3.73.59.26 1.05.41 1.41.52.59.19 1.13.16 1.55.1.47-.07 1.5-.61 1.71-1.2.21-.6.21-1.1.15-1.21-.06-.1-.23-.16-.49-.29Z" />
-              </svg>
-              WhatsApp
-            </a>
-          ) : null}
-          {partner.email ? (
-            <a
-              href={`mailto:${partner.email}`}
-              className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition hover:border-zinc-400 hover:bg-zinc-50"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-4 w-4"
-                aria-hidden
-              >
-                <rect x="3" y="5" width="18" height="14" rx="2" />
-                <path d="M3 7l9 6 9-6" />
-              </svg>
-              Email
-            </a>
-          ) : null}
-        </div>
       </div>
+      <h3 className="mt-5 text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+        {partner.name}
+      </h3>
+      {partner.shortDescription ? (
+        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-zinc-600">
+          {partner.shortDescription}
+        </p>
+      ) : null}
     </section>
   );
 }
@@ -594,8 +547,7 @@ function FormPanel(props: {
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
           <p className="font-semibold">Já recebemos um envio teu.</p>
           <p className="mt-1 text-emerald-800">
-            Podes continuar a anexar documentos em falta — cada submissão envia um novo email
-            ao teu parceiro com tudo o que anexares agora.
+            A gestora vai te contactar em ate 4 dias úteis. Podes continuar a anexar documentos em falta.
           </p>
         </div>
       ) : null}
@@ -880,6 +832,25 @@ function FormPanel(props: {
   );
 }
 
+/**
+ * Formata um WhatsApp internacional para apresentação ao utilizador.
+ * Aceita só dígitos. Para PT (`351...`) usa o agrupamento `+351 9XX XXX XXX`; restante
+ * apresenta com `+` e os dígitos crus, suficientes para o contacto humano.
+ */
+function formatWhatsappForDisplay(digits: string): string {
+  const d = digits.replace(/\D+/g, '');
+  if (!d) return '';
+  if (d.length >= 12 && d.startsWith('351')) {
+    const rest = d.slice(3);
+    return `+351 ${rest.slice(0, 3)} ${rest.slice(3, 6)} ${rest.slice(6)}`.trim();
+  }
+  if (d.length >= 13 && d.startsWith('55')) {
+    const rest = d.slice(2);
+    return `+55 ${rest.slice(0, 2)} ${rest.slice(2, 7)}-${rest.slice(7)}`.trim();
+  }
+  return `+${d}`;
+}
+
 function SentPanel(props: {
   partner: PartnerInfo;
   mode: LeadDocumentSubmissionMode;
@@ -887,6 +858,7 @@ function SentPanel(props: {
 }) {
   const { partner, mode, onStartNewMode } = props;
   const wa = digitsOnly(partner.whatsapp);
+  const waDisplay = formatWhatsappForDisplay(wa);
   return (
     <div className="space-y-5">
       <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center shadow-sm">
@@ -897,12 +869,58 @@ function SentPanel(props: {
           Documentos enviados!
         </h2>
         <p className="mt-1 text-sm text-emerald-800">
-          Os teus documentos foram enviados para o parceiro {partner.name}. Esperamos
+          Os teus documentos foram enviados para a gestora {partner.name}. Esperamos
           resposta em até <strong>4 dias úteis</strong>.
         </p>
       </section>
 
       <PartnerCard partner={partner} />
+
+      {wa ? (
+        <section className="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+          <div className="flex flex-col items-center gap-4 p-6 text-center sm:flex-row sm:text-left">
+            <div
+              aria-hidden
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="h-6 w-6"
+              >
+                <path d="M19.05 4.91A10 10 0 0 0 4.1 18.39L2 22l3.7-1.97a10 10 0 0 0 13.35-15.12Zm-7.04 15.31a8.34 8.34 0 0 1-4.25-1.16l-.3-.18-2.2 1.17.59-2.27-.2-.3a8.36 8.36 0 1 1 6.36 2.74Zm4.6-6.21c-.25-.13-1.5-.74-1.73-.83-.23-.08-.4-.13-.57.13-.16.25-.65.83-.8 1-.14.16-.3.19-.55.06-.25-.13-1.07-.39-2.04-1.25-.75-.67-1.26-1.5-1.4-1.75-.15-.25-.02-.39.11-.51.12-.12.25-.3.38-.45.13-.15.16-.25.25-.42.08-.16.04-.31-.02-.44-.06-.13-.57-1.38-.78-1.89-.21-.5-.42-.43-.57-.43h-.49c-.16 0-.42.06-.65.31s-.86.84-.86 2.05.88 2.39 1 2.55c.13.16 1.74 2.66 4.22 3.73.59.26 1.05.41 1.41.52.59.19 1.13.16 1.55.1.47-.07 1.5-.61 1.71-1.2.21-.6.21-1.1.15-1.21-.06-.1-.23-.16-.49-.29Z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
+                Falar com a tua gestora
+              </p>
+              <p className="mt-0.5 text-base font-semibold text-zinc-900">
+                {partner.name}
+              </p>
+              <p className="text-sm font-medium text-zinc-700">{waDisplay}</p>
+            </div>
+            <a
+              href={`https://wa.me/${wa}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 sm:w-auto"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="h-4 w-4"
+                aria-hidden
+              >
+                <path d="M19.05 4.91A10 10 0 0 0 4.1 18.39L2 22l3.7-1.97a10 10 0 0 0 13.35-15.12Zm-7.04 15.31a8.34 8.34 0 0 1-4.25-1.16l-.3-.18-2.2 1.17.59-2.27-.2-.3a8.36 8.36 0 1 1 6.36 2.74Zm4.6-6.21c-.25-.13-1.5-.74-1.73-.83-.23-.08-.4-.13-.57.13-.16.25-.65.83-.8 1-.14.16-.3.19-.55.06-.25-.13-1.07-.39-2.04-1.25-.75-.67-1.26-1.5-1.4-1.75-.15-.25-.02-.39.11-.51.12-.12.25-.3.38-.45.13-.15.16-.25.25-.42.08-.16.04-.31-.02-.44-.06-.13-.57-1.38-.78-1.89-.21-.5-.42-.43-.57-.43h-.49c-.16 0-.42.06-.65.31s-.86.84-.86 2.05.88 2.39 1 2.55c.13.16 1.74 2.66 4.22 3.73.59.26 1.05.41 1.41.52.59.19 1.13.16 1.55.1.47-.07 1.5-.61 1.71-1.2.21-.6.21-1.1.15-1.21-.06-.1-.23-.16-.49-.29Z" />
+              </svg>
+              Contactar pelo WhatsApp
+            </a>
+          </div>
+        </section>
+      ) : null}
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
         <h3 className="text-base font-semibold text-zinc-900">
@@ -910,7 +928,7 @@ function SentPanel(props: {
         </h3>
         <p className="mt-1 text-sm text-zinc-600">
           Podes enviar documentos do(a) cônjuge ou complementar este envio com documentos em
-          falta — sem precisar de confirmar o WhatsApp outra vez.
+          falta.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <button
@@ -932,21 +950,6 @@ function SentPanel(props: {
           (Anteriormente enviámos: {labelForMode(mode)}.)
         </p>
       </section>
-
-      {wa ? (
-        <p className="text-center text-sm text-zinc-700">
-          Em caso de dúvida, fala diretamente com o teu parceiro pelo{' '}
-          <a
-            href={`https://wa.me/${wa}`}
-            target="_blank"
-            rel="noreferrer"
-            className="font-semibold text-emerald-700 hover:underline"
-          >
-            WhatsApp
-          </a>
-          .
-        </p>
-      ) : null}
     </div>
   );
 }

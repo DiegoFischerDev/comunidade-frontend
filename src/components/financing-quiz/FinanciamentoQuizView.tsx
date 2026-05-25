@@ -345,7 +345,7 @@ function AtendimentoPanel({
         Atendimento gratuito
       </p>
       <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
-        Quero iniciar o meu atendimento com a gestora de crédito
+        Quero iniciar o meu atendimento gratuito com a gestora de crédito
       </h2>
 
 
