@@ -383,11 +383,14 @@ export const api = {
       cancelUrl: string;
       paymentMethod: 'card' | 'mbway' | 'pix';
     }) =>
-      request<{ url: string }>('/stripe/create-guest-rafacall-session', {
-        method: 'POST',
-        body: JSON.stringify(params),
-        token: null,
-      }),
+      request<{ url: string } | { skipPayment: true; unlockId: string }>(
+        '/stripe/create-guest-rafacall-session',
+        {
+          method: 'POST',
+          body: JSON.stringify(params),
+          token: null,
+        },
+      ),
     claimGuestRafacallSession: (sessionId: string) =>
       request<
         | { status: 'pending' }

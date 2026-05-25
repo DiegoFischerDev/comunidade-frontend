@@ -66,6 +66,7 @@ export default function RafaCallPaymentSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id')?.trim() ?? '';
+  const unlockIdFromUrl = searchParams.get('unlock_id')?.trim() ?? '';
 
   const [claim, setClaim] = useState<ClaimState>({ kind: 'loading' });
   const [availability, setAvailability] = useState<AvailabilityPayload | null>(null);
@@ -75,14 +76,46 @@ export default function RafaCallPaymentSuccessPage() {
 
   const tz = useMemo(() => resolvedUserTz(), []);
 
-  // 1) Claim do unlock no Stripe.
+  // 1) Claim do unlock — via Stripe session_id ou diretamente via unlock_id (caso o
+  // utilizador tenha crédito de taxa paga anteriormente, depois de um cancelamento).
   useEffect(() => {
     let cancelled = false;
-    if (!sessionId) {
+    if (!sessionId && !unlockIdFromUrl) {
       setClaim({ kind: 'error', message: 'Sessão de pagamento em falta.' });
       return;
     }
-    async function run() {
+
+    async function runUnlockDirect() {
+      try {
+        const u = await api.rafacall.guestUnlock(unlockIdFromUrl);
+        if (cancelled) return;
+        if (!u.paid) {
+          setClaim({ kind: 'error', message: 'Pagamento ainda não confirmado.' });
+          return;
+        }
+        if (u.consumed) {
+          setClaim({
+            kind: 'error',
+            message: 'Este crédito já foi usado para um agendamento.',
+          });
+          return;
+        }
+        if (u.expired) {
+          setClaim({ kind: 'error', message: 'Este crédito expirou.' });
+          return;
+        }
+        setClaim({ kind: 'ready', unlockId: u.id, name: u.name, whatsapp: u.whatsapp });
+      } catch (e) {
+        if (!cancelled) {
+          setClaim({
+            kind: 'error',
+            message: e instanceof Error ? e.message : 'Não foi possível abrir o crédito.',
+          });
+        }
+      }
+    }
+
+    async function runStripeClaim() {
       const maxAttempts = 12;
       for (let i = 0; i < maxAttempts; i++) {
         if (cancelled) return;
@@ -133,11 +166,17 @@ export default function RafaCallPaymentSuccessPage() {
         });
       }
     }
-    void run();
+
+    if (unlockIdFromUrl) {
+      void runUnlockDirect();
+    } else {
+      void runStripeClaim();
+    }
+
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [sessionId, unlockIdFromUrl]);
 
   // 2) Carrega disponibilidade após claim ok.
   useEffect(() => {
@@ -236,6 +275,8 @@ export default function RafaCallPaymentSuccessPage() {
     );
   }
 
+  const fromCredit = Boolean(unlockIdFromUrl) && !sessionId;
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
@@ -246,10 +287,15 @@ export default function RafaCallPaymentSuccessPage() {
             </svg>
           </div>
           <div>
-            <h1 className="text-xl font-bold text-zinc-900">Pagamento confirmado</h1>
+            <h1 className="text-xl font-bold text-zinc-900">
+              {fromCredit ? 'Taxa já paga — agenda quando quiseres' : 'Pagamento confirmado'}
+            </h1>
             <p className="mt-1 text-sm text-zinc-700">
-              Olá, <span className="font-semibold">{claim.name}</span>. Escolhe abaixo a data e a
-              hora da videochamada. Vamos enviar a confirmação para o WhatsApp{' '}
+              Olá, <span className="font-semibold">{claim.name}</span>.{' '}
+              {fromCredit
+                ? 'Como tinhas uma taxa de agendamento por usar, podes escolher data e hora sem pagar de novo.'
+                : 'Escolhe abaixo a data e a hora da videochamada.'}{' '}
+              Vamos enviar a confirmação para o WhatsApp{' '}
               <span className="font-medium">{claim.whatsapp}</span>.
             </p>
           </div>

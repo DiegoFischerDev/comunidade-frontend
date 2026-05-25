@@ -165,14 +165,22 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
     const cancelUrl = getRafacallCancelUrl();
 
     try {
-      const { url } = await api.stripe.createGuestRafacallSession({
+      const res = await api.stripe.createGuestRafacallSession({
         name: name.trim(),
         whatsapp: waDigits,
         successUrl,
         cancelUrl,
         paymentMethod,
       });
-      window.location.assign(url);
+      if ('skipPayment' in res) {
+        // Este WhatsApp já tem taxa paga não usada (cancelou um agendamento anterior).
+        // Salta o pagamento e vai direto ao scheduler.
+        window.location.assign(
+          `/dashboard/rafacall/success?unlock_id=${encodeURIComponent(res.unlockId)}`,
+        );
+        return;
+      }
+      window.location.assign(res.url);
     } catch (e) {
       setCheckoutLoading(false);
       setError(e instanceof Error ? e.message : 'Erro ao iniciar o pagamento.');

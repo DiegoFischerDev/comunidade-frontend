@@ -87,6 +87,7 @@ export function RafacallManageView({ bookingId }: Props) {
 
   const [whatsapp, setWhatsapp] = useState('');
   const [whatsappError, setWhatsappError] = useState('');
+  const [confirmFeedback, setConfirmFeedback] = useState('');
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [booking, setBooking] = useState<GuestBooking | null>(null);
@@ -109,9 +110,11 @@ export function RafacallManageView({ bookingId }: Props) {
     const wa = whatsapp.replace(/\D/g, '');
     if (wa.length < 8) {
       setWhatsappError('WhatsApp inválido.');
+      setConfirmFeedback('Indica um número de WhatsApp válido (com indicativo do país) para continuar.');
       return;
     }
     setWhatsappError('');
+    setConfirmFeedback('');
     setConfirmLoading(true);
     try {
       const b = await api.rafacall.guestBooking(bookingId, wa);
@@ -129,7 +132,9 @@ export function RafacallManageView({ bookingId }: Props) {
         });
       }
     } catch (e) {
-      setWhatsappError(e instanceof Error ? e.message : 'Não foi possível verificar o WhatsApp.');
+      const msg = e instanceof Error ? e.message : 'Não foi possível verificar o WhatsApp.';
+      setWhatsappError('Número não corresponde a este agendamento.');
+      setConfirmFeedback(msg);
     } finally {
       setConfirmLoading(false);
     }
@@ -249,6 +254,29 @@ export function RafacallManageView({ bookingId }: Props) {
               Para alterar ou cancelar o teu agendamento com a Rafa, confirma o número de WhatsApp
               que usaste no agendamento.
             </p>
+            {confirmFeedback ? (
+              <div
+                role="alert"
+                aria-live="polite"
+                className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+              >
+                <svg
+                  className="mt-0.5 h-4 w-4 flex-none text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                  />
+                </svg>
+                <span>{confirmFeedback}</span>
+              </div>
+            ) : null}
             <div className="mt-4">
               <LoginWhatsappFields
                 idPrefix="rafacall-manage"
@@ -258,6 +286,7 @@ export function RafacallManageView({ bookingId }: Props) {
                 onChange={(v) => {
                   setWhatsapp(v);
                   if (whatsappError) setWhatsappError('');
+                  if (confirmFeedback) setConfirmFeedback('');
                 }}
                 disabled={confirmLoading}
               />
