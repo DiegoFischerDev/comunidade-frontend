@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { KiwiFloatInput } from '@/components/membership/KiwiFloatInput';
@@ -42,6 +41,12 @@ export function FinanciamentoQuizView() {
   const [atendimentoSubmitting, setAtendimentoSubmitting] = useState(false);
   const [atendimentoError, setAtendimentoError] = useState('');
 
+  // Gate inicial: o utilizador indica o WhatsApp antes do quiz. Se já houver um lead com
+  // esse número, redirecionamos diretamente para a página de upload/atendimento; caso
+  // contrário, mantemos o número e seguimos para o quiz.
+  const [introChecking, setIntroChecking] = useState(false);
+  const [introError, setIntroError] = useState('');
+
   const cardRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -55,6 +60,41 @@ export function FinanciamentoQuizView() {
   }, [currentStep, phase]);
 
   const progress = useMemo(() => estimateProgress(answers), [answers]);
+
+  /**
+   * Verifica se o WhatsApp indicado já corresponde a um lead existente. Em caso afirmativo
+   * encaminhamos o utilizador para a página de upload/atendimento; caso contrário avançamos
+   * para o quiz, mantendo o número para reaproveitar no `request-atendimento` no fim.
+   */
+  async function handleIntroSubmit() {
+    const wa = whatsapp.replace(/\D+/g, '');
+    if (wa.length < 8) {
+      setWhatsappError('Indica um WhatsApp válido.');
+      return;
+    }
+    setWhatsappError('');
+    setIntroError('');
+    setIntroChecking(true);
+    try {
+      await api.leadDocuments.verify({ whatsapp: wa });
+      // Lead encontrado — vai direto para a página de upload (auto-verifica pelo query param).
+      router.push(`/financiamento/documentos?whatsapp=${encodeURIComponent(wa)}`);
+    } catch (err) {
+      const e = err as ApiHttpError;
+      if (e.status === 404) {
+        // Ainda não fez o questionário — segue para o quiz, com o WhatsApp já preenchido.
+        setPhase('quiz');
+        setIntroChecking(false);
+        return;
+      }
+      setIntroError(
+        getUserFacingApiError(e, { context: 'Ao verificar o teu WhatsApp' }),
+      );
+      setIntroChecking(false);
+    }
+    // Sem `finally` no caminho feliz: mantemos `introChecking` activo até a navegação
+    // concretizar para evitar duplos cliques durante o push do router.
+  }
 
   function handleBack() {
     const answered = answeredSteps(answers);
@@ -160,8 +200,6 @@ export function FinanciamentoQuizView() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
-      <AlreadyAnsweredBanner />
-
       <header>
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
           Financiar casa em Portugal
@@ -176,7 +214,18 @@ export function FinanciamentoQuizView() {
         className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
       >
         {phase === 'intro' ? (
-          <IntroPanel onStart={() => setPhase('quiz')} />
+          <IntroPanel
+            whatsapp={whatsapp}
+            setWhatsapp={(v) => {
+              setWhatsapp(v);
+              if (whatsappError) setWhatsappError('');
+              if (introError) setIntroError('');
+            }}
+            whatsappError={whatsappError}
+            loading={introChecking}
+            error={introError}
+            onSubmit={handleIntroSubmit}
+          />
         ) : phase === 'quiz' ? (
           <QuizPanel
             currentStep={currentStep}
@@ -229,55 +278,32 @@ export function FinanciamentoQuizView() {
   );
 }
 
-/** Banner no topo do quiz para quem já respondeu e só quer enviar a documentação. */
-function AlreadyAnsweredBanner() {
-  return (
-    <Link
-      href="/financiamento/documentos"
-      className="group flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm shadow-sm transition hover:border-amber-400 hover:bg-amber-100"
-    >
-      <span
-        aria-hidden
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-200 text-amber-800"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-5 w-5"
-        >
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="17 8 12 3 7 8" />
-          <line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
-      </span>
-      <span className="flex-1">
-        <span className="block font-semibold text-amber-900">
-          Já fiz o questionário e quero enviar os documentos para análise
-        </span>
-        <span className="block text-xs text-amber-800">
-          Avança direto para a página de envio (confirmas o WhatsApp e abrimos o teu formulário).
-        </span>
-      </span>
-      <span
-        aria-hidden
-        className="text-amber-700 transition-transform group-hover:translate-x-0.5"
-      >
-        →
-      </span>
-    </Link>
-  );
-}
-
 // ===== Sub-painéis =====
 
-function IntroPanel({ onStart }: { onStart: () => void }) {
+function IntroPanel({
+  whatsapp,
+  setWhatsapp,
+  whatsappError,
+  loading,
+  error,
+  onSubmit,
+}: {
+  whatsapp: string;
+  setWhatsapp: (v: string) => void;
+  whatsappError: string;
+  loading: boolean;
+  error: string;
+  onSubmit: () => void;
+}) {
   return (
-    <div className="px-6 py-10 sm:px-10 sm:py-14">
+    <form
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!loading) onSubmit();
+      }}
+      className="px-6 py-10 sm:px-10 sm:py-14"
+    >
       <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
         Questionário gratuito
       </p>
@@ -285,27 +311,51 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         Consigo financiar uma casa em Portugal?
       </h2>
       <p className="mt-4 text-base leading-relaxed text-zinc-700">
-        Em menos de 1 minuto descobre, em termos gerais, se tem viabilidade para crédito habitação
-        — e que percentagem do imóvel costuma ser financiada para o seu perfil.
+        Em menos de 1 minuto descobre, em termos gerais, se tem viabilidade para crédito
+        habitação — e que percentagem do imóvel costuma ser financiada para o teu perfil.
       </p>
 
       <ul className="mt-6 space-y-3 text-sm text-zinc-700">
         <Bullet>Apenas 4 a 6 perguntas, todas simples (Sim/Não).</Bullet>
         <Bullet>Resultado imediato, com um exemplo prático.</Bullet>
         <Bullet>
-          Se quiseres avançar, deixas nome, email e WhatsApp — e seguimos logo para o envio
-          de documentos com a gestora atribuída.
+          Se já respondeste antes, retomamos no envio de documentos com a tua gestora.
         </Bullet>
       </ul>
 
+      <div className="mt-7 rounded-xl border border-amber-200 bg-amber-50/60 p-5">
+        <p className="text-sm font-semibold text-amber-900">
+          Indica o teu WhatsApp para começar
+        </p>
+        <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
+          Se já tiveres respondido, vamos diretamente para o envio de documentos. Caso
+          contrário, abrimos o questionário.
+        </p>
+        <div className="mt-4">
+          <LoginWhatsappFields
+            idPrefix="financiamento-intro"
+            value={whatsapp}
+            onChange={setWhatsapp}
+            disabled={loading}
+            error={whatsappError}
+          />
+        </div>
+      </div>
+
+      {error ? (
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          {error}
+        </div>
+      ) : null}
+
       <button
-        type="button"
-        onClick={onStart}
-        className="mt-8 inline-flex w-full items-center justify-center rounded-xl bg-amber-600 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+        type="submit"
+        disabled={loading}
+        className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-amber-600 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Começar questionário
+        {loading ? 'A verificar…' : 'Começar agora'}
       </button>
-    </div>
+    </form>
   );
 }
 
