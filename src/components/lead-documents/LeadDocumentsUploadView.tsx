@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { api, getUserFacingApiError, type ApiHttpError } from '@/lib/api';
 import {
@@ -74,11 +75,17 @@ function fileTooLarge(file: File): boolean {
   return file.size > MAX_FILE_BYTES;
 }
 
-type ViewProps = { leadId: string };
+export function LeadDocumentsUploadView() {
+  const searchParams = useSearchParams();
+  const initialWhatsapp = useMemo(() => {
+    const raw = searchParams?.get('whatsapp') ?? '';
+    return digitsOnly(raw);
+  }, [searchParams]);
 
-export function LeadDocumentsUploadView({ leadId }: ViewProps) {
   const [phase, setPhase] = useState<Phase>('gate');
-  const [whatsapp, setWhatsapp] = useState('');
+  const [whatsapp, setWhatsapp] = useState(initialWhatsapp);
+  /** WhatsApp já validado pelo backend — usado como chave do IndexedDB e no submit. */
+  const [verifiedWhatsapp, setVerifiedWhatsapp] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState('');
 
@@ -96,17 +103,17 @@ export function LeadDocumentsUploadView({ leadId }: ViewProps) {
 
   // Restaurar estado guardado quando entramos no formulário.
   useEffect(() => {
-    if (phase !== 'form') return;
+    if (phase !== 'form' || !verifiedWhatsapp) return;
     (async () => {
       try {
-        const saved = await readFormState(leadId);
+        const saved = await readFormState(verifiedWhatsapp);
         if (saved && typeof saved === 'object') {
           setForm((prev) => ({ ...prev, ...(saved as Partial<StoredFormState>) }));
         }
-        const fields = await listSavedFields(leadId);
+        const fields = await listSavedFields(verifiedWhatsapp);
         const restored: Partial<Record<DocFieldName, File | null>> = {};
         for (const f of fields) {
-          const file = await readFile(leadId, f);
+          const file = await readFile(verifiedWhatsapp, f);
           if (file) restored[f as DocFieldName] = file;
         }
         if (Object.keys(restored).length) {
@@ -116,13 +123,16 @@ export function LeadDocumentsUploadView({ leadId }: ViewProps) {
         // Sem persistência local — não é fatal.
       }
     })();
-  }, [leadId, phase]);
+  }, [verifiedWhatsapp, phase]);
 
   // Persistir estado do formulário sempre que mudar.
   useEffect(() => {
-    if (phase !== 'form') return;
-    saveFormState(leadId, form as unknown as Record<string, unknown>).catch(() => undefined);
-  }, [leadId, phase, form]);
+    if (phase !== 'form' || !verifiedWhatsapp) return;
+    saveFormState(
+      verifiedWhatsapp,
+      form as unknown as Record<string, unknown>,
+    ).catch(() => undefined);
+  }, [verifiedWhatsapp, phase, form]);
 
   const requiredFields = useMemo<DocFieldName[]>(() => {
     if (!form.vinculoLaboral) return [];
@@ -141,40 +151,50 @@ export function LeadDocumentsUploadView({ leadId }: ViewProps) {
     form.vinculoLaboral === 'Contrato temporário' ||
     form.vinculoLaboral === 'Recibos verdes';
 
-  const handleVerify = useCallback(async () => {
-    const wa = digitsOnly(whatsapp);
-    if (wa.length < 6) {
-      setVerifyError('Indica o teu número de WhatsApp.');
-      return;
-    }
-    setVerifying(true);
-    setVerifyError('');
-    try {
-      const data = await api.leadDocuments.verify(leadId, { whatsapp: wa });
-      setLead(data.lead);
-      setPartner(data.partner);
-      setDocsSentAt(data.docsSentAt);
-      setForm((prev) => ({ ...prev, nome: data.lead.name }));
-      setPhase('form');
-    } catch (err) {
-      const e = err as ApiHttpError;
-      if (e.status === 403) {
-        setVerifyError(
-          'O número de WhatsApp não coincide com o registado para este pedido. Confirma se introduziste o mesmo número que usaste no questionário de financiamento.',
-        );
-      } else if (e.status === 404) {
-        setVerifyError(
-          'Não encontrámos este pedido. Verifica o link recebido por email — pode estar truncado.',
-        );
-      } else {
-        setVerifyError(
-          getUserFacingApiError(e, { context: 'Ao confirmar o teu WhatsApp' }),
-        );
+  const handleVerify = useCallback(
+    async (rawWhatsapp?: string) => {
+      const wa = digitsOnly(rawWhatsapp ?? whatsapp);
+      if (wa.length < 6) {
+        setVerifyError('Indica o teu número de WhatsApp.');
+        return;
       }
-    } finally {
-      setVerifying(false);
-    }
-  }, [leadId, whatsapp]);
+      setVerifying(true);
+      setVerifyError('');
+      try {
+        const data = await api.leadDocuments.verify({ whatsapp: wa });
+        setVerifiedWhatsapp(wa);
+        setLead(data.lead);
+        setPartner(data.partner);
+        setDocsSentAt(data.docsSentAt);
+        setForm((prev) => ({ ...prev, nome: data.lead.name }));
+        setPhase('form');
+      } catch (err) {
+        const e = err as ApiHttpError;
+        if (e.status === 404) {
+          setVerifyError(
+            'Não encontrámos nenhum pedido de financiamento para este número. Confirma se introduziste o mesmo WhatsApp que usaste no questionário — se ainda não fizeste, faz o questionário primeiro em /financiamento.',
+          );
+        } else {
+          setVerifyError(
+            getUserFacingApiError(e, { context: 'Ao confirmar o teu WhatsApp' }),
+          );
+        }
+      } finally {
+        setVerifying(false);
+      }
+    },
+    [whatsapp],
+  );
+
+  // Auto-verify quando a página é aberta com `?whatsapp=...` (vindo do final do quiz).
+  const autoVerifyAttempted = useRef(false);
+  useEffect(() => {
+    if (autoVerifyAttempted.current) return;
+    if (!initialWhatsapp || initialWhatsapp.length < 6) return;
+    autoVerifyAttempted.current = true;
+    void handleVerify(initialWhatsapp);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialWhatsapp]);
 
   const handlePickFile = useCallback(
     async (field: DocFieldName, file: File) => {
@@ -195,26 +215,28 @@ export function LeadDocumentsUploadView({ leadId }: ViewProps) {
         return;
       }
       setFiles((prev) => ({ ...prev, [field]: file }));
+      if (!verifiedWhatsapp) return;
       try {
-        await saveFile(leadId, field, file);
+        await saveFile(verifiedWhatsapp, field, file);
       } catch {
         // IndexedDB indisponível — o ficheiro continua em memória, perde-se ao recarregar.
       }
     },
-    [leadId],
+    [verifiedWhatsapp],
   );
 
   const handleRemoveFile = useCallback(
     async (field: DocFieldName) => {
       setFiles((prev) => ({ ...prev, [field]: null }));
       setFileErrors((prev) => ({ ...prev, [field]: undefined }));
+      if (!verifiedWhatsapp) return;
       try {
-        await deleteFile(leadId, field);
+        await deleteFile(verifiedWhatsapp, field);
       } catch {
         // ignore
       }
     },
-    [leadId],
+    [verifiedWhatsapp],
   );
 
   const handleToggleSemDocs = useCallback((label: string, checked: boolean) => {
@@ -256,11 +278,15 @@ export function LeadDocumentsUploadView({ leadId }: ViewProps) {
       setSubmitError(error);
       return;
     }
+    if (!verifiedWhatsapp) {
+      setSubmitError('Sessão expirada. Confirma o teu WhatsApp novamente.');
+      return;
+    }
     setSubmitError('');
     setSubmitting(true);
     try {
       const fd = new FormData();
-      fd.append('whatsapp', digitsOnly(whatsapp));
+      fd.append('whatsapp', verifiedWhatsapp);
       fd.append('mode', mode);
       fd.append('nome', form.nome);
       fd.append('estado_civil', form.estadoCivil);
@@ -277,9 +303,9 @@ export function LeadDocumentsUploadView({ leadId }: ViewProps) {
         const f = files[field];
         if (f) fd.append(field, f, f.name);
       }
-      await api.leadDocuments.submit(leadId, fd);
+      await api.leadDocuments.submit(fd);
       try {
-        await clearLeadStorage(leadId);
+        await clearLeadStorage(verifiedWhatsapp);
       } catch {
         // ignore
       }
@@ -301,7 +327,7 @@ export function LeadDocumentsUploadView({ leadId }: ViewProps) {
     } finally {
       setSubmitting(false);
     }
-  }, [validate, whatsapp, mode, form, requiredFields, files, leadId]);
+  }, [validate, verifiedWhatsapp, mode, form, requiredFields, files]);
 
   const handleStartNewMode = useCallback(
     (nextMode: LeadDocumentSubmissionMode) => {

@@ -5,9 +5,11 @@
  * — usamos IndexedDB. O Safari iOS não consegue guardar `File`/`Blob` em IndexedDB, por isso
  * guardamos `ArrayBuffer` + metadados e reconstruímos o `File` na leitura.
  *
- * Tudo o que está aqui corre apenas no browser; chamar do server seria um erro porque
- * `indexedDB` é `undefined` lá. As funções devolvem promessas que rejeitam silenciosamente
- * em SSR, deixando o caller decidir o fallback.
+ * A chave de partição é o WhatsApp em dígitos: assim o mesmo dispositivo lembra-se do que já
+ * anexou independentemente de já ter feito o `verify` no servidor. Tudo o que está aqui
+ * corre apenas no browser; chamar do server seria um erro porque `indexedDB` é `undefined`
+ * lá. As funções devolvem promessas que rejeitam silenciosamente em SSR, deixando o caller
+ * decidir o fallback.
  */
 
 const DB_NAME = 'comunidade_lead_documents';
@@ -42,17 +44,17 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
-function fileKey(leadId: string, fieldName: string): string {
-  return `${leadId}__${fieldName}`;
+function fileKey(whatsapp: string, fieldName: string): string {
+  return `${whatsapp}__${fieldName}`;
 }
 
-function formKey(leadId: string): string {
-  return `${leadId}${FORM_KEY_SUFFIX}`;
+function formKey(whatsapp: string): string {
+  return `${whatsapp}${FORM_KEY_SUFFIX}`;
 }
 
 /** Guarda (substitui) o ficheiro do campo. */
 export async function saveFile(
-  leadId: string,
+  whatsapp: string,
   fieldName: string,
   file: File,
 ): Promise<void> {
@@ -61,7 +63,7 @@ export async function saveFile(
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE, 'readwrite');
     tx.objectStore(STORE).put({
-      key: fileKey(leadId, fieldName),
+      key: fileKey(whatsapp, fieldName),
       buffer,
       fileName: file.name || 'documento',
       mimeType: file.type || 'application/octet-stream',
@@ -73,13 +75,13 @@ export async function saveFile(
 
 /** Lê o ficheiro do campo. Devolve `null` se não existir. */
 export async function readFile(
-  leadId: string,
+  whatsapp: string,
   fieldName: string,
 ): Promise<File | null> {
   const db = await openDb();
   return new Promise<File | null>((resolve, reject) => {
     const tx = db.transaction(STORE, 'readonly');
-    const req = tx.objectStore(STORE).get(fileKey(leadId, fieldName));
+    const req = tx.objectStore(STORE).get(fileKey(whatsapp, fieldName));
     req.onsuccess = () => {
       const row = req.result as StoredFile | undefined;
       if (!row) return resolve(null);
@@ -90,14 +92,14 @@ export async function readFile(
   });
 }
 
-/** Lista os `fieldName` já guardados localmente para este lead. */
-export async function listSavedFields(leadId: string): Promise<string[]> {
+/** Lista os `fieldName` já guardados localmente para este WhatsApp. */
+export async function listSavedFields(whatsapp: string): Promise<string[]> {
   const db = await openDb();
   return new Promise<string[]>((resolve, reject) => {
     const tx = db.transaction(STORE, 'readonly');
     const req = tx.objectStore(STORE).getAllKeys();
     req.onsuccess = () => {
-      const prefix = `${leadId}__`;
+      const prefix = `${whatsapp}__`;
       const all = (req.result ?? []) as IDBValidKey[];
       const fields: string[] = [];
       for (const k of all) {
@@ -112,32 +114,32 @@ export async function listSavedFields(leadId: string): Promise<string[]> {
 }
 
 /** Apaga apenas um campo. */
-export async function deleteFile(leadId: string, fieldName: string): Promise<void> {
+export async function deleteFile(whatsapp: string, fieldName: string): Promise<void> {
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE, 'readwrite');
-    tx.objectStore(STORE).delete(fileKey(leadId, fieldName));
+    tx.objectStore(STORE).delete(fileKey(whatsapp, fieldName));
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
 }
 
-/** Apaga todos os ficheiros e estado do formulário deste lead (após envio). */
-export async function clearLeadStorage(leadId: string): Promise<void> {
+/** Apaga todos os ficheiros e estado do formulário deste WhatsApp (após envio). */
+export async function clearLeadStorage(whatsapp: string): Promise<void> {
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE, 'readwrite');
     const store = tx.objectStore(STORE);
     const req = store.getAllKeys();
     req.onsuccess = () => {
-      const prefix = `${leadId}__`;
+      const prefix = `${whatsapp}__`;
       const all = (req.result ?? []) as IDBValidKey[];
       for (const k of all) {
         if (typeof k === 'string' && k.startsWith(prefix)) {
           store.delete(k);
         }
       }
-      store.delete(formKey(leadId));
+      store.delete(formKey(whatsapp));
     };
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
@@ -146,14 +148,14 @@ export async function clearLeadStorage(leadId: string): Promise<void> {
 
 /** Guarda o estado do formulário (estado civil, vínculo, etc.). */
 export async function saveFormState(
-  leadId: string,
+  whatsapp: string,
   formState: Record<string, unknown>,
 ): Promise<void> {
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE, 'readwrite');
     tx.objectStore(STORE).put({
-      key: formKey(leadId),
+      key: formKey(whatsapp),
       formState,
     } satisfies StoredForm);
     tx.oncomplete = () => resolve();
@@ -163,12 +165,12 @@ export async function saveFormState(
 
 /** Lê o estado do formulário. Devolve `null` se não houver nada guardado. */
 export async function readFormState(
-  leadId: string,
+  whatsapp: string,
 ): Promise<Record<string, unknown> | null> {
   const db = await openDb();
   return new Promise<Record<string, unknown> | null>((resolve, reject) => {
     const tx = db.transaction(STORE, 'readonly');
-    const req = tx.objectStore(STORE).get(formKey(leadId));
+    const req = tx.objectStore(STORE).get(formKey(whatsapp));
     req.onsuccess = () => {
       const row = req.result as StoredForm | undefined;
       resolve(row ? row.formState : null);

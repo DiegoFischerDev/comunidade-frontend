@@ -2362,8 +2362,8 @@ export const api = {
   },
 
   leadDocuments: {
-    /** Confirma o WhatsApp do lead e devolve dados para a página de upload (parceiro + lead). */
-    verify: (leadId: string, params: { whatsapp: string }) =>
+    /** Localiza o lead pelo WhatsApp e devolve dados para a página de upload (parceiro + lead). */
+    verify: (params: { whatsapp: string }) =>
       request<{
         lead: { id: string; name: string; email: string };
         partner: {
@@ -2377,15 +2377,18 @@ export const api = {
         docsSentAt: string | null;
         lastSubmissionAt: string | null;
         submissionsCount: number;
-      }>(`/lead-documents/${leadId}/verify`, {
+      }>(`/lead-documents/verify`, {
         method: 'POST',
         body: JSON.stringify(params),
         token: null,
       }),
-    /** Envia o formulário multipart (ficheiros + dados declarados) ao backend. */
-    submit: (leadId: string, formData: FormData) =>
+    /**
+     * Envia o formulário multipart (ficheiros + dados declarados). O `formData` deve incluir
+     * obrigatoriamente `whatsapp` (digits only) — o backend localiza o lead a partir dele.
+     */
+    submit: (formData: FormData) =>
       requestFormData<{ ok: true; documentCount: number }>(
-        `/lead-documents/${leadId}/submit`,
+        `/lead-documents/submit`,
         formData,
         { token: null },
       ),
@@ -2441,7 +2444,7 @@ export const api = {
         foreignCapital?: 'SIM' | 'NAO';
       };
     }) =>
-      request<{ ok: true }>(`/financing-quiz/request-atendimento`, {
+      request<{ ok: true; whatsapp: string }>(`/financing-quiz/request-atendimento`, {
         method: 'POST',
         body: JSON.stringify(params),
         token: null,

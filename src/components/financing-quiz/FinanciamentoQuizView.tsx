@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { KiwiFloatInput } from '@/components/membership/KiwiFloatInput';
 import { api, type ApiHttpError, getUserFacingApiError } from '@/lib/api';
@@ -15,11 +17,12 @@ import {
   type QuizStepId,
 } from '@/lib/financing-quiz';
 
-type Phase = 'intro' | 'quiz' | 'result' | 'sent';
+type Phase = 'intro' | 'quiz' | 'result';
 
 type SubmitResult = Awaited<ReturnType<typeof api.financingQuiz.submit>>;
 
 export function FinanciamentoQuizView() {
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>('intro');
   const [answers, setAnswers] = useState<FinancingAnswers>({});
   const [currentStep, setCurrentStep] = useState<QuizStepId>('AWAIT_RESIDENCE');
@@ -52,10 +55,6 @@ export function FinanciamentoQuizView() {
   }, [currentStep, phase]);
 
   const progress = useMemo(() => estimateProgress(answers), [answers]);
-
-  function handleChoose(stepId: QuizStepId, value: string) {
-    setAnswers((prev) => applyAnswer(prev, stepId, value));
-  }
 
   function handleBack() {
     const answered = answeredSteps(answers);
@@ -128,7 +127,7 @@ export function FinanciamentoQuizView() {
     setAtendimentoError('');
     setAtendimentoSubmitting(true);
     try {
-      await api.financingQuiz.requestAtendimento({
+      const res = await api.financingQuiz.requestAtendimento({
         name: name.trim(),
         email: email.trim(),
         whatsapp,
@@ -144,20 +143,25 @@ export function FinanciamentoQuizView() {
           foreignCapital: answers.foreignCapital,
         },
       });
-      setPhase('sent');
+      // Não enviamos email com os dados do parceiro — encaminhamos o lead diretamente para
+      // a página de upload, onde verá os contactos da gestora e poderá anexar a documentação.
+      router.push(`/financiamento/documentos?whatsapp=${encodeURIComponent(res.whatsapp)}`);
     } catch (err) {
       setAtendimentoError(
         getUserFacingApiError(err as ApiHttpError, {
           context: 'Ao solicitar a gestora',
         }),
       );
-    } finally {
       setAtendimentoSubmitting(false);
     }
+    // Não fazemos `finally` porque, no caminho feliz, vamos sair desta página via router.push
+    // — manter `submitting` activo evita o utilizador clicar duas vezes durante a navegação.
   }
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
+      <AlreadyAnsweredBanner />
+
       <header>
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
           Financiar casa em Portugal
@@ -190,7 +194,7 @@ export function FinanciamentoQuizView() {
             }}
             onBack={handleBack}
           />
-        ) : phase === 'result' ? (
+        ) : (
           <ResultPanel
             result={result!}
             name={name}
@@ -215,8 +219,6 @@ export function FinanciamentoQuizView() {
             error={atendimentoError}
             onSubmit={handleRequestAtendimento}
           />
-        ) : (
-          <SentPanel email={email} />
         )}
       </div>
 
@@ -224,6 +226,50 @@ export function FinanciamentoQuizView() {
         Os resultados são indicativos e não substituem a análise de um gestor de crédito.
       </p>
     </div>
+  );
+}
+
+/** Banner no topo do quiz para quem já respondeu e só quer enviar a documentação. */
+function AlreadyAnsweredBanner() {
+  return (
+    <Link
+      href="/financiamento/documentos"
+      className="group flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm shadow-sm transition hover:border-amber-400 hover:bg-amber-100"
+    >
+      <span
+        aria-hidden
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-200 text-amber-800"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-5 w-5"
+        >
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+      </span>
+      <span className="flex-1">
+        <span className="block font-semibold text-amber-900">
+          Já fiz o questionário e quero enviar os documentos para análise
+        </span>
+        <span className="block text-xs text-amber-800">
+          Avança direto para a página de envio (confirmas o WhatsApp e abrimos o teu formulário).
+        </span>
+      </span>
+      <span
+        aria-hidden
+        className="text-amber-700 transition-transform group-hover:translate-x-0.5"
+      >
+        →
+      </span>
+    </Link>
   );
 }
 
@@ -247,7 +293,8 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         <Bullet>Apenas 4 a 6 perguntas, todas simples (Sim/Não).</Bullet>
         <Bullet>Resultado imediato, com um exemplo prático.</Bullet>
         <Bullet>
-          Se quiseres avançar, deixas o teu email e recebes a foto + contactos da gestora.
+          Se quiseres avançar, deixas nome, email e WhatsApp — e seguimos logo para o envio
+          de documentos com a gestora atribuída.
         </Bullet>
       </ul>
 
@@ -420,8 +467,8 @@ function ResultPanel({
             Quer falar com uma gestora de crédito gratuitamente?
           </p>
           <p className="mt-1 text-sm leading-relaxed text-amber-900/90">
-            Indica o teu nome, email e WhatsApp. Vais receber por email a foto, os contactos da
-            gestora atribuída e o link para enviar a tua documentação.
+            Indica o teu nome, email e WhatsApp. A seguir abrimos a página onde vês os
+            contactos da gestora atribuída e podes enviar a tua documentação.
           </p>
 
           <div className="mt-4 space-y-3">
@@ -462,7 +509,7 @@ function ResultPanel({
             disabled={submitting}
             className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-amber-600 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {submitting ? 'A enviar email…' : 'Receber dados da gestora por email'}
+            {submitting ? 'A preparar a tua página…' : 'Avançar para envio de documentos'}
           </button>
           <p className="mt-2 text-center text-[11px] text-amber-900/80">
             O serviço da gestora é gratuito — quem paga a comissão são os bancos.
@@ -483,42 +530,6 @@ function ResultPanel({
           .
         </div>
       )}
-    </div>
-  );
-}
-
-function SentPanel({ email }: { email: string }) {
-  return (
-    <div className="px-6 py-12 text-center sm:px-10 sm:py-14">
-      <div
-        aria-hidden
-        className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-8 w-8"
-        >
-          <path d="M4 4h16v16H4z" />
-          <path d="M22 6l-10 7L2 6" />
-        </svg>
-      </div>
-      <h2 className="mt-5 text-2xl font-semibold tracking-tight text-zinc-900">
-        Email enviado!
-      </h2>
-      <p className="mt-3 text-sm leading-relaxed text-zinc-700">
-        Acabámos de enviar para <strong className="text-zinc-900">{email}</strong> a foto, os
-        contactos da gestora atribuída e o link para enviar os teus documentos. A gestora entra em
-        contacto pelo WhatsApp em até 4 dias úteis após receber a documentação.
-      </p>
-      <p className="mt-4 text-xs text-zinc-500">
-        Se não vires o email em alguns minutos, verifica a pasta de spam ou promoções.
-      </p>
     </div>
   );
 }
