@@ -3,7 +3,7 @@
 import ChecklistPage from '@/app/(dashboard)/dashboard/checklist/checklist-page';
 
 type Props = {
-  /** Margem superior da secção (ex.: `mt-0` na página dedicada `/plano-de-imigracao`). */
+  /** Margem superior da secção. */
   className?: string;
 };
 

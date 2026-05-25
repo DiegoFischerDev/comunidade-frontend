@@ -19,7 +19,6 @@ import {
 } from '@/lib/auth-ui-events';
 import { isActiveMember } from '@/lib/membership-access';
 import { SidebarWhatsAppGroupLinks } from '@/components/navigation/SidebarWhatsAppGroupLinks';
-import { partnerPublicPagePath } from '@/lib/partner-public-shared';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   LoginMethodSwitchLink,
@@ -391,14 +390,6 @@ export default function DashboardLayout({
   const isCasasPath =
     pathname === '/dashboard/casas' || pathname.startsWith('/dashboard/casas/');
   const isBusinessPath = pathname === '/dashboard/business';
-  const partnerStaticPagePath =
-    partnerId && partnerPublicSlug
-      ? partnerPublicPagePath(partnerId, partnerPublicSlug)
-      : null;
-  const isPartnerMyPagePath =
-    Boolean(partnerStaticPagePath) &&
-    (pathname === partnerStaticPagePath ||
-      (partnerId ? pathname === `/partner/${partnerId}` : false));
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -487,9 +478,9 @@ export default function DashboardLayout({
             Imóveis
           </Link>
           <Link
-            href="/relocation/servicos"
+            href="/servicos"
             className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/relocation/servicos'
+              pathname === '/servicos'
                 ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
                 : 'text-zinc-800 hover:bg-zinc-100'
             }`}
@@ -514,21 +505,6 @@ export default function DashboardLayout({
                 <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
                   Menu de parceiro
                 </p>
-                {partnerStaticPagePath ? (
-                  <a
-                    href={partnerStaticPagePath}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`block rounded-md px-3 py-2 text-sm ${
-                      isPartnerMyPagePath
-                        ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                        : 'text-zinc-800 hover:bg-zinc-100'
-                    }`}
-                    aria-label="Abrir a minha página pública numa nova aba"
-                  >
-                    Minha página
-                  </a>
-                ) : null}
                 <Link
                   href="/dashboard/casas"
                   className={`block rounded-md px-3 py-2 text-sm ${
@@ -549,45 +525,10 @@ export default function DashboardLayout({
                 >
                   Minha empresa
                 </Link>
-                <Link
-                  href="/dashboard/my-services"
-                  className={`block rounded-md px-3 py-2 text-sm ${
-                    pathname === '/dashboard/my-services'
-                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                      : 'text-zinc-800 hover:bg-zinc-100'
-                  }`}
-                >
-                  Meus serviços
-                </Link>
               </div>
             </>
           ) : (
             <>
-          {user && user.role !== 'PARTNER' && (user.role === 'ADMIN' || isActiveMember(user)) ? (
-            <>
-              <Link
-                href="/plano-de-imigracao"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/plano-de-imigracao'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Plano de imigração
-              </Link>
-              <Link
-                href="/psp"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/psp' || pathname.startsWith('/psp/')
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Guia PSP
-              </Link>
-            </>
-          ) : null}
-
           {isActiveMember(user) && user?.role !== 'PARTNER' && (
             <Link
               href="/dashboard/my-referrals"
@@ -665,16 +606,6 @@ export default function DashboardLayout({
                 Links rastreados
               </Link>
               <Link
-                href="/dashboard/admin/recommended-services"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/admin/recommended-services'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Serviços indicados
-              </Link>
-              <Link
                 href="/dashboard/admin/gatilhos"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/gatilhos'
@@ -683,17 +614,6 @@ export default function DashboardLayout({
                 }`}
               >
                 Gatilhos (WhatsApp)
-              </Link>
-              <Link
-                href="/dashboard/admin/commissions"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/admin/commissions' ||
-                  pathname === '/dashboard/admin/services'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Comissões
               </Link>
               <Link
                 href="/dashboard/categories"
@@ -715,16 +635,6 @@ export default function DashboardLayout({
               >
                 Parceiros
               </Link>
-              <Link
-                href="/dashboard/affiliates"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/affiliates'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Afiliados
-              </Link>
             </>
           )}
           {user?.role === 'PARTNER' && !isRelocationPartner ? (
@@ -732,21 +642,6 @@ export default function DashboardLayout({
               <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
                 Menu de parceiro
               </p>
-              {partnerStaticPagePath ? (
-                <a
-                  href={partnerStaticPagePath}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`block rounded-md px-3 py-2 text-sm ${
-                    isPartnerMyPagePath
-                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                      : 'text-zinc-800 hover:bg-zinc-100'
-                  }`}
-                  aria-label="Abrir a minha página pública numa nova aba"
-                >
-                  Minha página
-                </a>
-              ) : null}
               <Link
                 href="/dashboard/business"
                 className={`block rounded-md px-3 py-2 text-sm ${
@@ -756,16 +651,6 @@ export default function DashboardLayout({
                 }`}
               >
                 Minha empresa
-              </Link>
-              <Link
-                href="/dashboard/my-services"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/my-services'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Meus serviços
               </Link>
             </div>
           ) : null}

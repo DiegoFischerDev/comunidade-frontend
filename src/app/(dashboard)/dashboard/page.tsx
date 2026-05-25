@@ -232,7 +232,7 @@ export default function DashboardPage() {
             className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
           >
             <Link
-              href="/relocation/servicos"
+              href="/servicos"
               className="group relative block min-w-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
               aria-label="Serviços que indico"
             >

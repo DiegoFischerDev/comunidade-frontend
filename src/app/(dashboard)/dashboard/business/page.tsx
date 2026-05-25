@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api, getAuthToken } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { CardButton } from '@/components/ui/CardButton';
+import { PartnerServicesManager } from '@/components/partner/PartnerServicesManager';
 
 export default function BusinessPage() {
   const { user } = useAuth();
@@ -727,72 +729,13 @@ export default function BusinessPage() {
           </div>
 
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-            <h2 className="text-sm font-semibold text-zinc-900">
-              Dados de faturação (Opcional)
-            </h2>
-            <p className="mt-1 text-xs text-zinc-600">
-              Estes dados serão usados quando você marcar &quot;Quero fatura&quot; no pagamento
-              da comissão.
-            </p>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-zinc-700">
-                  Nome / Empresa
-                </label>
-                <input
-                  type="text"
-                  value={billingName}
-                  onChange={(e) => setBillingName(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-zinc-700">
-                  NIF
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={billingNif}
-                  onChange={(e) => setBillingNif(e.target.value)}
-                  placeholder="9 dígitos"
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-zinc-700">
-                  Morada
-                </label>
-                <input
-                  type="text"
-                  value={billingAddress}
-                  onChange={(e) => setBillingAddress(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-zinc-700">
-                  Código postal
-                </label>
-                <input
-                  type="text"
-                  value={billingPostalCode}
-                  onChange={(e) => setBillingPostalCode(e.target.value)}
-                  placeholder="0000-000"
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-            </div>
+            <PartnerServicesManager />
           </div>
 
           <div>
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-            >
+            <CardButton type="submit" variant="secondary" loading={saving}>
               {saving ? 'Salvando…' : 'Salvar alterações'}
-            </button>
+            </CardButton>
           </div>
         </form>
       )}
