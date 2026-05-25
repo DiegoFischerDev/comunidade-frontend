@@ -36,8 +36,17 @@ export default function AdminGatilhosPage() {
     <div className="w-full min-w-0 max-w-full">
       <h1 className="text-2xl font-semibold text-zinc-900">Gatilhos (WhatsApp)</h1>
       <p className="mt-2 max-w-3xl text-sm text-zinc-600">
-        Lista dos gatilhos atualmente suportados e o que cada um dispara. Use para
-        manutenção e suporte.
+        Lista dos gatilhos atualmente suportados e o que cada um dispara. Use para manutenção e
+        suporte. O quiz de financiamento foi movido para o dashboard público{' '}
+        <a
+          href="/financiamento"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-amber-800 underline-offset-2 hover:underline"
+        >
+          /financiamento
+        </a>{' '}
+        e já não corre no WhatsApp.
       </p>
 
       <div className="mt-6 max-w-2xl">

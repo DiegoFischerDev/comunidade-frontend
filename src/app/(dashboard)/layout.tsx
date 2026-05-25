@@ -478,6 +478,16 @@ export default function DashboardLayout({
             Imóveis
           </Link>
           <Link
+            href="/financiamento"
+            className={`block rounded-md px-3 py-2 text-sm ${
+              pathname === '/financiamento'
+                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                : 'text-zinc-800 hover:bg-zinc-100'
+            }`}
+          >
+            Financiar casa em PT
+          </Link>
+          <Link
             href="/servicos"
             className={`block rounded-md px-3 py-2 text-sm ${
               pathname === '/servicos'
@@ -584,16 +594,6 @@ export default function DashboardLayout({
                 }`}
               >
                 Links rastreados
-              </Link>
-              <Link
-                href="/dashboard/admin/gatilhos"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/admin/gatilhos'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
-                }`}
-              >
-                Gatilhos (WhatsApp)
               </Link>
               <Link
                 href="/dashboard/categories"

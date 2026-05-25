@@ -202,102 +202,138 @@ export default function PublicRelocationHousesListPage() {
 
   const filterBar = useMemo(
     () => (
-      <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end sm:gap-4">
-        <div className="min-w-0 flex-1">
-          <RelocationCityCombobox
-            id="filter-cidade"
-            label="Cidade"
-            value={cidade}
-            onChange={(next) => setRouteFilters({ cidade: next, tipologia, finalidade, page: 1 })}
-            allowEmpty
-            emptyLabel="Todas"
-            variant="amber"
-          />
+      <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <div
+          role="tablist"
+          aria-label="Finalidade do imóvel"
+          className="flex w-full max-w-md rounded-xl border border-zinc-200 bg-zinc-100 p-1"
+        >
+          {RELOCATION_BUSINESS_TYPE_OPTIONS.map((key) => {
+            const selected = finalidade === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() =>
+                  setRouteFilters({
+                    cidade,
+                    tipologia,
+                    finalidade: key,
+                    valorMin,
+                    valorMax,
+                    page: 1,
+                  })
+                }
+                className={
+                  selected
+                    ? "flex-1 rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition"
+                    : "flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-zinc-600 transition hover:bg-white/80 hover:text-zinc-900"
+                }
+              >
+                {BUSINESS_TYPE_TAB_CLASS[key]}
+              </button>
+            );
+          })}
         </div>
-        <div className="min-w-0 flex-1">
-          <label
-            className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500"
-            htmlFor="filter-tipologia"
-          >
-            Tipologia
-          </label>
-          <select
-            id="filter-tipologia"
-            value={tipologia}
-            onChange={(e) =>
-              setRouteFilters({ cidade, tipologia: e.target.value, finalidade, page: 1 })
-            }
-            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-          >
-            <option value="">Todas</option>
-            {RELOCATION_TYPOLOGY_OPTIONS.map((key) => (
-              <option key={key} value={key}>
-                {RELOCATION_TYPOLOGY_LABELS[key] ?? key}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="min-w-0 flex-1">
-          <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500">
-            Valor (EUR)
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              inputMode="numeric"
-              type="number"
-              min={0}
-              step={1}
-              value={valorMin}
-              onChange={(e) =>
-                setRouteFilters({
-                  cidade,
-                  tipologia,
-                  finalidade,
-                  valorMin: e.target.value,
-                  page: 1,
-                })
-              }
-              placeholder="Mín."
-              aria-label="Valor mínimo"
-              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-            />
-            <input
-              inputMode="numeric"
-              type="number"
-              min={0}
-              step={1}
-              value={valorMax}
-              onChange={(e) =>
-                setRouteFilters({
-                  cidade,
-                  tipologia,
-                  finalidade,
-                  valorMax: e.target.value,
-                  page: 1,
-                })
-              }
-              placeholder="Máx."
-              aria-label="Valor máximo"
-              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+          <div className="min-w-0 flex-1">
+            <RelocationCityCombobox
+              id="filter-cidade"
+              label="Cidade"
+              value={cidade}
+              onChange={(next) => setRouteFilters({ cidade: next, tipologia, finalidade, page: 1 })}
+              allowEmpty
+              emptyLabel="Todas"
+              variant="amber"
             />
           </div>
+          <div className="min-w-0 flex-1">
+            <label
+              className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500"
+              htmlFor="filter-tipologia"
+            >
+              Tipologia
+            </label>
+            <select
+              id="filter-tipologia"
+              value={tipologia}
+              onChange={(e) =>
+                setRouteFilters({ cidade, tipologia: e.target.value, finalidade, page: 1 })
+              }
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            >
+              <option value="">Todas</option>
+              {RELOCATION_TYPOLOGY_OPTIONS.map((key) => (
+                <option key={key} value={key}>
+                  {RELOCATION_TYPOLOGY_LABELS[key] ?? key}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="min-w-0 flex-1">
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Valor (EUR)
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                inputMode="numeric"
+                type="number"
+                min={0}
+                step={1}
+                value={valorMin}
+                onChange={(e) =>
+                  setRouteFilters({
+                    cidade,
+                    tipologia,
+                    finalidade,
+                    valorMin: e.target.value,
+                    page: 1,
+                  })
+                }
+                placeholder="Mín."
+                aria-label="Valor mínimo"
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              />
+              <input
+                inputMode="numeric"
+                type="number"
+                min={0}
+                step={1}
+                value={valorMax}
+                onChange={(e) =>
+                  setRouteFilters({
+                    cidade,
+                    tipologia,
+                    finalidade,
+                    valorMax: e.target.value,
+                    page: 1,
+                  })
+                }
+                placeholder="Máx."
+                aria-label="Valor máximo"
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              />
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              setRouteFilters({
+                cidade: "",
+                tipologia: "",
+                valorMin: "",
+                valorMax: "",
+                finalidade,
+                page: 1,
+              })
+            }
+            className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100"
+          >
+            Limpar filtros
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() =>
-            setRouteFilters({
-              cidade: "",
-              tipologia: "",
-              valorMin: "",
-              valorMax: "",
-              finalidade,
-              page: 1,
-            })
-          }
-          className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100"
-        >
-          Limpar filtros
-        </button>
       </div>
     ),
     [cidade, tipologia, finalidade, valorMin, valorMax, setRouteFilters, router],
@@ -399,41 +435,6 @@ export default function PublicRelocationHousesListPage() {
           </a>
         </div>
       </section>
-
-      <div
-        role="tablist"
-        aria-label="Finalidade do imóvel"
-        className="flex w-full max-w-md rounded-xl border border-zinc-200 bg-zinc-100 p-1 shadow-sm"
-      >
-        {RELOCATION_BUSINESS_TYPE_OPTIONS.map((key) => {
-          const selected = finalidade === key;
-          return (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              onClick={() =>
-                setRouteFilters({
-                  cidade,
-                  tipologia,
-                  finalidade: key,
-                  valorMin,
-                  valorMax,
-                  page: 1,
-                })
-              }
-              className={
-                selected
-                  ? "flex-1 rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition"
-                  : "flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-zinc-600 transition hover:bg-white/80 hover:text-zinc-900"
-              }
-            >
-              {BUSINESS_TYPE_TAB_CLASS[key]}
-            </button>
-          );
-        })}
-      </div>
 
       {filterBar}
 

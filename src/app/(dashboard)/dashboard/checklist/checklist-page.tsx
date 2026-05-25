@@ -1021,7 +1021,7 @@ export default function ChecklistPage() {
         >
           <div>
             <h1 className="hidden text-2xl font-semibold text-zinc-900 print:block md:block">
-              Meu Plano de Imigração
+              Plano de Imigração
             </h1>
             <p className="mt-1 text-sm text-zinc-600">
               Organize teu plano e acompanhe as etapas do processo até se regularizar em Portugal.

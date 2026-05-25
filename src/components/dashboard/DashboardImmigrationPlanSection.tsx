@@ -12,7 +12,7 @@ export function DashboardImmigrationPlanSection({ className = 'mt-8' }: Props) {
   return (
     <section className={className} aria-labelledby="dashboard-immigration-plan-heading">
       <h2 id="dashboard-immigration-plan-heading" className="sr-only">
-        Meu plano de imigração
+        Plano de imigração
       </h2>
       <ChecklistPage />
     </section>

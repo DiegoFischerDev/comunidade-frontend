@@ -18,6 +18,7 @@ const RESERVED = new Set(
     'relocation',
     'servicos',
     'agendamento',
+    'financiamento',
     'favicon.ico',
     'robots.txt',
     'sitemap.xml',

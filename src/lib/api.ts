@@ -460,6 +460,7 @@ export const api = {
         id: string;
         status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
       }>('/rafacall/cancel', { method: 'POST', body: JSON.stringify(body) }),
+    // (continua abaixo)
     // ===== Fluxo guest (sem auth) =====
     guestUnlock: (id: string) =>
       request<{
@@ -2442,5 +2443,62 @@ export const api = {
       }),
     deleteMyTicket: (id: string) =>
       request<{ ok: true }>(`/support/tickets/me/${id}`, { method: 'DELETE' }),
+  },
+
+  financingQuiz: {
+    submit: (params: {
+      answers: {
+        residencePt: 'SIM' | 'NAO';
+        mode: 'casado' | 'solteiro';
+        q2?: 'SIM' | 'NAO';
+        q3?: 'SIM' | 'NAO';
+        q5?: 'SIM' | 'NAO';
+        q7?: 'SIM' | 'NAO';
+        capitalOk?: 'SIM' | 'NAO';
+        foreignCtef?: 'SIM' | 'NAO';
+        foreignCapital?: 'SIM' | 'NAO';
+      };
+    }) =>
+      request<{
+        outcome: {
+          key:
+            | '100'
+            | '90'
+            | '80'
+            | 'foreign-80'
+            | 'indef-sem-ctef-10'
+            | 'inviavel'
+            | 'fallback';
+          body: string;
+        };
+        example: { intro?: string; body: string } | null;
+        summary: string;
+        eligibleForAtendimento: boolean;
+      }>(`/financing-quiz/submit`, {
+        method: 'POST',
+        body: JSON.stringify(params),
+        token: null,
+      }),
+    requestAtendimento: (params: {
+      name: string;
+      email: string;
+      whatsapp: string;
+      answers: {
+        residencePt: 'SIM' | 'NAO';
+        mode: 'casado' | 'solteiro';
+        q2?: 'SIM' | 'NAO';
+        q3?: 'SIM' | 'NAO';
+        q5?: 'SIM' | 'NAO';
+        q7?: 'SIM' | 'NAO';
+        capitalOk?: 'SIM' | 'NAO';
+        foreignCtef?: 'SIM' | 'NAO';
+        foreignCapital?: 'SIM' | 'NAO';
+      };
+    }) =>
+      request<{ ok: true }>(`/financing-quiz/request-atendimento`, {
+        method: 'POST',
+        body: JSON.stringify(params),
+        token: null,
+      }),
   },
 };
