@@ -531,59 +531,76 @@ function ResultPanel({
         <form
           onSubmit={onSubmit}
           noValidate
-          className="mt-8 rounded-xl border border-amber-300 bg-amber-50/60 p-5"
+          className="mt-8 overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-b from-emerald-50/70 via-white to-white shadow-sm"
         >
-          <p className="text-sm font-semibold text-amber-900">
-            Quer falar com uma gestora de crédito gratuitamente?
-          </p>
-          <p className="mt-1 text-sm leading-relaxed text-amber-900/90">
-            Indica o teu nome, email e WhatsApp. A seguir abrimos a página onde vês os
-            contactos da gestora atribuída e podes enviar a tua documentação.
-          </p>
-
-          <div className="mt-4 space-y-3">
-            <KiwiFloatInput
-              label="Nome"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoComplete="name"
-              error={nameError}
-              disabled={submitting}
-            />
-            <KiwiFloatInput
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              error={emailError}
-              disabled={submitting}
-            />
-            <LoginWhatsappFields
-              idPrefix="financiamento"
-              value={whatsapp}
-              onChange={setWhatsapp}
-              disabled={submitting}
-              error={whatsappError}
-            />
+          <div className="border-b border-emerald-100 bg-emerald-50/70 px-6 py-3 text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
+              Atendimento gratuito
+            </p>
           </div>
 
-          {error ? (
-            <div className="mt-4 rounded-lg border border-red-200 bg-white p-3 text-sm text-red-800">
-              {error}
-            </div>
-          ) : null}
+          <div className="px-6 py-7 sm:px-8 sm:py-8">
+            <h3 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+              Quero iniciar o meu atendimento com a gestora de crédito
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+              Preenche os teus dados e abrimos a tua página de atendimento com os contactos
+              da gestora atribuída e o envio de documentos para análise.
+            </p>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-amber-600 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {submitting ? 'A preparar a tua página…' : 'Avançar para envio de documentos'}
-          </button>
-          <p className="mt-2 text-center text-[11px] text-amber-900/80">
-            O serviço da gestora é gratuito — quem paga a comissão são os bancos.
-          </p>
+            <ul className="mt-5 grid gap-x-4 gap-y-2 text-sm text-zinc-700 sm:grid-cols-2">
+              <CheckItem>Gestora atribuída automaticamente</CheckItem>
+              <CheckItem>Envio de documentos no momento</CheckItem>
+              <CheckItem>Resposta em até 4 dias úteis</CheckItem>
+              <CheckItem>Sem custos para ti</CheckItem>
+            </ul>
+
+            <div className="mt-6 space-y-3">
+              <KiwiFloatInput
+                label="Nome"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
+                error={nameError}
+                disabled={submitting}
+              />
+              <KiwiFloatInput
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                error={emailError}
+                disabled={submitting}
+              />
+              <LoginWhatsappFields
+                idPrefix="financiamento"
+                value={whatsapp}
+                onChange={setWhatsapp}
+                disabled={submitting}
+                error={whatsappError}
+              />
+            </div>
+
+            {error ? (
+              <div className="mt-4 rounded-lg border border-red-200 bg-white p-3 text-sm text-red-800">
+                {error}
+              </div>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {submitting
+                ? 'A preparar a tua página…'
+                : 'Iniciar atendimento gratuito'}
+            </button>
+            <p className="mt-2 text-center text-[11px] text-zinc-500">
+              O serviço da gestora é gratuito — quem paga a comissão são os bancos.
+            </p>
+          </div>
         </form>
       ) : (
         <div className="mt-8 rounded-xl border border-zinc-200 bg-zinc-50 p-5 text-sm leading-relaxed text-zinc-700">
@@ -612,6 +629,32 @@ function Bullet({ children }: { children: React.ReactNode }) {
         className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700"
       >
         ✓
+      </span>
+      <span>{children}</span>
+    </li>
+  );
+}
+
+/** Mesma estrutura que `Bullet`, mas com tons emerald — usado no painel de atendimento. */
+function CheckItem({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-2">
+      <span
+        aria-hidden
+        className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={3}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-3 w-3"
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
       </span>
       <span>{children}</span>
     </li>

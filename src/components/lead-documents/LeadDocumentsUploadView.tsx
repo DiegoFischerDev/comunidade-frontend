@@ -56,6 +56,7 @@ type StoredFormState = {
   semDocsLabels: string[];
   consent: boolean;
   nome: string;
+  email: string;
 };
 
 const DEFAULT_FORM_STATE: StoredFormState = {
@@ -69,6 +70,7 @@ const DEFAULT_FORM_STATE: StoredFormState = {
   semDocsLabels: [],
   consent: false,
   nome: '',
+  email: '',
 };
 
 function fileTooLarge(file: File): boolean {
@@ -166,7 +168,11 @@ export function LeadDocumentsUploadView() {
         setLead(data.lead);
         setPartner(data.partner);
         setDocsSentAt(data.docsSentAt);
-        setForm((prev) => ({ ...prev, nome: data.lead.name }));
+        setForm((prev) => ({
+          ...prev,
+          nome: prev.nome || data.lead.name,
+          email: prev.email || data.lead.email,
+        }));
         setPhase('form');
       } catch (err) {
         const e = err as ApiHttpError;
@@ -249,6 +255,10 @@ export function LeadDocumentsUploadView() {
   }, []);
 
   const validate = useCallback((): string | null => {
+    if (!form.nome.trim()) return 'Indica o teu nome.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      return 'Indica um email válido.';
+    }
     if (!form.vinculoLaboral) return 'Indica o teu vínculo laboral.';
     if (!form.estadoCivil) return 'Indica o teu estado civil.';
     if (!form.consent) {
@@ -263,6 +273,8 @@ export function LeadDocumentsUploadView() {
     }
     return null;
   }, [
+    form.nome,
+    form.email,
     form.vinculoLaboral,
     form.estadoCivil,
     form.consent,
@@ -289,6 +301,7 @@ export function LeadDocumentsUploadView() {
       fd.append('whatsapp', verifiedWhatsapp);
       fd.append('mode', mode);
       fd.append('nome', form.nome);
+      fd.append('email', form.email);
       fd.append('estado_civil', form.estadoCivil);
       fd.append('num_dependentes', form.numDependentes);
       fd.append('anos_emprego_atual', form.anosEmprego);
@@ -336,6 +349,7 @@ export function LeadDocumentsUploadView() {
       setForm({
         ...DEFAULT_FORM_STATE,
         nome: lead?.name ?? '',
+        email: lead?.email ?? '',
       });
       setSubmitError('');
       setFileErrors({});
@@ -354,11 +368,6 @@ export function LeadDocumentsUploadView() {
           <h1 className="mt-1 text-2xl font-semibold text-zinc-900 sm:text-3xl">
             Envio de documentos
           </h1>
-          <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-zinc-600">
-            Esta plataforma foi criada para te ajudar a organizar e enviar, num único sítio,
-            os documentos necessários para o teu pedido de crédito habitação. Os ficheiros
-            vão direto para o email do teu parceiro de financiamento.
-          </p>
         </header>
 
         {phase === 'gate' ? (
@@ -373,7 +382,6 @@ export function LeadDocumentsUploadView() {
 
         {phase === 'form' && lead && partner ? (
           <FormPanel
-            lead={lead}
             partner={partner}
             docsSentAt={docsSentAt}
             mode={mode}
@@ -453,48 +461,85 @@ function GatePanel(props: {
 
 function PartnerCard({ partner }: { partner: PartnerInfo }) {
   const wa = digitsOnly(partner.whatsapp);
+  const initial = (partner.name?.trim()?.charAt(0) ?? 'P').toUpperCase();
   return (
-    <div className="flex flex-col items-start gap-4 rounded-2xl border border-amber-200 bg-amber-50/50 p-4 sm:flex-row sm:items-center">
-      {partner.logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={partner.logoUrl}
-          alt={partner.name}
-          className="h-16 w-16 shrink-0 rounded-xl border border-amber-200 bg-white object-contain p-1"
-        />
-      ) : null}
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium uppercase tracking-wide text-amber-800">
-          O teu parceiro de financiamento
+    <section className="overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-b from-amber-50 via-white to-white shadow-sm">
+      <div className="border-b border-amber-100 px-6 py-3 text-center">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-700">
+          A tua gestora de crédito
         </p>
-        <p className="text-base font-semibold text-zinc-900">{partner.name}</p>
-        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-700">
+      </div>
+      <div className="px-6 py-8 text-center sm:px-10 sm:py-10">
+        {partner.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={partner.logoUrl}
+            alt={partner.name}
+            className="mx-auto h-32 w-32 rounded-2xl border border-amber-200 bg-white object-contain p-3 shadow-sm sm:h-40 sm:w-40"
+          />
+        ) : (
+          <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-2xl border border-amber-200 bg-white text-4xl font-semibold text-amber-700 shadow-sm sm:h-40 sm:w-40">
+            {initial}
+          </div>
+        )}
+        <h3 className="mt-5 text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+          {partner.name}
+        </h3>
+        {partner.shortDescription ? (
+          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-zinc-600">
+            {partner.shortDescription}
+          </p>
+        ) : null}
+
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
           {wa ? (
             <a
               href={`https://wa.me/${wa}`}
               target="_blank"
               rel="noreferrer"
-              className="font-medium text-emerald-700 hover:underline"
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50"
             >
-              WhatsApp +{wa}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="h-4 w-4"
+                aria-hidden
+              >
+                <path d="M19.05 4.91A10 10 0 0 0 4.1 18.39L2 22l3.7-1.97a10 10 0 0 0 13.35-15.12Zm-7.04 15.31a8.34 8.34 0 0 1-4.25-1.16l-.3-.18-2.2 1.17.59-2.27-.2-.3a8.36 8.36 0 1 1 6.36 2.74Zm4.6-6.21c-.25-.13-1.5-.74-1.73-.83-.23-.08-.4-.13-.57.13-.16.25-.65.83-.8 1-.14.16-.3.19-.55.06-.25-.13-1.07-.39-2.04-1.25-.75-.67-1.26-1.5-1.4-1.75-.15-.25-.02-.39.11-.51.12-.12.25-.3.38-.45.13-.15.16-.25.25-.42.08-.16.04-.31-.02-.44-.06-.13-.57-1.38-.78-1.89-.21-.5-.42-.43-.57-.43h-.49c-.16 0-.42.06-.65.31s-.86.84-.86 2.05.88 2.39 1 2.55c.13.16 1.74 2.66 4.22 3.73.59.26 1.05.41 1.41.52.59.19 1.13.16 1.55.1.47-.07 1.5-.61 1.71-1.2.21-.6.21-1.1.15-1.21-.06-.1-.23-.16-.49-.29Z" />
+              </svg>
+              WhatsApp
             </a>
           ) : null}
           {partner.email ? (
             <a
               href={`mailto:${partner.email}`}
-              className="break-all font-medium text-blue-700 hover:underline"
+              className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition hover:border-zinc-400 hover:bg-zinc-50"
             >
-              {partner.email}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+                aria-hidden
+              >
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <path d="M3 7l9 6 9-6" />
+              </svg>
+              Email
             </a>
           ) : null}
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
 function FormPanel(props: {
-  lead: LeadInfo;
   partner: PartnerInfo;
   docsSentAt: string | null;
   mode: LeadDocumentSubmissionMode;
@@ -513,7 +558,6 @@ function FormPanel(props: {
   onSubmit: () => void;
 }) {
   const {
-    lead,
     partner,
     docsSentAt,
     mode,
@@ -562,7 +606,8 @@ function FormPanel(props: {
         <header>
           <h2 className="text-lg font-semibold text-zinc-900">Os teus dados</h2>
           <p className="mt-0.5 text-xs text-zinc-500">
-            {labelForMode(mode)} — para: {lead.name}
+            Confirma o nome e o email para a gestora — usamos estes dados no email da
+            análise.
           </p>
         </header>
 
@@ -574,9 +619,35 @@ function FormPanel(props: {
               value={form.nome}
               onChange={(e) => setForm({ ...form, nome: e.target.value })}
               className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              autoComplete="name"
             />
           </Field>
 
+          <Field label="Email" htmlFor="lead-docs-email">
+            <input
+              id="lead-docs-email"
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              autoComplete="email"
+              placeholder="exemplo@email.com"
+            />
+          </Field>
+        </div>
+      </section>
+
+      <section className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <header>
+          <h2 className="text-lg font-semibold text-zinc-900">
+            Sobre o teu perfil financeiro
+          </h2>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            {labelForMode(mode)}. Estes dados ajudam a gestora a preparar a análise.
+          </p>
+        </header>
+
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Estado civil" htmlFor="lead-docs-estado-civil">
             <select
               id="lead-docs-estado-civil"
@@ -683,9 +754,6 @@ function FormPanel(props: {
           />
           <span>
             Solicito financiamento a <strong>100%</strong> para jovens com menos de 35 anos.
-            <span className="block text-xs text-zinc-600">
-              Se marcado, vamos pedir-te 3 documentos extra (certidões de não dívida).
-            </span>
           </span>
         </label>
       </section>
@@ -735,11 +803,10 @@ function FormPanel(props: {
         <section className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
           <header>
             <h2 className="text-lg font-semibold text-zinc-900">
-              Mensagem para o teu parceiro (opcional)
+              Mensagem para sua gestora
             </h2>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Aproveita para indicares qualquer contexto adicional (ex.: contrato-promessa
-              assinado, casa específica em mente, etc.).
+              Aproveita para falar um pouco mais sobre você e adicionar alguma informação que achar necessária.
             </p>
           </header>
           <textarea
@@ -751,9 +818,12 @@ function FormPanel(props: {
           />
 
           {missingForCheckboxes.length ? (
-            <details className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
+            <details
+              open
+              className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3"
+            >
               <summary className="cursor-pointer text-sm font-medium text-zinc-800">
-                Não tens algum destes documentos? (marca para informar o parceiro)
+                Não tens algum destes documentos?
               </summary>
               <div className="mt-3 space-y-2">
                 {missingForCheckboxes.map((m) => (
