@@ -173,7 +173,11 @@ export function LeadDocumentsUploadView() {
           nome: prev.nome || data.lead.name,
           email: prev.email || data.lead.email,
         }));
-        setPhase('form');
+        // Se já enviou documentos antes, mostramos o painel «Documentos enviados!» com os
+        // contactos da gestora — o utilizador pode escolher enviar mais (extra/cônjuge) a
+        // partir desse painel; entrar direto no formulário aqui seria confuso porque dá
+        // ideia de que ele tem ainda algo por anexar.
+        setPhase(data.docsSentAt ? 'sent' : 'form');
       } catch (err) {
         const e = err as ApiHttpError;
         if (e.status === 404) {
@@ -472,10 +476,10 @@ function PartnerCard({ partner }: { partner: PartnerInfo }) {
           <img
             src={partner.logoUrl}
             alt={partner.name}
-            className="mx-auto block h-auto w-full max-w-md object-contain sm:max-w-lg"
+            className="mx-auto block h-auto w-full max-w-md object-contain sm:max-w-[16rem]"
           />
         ) : (
-          <div className="mx-auto flex aspect-square w-full max-w-md items-center justify-center text-7xl font-semibold text-amber-700 sm:max-w-lg">
+          <div className="mx-auto flex aspect-square w-full max-w-md items-center justify-center text-7xl font-semibold text-amber-700 sm:max-w-[16rem]">
             {initial}
           </div>
         )}
