@@ -217,7 +217,6 @@ export function FinanciamentoQuizView() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
-      {managers.length ? <ManagersStrip items={managers} /> : null}
       <div
         ref={cardRef}
         className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
@@ -284,7 +283,9 @@ export function FinanciamentoQuizView() {
         />
       ) : null}
 
-      <StepsSection />
+      {phase === 'intro' && managers.length ? <ManagersStrip items={managers} /> : null}
+
+      {phase === 'intro' ? <StepsSection /> : null}
 
     </div>
   );
@@ -353,39 +354,44 @@ function ManagersStrip(props: {
 }) {
   return (
     <section className="px-1 py-2 sm:px-0">
-      <header className="text-center">
-        <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
-          Gestoras de crédito
-        </p>
-        <p className="mt-1 text-sm text-zinc-600">
-          Conhece quem vai acompanhar gratuitamente o teu processo do início ao fim.
-        </p>
-      </header>
+      <div className="rounded-2xl bg-gradient-to-b from-amber-50/70 via-transparent to-transparent px-4 py-5 sm:px-6">
+        <header className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
+            Gestoras de crédito
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">
+            Conhece quem vai acompanhar gratuitamente o teu processo do início ao fim.
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+            Podes começar pelo questionário e, no fim, enviar os documentos para análise.
+          </p>
+        </header>
 
-      <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {props.items.map((m) => (
-          <li
-            key={m.id}
-            className="rounded-2xl bg-zinc-50/70 px-4 py-5 text-center"
-          >
-            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-white/70 ring-1 ring-zinc-200 sm:h-28 sm:w-28">
-              {m.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={m.logoUrl}
-                  alt={m.name}
-                  className="h-20 w-20 rounded-full bg-white object-contain sm:h-24 sm:w-24"
-                />
-              ) : (
-                <span className="text-lg font-semibold text-amber-800">
-                  {(m.name?.trim()?.[0] ?? 'G').toUpperCase()}
-                </span>
-              )}
-            </div>
-            <p className="mt-3 text-base font-semibold text-zinc-900">{m.name}</p>
-          </li>
-        ))}
-      </ul>
+        <ul className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {props.items.map((m) => (
+            <li
+              key={m.id}
+              className="rounded-2xl bg-white/70 px-4 py-5 text-center ring-1 ring-zinc-200/70 backdrop-blur-sm"
+            >
+              <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-white ring-1 ring-zinc-200 sm:h-40 sm:w-40">
+                {m.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={m.logoUrl}
+                    alt={m.name}
+                    className="h-28 w-28 rounded-full bg-white object-contain sm:h-36 sm:w-36"
+                  />
+                ) : (
+                  <span className="text-3xl font-semibold text-amber-800">
+                    {(m.name?.trim()?.[0] ?? 'G').toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <p className="mt-4 text-base font-semibold text-zinc-900">{m.name}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }
