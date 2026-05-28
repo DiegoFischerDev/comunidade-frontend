@@ -11,8 +11,11 @@ export default function BusinessPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [accessSaving, setAccessSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [accessError, setAccessError] = useState('');
+  const [accessSuccess, setAccessSuccess] = useState('');
 
   const [partnerId, setPartnerId] = useState<string | null>(null);
   const [publicSlug, setPublicSlug] = useState('');
@@ -37,6 +40,11 @@ export default function BusinessPage() {
     ReturnType<typeof api.partner.contactLinks>
   > | null>(null);
   const [pageLinksLoading, setPageLinksLoading] = useState(false);
+
+  const [accountEmail, setAccountEmail] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newPassword2, setNewPassword2] = useState('');
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -72,6 +80,14 @@ export default function BusinessPage() {
     };
   }
 
+  const totalPageLinkClicks = (() => {
+    const hero = pageLinks?.hero?.clickCount ?? 0;
+    const services = (pageLinks?.services ?? [])
+      .filter((s) => s.link)
+      .reduce((sum, s) => sum + (s.link?.clickCount ?? 0), 0);
+    return hero + services;
+  })();
+
   useEffect(() => {
     if (!user) return;
     if (user.role !== 'PARTNER') {
@@ -81,6 +97,15 @@ export default function BusinessPage() {
 
     (async () => {
       try {
+        try {
+          const token = getAuthToken();
+          if (token) {
+            const me = await api.auth.me(token);
+            setAccountEmail(me.email ?? '');
+          }
+        } catch {
+          // ignore
+        }
         const data = await api.partner.me();
         setPartnerId(data.id);
         setPublicSlug(data.publicSlug?.trim() ?? '');
@@ -175,6 +200,48 @@ export default function BusinessPage() {
       );
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleAccessSave(e: React.FormEvent) {
+    e.preventDefault();
+    setAccessError('');
+    setAccessSuccess('');
+    setAccessSaving(true);
+    try {
+      const emailTrim = accountEmail.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
+        throw new Error('Indica um email válido.');
+      }
+
+      await api.auth.updateMe({ email: emailTrim });
+
+      if (newPassword || newPassword2 || currentPassword) {
+        if (!currentPassword) {
+          throw new Error('Indica a tua senha atual para trocar a senha.');
+        }
+        if (!newPassword || newPassword.length < 8) {
+          throw new Error('A nova senha deve ter pelo menos 8 caracteres.');
+        }
+        if (newPassword !== newPassword2) {
+          throw new Error('As novas senhas não coincidem.');
+        }
+        await api.auth.changePassword({
+          currentPassword,
+          newPassword,
+        });
+        setCurrentPassword('');
+        setNewPassword('');
+        setNewPassword2('');
+      }
+
+      setAccessSuccess('Dados de acesso atualizados com sucesso.');
+    } catch (err) {
+      setAccessError(
+        err instanceof Error ? err.message : 'Erro ao atualizar dados de acesso.',
+      );
+    } finally {
+      setAccessSaving(false);
     }
   }
 
@@ -373,75 +440,19 @@ export default function BusinessPage() {
           >
             Ver minha página no Google
           </Link>
+          <p className="mt-2 text-xs text-zinc-600">
+            clicks nos botões da minha página:{' '}
+            <span className="font-semibold text-zinc-900">
+              {pageLinksLoading ? '…' : totalPageLinkClicks}
+            </span>{' '}
+            click{!pageLinksLoading && totalPageLinkClicks === 1 ? '' : 's'}
+          </p>
         </div>
       ) : partnerId ? (
         <p className="mt-4 text-sm text-amber-800/95">
           A página pública só fica acessível depois de definires e guardares o endereço público
           (URL) no formulário abaixo.
         </p>
-      ) : null}
-
-      {partnerId && !loading ? (
-        <section className="mt-6 rounded-lg border border-zinc-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-zinc-900">
-            Links da minha página
-          </h2>
-          <p className="mt-1 text-xs text-zinc-600">
-            Links rastreados usados na tua página pública (contacto principal e botões dos
-            serviços). Cada clique é contado quando alguém abre o link.
-          </p>
-          {pageLinksLoading ? (
-            <p className="mt-3 text-sm text-zinc-500">A carregar links…</p>
-          ) : !pageLinks?.hero &&
-            !(pageLinks?.services ?? []).some((s) => s.link) ? (
-            <p className="mt-3 text-sm text-zinc-600">
-              Ainda não há links configurados. Pede ao administrador para gerar os links em
-              Parceiros.
-            </p>
-          ) : (
-            <ul className="mt-4 divide-y divide-zinc-100 rounded-lg border border-zinc-100">
-              {pageLinks?.hero ? (
-                <li className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-zinc-900">
-                      Contacto principal (hero)
-                    </p>
-                    <p className="mt-0.5 truncate font-mono text-xs text-zinc-600">
-                      {absoluteRedirectPath(pageLinks.hero.redirectPath)}
-                    </p>
-                  </div>
-                  <p className="shrink-0 text-sm tabular-nums text-zinc-700">
-                    <span className="font-semibold text-zinc-900">
-                      {pageLinks.hero.clickCount}
-                    </span>{' '}
-                    clique{pageLinks.hero.clickCount === 1 ? '' : 's'}
-                  </p>
-                </li>
-              ) : null}
-              {(pageLinks?.services ?? [])
-                .filter((s) => s.link)
-                .map((s) => (
-                  <li
-                    key={s.id}
-                    className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-zinc-900">{s.title}</p>
-                      <p className="mt-0.5 truncate font-mono text-xs text-zinc-600">
-                        {absoluteRedirectPath(s.link!.redirectPath)}
-                      </p>
-                    </div>
-                    <p className="shrink-0 text-sm tabular-nums text-zinc-700">
-                      <span className="font-semibold text-zinc-900">
-                        {s.link!.clickCount}
-                      </span>{' '}
-                      clique{s.link!.clickCount === 1 ? '' : 's'}
-                    </p>
-                  </li>
-                ))}
-            </ul>
-          )}
-        </section>
       ) : null}
 
       {error && (
@@ -508,6 +519,83 @@ export default function BusinessPage() {
                 className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
+
+            <form onSubmit={handleAccessSave} className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-4">
+              <p className="text-sm font-semibold text-zinc-900">Dados de acesso</p>
+              <p className="mt-1 text-xs text-zinc-600">
+                Atualiza o email e/ou a senha da tua conta de parceiro.
+              </p>
+
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="block text-sm font-medium text-zinc-700">
+                    Email da conta
+                  </label>
+                  <input
+                    type="email"
+                    value={accountEmail}
+                    onChange={(e) => setAccountEmail(e.target.value)}
+                    placeholder="exemplo@email.com"
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-zinc-700">
+                    Senha atual
+                  </label>
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-zinc-700">
+                    Nova senha
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="block text-sm font-medium text-zinc-700">
+                    Confirmar nova senha
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword2}
+                    onChange={(e) => setNewPassword2(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {accessError ? (
+                <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {accessError}
+                </div>
+              ) : null}
+              {accessSuccess ? (
+                <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                  {accessSuccess}
+                </div>
+              ) : null}
+
+              <button
+                type="submit"
+                disabled={accessSaving}
+                className="mt-3 w-full rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60"
+              >
+                {accessSaving ? 'A salvar…' : 'Salvar dados de acesso'}
+              </button>
+            </form>
             <div className="space-y-1">
               <label className="block text-sm font-medium text-zinc-700">
                 Instagram da empresa

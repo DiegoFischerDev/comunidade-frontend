@@ -200,12 +200,6 @@ export function FinanciamentoQuizView() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
-          Financiamento de casa em Portugal
-        </h1>
-      </header>
-
       <div
         ref={cardRef}
         className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
@@ -290,10 +284,6 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
       <h2 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
         Rafa, Consigo financiar uma casa em Portugal?
       </h2>
-      <p className="mt-4 text-base leading-relaxed text-zinc-700">
-        Descobre, em termos gerais, se tens viabilidade para crédito
-        habitação
-      </p>
 
       <ul className="mt-6 space-y-3 text-sm text-zinc-700">
         <Bullet>Apenas 4 a 6 perguntas, todas simples (Sim/Não).</Bullet>
@@ -372,9 +362,6 @@ function AtendimentoPanel({
       >
         {loading ? 'A verificar…' : 'Solicitrar atendimento'}
       </button>
-      <p className="mt-2 text-center text-[11px] text-zinc-500">
-        O serviço da gestora é gratuito — quem paga a comissão são os bancos.
-      </p>
     </form>
   );
 }
@@ -597,9 +584,6 @@ function ResultPanel({
                 ? 'A preparar a tua página…'
                 : 'Iniciar atendimento gratuito'}
             </button>
-            <p className="mt-2 text-center text-[11px] text-zinc-500">
-              O serviço da gestora é gratuito — quem paga a comissão são os bancos.
-            </p>
           </div>
         </form>
       ) : (

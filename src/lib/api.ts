@@ -221,6 +221,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(params),
       }),
+    changePassword: (params: { currentPassword: string; newPassword: string }) =>
+      request<{ ok: true }>('/auth/password', {
+        method: 'PATCH',
+        body: JSON.stringify(params),
+      }),
     updateMe: (body: {
       name?: string;
       email?: string;
