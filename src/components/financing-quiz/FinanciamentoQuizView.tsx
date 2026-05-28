@@ -362,9 +362,6 @@ function ManagersStrip(props: {
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">
             Conhece quem vai acompanhar gratuitamente o teu processo do início ao fim.
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-            Podes começar pelo questionário e, no fim, enviar os documentos para análise.
-          </p>
         </header>
 
         <ul className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">

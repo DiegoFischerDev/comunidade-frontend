@@ -41,6 +41,9 @@ export default function BusinessPage() {
   const [accountEmail, setAccountEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPassword2, setNewPassword2] = useState('');
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -168,18 +171,6 @@ export default function BusinessPage() {
         await api.auth.updateMe({ email: emailTrim });
       }
 
-      if (newPassword || newPassword2) {
-        if (!newPassword || newPassword.length < 8) {
-          throw new Error('A nova senha deve ter pelo menos 8 caracteres.');
-        }
-        if (newPassword !== newPassword2) {
-          throw new Error('As novas senhas não coincidem.');
-        }
-        await api.auth.changePassword({ newPassword });
-        setNewPassword('');
-        setNewPassword2('');
-      }
-
       setPublicSlug(updated.publicSlug?.trim() ?? '');
       setName(updated.name);
       setWhatsapp(updated.whatsapp || '');
@@ -208,6 +199,30 @@ export default function BusinessPage() {
       );
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSavePassword() {
+    setPasswordError('');
+    setPasswordSaving(true);
+    try {
+      if (!newPassword || newPassword.length < 8) {
+        throw new Error('A nova senha deve ter pelo menos 8 caracteres.');
+      }
+      if (newPassword !== newPassword2) {
+        throw new Error('As novas senhas não coincidem.');
+      }
+      await api.auth.changePassword({ newPassword });
+      setNewPassword('');
+      setNewPassword2('');
+      setPasswordModalOpen(false);
+      setSuccess('Senha atualizada com sucesso.');
+    } catch (err) {
+      setPasswordError(
+        err instanceof Error ? err.message : 'Erro ao atualizar senha. Tente novamente.',
+      );
+    } finally {
+      setPasswordSaving(false);
     }
   }
 
@@ -435,6 +450,7 @@ export default function BusinessPage() {
       {loading ? (
         <p className="mt-4 text-sm text-zinc-600">Carregando dados da empresa…</p>
       ) : (
+        <>
         <form
           onSubmit={handleSubmit}
           className="mt-6 space-y-4 rounded-lg border border-zinc-200 bg-white p-4"
@@ -517,28 +533,18 @@ export default function BusinessPage() {
                 Apenas utilizador com @ (ex: @minha_empresa)
               </p>
             </div>
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-zinc-700">
-                Nova senha
-              </label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-              <p className="text-xs text-zinc-500">Mínimo 8 caracteres.</p>
-            </div>
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-zinc-700">
-                Confirmar nova senha
-              </label>
-              <input
-                type="password"
-                value={newPassword2}
-                onChange={(e) => setNewPassword2(e.target.value)}
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-zinc-700">Senha</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setPasswordError('');
+                  setPasswordModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+              >
+                Alterar senha
+              </button>
             </div>
           </div>
 
@@ -750,6 +756,80 @@ export default function BusinessPage() {
             </CardButton>
           </div>
         </form>
+
+        {passwordModalOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-zinc-900">Alterar senha</h2>
+                  <p className="mt-1 text-xs text-zinc-500">Mínimo 8 caracteres.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (passwordSaving) return;
+                    setPasswordModalOpen(false);
+                  }}
+                  className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                >
+                  Fechar
+                </button>
+              </div>
+
+              {passwordError ? (
+                <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {passwordError}
+                </div>
+              ) : null}
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="text-sm sm:col-span-2">
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                    Nova senha
+                  </span>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  />
+                </label>
+                <label className="text-sm sm:col-span-2">
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                    Confirmar nova senha
+                  </span>
+                  <input
+                    type="password"
+                    value={newPassword2}
+                    onChange={(e) => setNewPassword2(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  />
+                </label>
+              </div>
+
+              <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setPasswordModalOpen(false)}
+                  disabled={passwordSaving}
+                  className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSavePassword()}
+                  disabled={passwordSaving}
+                  className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 disabled:opacity-60"
+                >
+                  {passwordSaving ? 'Salvando…' : 'Salvar alterações'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        </>
       )}
     </div>
   );
