@@ -358,23 +358,23 @@ function ManagersStrip(props: {
           Gestoras de crédito
         </p>
         <p className="mt-1 text-sm text-zinc-600">
-          Conhece quem vai acompanhar o teu processo do início ao fim.
+          Conhece quem vai acompanhar gratuitamente o teu processo do início ao fim.
         </p>
       </header>
 
-      <ul className="mt-4 flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
+      <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {props.items.map((m) => (
           <li
             key={m.id}
-            className="min-w-[220px] flex-1 rounded-2xl bg-zinc-50/70 px-4 py-4 text-center sm:min-w-0"
+            className="rounded-2xl bg-zinc-50/70 px-4 py-5 text-center"
           >
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/70 ring-1 ring-zinc-200">
+            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-white/70 ring-1 ring-zinc-200 sm:h-28 sm:w-28">
               {m.logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={m.logoUrl}
                   alt={m.name}
-                  className="h-14 w-14 rounded-full bg-white object-contain"
+                  className="h-20 w-20 rounded-full bg-white object-contain sm:h-24 sm:w-24"
                 />
               ) : (
                 <span className="text-lg font-semibold text-amber-800">
@@ -382,7 +382,7 @@ function ManagersStrip(props: {
                 </span>
               )}
             </div>
-            <p className="mt-3 text-sm font-semibold text-zinc-900">{m.name}</p>
+            <p className="mt-3 text-base font-semibold text-zinc-900">{m.name}</p>
           </li>
         ))}
       </ul>
