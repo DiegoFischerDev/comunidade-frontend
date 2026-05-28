@@ -48,13 +48,35 @@ function previewOneLine(text: string | null, max = 100): string {
   return `${t.slice(0, max)}…`;
 }
 
-function toDateTimeLocalValue(isoUtc: string): string {
+function statusLabel(status: string | null | undefined): string {
+  switch (status) {
+    case 'inviavel':
+      return 'Inviável';
+    case 'pre_aprovado':
+      return 'Pré-aprovado';
+    case 'credito_aprovado':
+      return 'Crédito aprovado';
+    case 'agendado_escritura':
+      return 'Agendado escritura';
+    case 'escritura_realizada':
+      return 'Escritura realizada';
+    default:
+      return '—';
+  }
+}
+
+function toDateOnlyValue(isoUtc: string): string {
   const d = new Date(isoUtc);
   if (Number.isNaN(d.getTime())) return '';
   const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
-    d.getHours(),
-  )}:${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function dateOnlyToIsoUtcNoon(dateOnly: string): string {
+  // Usamos 12:00 hora local para evitar "mudança de dia" por timezone/DST ao converter para UTC.
+  const [y, m, d] = dateOnly.split('-').map((n) => Number(n));
+  if (!y || !m || !d) return new Date(NaN).toISOString();
+  return new Date(y, m - 1, d, 12, 0, 0, 0).toISOString();
 }
 
 export default function LeadsPage() {
@@ -71,7 +93,7 @@ export default function LeadsPage() {
   const [editEmail, setEditEmail] = useState('');
   const [editWhatsapp, setEditWhatsapp] = useState('');
   const [editComment, setEditComment] = useState('');
-  const [editNextContact, setEditNextContact] = useState(''); // datetime-local
+  const [editNextContact, setEditNextContact] = useState(''); // date (YYYY-MM-DD)
   const [editStatus, setEditStatus] = useState<string>('');
 
   useEffect(() => {
@@ -115,7 +137,7 @@ export default function LeadsPage() {
     setEditEmail(row.email ?? '');
     setEditWhatsapp(row.whatsapp ?? '');
     setEditComment(row.comment ?? '');
-    setEditNextContact(row.nextContactAt ? toDateTimeLocalValue(row.nextContactAt) : '');
+    setEditNextContact(row.nextContactAt ? toDateOnlyValue(row.nextContactAt) : '');
     setEditStatus(row.status ?? '');
   }
 
@@ -140,7 +162,7 @@ export default function LeadsPage() {
       if (!editNextContact) {
         await api.partner.leads.nextContact.set(editing.id, null);
       } else {
-        const iso = new Date(editNextContact).toISOString();
+        const iso = dateOnlyToIsoUtcNoon(editNextContact);
         await api.partner.leads.nextContact.set(editing.id, iso);
       }
       const data = await api.partner.leads.list();
@@ -316,6 +338,7 @@ export default function LeadsPage() {
                 <tr>
                   <th className="px-4 py-3">Data</th>
                   <th className="px-4 py-3">Lead</th>
+                  <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Docs</th>
                   <th className="px-4 py-3">Resumo</th>
                   <th className="px-4 py-3 text-right">Ações</th>
@@ -336,6 +359,9 @@ export default function LeadsPage() {
                           {lead.email} · +{wa}
                         </div>
                         <div className="text-[11px] text-zinc-400">ID: {lead.id}</div>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-zinc-700">
+                        {statusLabel(lead.status)}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-zinc-700">
                         {lead.docsSentAt ? (
@@ -440,7 +466,7 @@ export default function LeadsPage() {
                   Próximo contacto
                 </span>
                 <input
-                  type="datetime-local"
+                  type="date"
                   value={editNextContact}
                   onChange={(e) => setEditNextContact(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"

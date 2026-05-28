@@ -35,6 +35,23 @@ function previewOneLine(text: string | null, max = 90): string {
   return `${t.slice(0, max)}…`;
 }
 
+function statusLabel(status: string | null | undefined): string {
+  switch (status) {
+    case 'inviavel':
+      return 'Inviável';
+    case 'pre_aprovado':
+      return 'Pré-aprovado';
+    case 'credito_aprovado':
+      return 'Crédito aprovado';
+    case 'agendado_escritura':
+      return 'Agendado escritura';
+    case 'escritura_realizada':
+      return 'Escritura realizada';
+    default:
+      return '—';
+  }
+}
+
 export default function AdminLeadsGestorasPage() {
   const { user } = useAuth();
   const canSee = user?.role === 'ADMIN';
@@ -217,6 +234,7 @@ export default function AdminLeadsGestorasPage() {
                 <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3">Lead</th>
                 <th className="px-4 py-3">Gestora</th>
+                <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Docs</th>
                 <th className="px-4 py-3">Resumo</th>
                 <th className="px-4 py-3 text-right">Ações</th>
@@ -239,6 +257,9 @@ export default function AdminLeadsGestorasPage() {
                   </td>
                   <td className="px-4 py-3 text-zinc-800">
                     {row.partner?.name ?? '—'}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-zinc-700">
+                    {statusLabel(row.status)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-zinc-700">
                     {row.docsSentAt ? (
