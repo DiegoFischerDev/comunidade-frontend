@@ -686,12 +686,14 @@ export const api = {
         request<{
           items: Array<{
             id: string;
+            publicId: number;
             name: string;
             whatsapp: string;
             email: string;
             comment: string | null;
             outcomeKey: string | null;
             docsSentAt: string | null;
+            status: string | null;
             submissionsCount: number;
             createdAt: string;
             partner: { id: string; name: string; categorySlug: string | null };
@@ -706,16 +708,19 @@ export const api = {
           comment?: string | null;
           outcomeKey?: string | null;
           partnerId?: string;
+          status?: string | null;
         },
       ) =>
         request<{
           id: string;
+          publicId: number;
           name: string;
           whatsapp: string;
           email: string;
           comment: string | null;
           outcomeKey: string | null;
           docsSentAt: string | null;
+          status: string | null;
           createdAt: string;
           partner: { id: string; name: string; categorySlug: string | null };
           submissionsCount: number;
@@ -2008,12 +2013,14 @@ export const api = {
         request<{
           items: {
             id: string;
+            publicId: number;
             name: string;
             whatsapp: string;
             email: string;
             comment: string | null;
             outcomeKey: string | null;
             docsSentAt: string | null;
+            status: string | null;
             submissionsCount: number;
             nextContactAt?: string | null;
             createdAt: string;
@@ -2021,16 +2028,24 @@ export const api = {
         }>('/leads/me', { method: 'GET' }),
       update: (
         id: string,
-        input: { name?: string; email?: string; whatsapp?: string; comment?: string | null },
+        input: {
+          name?: string;
+          email?: string;
+          whatsapp?: string;
+          comment?: string | null;
+          status?: string | null;
+        },
       ) =>
         request<{
           id: string;
+          publicId: number;
           name: string;
           whatsapp: string;
           email: string;
           comment: string | null;
           outcomeKey: string | null;
           docsSentAt: string | null;
+          status: string | null;
           submissionsCount: number;
           createdAt: string;
         }>(`/leads/me/${id}`, { method: 'PATCH', body: JSON.stringify(input) }),
@@ -2039,12 +2054,14 @@ export const api = {
           request<{
             items: {
               id: string;
+              publicId: number;
               name: string;
               whatsapp: string;
               email: string;
               comment: string | null;
               outcomeKey: string | null;
               docsSentAt: string | null;
+              status: string | null;
               nextContactAt: string;
               submissionsCount: number;
               createdAt: string;

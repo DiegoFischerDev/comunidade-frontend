@@ -7,6 +7,11 @@ import { api } from '@/lib/api';
 type Payload = Awaited<ReturnType<typeof api.admin.leadsGestoras.list>>;
 type LeadRow = Payload['items'][number];
 
+function formatLeadPublicId(publicId: number | null | undefined): string {
+  if (!publicId || Number.isNaN(Number(publicId))) return '—';
+  return String(publicId).padStart(6, '0');
+}
+
 function digitsOnly(value: string): string {
   return (value || '').replace(/\D+/g, '');
 }
@@ -38,6 +43,7 @@ export default function AdminLeadsGestorasPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const [editing, setEditing] = useState<LeadRow | null>(null);
   const [saving, setSaving] = useState(false);
@@ -47,6 +53,7 @@ export default function AdminLeadsGestorasPage() {
   const [editEmail, setEditEmail] = useState('');
   const [editWhatsapp, setEditWhatsapp] = useState('');
   const [editComment, setEditComment] = useState('');
+  const [editStatus, setEditStatus] = useState<string>('');
 
   const load = useCallback(async () => {
     if (!canSee) return;
@@ -71,8 +78,10 @@ export default function AdminLeadsGestorasPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return items;
     return items.filter((l) => {
+      if (statusFilter !== 'all' && (l.status ?? '') !== statusFilter) {
+        return false;
+      }
       const hay = [
         l.id,
         l.name,
@@ -83,9 +92,9 @@ export default function AdminLeadsGestorasPage() {
       ]
         .join(' ')
         .toLowerCase();
-      return hay.includes(q);
+      return !q || hay.includes(q);
     });
-  }, [items, query]);
+  }, [items, query, statusFilter]);
 
   const openEdit = useCallback((row: LeadRow) => {
     setEditing(row);
@@ -93,6 +102,7 @@ export default function AdminLeadsGestorasPage() {
     setEditEmail(row.email ?? '');
     setEditWhatsapp(row.whatsapp ?? '');
     setEditComment(row.comment ?? '');
+    setEditStatus(row.status ?? '');
   }, []);
 
   const closeEdit = useCallback(() => {
@@ -110,6 +120,7 @@ export default function AdminLeadsGestorasPage() {
         email: editEmail.trim() || undefined,
         whatsapp: digitsOnly(editWhatsapp) || undefined,
         comment: editComment.trim() ? editComment : null,
+        status: editStatus || null,
       });
       await load();
       closeEdit();
@@ -118,7 +129,7 @@ export default function AdminLeadsGestorasPage() {
     } finally {
       setSaving(false);
     }
-  }, [editing, editName, editEmail, editWhatsapp, editComment, load, closeEdit]);
+  }, [editing, editName, editEmail, editWhatsapp, editComment, editStatus, load, closeEdit]);
 
   const deleteLead = useCallback(
     async (id: string) => {
@@ -160,6 +171,18 @@ export default function AdminLeadsGestorasPage() {
           </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 sm:w-56"
+          >
+            <option value="all">Todos os status</option>
+            <option value="inviavel">Inviável</option>
+            <option value="pre_aprovado">Pré-aprovado</option>
+            <option value="credito_aprovado">Crédito aprovado</option>
+            <option value="agendado_escritura">Agendado escritura</option>
+            <option value="escritura_realizada">Escritura realizada</option>
+          </select>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -210,7 +233,9 @@ export default function AdminLeadsGestorasPage() {
                     <div className="text-xs text-zinc-600">
                       {row.email} · +{digitsOnly(row.whatsapp)}
                     </div>
-                    <div className="text-[11px] text-zinc-400">ID: {row.id}</div>
+                    <div className="text-[11px] text-zinc-400">
+                      ID: {formatLeadPublicId(row.publicId)}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-zinc-800">
                     {row.partner?.name ?? '—'}
@@ -259,7 +284,9 @@ export default function AdminLeadsGestorasPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-zinc-900">Editar lead</h2>
-                <p className="mt-1 text-xs text-zinc-500">ID: {editing.id}</p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  ID: {formatLeadPublicId(editing.publicId)}
+                </p>
               </div>
               <button
                 type="button"
@@ -300,6 +327,23 @@ export default function AdminLeadsGestorasPage() {
                   onChange={(e) => setEditWhatsapp(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
                 />
+              </label>
+              <label className="text-sm sm:col-span-2">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Status
+                </span>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                >
+                  <option value="">Sem status</option>
+                  <option value="inviavel">Inviável</option>
+                  <option value="pre_aprovado">Pré-aprovado</option>
+                  <option value="credito_aprovado">Crédito aprovado</option>
+                  <option value="agendado_escritura">Agendado escritura</option>
+                  <option value="escritura_realizada">Escritura realizada</option>
+                </select>
               </label>
               <label className="text-sm sm:col-span-2">
                 <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">

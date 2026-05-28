@@ -6,15 +6,23 @@ import { useAuth } from '@/contexts/AuthContext';
 
 type LeadRow = {
   id: string;
+  publicId: number;
   name: string;
   whatsapp: string;
   email: string;
   comment: string | null;
   outcomeKey: string | null;
   docsSentAt: string | null;
+  status: string | null;
+  nextContactAt?: string | null;
   submissionsCount: number;
   createdAt: string;
 };
+
+function formatLeadPublicId(publicId: number | null | undefined): string {
+  if (!publicId || Number.isNaN(Number(publicId))) return '—';
+  return String(publicId).padStart(6, '0');
+}
 
 /** Apenas dígitos — para construir links wa.me. */
 function digitsOnly(value: string): string {
@@ -40,6 +48,15 @@ function previewOneLine(text: string | null, max = 100): string {
   return `${t.slice(0, max)}…`;
 }
 
+function toDateTimeLocalValue(isoUtc: string): string {
+  const d = new Date(isoUtc);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours(),
+  )}:${pad(d.getMinutes())}`;
+}
+
 export default function LeadsPage() {
   const { user } = useAuth();
   const [leads, setLeads] = useState<LeadRow[]>([]);
@@ -47,12 +64,15 @@ export default function LeadsPage() {
   const [error, setError] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [editing, setEditing] = useState<LeadRow | null>(null);
   const [saving, setSaving] = useState(false);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editWhatsapp, setEditWhatsapp] = useState('');
   const [editComment, setEditComment] = useState('');
+  const [editNextContact, setEditNextContact] = useState(''); // datetime-local
+  const [editStatus, setEditStatus] = useState<string>('');
 
   useEffect(() => {
     if (!user) return;
@@ -76,14 +96,16 @@ export default function LeadsPage() {
   const totalCount = useMemo(() => leads.length, [leads]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return leads;
     return leads.filter((l) => {
+      if (statusFilter !== 'all' && (l.status ?? '') !== statusFilter) {
+        return false;
+      }
       const hay = [l.id, l.name, l.email, l.whatsapp, l.comment ?? '']
         .join(' ')
         .toLowerCase();
-      return hay.includes(q);
+      return !q || hay.includes(q);
     });
-  }, [leads, query]);
+  }, [leads, query, statusFilter]);
 
   const filteredCount = filtered.length;
 
@@ -93,6 +115,8 @@ export default function LeadsPage() {
     setEditEmail(row.email ?? '');
     setEditWhatsapp(row.whatsapp ?? '');
     setEditComment(row.comment ?? '');
+    setEditNextContact(row.nextContactAt ? toDateTimeLocalValue(row.nextContactAt) : '');
+    setEditStatus(row.status ?? '');
   }
 
   function closeEdit() {
@@ -110,7 +134,15 @@ export default function LeadsPage() {
         email: editEmail.trim() || undefined,
         whatsapp: digitsOnly(editWhatsapp) || undefined,
         comment: editComment.trim() ? editComment : null,
+        status: editStatus || null,
       });
+      // Próximo contacto (agenda)
+      if (!editNextContact) {
+        await api.partner.leads.nextContact.set(editing.id, null);
+      } else {
+        const iso = new Date(editNextContact).toISOString();
+        await api.partner.leads.nextContact.set(editing.id, iso);
+      }
       const data = await api.partner.leads.list();
       setLeads(data.items);
       closeEdit();
@@ -151,6 +183,18 @@ export default function LeadsPage() {
               {filteredCount} {filteredCount === 1 ? 'lead' : 'leads'}
             </span>
           ) : null}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 sm:w-56"
+          >
+            <option value="all">Todos os status</option>
+            <option value="inviavel">Inviável</option>
+            <option value="pre_aprovado">Pré-aprovado</option>
+            <option value="credito_aprovado">Crédito aprovado</option>
+            <option value="agendado_escritura">Agendado escritura</option>
+            <option value="escritura_realizada">Escritura realizada</option>
+          </select>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -220,12 +264,9 @@ export default function LeadsPage() {
                           </a>
                         ) : null}
                         {lead.email ? (
-                          <a
-                            href={`mailto:${lead.email}`}
-                            className="break-all font-medium text-blue-700 hover:underline"
-                          >
+                          <span className="break-all font-medium text-zinc-700">
                             {lead.email}
-                          </a>
+                          </span>
                         ) : null}
                       </div>
                       {lead.docsSentAt ? (
@@ -360,7 +401,9 @@ export default function LeadsPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-zinc-900">Editar lead</h2>
-                <p className="mt-1 text-xs text-zinc-500">ID: {editing.id}</p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  ID: {formatLeadPublicId(editing.publicId)}
+                </p>
               </div>
               <button
                 type="button"
@@ -391,6 +434,37 @@ export default function LeadsPage() {
                   onChange={(e) => setEditEmail(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
                 />
+              </label>
+              <label className="text-sm sm:col-span-2">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Próximo contacto
+                </span>
+                <input
+                  type="datetime-local"
+                  value={editNextContact}
+                  onChange={(e) => setEditNextContact(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                />
+                <p className="mt-1 text-xs text-zinc-500">
+                  Para remover da agenda, apaga o campo e salva.
+                </p>
+              </label>
+              <label className="text-sm sm:col-span-2">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Status
+                </span>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                >
+                  <option value="">Sem status</option>
+                  <option value="inviavel">Inviável</option>
+                  <option value="pre_aprovado">Pré-aprovado</option>
+                  <option value="credito_aprovado">Crédito aprovado</option>
+                  <option value="agendado_escritura">Agendado escritura</option>
+                  <option value="escritura_realizada">Escritura realizada</option>
+                </select>
               </label>
               <label className="text-sm sm:col-span-2">
                 <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">

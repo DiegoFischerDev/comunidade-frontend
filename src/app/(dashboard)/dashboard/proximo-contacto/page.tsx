@@ -8,6 +8,11 @@ type Row = Awaited<
   ReturnType<typeof api.partner.leads.nextContact.list>
 >['items'][number];
 
+function formatLeadPublicId(publicId: number | null | undefined): string {
+  if (!publicId || Number.isNaN(Number(publicId))) return '—';
+  return String(publicId).padStart(6, '0');
+}
+
 function digitsOnly(value: string): string {
   return String(value ?? '').replace(/\D+/g, '');
 }
@@ -51,6 +56,7 @@ export default function ProximoContactoPage() {
   const [items, setItems] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const [editing, setEditing] = useState<Row | null>(null);
   const [editValue, setEditValue] = useState(''); // datetime-local (local tz)
@@ -76,8 +82,23 @@ export default function ProximoContactoPage() {
   }, [load]);
 
   const groups = useMemo(() => {
+    // Mostrar apenas: mês anterior, mês atual e futuros (ignorar meses mais antigos).
+    const now = new Date();
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const visible = items.filter((it) => {
+      const d = new Date(it.nextContactAt);
+      if (Number.isNaN(d.getTime())) return false;
+      return d >= startOfPrevMonth;
+    });
+    const visibleFiltered =
+      statusFilter === 'all'
+        ? visible
+        : visible.filter((it) => (it.status ?? '') === statusFilter);
+
     const map = new Map<string, Row[]>();
-    for (const it of items) {
+    for (const it of visibleFiltered) {
       const d = new Date(it.nextContactAt);
       const key = Number.isNaN(d.getTime())
         ? 'Sem data'
@@ -93,17 +114,40 @@ export default function ProximoContactoPage() {
           new Date(a.nextContactAt).getTime() - new Date(b.nextContactAt).getTime(),
       );
     }
-    const entries = Array.from(map.entries()).sort((a, b) =>
+    const keyFor = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const prevKey = keyFor(startOfPrevMonth);
+    const thisKey = keyFor(startOfThisMonth);
+
+    const prevItems = map.get(prevKey) ?? [];
+    const thisItems = map.get(thisKey) ?? [];
+    map.delete(prevKey);
+    map.delete(thisKey);
+
+    const futureEntries = Array.from(map.entries()).sort((a, b) =>
       a[0].localeCompare(b[0]),
     );
-    return entries.map(([key, arr]) => {
-      const label =
-        key === 'Sem data'
-          ? key
-          : formatMonthPt(new Date(`${key}-01T00:00:00`));
-      return { key, label, items: arr };
-    });
-  }, [items]);
+
+    const out: Array<{ key: string; label: string; items: Row[] }> = [];
+    if (prevItems.length) {
+      out.push({
+        key: prevKey,
+        label: `Mês anterior — ${formatMonthPt(startOfPrevMonth)}`,
+        items: prevItems,
+      });
+    }
+    if (thisItems.length) {
+      out.push({
+        key: thisKey,
+        label: `Mês atual — ${formatMonthPt(startOfThisMonth)}`,
+        items: thisItems,
+      });
+    }
+    for (const [key, arr] of futureEntries) {
+      out.push({ key, label: formatMonthPt(new Date(`${key}-01T00:00:00`)), items: arr });
+    }
+    return out;
+  }, [items, statusFilter]);
 
   const openEdit = useCallback((row: Row) => {
     setEditing(row);
@@ -156,13 +200,27 @@ export default function ProximoContactoPage() {
             Agenda simples de follow-up. Aqui só aparecem leads com agendamento definido.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void load()}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
-          Atualizar
-        </button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 sm:w-56"
+          >
+            <option value="all">Todos os status</option>
+            <option value="inviavel">Inviável</option>
+            <option value="pre_aprovado">Pré-aprovado</option>
+            <option value="credito_aprovado">Crédito aprovado</option>
+            <option value="agendado_escritura">Agendado escritura</option>
+            <option value="escritura_realizada">Escritura realizada</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          >
+            Atualizar
+          </button>
+        </div>
       </div>
 
       {error ? (
@@ -210,7 +268,9 @@ export default function ProximoContactoPage() {
                             <div className="text-xs text-zinc-600">
                               {row.email} · +{wa}
                             </div>
-                            <div className="text-[11px] text-zinc-400">ID: {row.id}</div>
+                            <div className="text-[11px] text-zinc-400">
+                              ID: {formatLeadPublicId(row.publicId)}
+                            </div>
                           </td>
                           <td className="max-w-[520px] px-4 py-3 text-zinc-700">
                             {previewOneLine(row.comment)}
@@ -252,7 +312,7 @@ export default function ProximoContactoPage() {
               <div>
                 <h2 className="text-lg font-semibold text-zinc-900">Editar próximo contacto</h2>
                 <p className="mt-1 text-xs text-zinc-500">
-                  {editing.name} · ID: {editing.id}
+                  {editing.name} · ID: {formatLeadPublicId(editing.publicId)}
                 </p>
               </div>
               <button
