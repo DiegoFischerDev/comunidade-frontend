@@ -221,7 +221,7 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(params),
       }),
-    changePassword: (params: { currentPassword: string; newPassword: string }) =>
+    changePassword: (params: { currentPassword?: string; newPassword: string }) =>
       request<{ ok: true }>('/auth/password', {
         method: 'PATCH',
         body: JSON.stringify(params),
@@ -2018,6 +2018,21 @@ export const api = {
             createdAt: string;
           }[];
         }>('/leads/me', { method: 'GET' }),
+      update: (
+        id: string,
+        input: { name?: string; email?: string; whatsapp?: string; comment?: string | null },
+      ) =>
+        request<{
+          id: string;
+          name: string;
+          whatsapp: string;
+          email: string;
+          comment: string | null;
+          outcomeKey: string | null;
+          docsSentAt: string | null;
+          submissionsCount: number;
+          createdAt: string;
+        }>(`/leads/me/${id}`, { method: 'PATCH', body: JSON.stringify(input) }),
     },
   },
   marketplace: {

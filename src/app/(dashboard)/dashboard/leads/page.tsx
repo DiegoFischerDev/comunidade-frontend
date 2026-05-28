@@ -47,6 +47,12 @@ export default function LeadsPage() {
   const [error, setError] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const [editing, setEditing] = useState<LeadRow | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editWhatsapp, setEditWhatsapp] = useState('');
+  const [editComment, setEditComment] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -54,7 +60,7 @@ export default function LeadsPage() {
       setLoading(false);
       return;
     }
-    (async () => {
+    const load = async () => {
       try {
         const data = await api.partner.leads.list();
         setLeads(data.items);
@@ -63,7 +69,8 @@ export default function LeadsPage() {
       } finally {
         setLoading(false);
       }
-    })();
+    };
+    void load();
   }, [user]);
 
   const totalCount = useMemo(() => leads.length, [leads]);
@@ -80,6 +87,40 @@ export default function LeadsPage() {
 
   const filteredCount = filtered.length;
 
+  function openEdit(row: LeadRow) {
+    setEditing(row);
+    setEditName(row.name ?? '');
+    setEditEmail(row.email ?? '');
+    setEditWhatsapp(row.whatsapp ?? '');
+    setEditComment(row.comment ?? '');
+  }
+
+  function closeEdit() {
+    setEditing(null);
+    setSaving(false);
+  }
+
+  async function saveEdit() {
+    if (!editing) return;
+    setSaving(true);
+    setError('');
+    try {
+      await api.partner.leads.update(editing.id, {
+        name: editName.trim() || undefined,
+        email: editEmail.trim() || undefined,
+        whatsapp: digitsOnly(editWhatsapp) || undefined,
+        comment: editComment.trim() ? editComment : null,
+      });
+      const data = await api.partner.leads.list();
+      setLeads(data.items);
+      closeEdit();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao salvar.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (!user) return null;
 
   if (user.role !== 'PARTNER') {
@@ -94,7 +135,7 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className="mx-auto w-full px-4 py-6 sm:px-6 sm:py-8">
       <header className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
@@ -195,15 +236,26 @@ export default function LeadsPage() {
                       ) : null}
                     </div>
                     {lead.comment ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpandedId((prev) => (prev === lead.id ? null : lead.id))
-                        }
-                        className="self-start rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
-                      >
-                        {isOpen ? 'Ocultar detalhes' : 'Ver resumo'}
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedId((prev) =>
+                              prev === lead.id ? null : lead.id,
+                            )
+                          }
+                          className="self-start rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
+                        >
+                          {isOpen ? 'Ocultar detalhes' : 'Ver resumo'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openEdit(lead)}
+                          className="self-start rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+                        >
+                          Editar
+                        </button>
+                      </div>
                     ) : null}
                   </div>
                   {isOpen && lead.comment ? (
@@ -274,6 +326,13 @@ export default function LeadsPage() {
                             WhatsApp
                           </a>
                         ) : null}
+                        <button
+                          type="button"
+                          onClick={() => openEdit(lead)}
+                          className="ml-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+                        >
+                          Editar
+                        </button>
                         {lead.comment ? (
                           <button
                             type="button"
@@ -294,6 +353,88 @@ export default function LeadsPage() {
           </div>
         </>
       )}
+
+      {editing ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-zinc-900">Editar lead</h2>
+                <p className="mt-1 text-xs text-zinc-500">ID: {editing.id}</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEdit}
+                className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+              >
+                Fechar
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <label className="text-sm">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Nome
+                </span>
+                <input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="text-sm">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Email
+                </span>
+                <input
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="text-sm sm:col-span-2">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  WhatsApp (dígitos)
+                </span>
+                <input
+                  value={editWhatsapp}
+                  onChange={(e) => setEditWhatsapp(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="text-sm sm:col-span-2">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Comentário (resumo)
+                </span>
+                <textarea
+                  value={editComment}
+                  onChange={(e) => setEditComment(e.target.value)}
+                  rows={5}
+                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                />
+              </label>
+            </div>
+
+            <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={closeEdit}
+                className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void saveEdit()}
+                disabled={saving}
+                className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 disabled:opacity-60"
+              >
+                {saving ? 'Salvando…' : 'Salvar alterações'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

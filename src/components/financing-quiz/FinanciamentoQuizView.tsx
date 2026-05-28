@@ -353,31 +353,39 @@ function ManagersStrip(props: {
 }) {
   return (
     <section className="px-1 py-2 sm:px-0">
-      <p className="text-xs font-semibold uppercase tracking-wider text-zinc-600">
-        Gestoras de crédito
-      </p>
-      <div className="mt-3 flex flex-wrap gap-3">
+      <header className="text-center">
+        <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
+          Gestoras de crédito
+        </p>
+        <p className="mt-1 text-sm text-zinc-600">
+          Conhece quem vai acompanhar o teu processo do início ao fim.
+        </p>
+      </header>
+
+      <ul className="mt-4 flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
         {props.items.map((m) => (
-          <div
+          <li
             key={m.id}
-            className="flex items-center gap-3 rounded-xl bg-zinc-50 px-3 py-2"
+            className="min-w-[220px] flex-1 rounded-2xl bg-zinc-50/70 px-4 py-4 text-center sm:min-w-0"
           >
-            {m.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={m.logoUrl}
-                alt={m.name}
-                className="h-14 w-14 rounded-full bg-white object-contain"
-              />
-            ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-800">
-                {(m.name?.trim()?.[0] ?? 'G').toUpperCase()}
-              </div>
-            )}
-            <div className="text-sm font-semibold text-zinc-900">{m.name}</div>
-          </div>
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/70 ring-1 ring-zinc-200">
+              {m.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={m.logoUrl}
+                  alt={m.name}
+                  className="h-14 w-14 rounded-full bg-white object-contain"
+                />
+              ) : (
+                <span className="text-lg font-semibold text-amber-800">
+                  {(m.name?.trim()?.[0] ?? 'G').toUpperCase()}
+                </span>
+              )}
+            </div>
+            <p className="mt-3 text-sm font-semibold text-zinc-900">{m.name}</p>
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }

@@ -11,11 +11,8 @@ export default function BusinessPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [accessSaving, setAccessSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [accessError, setAccessError] = useState('');
-  const [accessSuccess, setAccessSuccess] = useState('');
 
   const [partnerId, setPartnerId] = useState<string | null>(null);
   const [publicSlug, setPublicSlug] = useState('');
@@ -42,19 +39,10 @@ export default function BusinessPage() {
   const [pageLinksLoading, setPageLinksLoading] = useState(false);
 
   const [accountEmail, setAccountEmail] = useState('');
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPassword2, setNewPassword2] = useState('');
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
-  function absoluteRedirectPath(path: string): string {
-    const base =
-      (typeof window !== 'undefined'
-        ? window.location.origin
-        : process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')) || '';
-    return base ? `${base}${path}` : path;
-  }
 
   function buildPartnerUpdatePayload(
     overrides: Partial<{
@@ -172,6 +160,26 @@ export default function BusinessPage() {
         publicSlug: publicSlug.trim() === '' ? null : publicSlug.trim(),
       });
 
+      const emailTrim = accountEmail.trim().toLowerCase();
+      if (emailTrim && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
+        throw new Error('Indica um email válido.');
+      }
+      if (emailTrim) {
+        await api.auth.updateMe({ email: emailTrim });
+      }
+
+      if (newPassword || newPassword2) {
+        if (!newPassword || newPassword.length < 8) {
+          throw new Error('A nova senha deve ter pelo menos 8 caracteres.');
+        }
+        if (newPassword !== newPassword2) {
+          throw new Error('As novas senhas não coincidem.');
+        }
+        await api.auth.changePassword({ newPassword });
+        setNewPassword('');
+        setNewPassword2('');
+      }
+
       setPublicSlug(updated.publicSlug?.trim() ?? '');
       setName(updated.name);
       setWhatsapp(updated.whatsapp || '');
@@ -200,48 +208,6 @@ export default function BusinessPage() {
       );
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleAccessSave(e: React.FormEvent) {
-    e.preventDefault();
-    setAccessError('');
-    setAccessSuccess('');
-    setAccessSaving(true);
-    try {
-      const emailTrim = accountEmail.trim().toLowerCase();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
-        throw new Error('Indica um email válido.');
-      }
-
-      await api.auth.updateMe({ email: emailTrim });
-
-      if (newPassword || newPassword2 || currentPassword) {
-        if (!currentPassword) {
-          throw new Error('Indica a tua senha atual para trocar a senha.');
-        }
-        if (!newPassword || newPassword.length < 8) {
-          throw new Error('A nova senha deve ter pelo menos 8 caracteres.');
-        }
-        if (newPassword !== newPassword2) {
-          throw new Error('As novas senhas não coincidem.');
-        }
-        await api.auth.changePassword({
-          currentPassword,
-          newPassword,
-        });
-        setCurrentPassword('');
-        setNewPassword('');
-        setNewPassword2('');
-      }
-
-      setAccessSuccess('Dados de acesso atualizados com sucesso.');
-    } catch (err) {
-      setAccessError(
-        err instanceof Error ? err.message : 'Erro ao atualizar dados de acesso.',
-      );
-    } finally {
-      setAccessSaving(false);
     }
   }
 
@@ -519,83 +485,41 @@ export default function BusinessPage() {
                 className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
-
-            <form onSubmit={handleAccessSave} className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-4">
-              <p className="text-sm font-semibold text-zinc-900">Dados de acesso</p>
-              <p className="mt-1 text-xs text-zinc-600">
-                Atualiza o email e/ou a senha da tua conta de parceiro.
-              </p>
-
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="block text-sm font-medium text-zinc-700">
-                    Email da conta
-                  </label>
-                  <input
-                    type="email"
-                    value={accountEmail}
-                    onChange={(e) => setAccountEmail(e.target.value)}
-                    placeholder="exemplo@email.com"
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-zinc-700">
-                    Senha atual
-                  </label>
-                  <input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-zinc-700">
-                    Nova senha
-                  </label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="block text-sm font-medium text-zinc-700">
-                    Confirmar nova senha
-                  </label>
-                  <input
-                    type="password"
-                    value={newPassword2}
-                    onChange={(e) => setNewPassword2(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              {accessError ? (
-                <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-                  {accessError}
-                </div>
-              ) : null}
-              {accessSuccess ? (
-                <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-                  {accessSuccess}
-                </div>
-              ) : null}
-
-              <button
-                type="submit"
-                disabled={accessSaving}
-                className="mt-3 w-full rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60"
-              >
-                {accessSaving ? 'A salvar…' : 'Salvar dados de acesso'}
-              </button>
-            </form>
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-zinc-700">
+                Email da conta
+              </label>
+              <input
+                type="email"
+                value={accountEmail}
+                onChange={(e) => setAccountEmail(e.target.value)}
+                placeholder="exemplo@email.com"
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-zinc-700">
+                Nova senha
+              </label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <p className="text-xs text-zinc-500">Mínimo 8 caracteres.</p>
+            </div>
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-zinc-700">
+                Confirmar nova senha
+              </label>
+              <input
+                type="password"
+                value={newPassword2}
+                onChange={(e) => setNewPassword2(e.target.value)}
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
             <div className="space-y-1">
               <label className="block text-sm font-medium text-zinc-700">
                 Instagram da empresa
