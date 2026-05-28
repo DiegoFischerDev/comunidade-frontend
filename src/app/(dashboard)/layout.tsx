@@ -598,6 +598,16 @@ export default function DashboardLayout({
                 Links rastreados
               </Link>
               <Link
+                href="/dashboard/admin/leads-gestoras"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/admin/leads-gestoras'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Leads gestoras
+              </Link>
+              <Link
                 href="/dashboard/partners"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/partners'

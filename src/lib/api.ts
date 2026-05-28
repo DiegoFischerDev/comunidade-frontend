@@ -676,6 +676,48 @@ export const api = {
       delete: (id: string) =>
         request<void>(`/users/${id}`, { method: 'DELETE' }),
     },
+    leadsGestoras: {
+      list: () =>
+        request<{
+          items: Array<{
+            id: string;
+            name: string;
+            whatsapp: string;
+            email: string;
+            comment: string | null;
+            outcomeKey: string | null;
+            docsSentAt: string | null;
+            submissionsCount: number;
+            createdAt: string;
+            partner: { id: string; name: string; categorySlug: string | null };
+          }>;
+        }>('/leads/admin', { method: 'GET' }),
+      update: (
+        id: string,
+        input: {
+          name?: string;
+          email?: string;
+          whatsapp?: string;
+          comment?: string | null;
+          outcomeKey?: string | null;
+          partnerId?: string;
+        },
+      ) =>
+        request<{
+          id: string;
+          name: string;
+          whatsapp: string;
+          email: string;
+          comment: string | null;
+          outcomeKey: string | null;
+          docsSentAt: string | null;
+          createdAt: string;
+          partner: { id: string; name: string; categorySlug: string | null };
+          submissionsCount: number;
+        }>(`/leads/admin/${id}`, { method: 'PATCH', body: JSON.stringify(input) }),
+      delete: (id: string) =>
+        request<{ ok: true }>(`/leads/admin/${id}`, { method: 'DELETE' }),
+    },
     rafacall: {
       schedule: (tz?: string) => {
         const q = tz ? `?tz=${encodeURIComponent(tz)}` : '';
