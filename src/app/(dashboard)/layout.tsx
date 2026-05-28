@@ -646,6 +646,18 @@ export default function DashboardLayout({
                   Meus leads
                 </Link>
               ) : null}
+              {isFinanciamentoPartner ? (
+                <Link
+                  href="/dashboard/proximo-contacto"
+                  className={`block rounded-md px-3 py-2 text-sm ${
+                    pathname === '/dashboard/proximo-contacto'
+                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                      : 'text-zinc-800 hover:bg-zinc-100'
+                  }`}
+                >
+                  Próximo contacto
+                </Link>
+              ) : null}
             </div>
           ) : null}
             </>

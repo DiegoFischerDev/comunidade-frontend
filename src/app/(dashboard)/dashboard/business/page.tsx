@@ -499,6 +499,26 @@ export default function BusinessPage() {
             </div>
             <div className="space-y-1">
               <label className="block text-sm font-medium text-zinc-700">
+                Instagram da empresa
+              </label>
+              <input
+                type="text"
+                value={instagram}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === '') setInstagram('');
+                  else if (v.startsWith('@')) setInstagram(v);
+                  else setInstagram('@' + v);
+                }}
+                placeholder="@empresa"
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <p className="text-xs text-zinc-500">
+                Apenas utilizador com @ (ex: @minha_empresa)
+              </p>
+            </div>
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-zinc-700">
                 Nova senha
               </label>
               <input
@@ -519,26 +539,6 @@ export default function BusinessPage() {
                 onChange={(e) => setNewPassword2(e.target.value)}
                 className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
-            </div>
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-zinc-700">
-                Instagram da empresa
-              </label>
-              <input
-                type="text"
-                value={instagram}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  if (v === '') setInstagram('');
-                  else if (v.startsWith('@')) setInstagram(v);
-                  else setInstagram('@' + v);
-                }}
-                placeholder="@empresa"
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-              <p className="text-xs text-zinc-500">
-                Apenas utilizador com @ (ex: @minha_empresa)
-              </p>
             </div>
           </div>
 

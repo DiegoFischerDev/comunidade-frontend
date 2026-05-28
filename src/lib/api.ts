@@ -2015,6 +2015,7 @@ export const api = {
             outcomeKey: string | null;
             docsSentAt: string | null;
             submissionsCount: number;
+            nextContactAt?: string | null;
             createdAt: string;
           }[];
         }>('/leads/me', { method: 'GET' }),
@@ -2033,6 +2034,28 @@ export const api = {
           submissionsCount: number;
           createdAt: string;
         }>(`/leads/me/${id}`, { method: 'PATCH', body: JSON.stringify(input) }),
+      nextContact: {
+        list: () =>
+          request<{
+            items: {
+              id: string;
+              name: string;
+              whatsapp: string;
+              email: string;
+              comment: string | null;
+              outcomeKey: string | null;
+              docsSentAt: string | null;
+              nextContactAt: string;
+              submissionsCount: number;
+              createdAt: string;
+            }[];
+          }>('/leads/me/next-contact', { method: 'GET' }),
+        set: (id: string, nextContactAt: string | null) =>
+          request<{ id: string; nextContactAt: string | null }>(
+            `/leads/me/${id}/next-contact`,
+            { method: 'PATCH', body: JSON.stringify({ nextContactAt }) },
+          ),
+      },
     },
   },
   marketplace: {
