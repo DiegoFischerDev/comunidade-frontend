@@ -284,10 +284,67 @@ export function FinanciamentoQuizView() {
         />
       ) : null}
 
-      <p className="text-center text-xs text-zinc-500">
-        Os resultados são indicativos e não substituem a análise de um gestor de crédito.
-      </p>
+      <StepsSection />
+
     </div>
+  );
+}
+
+function StepsSection() {
+  const steps = [
+    {
+      num: '01',
+      title: 'Análise',
+      body: 'Primeiro contato, análise de viabilidade, recolha de documentos pessoais, esclarecimento de dúvidas e direcionamento completo.',
+    },
+    {
+      num: '02',
+      title: 'Propostas',
+      body: 'Retorno da pré aprovação: Apresentação de mais de uma institição para comparar e garantir sempre a melhor proposta.',
+    },
+    {
+      num: '03',
+      title: 'Imóvel',
+      body: 'Ajuda de consultor imobiliário parceiro, conferência e envio de documentação do imóvel e acompanhamento de avaliação.',
+    },
+    {
+      num: '04',
+      title: 'Escrituração',
+      body: 'A tão desejada \"chave na mão\", acompanhamos e celebramos esse momento tão especial da sua vida.',
+    },
+  ];
+
+  return (
+    <section className="px-1 py-2 sm:px-0">
+      <header className="text-center">
+        <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
+          Conheça as Etapas
+        </p>
+        <h2 className="mt-1 text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+          Do primeiro contacto à chave na mão
+        </h2>
+      </header>
+
+      <ol className="mt-6 grid gap-6 sm:grid-cols-2">
+        {steps.map((s) => (
+          <li key={s.num} className="relative pl-12">
+            <span
+              aria-hidden
+              className="absolute left-0 top-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-800"
+            >
+              {s.num}
+            </span>
+
+            <h3 className="text-lg font-semibold text-zinc-900">{s.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-600">{s.body}</p>
+            <div
+              aria-hidden
+              className="mt-4 h-px w-full bg-gradient-to-r from-zinc-200 via-zinc-200/40 to-transparent"
+            />
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 
@@ -295,7 +352,7 @@ function ManagersStrip(props: {
   items: Array<{ id: string; name: string; logoUrl: string | null }>;
 }) {
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <section className="px-1 py-2 sm:px-0">
       <p className="text-xs font-semibold uppercase tracking-wider text-zinc-600">
         Gestoras de crédito
       </p>
@@ -303,17 +360,17 @@ function ManagersStrip(props: {
         {props.items.map((m) => (
           <div
             key={m.id}
-            className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2"
+            className="flex items-center gap-3 rounded-xl bg-zinc-50 px-3 py-2"
           >
             {m.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={m.logoUrl}
                 alt={m.name}
-                className="h-10 w-10 rounded-full bg-white object-contain"
+                className="h-14 w-14 rounded-full bg-white object-contain"
               />
             ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-800">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-800">
                 {(m.name?.trim()?.[0] ?? 'G').toUpperCase()}
               </div>
             )}
@@ -341,6 +398,11 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         <Bullet>Apenas 4 a 6 perguntas, todas simples (Sim/Não).</Bullet>
         <Bullet>Resultado imediato, com um exemplo prático.</Bullet>
       </ul>
+
+
+      <p className="mt-6 text-center text-xs text-zinc-500">
+        Os resultados são indicativos e não substituem a análise de um gestor de crédito.
+      </p>
 
       <button
         type="button"
@@ -582,17 +644,6 @@ function ResultPanel({
             <h3 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
               Quero iniciar o meu atendimento com a gestora de crédito
             </h3>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-              Preenche os teus dados e abrimos a tua página de atendimento com os contactos
-              da gestora atribuída e o envio de documentos para análise.
-            </p>
-
-            <ul className="mt-5 grid gap-x-4 gap-y-2 text-sm text-zinc-700 sm:grid-cols-2">
-              <CheckItem>Gestora atribuída automaticamente</CheckItem>
-              <CheckItem>Envio de documentos no momento</CheckItem>
-              <CheckItem>Resposta em até 4 dias úteis</CheckItem>
-              <CheckItem>Sem custos para ti</CheckItem>
-            </ul>
 
             <div className="mt-6 space-y-3">
               <KiwiFloatInput
@@ -671,28 +722,4 @@ function Bullet({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Mesma estrutura que `Bullet`, mas com tons emerald — usado no painel de atendimento. */
-function CheckItem({ children }: { children: React.ReactNode }) {
-  return (
-    <li className="flex items-start gap-2">
-      <span
-        aria-hidden
-        className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={3}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-3 w-3"
-        >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      </span>
-      <span>{children}</span>
-    </li>
-  );
-}
+
