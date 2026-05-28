@@ -1597,6 +1597,15 @@ export const api = {
         servicesWithLink: number;
         servicesTotal: number;
       }>('/partners/me/contact-links', { method: 'GET' }),
+    publicFinancingManagers: () =>
+      request<{
+        items: Array<{
+          id: string;
+          name: string;
+          logoUrl: string | null;
+          shortDescription: string | null;
+        }>;
+      }>('/partners/financiamento/gestoras', { method: 'GET', token: null }),
     updateMe: (input: {
       name?: string;
       whatsapp?: string;

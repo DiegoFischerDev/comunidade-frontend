@@ -47,11 +47,28 @@ export function FinanciamentoQuizView() {
   const [introChecking, setIntroChecking] = useState(false);
   const [introError, setIntroError] = useState('');
 
+  const [managers, setManagers] = useState<
+    Array<{ id: string; name: string; logoUrl: string | null }>
+  >([]);
+
   const cardRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setCurrentStep(nextStep(answers));
   }, [answers]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.partner.publicFinancingManagers();
+        setManagers(
+          res.items.map((m) => ({ id: m.id, name: m.name, logoUrl: m.logoUrl })),
+        );
+      } catch {
+        setManagers([]);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -200,6 +217,7 @@ export function FinanciamentoQuizView() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
+      {managers.length ? <ManagersStrip items={managers} /> : null}
       <div
         ref={cardRef}
         className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
@@ -273,6 +291,40 @@ export function FinanciamentoQuizView() {
   );
 }
 
+function ManagersStrip(props: {
+  items: Array<{ id: string; name: string; logoUrl: string | null }>;
+}) {
+  return (
+    <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-wider text-zinc-600">
+        Gestoras de crédito
+      </p>
+      <div className="mt-3 flex flex-wrap gap-3">
+        {props.items.map((m) => (
+          <div
+            key={m.id}
+            className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2"
+          >
+            {m.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={m.logoUrl}
+                alt={m.name}
+                className="h-10 w-10 rounded-full bg-white object-contain"
+              />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-800">
+                {(m.name?.trim()?.[0] ?? 'G').toUpperCase()}
+              </div>
+            )}
+            <div className="text-sm font-semibold text-zinc-900">{m.name}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // ===== Sub-painéis =====
 
 function IntroPanel({ onStart }: { onStart: () => void }) {
@@ -335,7 +387,7 @@ function AtendimentoPanel({
         Atendimento gratuito
       </p>
       <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
-        Quero iniciar o meu atendimento gratuito com a gestora de crédito
+        Quero iniciar o meu atendimento gratuito com uma gestora de crédito
       </h2>
 
 
