@@ -738,6 +738,7 @@ export const api = {
             title: string | null;
             groupJid: string;
             monitoredNumbers: string[];
+            monitorAllMembers: boolean;
             active: boolean;
             messagesCount: number;
             createdAt: string;
@@ -749,6 +750,7 @@ export const api = {
         title?: string;
         groupJid: string;
         monitoredNumbers?: string[];
+        monitorAllMembers?: boolean;
         active?: boolean;
       }) =>
         request<{ id: string }>('/whatsapp-scan/groups', {
@@ -762,6 +764,7 @@ export const api = {
           title?: string;
           groupJid?: string;
           monitoredNumbers?: string[];
+          monitorAllMembers?: boolean;
           active?: boolean;
         },
       ) =>
@@ -774,6 +777,11 @@ export const api = {
       groupSubject: (groupJid: string) =>
         request<{ subject: string | null }>(
           `/whatsapp-scan/group-subject?groupJid=${encodeURIComponent(groupJid)}`,
+          { method: 'GET' },
+        ),
+      contactDisplayName: (number: string) =>
+        request<{ displayName: string | null }>(
+          `/whatsapp-scan/contact-display-name?number=${encodeURIComponent(number)}`,
           { method: 'GET' },
         ),
       listMessages: (groupId?: string) => {
@@ -2089,21 +2097,32 @@ export const api = {
             title: string | null;
             groupJid: string;
             monitoredNumbers: string[];
+            monitorAllMembers: boolean;
             active: boolean;
             createdAt: string;
             updatedAt: string;
           }>;
           automationEnabled: boolean;
         }>('/whatsapp-scan/me/groups', { method: 'GET' }),
+      contactDisplayName: (number: string) =>
+        request<{ displayName: string | null }>(
+          `/whatsapp-scan/me/contact-display-name?number=${encodeURIComponent(number)}`,
+          { method: 'GET' },
+        ),
       updateGroup: (
         id: string,
-        input: { monitoredNumbers?: string[]; active?: boolean },
+        input: {
+          monitoredNumbers?: string[];
+          monitorAllMembers?: boolean;
+          active?: boolean;
+        },
       ) =>
         request<{
           id: string;
           title: string | null;
           groupJid: string;
           monitoredNumbers: string[];
+          monitorAllMembers: boolean;
           active: boolean;
           createdAt: string;
           updatedAt: string;
@@ -2118,6 +2137,7 @@ export const api = {
             title: string | null;
             groupJid: string;
             monitoredNumbers: string[];
+            monitorAllMembers: boolean;
             active: boolean;
             createdAt: string;
             updatedAt: string;

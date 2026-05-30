@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import { MonitoredUsersCell } from '@/components/whatsapp-scan/MonitoredUsersCell';
 import { WhatsappScanNumbersInput } from '@/components/whatsapp-scan/WhatsappScanNumbersInput';
 
 type GroupsPayload = Awaited<ReturnType<typeof api.admin.whatsappScan.listGroups>>;
@@ -81,6 +82,23 @@ export default function AdminWhatsappScanPage() {
   const [logsGroup, setLogsGroup] = useState<GroupRow | null>(null);
   const [logs, setLogs] = useState<MessageRow[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [contactNames, setContactNames] = useState<Record<string, string | null>>(
+    {},
+  );
+  const contactNamesRequested = useRef<Set<string>>(new Set());
+
+  const resolveContactName = useCallback(async (digits: string) => {
+    const key = digits.replace(/\D/g, '');
+    if (key.length < 8) return;
+    if (contactNamesRequested.current.has(key)) return;
+    contactNamesRequested.current.add(key);
+    try {
+      const res = await api.admin.whatsappScan.contactDisplayName(key);
+      setContactNames((prev) => ({ ...prev, [key]: res.displayName }));
+    } catch {
+      setContactNames((prev) => ({ ...prev, [key]: null }));
+    }
+  }, []);
 
   const load = useCallback(async () => {
     if (!canSee) return;
@@ -108,6 +126,16 @@ export default function AdminWhatsappScanPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const nums = new Set<string>();
+    for (const g of groups) {
+      if (!g.monitorAllMembers) {
+        for (const n of g.monitoredNumbers) nums.add(n);
+      }
+    }
+    for (const n of nums) void resolveContactName(n);
+  }, [groups, resolveContactName]);
 
   const handleCreate = useCallback(async () => {
     setError('');
@@ -366,7 +394,7 @@ export default function AdminWhatsappScanPage() {
                 <th className="px-4 py-3">Parceiro</th>
                 <th className="px-4 py-3">Título</th>
                 <th className="px-4 py-3">Grupo (JID)</th>
-                <th className="px-4 py-3">Números monitorados</th>
+                <th className="px-4 py-3">Usuários monitorados</th>
                 <th className="px-4 py-3">Estado</th>
                 <th className="px-4 py-3">Mensagens</th>
                 <th className="px-4 py-3 text-right">Ações</th>
@@ -383,13 +411,11 @@ export default function AdminWhatsappScanPage() {
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-zinc-700">{row.groupJid}</td>
                   <td className="px-4 py-3 text-zinc-700">
-                    {row.monitoredNumbers.length === 0 ? (
-                      <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
-                        Todos
-                      </span>
-                    ) : (
-                      <span className="text-xs">{row.monitoredNumbers.join(', ')}</span>
-                    )}
+                    <MonitoredUsersCell
+                      numbers={row.monitoredNumbers}
+                      monitorAllMembers={row.monitorAllMembers}
+                      contactNames={contactNames}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     {row.active ? (
