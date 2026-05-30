@@ -1,4 +1,4 @@
-type PublicationStatus = "PUBLISHED" | "HIDDEN";
+type PublicationStatus = "PUBLISHED" | "HIDDEN" | "TRASH";
 
 type Props = {
   publicationStatus: PublicationStatus;

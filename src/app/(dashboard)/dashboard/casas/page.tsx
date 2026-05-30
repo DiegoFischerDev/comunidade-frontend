@@ -1,19 +1,29 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AddHouseModal } from "@/components/house/AddHouseModal";
 import { isActivePublished } from "@/components/house/HousePublicationStatusBadge";
 import { AddAdvertisingBalanceModal } from "@/components/house/AddAdvertisingBalanceModal";
 import { AdvertisingBalanceCard } from "@/components/house/AdvertisingBalanceCard";
-import { PartnerHousesList } from "@/components/house/PartnerHousesList";
+import { PartnerHousesList, type HouseListSelection } from "@/components/house/PartnerHousesList";
 import { PublishHouseConfirmModal } from "@/components/house/PublishHouseConfirmModal";
 import { api } from "@/lib/api";
 import { formatHouseEntradaShort, formatHouseEntradaWithTotal } from "@/lib/house-entrance";
 import { useAuth } from "@/contexts/AuthContext";
 import { CardButton } from "@/components/ui/CardButton";
+import {
+  formatPublicationCostEur,
+  HOUSE_PUBLICATION_COST_EUR_CENTS,
+} from "@/lib/house-publication";
 
 type HouseRow = Awaited<ReturnType<typeof api.partner.houses.list>>[number];
+
+const BULK_PUBLISH_DELAY_MS = 10_000;
+
+function sleep(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
 
 const CITY_LABELS: Record<string, string> = {
   INTERIOR: "Interior",
@@ -62,8 +72,10 @@ export default function PartnerHousesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("");
+  const [tab, setTab] = useState<"PUBLISHED" | "HIDDEN" | "TRASH">("PUBLISHED");
   const [savingById, setSavingById] = useState<Record<string, boolean>>({});
   const [deletingById, setDeletingById] = useState<Record<string, boolean>>({});
+  const [restoringById, setRestoringById] = useState<Record<string, boolean>>({});
   const [canManageHouses, setCanManageHouses] = useState<boolean | null>(null);
   const [showUpdatedBanner, setShowUpdatedBanner] = useState(false);
   const [showHouseModal, setShowHouseModal] = useState(false);
@@ -73,6 +85,9 @@ export default function PartnerHousesPage() {
   const [publishHouse, setPublishHouse] = useState<HouseRow | null>(null);
   const [publishingById, setPublishingById] = useState<Record<string, boolean>>({});
   const [showTopupSuccessBanner, setShowTopupSuccessBanner] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const bulkPublishCancelRef = useRef(false);
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
@@ -142,10 +157,20 @@ export default function PartnerHousesPage() {
     };
   }, [user]);
 
+  const counts = useMemo(
+    () => ({
+      PUBLISHED: rows.filter((r) => r.publicationStatus === "PUBLISHED").length,
+      HIDDEN: rows.filter((r) => r.publicationStatus === "HIDDEN").length,
+      TRASH: rows.filter((r) => r.publicationStatus === "TRASH").length,
+    }),
+    [rows],
+  );
+
   const filtered = useMemo(() => {
+    const byTab = rows.filter((r) => r.publicationStatus === tab);
     const q = filter.trim().toLowerCase();
     const list = q
-      ? rows.filter((r) => {
+      ? byTab.filter((r) => {
           const text = [
             String(r.houseId),
             r.title,
@@ -172,7 +197,7 @@ export default function PartnerHousesPage() {
             .toLowerCase();
           return text.includes(q);
         })
-      : rows;
+      : byTab;
 
     return [...list].sort((a, b) => {
       const aPublished = isActivePublished(a.publicationStatus, a.publishedUntil) ? 1 : 0;
@@ -180,7 +205,49 @@ export default function PartnerHousesPage() {
       if (bPublished !== aPublished) return bPublished - aPublished;
       return b.houseId - a.houseId;
     });
-  }, [rows, filter]);
+  }, [rows, filter, tab]);
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [tab]);
+
+  const selectedCount = selectedIds.size;
+  const filteredIds = useMemo(() => filtered.map((r) => r.id), [filtered]);
+  const allFilteredSelected =
+    filtered.length > 0 && filtered.every((r) => selectedIds.has(r.id));
+  const someFilteredSelected =
+    filtered.some((r) => selectedIds.has(r.id)) && !allFilteredSelected;
+
+  const selection: HouseListSelection = useMemo(
+    () => ({
+      selectedIds,
+      onToggle: (id: string) => {
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          return next;
+        });
+      },
+      onToggleAll: () => {
+        setSelectedIds((prev) => {
+          if (allFilteredSelected) {
+            const next = new Set(prev);
+            for (const id of filteredIds) next.delete(id);
+            return next;
+          }
+          const next = new Set(prev);
+          for (const id of filteredIds) next.add(id);
+          return next;
+        });
+      },
+      allSelected: allFilteredSelected,
+      someSelected: someFilteredSelected,
+    }),
+    [selectedIds, allFilteredSelected, someFilteredSelected, filteredIds],
+  );
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
   async function handlePublishConfirm() {
     if (!publishHouse) return;
@@ -215,9 +282,147 @@ export default function PartnerHousesPage() {
     }
   }
 
-  async function handleDeleteHouse(id: string) {
+  async function handleTrashHouse(id: string) {
     const ok = window.confirm(
-      "Excluir este imóvel? As fotos e o vídeo serão removidos. Esta ação não pode ser desfeita.",
+      "Mover este imóvel para a lixeira? Poderás restaurá-lo nos próximos 10 dias; depois será excluído automaticamente.",
+    );
+    if (!ok) return;
+    setDeletingById((s) => ({ ...s, [id]: true }));
+    setError("");
+    try {
+      await api.partner.houses.trash(id);
+      const data = await api.partner.houses.list();
+      setRows(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível mover o imóvel para a lixeira.");
+    } finally {
+      setDeletingById((s) => ({ ...s, [id]: false }));
+    }
+  }
+
+  async function handleRestoreHouse(id: string) {
+    setRestoringById((s) => ({ ...s, [id]: true }));
+    setError("");
+    try {
+      await api.partner.houses.restore(id);
+      const data = await api.partner.houses.list();
+      setRows(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível restaurar o imóvel.");
+    } finally {
+      setRestoringById((s) => ({ ...s, [id]: false }));
+    }
+  }
+
+  async function handleBulkPublish() {
+    const ids = filtered.filter((r) => selectedIds.has(r.id)).map((r) => r.id);
+    if (ids.length === 0) return;
+
+    const costCents = ids.length * HOUSE_PUBLICATION_COST_EUR_CENTS;
+    if (balanceEurCents < costCents) {
+      setError(
+        `Saldo insuficiente. São necessários ${formatPublicationCostEur(costCents)} para publicar ${ids.length} imóvel(is).`,
+      );
+      return;
+    }
+
+    const estMin = Math.ceil(((ids.length - 1) * BULK_PUBLISH_DELAY_MS) / 60_000);
+    const ok = window.confirm(
+      `Publicar ${ids.length} imóvel(is) em sequência?\n\n` +
+        `Custo total: ${formatPublicationCostEur(costCents)} (1 € por imóvel).\n` +
+        `Haverá pelo menos 10 segundos entre cada publicação` +
+        (ids.length > 1 ? ` (cerca de ${estMin} min no total).` : ".") +
+        `\n\nPodes cancelar fechando a página; o imóvel em curso termina primeiro.`,
+    );
+    if (!ok) return;
+
+    bulkPublishCancelRef.current = false;
+    setBulkBusy(true);
+    setError("");
+
+    for (let i = 0; i < ids.length; i++) {
+      if (bulkPublishCancelRef.current) break;
+      const id = ids[i]!;
+      setPublishingById((s) => ({ ...s, [id]: true }));
+      try {
+        const res = await api.partner.houses.publish(id);
+        setBalanceEurCents(res.balanceEurCents);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : `Falha ao publicar o imóvel (${i + 1} de ${ids.length}).`,
+        );
+        break;
+      } finally {
+        setPublishingById((s) => ({ ...s, [id]: false }));
+      }
+
+      if (i < ids.length - 1 && !bulkPublishCancelRef.current) {
+        await sleep(BULK_PUBLISH_DELAY_MS);
+      }
+    }
+
+    try {
+      const data = await api.partner.houses.list();
+      setRows(data);
+    } catch {
+      /* ignore */
+    }
+    setBulkBusy(false);
+    clearSelection();
+  }
+
+  async function handleBulkDelete() {
+    const ids = filtered.filter((r) => selectedIds.has(r.id)).map((r) => r.id);
+    if (ids.length === 0) return;
+
+    const isTrash = tab === "TRASH";
+    const ok = window.confirm(
+      isTrash
+        ? `Excluir definitivamente ${ids.length} imóvel(is)? As fotos e vídeos serão removidos do servidor. Esta ação não pode ser desfeita.`
+        : `Mover ${ids.length} imóvel(is) para a lixeira? Poderás restaurá-los nos próximos 10 dias.`,
+    );
+    if (!ok) return;
+
+    setBulkBusy(true);
+    setError("");
+
+    for (const id of ids) {
+      setDeletingById((s) => ({ ...s, [id]: true }));
+      try {
+        if (isTrash) {
+          await api.partner.houses.delete(id);
+        } else {
+          await api.partner.houses.trash(id);
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : isTrash
+              ? "Não foi possível excluir um dos imóveis."
+              : "Não foi possível mover um dos imóveis para a lixeira.",
+        );
+        break;
+      } finally {
+        setDeletingById((s) => ({ ...s, [id]: false }));
+      }
+    }
+
+    try {
+      const data = await api.partner.houses.list();
+      setRows(data);
+    } catch {
+      /* ignore */
+    }
+    setBulkBusy(false);
+    clearSelection();
+  }
+
+  async function handleDeleteForever(id: string) {
+    const ok = window.confirm(
+      "Excluir definitivamente este imóvel? As fotos e o vídeo serão removidos do servidor. Esta ação não pode ser desfeita.",
     );
     if (!ok) return;
     setDeletingById((s) => ({ ...s, [id]: true }));
@@ -316,20 +521,57 @@ export default function PartnerHousesPage() {
         </div>
       ) : (
         <>
-          <div className="mt-6 flex items-end gap-3">
+          <div className="mt-6 border-b border-zinc-200">
+            <nav className="-mb-px flex gap-1 sm:gap-2" aria-label="Abas de imóveis">
+              {(
+                [
+                  { key: "PUBLISHED", label: "Publicados" },
+                  { key: "HIDDEN", label: "Ocultos" },
+                  { key: "TRASH", label: "Lixeira" },
+                ] as const
+              ).map((t) => {
+                const active = tab === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setTab(t.key)}
+                    className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
+                      active
+                        ? "border-blue-600 text-blue-700"
+                        : "border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700"
+                    }`}
+                  >
+                    {t.label}
+                    <span
+                      className={`ml-1.5 rounded-full px-1.5 py-0.5 text-xs tabular-nums ${
+                        active ? "bg-blue-100 text-blue-700" : "bg-zinc-100 text-zinc-500"
+                      }`}
+                    >
+                      {counts[t.key]}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="min-w-0 flex-1 max-w-md">
               <label className="block text-xs font-medium text-zinc-700">Filtrar</label>
               <input
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 placeholder="Pesquisar por Id, título, cidade, tipologia, preço…"
-                className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                disabled={bulkBusy}
+                className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
               />
             </div>
             <div className="ml-auto shrink-0">
               <CardButton
                 type="button"
                 variant="primary"
+                disabled={bulkBusy}
                 onClick={() => {
                   setEditHouseId(null);
                   setShowHouseModal(true);
@@ -340,20 +582,92 @@ export default function PartnerHousesPage() {
             </div>
           </div>
 
-          <PartnerHousesList
-            rows={filtered}
-            publishingById={publishingById}
-            deletingById={deletingById}
-            onPublish={(house) => {
-              if (Object.values(publishingById).some(Boolean)) return;
-              setPublishHouse(house);
-            }}
-            onEdit={(id) => {
-              setEditHouseId(id);
-              setShowHouseModal(true);
-            }}
-            onDelete={handleDeleteHouse}
-          />
+          {selectedCount > 0 ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5">
+              <span className="text-sm font-medium text-blue-900">
+                {selectedCount} selecionado{selectedCount === 1 ? "" : "s"}
+              </span>
+              {tab !== "TRASH" ? (
+                <CardButton
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  disabled={bulkBusy}
+                  onClick={() => void handleBulkPublish()}
+                >
+                  Publicar selecionados
+                </CardButton>
+              ) : null}
+              <CardButton
+                type="button"
+                variant="danger"
+                size="sm"
+                disabled={bulkBusy}
+                onClick={() => void handleBulkDelete()}
+              >
+                {tab === "TRASH" ? "Excluir selecionados" : "Mover para lixeira"}
+              </CardButton>
+              <button
+                type="button"
+                disabled={bulkBusy}
+                onClick={clearSelection}
+                className="text-sm font-medium text-blue-800 underline-offset-2 hover:underline disabled:opacity-50"
+              >
+                Limpar seleção
+              </button>
+              {bulkBusy ? (
+                <>
+                  <span className="text-xs text-blue-700">
+                    {Object.values(publishingById).some(Boolean)
+                      ? "A publicar em sequência (10 s entre cada)…"
+                      : "A processar…"}
+                  </span>
+                  {Object.values(publishingById).some(Boolean) ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        bulkPublishCancelRef.current = true;
+                      }}
+                      className="text-xs font-medium text-red-700 underline-offset-2 hover:underline"
+                    >
+                      Cancelar publicação
+                    </button>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+          ) : null}
+
+          {filtered.length === 0 ? (
+            <p className="mt-6 rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-8 text-center text-sm text-zinc-600">
+              {tab === "PUBLISHED"
+                ? "Nenhum imóvel publicado."
+                : tab === "HIDDEN"
+                  ? "Nenhum imóvel oculto."
+                  : "A lixeira está vazia."}
+            </p>
+          ) : (
+            <PartnerHousesList
+              rows={filtered}
+              tab={tab}
+              publishingById={publishingById}
+              deletingById={deletingById}
+              restoringById={restoringById}
+              selection={selection}
+              bulkBusy={bulkBusy}
+              onPublish={(house) => {
+                if (bulkBusy || Object.values(publishingById).some(Boolean)) return;
+                setPublishHouse(house);
+              }}
+              onEdit={(id) => {
+                setEditHouseId(id);
+                setShowHouseModal(true);
+              }}
+              onTrash={handleTrashHouse}
+              onRestore={handleRestoreHouse}
+              onDeleteForever={handleDeleteForever}
+            />
+          )}
         </>
       )}
 

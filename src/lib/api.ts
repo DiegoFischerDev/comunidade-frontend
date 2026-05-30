@@ -1832,9 +1832,11 @@ export const api = {
             caucoesCount: number;
             rendasEntradaCount: number;
             furnished: boolean;
-            publicationStatus: 'PUBLISHED' | 'HIDDEN';
+            publicationStatus: 'PUBLISHED' | 'HIDDEN' | 'TRASH';
             publishedUntil: string | null;
             lastPublishedAt: string | null;
+            hiddenAt: string | null;
+            trashedAt: string | null;
             whatsappSentAt: string | null;
             whatsappError: string | null;
             whatsappSends?: { sentAt: string }[];
@@ -2020,6 +2022,16 @@ export const api = {
           publicationStatus: 'HIDDEN';
           publishedUntil: string | null;
         }>(`/partners/me/houses/${encodeURIComponent(id)}/unpublish`, { method: 'POST' }),
+      trash: (id: string) =>
+        request<{ ok: true }>(
+          `/partners/me/houses/${encodeURIComponent(id)}/trash`,
+          { method: 'POST' },
+        ),
+      restore: (id: string) =>
+        request<{ ok: true }>(
+          `/partners/me/houses/${encodeURIComponent(id)}/restore`,
+          { method: 'POST' },
+        ),
       delete: (id: string) =>
         request<{ ok: true }>(
           `/partners/me/houses/${encodeURIComponent(id)}`,

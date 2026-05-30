@@ -55,7 +55,7 @@ export type HousePublishPreview = {
   imageUrls: string[];
   coverImageUrl?: string | null;
   videoPosterUrl?: string | null;
-  publicationStatus: "PUBLISHED" | "HIDDEN";
+  publicationStatus: "PUBLISHED" | "HIDDEN" | "TRASH";
   publishedUntil?: string | null;
   whatsappSentAt: string | null;
   whatsappSends?: { sentAt: string }[];
