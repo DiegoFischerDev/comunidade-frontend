@@ -1939,6 +1939,49 @@ export const api = {
           updatedAt: string;
         }>('/partners/me/houses', fd, { method: 'POST' });
       },
+      createFromDescription: (input: {
+        description: string;
+        images?: File[];
+        video?: File;
+        thumbnail?: File;
+        coverImageIndex?: number;
+      }) => {
+        const fd = new FormData();
+        fd.append('description', input.description.trim());
+        if (input.video) fd.append('video', input.video);
+        if (input.thumbnail) fd.append('thumbnail', input.thumbnail);
+        if (input.images?.length) {
+          for (const file of input.images) fd.append('images', file);
+        }
+        if (input.images?.length && input.coverImageIndex != null) {
+          fd.append('coverImageIndex', String(input.coverImageIndex));
+        }
+        return requestFormData<{
+          id: string;
+          houseId: number;
+          title: string;
+          description: string;
+          businessType: 'RENT' | 'SALE';
+          typology: 'T0' | 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'QUARTO_AP_COMPARTILHADO';
+          city: string;
+          availableFrom: string;
+          priceEur: string;
+          relocationFeeEur: string;
+          caucoesCount: number;
+          rendasEntradaCount: number;
+          furnished: boolean;
+          publicationStatus: 'PUBLISHED' | 'HIDDEN';
+          publishedUntil: string | null;
+          lastPublishedAt: string | null;
+          whatsappSentAt: string | null;
+          whatsappError: string | null;
+          imageUrls: string[];
+          coverImageUrl: string | null;
+          videoUrl: string | null;
+          createdAt: string;
+          updatedAt: string;
+        }>('/partners/me/houses/from-description', fd, { method: 'POST' });
+      },
       update: (
         id: string,
         input: {

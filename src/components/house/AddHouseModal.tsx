@@ -78,6 +78,8 @@ export function AddHouseModal({
 }: AddHouseModalProps) {
   const isAdmin = mode === 'admin';
   const isEdit = Boolean(houseId?.trim());
+  /** Parceiro a criar: só mídia + descrição; campos extraídos pela OpenAI no servidor. */
+  const isPartnerAiCreate = !isAdmin && !isEdit;
 
   const [relocationPartners, setRelocationPartners] = useState<{ id: string; name: string }[]>([]);
   const [assignedPartnerId, setAssignedPartnerId] = useState('');
@@ -286,7 +288,16 @@ export function AddHouseModal({
     const cleanCity = city.trim();
     const id = houseId?.trim();
 
-    if (!isAdmin || isEdit) {
+    if (isPartnerAiCreate) {
+      if (!cleanDesc || cleanDesc.length < 20) {
+        return setError(
+          'Escreve uma descrição com pelo menos 20 caracteres (tipologia, cidade, preço, mobilado, etc.).',
+        );
+      }
+      if (images.length === 0 && !video) {
+        return setError('Adiciona pelo menos 1 imagem ou 1 vídeo.');
+      }
+    } else if (!isAdmin || isEdit) {
       if (!cleanTitle) return setError('Preenche o título do imóvel.');
       if (!cleanDesc) return setError('Preenche a descrição.');
       if (!cleanCity) return setError('Preenche a cidade.');
@@ -300,12 +311,6 @@ export function AddHouseModal({
         );
       }
       if (!cleanRelocation) return setError('Preenche a taxa de relocation (em euros).');
-    }
-
-    if (!isAdmin && !isEdit) {
-      if (images.length === 0 && !video) {
-        return setError('Adiciona pelo menos 1 imagem ou 1 vídeo.');
-      }
     }
 
     if (isEdit && !isAdmin) {
@@ -371,6 +376,14 @@ export function AddHouseModal({
           furnished,
           ...(images.length ? { coverImageIndex } : {}),
           ...(assignedPartnerId.trim() ? { partnerId: assignedPartnerId.trim() } : {}),
+        });
+      } else if (isPartnerAiCreate) {
+        await api.partner.houses.createFromDescription({
+          description: cleanDesc,
+          ...(images.length ? { images } : {}),
+          ...(video ? { video } : {}),
+          ...(thumbnail && images.length === 0 ? { thumbnail } : {}),
+          ...(images.length ? { coverImageIndex } : {}),
         });
       } else {
         await api.partner.houses.create({
@@ -459,138 +472,152 @@ export function AddHouseModal({
               editMedia={editMedia}
             />
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="text-sm">
-                <span className="mb-1 block text-xs font-medium text-zinc-700">Título</span>
-                <input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                  placeholder="Ex.: T2 mobilado no Porto"
-                />
-              </label>
-              <div className="text-sm">
-                <RelocationCityCombobox
-                  id={isAdmin ? 'admin-house-city' : 'partner-house-city'}
-                  label="Cidade"
-                  labelClassName="mb-1 block text-xs font-medium text-zinc-700"
-                  value={city}
-                  onChange={isAdmin ? setCity : handleCityChange}
-                  allowEmpty={isAdmin && !isEdit}
-                  allowCustomValue
-                  extraCityOptions={extraCityOptions}
-                  placeholder="Pesquisar cidade…"
-                  variant={isAdmin ? 'amber' : 'blue'}
-                  required={!isAdmin || isEdit}
-                />
-              </div>
-              <label className="text-sm">
-                <span className="mb-1 block text-xs font-medium text-zinc-700">Tipologia</span>
-                <select
-                  value={typology}
-                  onChange={(e) => setTypology(e.target.value as (typeof HOUSE_TYPOLOGIES)[number]['id'])}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                >
-                  {HOUSE_TYPOLOGIES.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="text-sm">
-                <span className="mb-1 block text-xs font-medium text-zinc-700">Finalidade</span>
-                <select
-                  value={businessType}
-                  onChange={(e) =>
-                    setBusinessType(e.target.value as (typeof HOUSE_BUSINESS_TYPES)[number]['id'])
-                  }
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                >
-                  {HOUSE_BUSINESS_TYPES.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="text-sm">
-                <span className="mb-1 block text-xs font-medium text-zinc-700">Disponível a partir</span>
-                <input
-                  type="date"
-                  value={availableFrom}
-                  onChange={(e) => setAvailableFrom(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                />
-              </label>
-              <label className="text-sm">
-                <span className="mb-1 block text-xs font-medium text-zinc-700">
-                  {businessType === 'SALE' ? 'Preço de venda (EUR)' : 'Renda mensal (EUR)'}
-                </span>
-                <input
-                  value={priceEur}
-                  onChange={(e) => setPriceEur(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                />
-              </label>
-              <label className="text-sm">
-                <span className="mb-1 block text-xs font-medium text-zinc-700">Taxa relocation (EUR)</span>
-                <input
-                  value={relocationFeeEur}
-                  onChange={(e) => setRelocationFeeEur(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                />
-              </label>
-              <div className="grid grid-cols-2 gap-3 sm:col-span-2">
+            {!isPartnerAiCreate ? (
+              <div className="grid gap-4 sm:grid-cols-2">
                 <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Cauções</span>
+                  <span className="mb-1 block text-xs font-medium text-zinc-700">Título</span>
+                  <input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    placeholder="Ex.: T2 mobilado no Porto"
+                  />
+                </label>
+                <div className="text-sm">
+                  <RelocationCityCombobox
+                    id={isAdmin ? 'admin-house-city' : 'partner-house-city'}
+                    label="Cidade"
+                    labelClassName="mb-1 block text-xs font-medium text-zinc-700"
+                    value={city}
+                    onChange={isAdmin ? setCity : handleCityChange}
+                    allowEmpty={isAdmin && !isEdit}
+                    allowCustomValue
+                    extraCityOptions={extraCityOptions}
+                    placeholder="Pesquisar cidade…"
+                    variant={isAdmin ? 'amber' : 'blue'}
+                    required={!isAdmin || isEdit}
+                  />
+                </div>
+                <label className="text-sm">
+                  <span className="mb-1 block text-xs font-medium text-zinc-700">Tipologia</span>
                   <select
-                    value={caucoesCount}
-                    onChange={(e) => setCaucoesCount(e.target.value)}
+                    value={typology}
+                    onChange={(e) => setTypology(e.target.value as (typeof HOUSE_TYPOLOGIES)[number]['id'])}
                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                   >
-                    {HOUSE_ENTRADA_COUNT_OPTIONS.map((n) => (
-                      <option key={n} value={n}>
-                        {n}
+                    {HOUSE_TYPOLOGIES.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.label}
                       </option>
                     ))}
                   </select>
                 </label>
                 <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Rendas antecipadas</span>
+                  <span className="mb-1 block text-xs font-medium text-zinc-700">Finalidade</span>
                   <select
-                    value={rendasEntradaCount}
-                    onChange={(e) => setRendasEntradaCount(e.target.value)}
+                    value={businessType}
+                    onChange={(e) =>
+                      setBusinessType(e.target.value as (typeof HOUSE_BUSINESS_TYPES)[number]['id'])
+                    }
                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                   >
-                    {HOUSE_ENTRADA_COUNT_OPTIONS.map((n) => (
-                      <option key={n} value={n}>
-                        {n}
+                    {HOUSE_BUSINESS_TYPES.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.label}
                       </option>
                     ))}
                   </select>
                 </label>
+                <label className="text-sm">
+                  <span className="mb-1 block text-xs font-medium text-zinc-700">Disponível a partir</span>
+                  <input
+                    type="date"
+                    value={availableFrom}
+                    onChange={(e) => setAvailableFrom(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                  />
+                </label>
+                <label className="text-sm">
+                  <span className="mb-1 block text-xs font-medium text-zinc-700">
+                    {businessType === 'SALE' ? 'Preço de venda (EUR)' : 'Renda mensal (EUR)'}
+                  </span>
+                  <input
+                    value={priceEur}
+                    onChange={(e) => setPriceEur(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                  />
+                </label>
+                <label className="text-sm">
+                  <span className="mb-1 block text-xs font-medium text-zinc-700">Taxa relocation (EUR)</span>
+                  <input
+                    value={relocationFeeEur}
+                    onChange={(e) => setRelocationFeeEur(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-3 sm:col-span-2">
+                  <label className="text-sm">
+                    <span className="mb-1 block text-xs font-medium text-zinc-700">Cauções</span>
+                    <select
+                      value={caucoesCount}
+                      onChange={(e) => setCaucoesCount(e.target.value)}
+                      className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    >
+                      {HOUSE_ENTRADA_COUNT_OPTIONS.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-sm">
+                    <span className="mb-1 block text-xs font-medium text-zinc-700">Rendas antecipadas</span>
+                    <select
+                      value={rendasEntradaCount}
+                      onChange={(e) => setRendasEntradaCount(e.target.value)}
+                      className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    >
+                      {HOUSE_ENTRADA_COUNT_OPTIONS.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <label className="mt-1 inline-flex items-center gap-2 text-sm text-zinc-700 sm:col-span-2">
+                  <input
+                    type="checkbox"
+                    checked={furnished}
+                    onChange={(e) => setFurnished(e.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-300"
+                  />
+                  Imóvel mobilado
+                </label>
               </div>
-              <label className="mt-1 inline-flex items-center gap-2 text-sm text-zinc-700 sm:col-span-2">
-                <input
-                  type="checkbox"
-                  checked={furnished}
-                  onChange={(e) => setFurnished(e.target.checked)}
-                  className="h-4 w-4 rounded border-zinc-300"
-                />
-                Imóvel mobilado
-              </label>
-            </div>
+            ) : null}
 
             <label className="block text-sm">
-              <span className="mb-1 block text-xs font-medium text-zinc-700">Descrição</span>
+              <span className="mb-1 block text-xs font-medium text-zinc-700">
+                {isPartnerAiCreate ? 'Descrição do imóvel' : 'Descrição'}
+              </span>
+              {isPartnerAiCreate ? (
+                <p className="mb-2 text-xs text-zinc-500">
+                  Inclui tipologia, cidade, preço, mobilado, cauções, data de entrada, etc. Ao publicar, a IA
+                  preenche automaticamente o resto do anúncio.
+                </p>
+              ) : null}
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                rows={4}
+                rows={isPartnerAiCreate ? 8 : 4}
                 className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                 placeholder={
-                  isAdmin ? undefined : 'Detalha localização, mobiliado, despesas incluídas, duração mínima, etc.'
+                  isPartnerAiCreate
+                    ? 'Ex.: T2 mobilado no Porto, renda 950€, 2 cauções, entrada 1 de julho, taxa relocation 500€…'
+                    : isAdmin
+                      ? undefined
+                      : 'Detalha localização, mobilado, despesas incluídas, duração mínima, etc.'
                 }
               />
             </label>
@@ -613,7 +640,9 @@ export function AddHouseModal({
                 className="rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
               >
                 {saving
-                  ? 'A guardar…'
+                  ? isPartnerAiCreate
+                    ? 'A analisar com IA…'
+                    : 'A guardar…'
                   : isEdit
                     ? 'Guardar alterações'
                     : isAdmin
