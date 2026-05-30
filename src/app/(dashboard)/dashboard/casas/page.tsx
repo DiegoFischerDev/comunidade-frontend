@@ -789,10 +789,17 @@ export default function PartnerHousesPage() {
           setEditHouseId(null);
         }}
         onSuccess={async () => {
+          const wasCreate = editHouseId == null;
           try {
             const data = await api.partner.houses.list();
             setRows(data);
-            if (editHouseId) setShowUpdatedBanner(true);
+            if (wasCreate) {
+              setTab("HIDDEN");
+              setFilter("");
+              setSelectedIds(new Set());
+            } else {
+              setShowUpdatedBanner(true);
+            }
           } catch (err) {
             setError(err instanceof Error ? err.message : "Erro ao carregar casas.");
           }

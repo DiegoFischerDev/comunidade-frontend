@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import { EvolutionGroupSelect } from '@/components/whatsapp-scan/EvolutionGroupSelect';
 import { MonitoredUsersCell } from '@/components/whatsapp-scan/MonitoredUsersCell';
 import { WhatsappScanNumbersInput } from '@/components/whatsapp-scan/WhatsappScanNumbersInput';
 
@@ -66,7 +67,6 @@ export default function AdminWhatsappScanPage() {
   const [formGroupJid, setFormGroupJid] = useState('');
   const [formNumbers, setFormNumbers] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
-  const [fetchingTitle, setFetchingTitle] = useState(false);
 
   // edição
   const [editing, setEditing] = useState<GroupRow | null>(null);
@@ -144,8 +144,8 @@ export default function AdminWhatsappScanPage() {
       setError('Escolhe o parceiro relocation.');
       return;
     }
-    if (!/@g\.us$/i.test(formGroupJid.trim())) {
-      setError('JID do grupo inválido (deve terminar em @g.us).');
+    if (!formGroupJid.trim()) {
+      setError('Seleciona um grupo WhatsApp.');
       return;
     }
     setCreating(true);
@@ -168,30 +168,6 @@ export default function AdminWhatsappScanPage() {
       setCreating(false);
     }
   }, [formPartnerId, formTitle, formGroupJid, formNumbers, load]);
-
-  const fetchTitle = useCallback(
-    async (groupJid: string, apply: (title: string) => void) => {
-      setError('');
-      if (!/@g\.us$/i.test(groupJid.trim())) {
-        setError('Preenche um JID válido (deve terminar em @g.us) antes de buscar o título.');
-        return;
-      }
-      setFetchingTitle(true);
-      try {
-        const res = await api.admin.whatsappScan.groupSubject(groupJid.trim());
-        if (res.subject) {
-          apply(res.subject);
-        } else {
-          setError('Não foi possível obter o nome do grupo na Evolution (verifica o JID/instância).');
-        }
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Erro ao buscar o título do grupo.');
-      } finally {
-        setFetchingTitle(false);
-      }
-    },
-    [],
-  );
 
   const openEdit = useCallback((row: GroupRow) => {
     setEditing(row);
@@ -260,6 +236,18 @@ export default function AdminWhatsappScanPage() {
     return m;
   }, [partners]);
 
+  const monitoredGroupJids = useMemo(
+    () => new Set(groups.map((g) => g.groupJid)),
+    [groups],
+  );
+
+  const editExcludeJids = useMemo(() => {
+    if (!editing) return monitoredGroupJids;
+    return new Set(
+      groups.filter((g) => g.id !== editing.id).map((g) => g.groupJid),
+    );
+  }, [groups, editing, monitoredGroupJids]);
+
   if (!user) return null;
   if (!canSee) {
     return (
@@ -322,40 +310,18 @@ export default function AdminWhatsappScanPage() {
               ))}
             </select>
           </label>
-          <label className="text-sm">
-            <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
-              Título do grupo
-            </span>
-            <div className="mt-1 flex gap-2">
-              <input
-                value={formTitle}
-                onChange={(e) => setFormTitle(e.target.value)}
-                placeholder="Ex.: Imóveis Figueira da Foz"
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => void fetchTitle(formGroupJid, setFormTitle)}
-                disabled={fetchingTitle}
-                title="Buscar o nome do grupo na Evolution a partir do JID"
-                className="shrink-0 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
-              >
-                {fetchingTitle ? 'Buscando…' : 'Buscar'}
-              </button>
-            </div>
-            <span className="mt-1 block text-xs text-zinc-500">
-              Se deixares vazio, tentamos preencher automaticamente pelo JID ao adicionar.
-            </span>
-          </label>
           <label className="text-sm sm:col-span-2">
             <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
-              JID do grupo
+              Grupo WhatsApp
             </span>
-            <input
-              value={formGroupJid}
-              onChange={(e) => setFormGroupJid(e.target.value)}
-              placeholder="120363XXXXXXXXXX@g.us"
-              className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 font-mono text-sm"
+            <EvolutionGroupSelect
+              valueJid={formGroupJid}
+              excludeJids={monitoredGroupJids}
+              disabled={creating}
+              onChange={(g) => {
+                setFormGroupJid(g.groupJid);
+                setFormTitle(g.title);
+              }}
             />
           </label>
           <div className="text-sm sm:col-span-2">
@@ -491,36 +457,18 @@ export default function AdminWhatsappScanPage() {
                   ))}
                 </select>
               </label>
-              <label className="text-sm">
+              <label className="text-sm sm:col-span-2">
                 <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                  Título do grupo
+                  Grupo WhatsApp
                 </span>
-                <div className="mt-1 flex gap-2">
-                  <input
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    placeholder="Ex.: Imóveis Figueira da Foz"
-                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => void fetchTitle(editGroupJid, setEditTitle)}
-                    disabled={fetchingTitle}
-                    title="Buscar o nome do grupo na Evolution a partir do JID"
-                    className="shrink-0 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
-                  >
-                    {fetchingTitle ? 'Buscando…' : 'Buscar'}
-                  </button>
-                </div>
-              </label>
-              <label className="text-sm">
-                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                  JID do grupo
-                </span>
-                <input
-                  value={editGroupJid}
-                  onChange={(e) => setEditGroupJid(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 font-mono text-sm"
+                <EvolutionGroupSelect
+                  valueJid={editGroupJid}
+                  excludeJids={editExcludeJids}
+                  disabled={savingEdit}
+                  onChange={(g) => {
+                    setEditGroupJid(g.groupJid);
+                    setEditTitle(g.title);
+                  }}
                 />
               </label>
               <div className="text-sm">

@@ -774,6 +774,11 @@ export const api = {
         }),
       deleteGroup: (id: string) =>
         request<{ ok: true }>(`/whatsapp-scan/groups/${id}`, { method: 'DELETE' }),
+      listEvolutionGroups: () =>
+        request<{
+          instance: string;
+          items: Array<{ groupJid: string; title: string }>;
+        }>('/whatsapp-scan/evolution-groups', { method: 'GET' }),
       groupSubject: (groupJid: string) =>
         request<{ subject: string | null }>(
           `/whatsapp-scan/group-subject?groupJid=${encodeURIComponent(groupJid)}`,
