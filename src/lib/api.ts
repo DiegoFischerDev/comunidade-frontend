@@ -2081,6 +2081,53 @@ export const api = {
           { method: 'DELETE' },
         ),
     },
+    whatsappScan: {
+      listGroups: () =>
+        request<{
+          items: Array<{
+            id: string;
+            title: string | null;
+            groupJid: string;
+            monitoredNumbers: string[];
+            active: boolean;
+            createdAt: string;
+            updatedAt: string;
+          }>;
+          automationEnabled: boolean;
+        }>('/whatsapp-scan/me/groups', { method: 'GET' }),
+      updateGroup: (
+        id: string,
+        input: { monitoredNumbers?: string[]; active?: boolean },
+      ) =>
+        request<{
+          id: string;
+          title: string | null;
+          groupJid: string;
+          monitoredNumbers: string[];
+          active: boolean;
+          createdAt: string;
+          updatedAt: string;
+        }>(`/whatsapp-scan/me/groups/${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: JSON.stringify(input),
+        }),
+      setAutomation: (active: boolean) =>
+        request<{
+          items: Array<{
+            id: string;
+            title: string | null;
+            groupJid: string;
+            monitoredNumbers: string[];
+            active: boolean;
+            createdAt: string;
+            updatedAt: string;
+          }>;
+          automationEnabled: boolean;
+        }>('/whatsapp-scan/me/automation', {
+          method: 'PATCH',
+          body: JSON.stringify({ active }),
+        }),
+    },
     sales: {
       list: () =>
         request<

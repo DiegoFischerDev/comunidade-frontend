@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import { WhatsappScanNumbersInput } from '@/components/whatsapp-scan/WhatsappScanNumbersInput';
 
 type GroupsPayload = Awaited<ReturnType<typeof api.admin.whatsappScan.listGroups>>;
 type GroupRow = GroupsPayload['items'][number];
@@ -10,80 +11,6 @@ type MessagesPayload = Awaited<ReturnType<typeof api.admin.whatsappScan.listMess
 type MessageRow = MessagesPayload['items'][number];
 
 type RelocationPartner = { id: string; name: string };
-
-/** Input de "chips": digita um número e adiciona com Enter/vírgula/espaço; remove com ×. */
-function NumbersInput({
-  value,
-  onChange,
-}: {
-  value: string[];
-  onChange: (next: string[]) => void;
-}) {
-  const [draft, setDraft] = useState('');
-
-  const addFromDraft = (raw: string) => {
-    const parts = raw
-      .split(/[\s,;]+/)
-      .map((s) => s.replace(/\D+/g, ''))
-      .filter((s) => s.length > 0);
-    if (parts.length === 0) {
-      setDraft('');
-      return;
-    }
-    onChange(Array.from(new Set([...value, ...parts])));
-    setDraft('');
-  };
-
-  const remove = (n: string) => onChange(value.filter((v) => v !== n));
-
-  return (
-    <div className="mt-1 rounded-lg border border-zinc-200 px-2 py-2 focus-within:border-amber-400">
-      {value.length > 0 ? (
-        <div className="mb-2 flex flex-wrap gap-1.5">
-          {value.map((n) => (
-            <span
-              key={n}
-              className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800"
-            >
-              +{n}
-              <button
-                type="button"
-                onClick={() => remove(n)}
-                className="leading-none text-amber-600 hover:text-amber-900"
-                aria-label={`Remover ${n}`}
-              >
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
-      ) : null}
-      <input
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
-            e.preventDefault();
-            addFromDraft(draft);
-          } else if (e.key === 'Backspace' && draft === '' && value.length > 0) {
-            remove(value[value.length - 1]);
-          }
-        }}
-        onBlur={() => addFromDraft(draft)}
-        onPaste={(e) => {
-          const text = e.clipboardData.getData('text');
-          if (/[\s,;]/.test(text)) {
-            e.preventDefault();
-            addFromDraft(text);
-          }
-        }}
-        inputMode="numeric"
-        placeholder="Ex.: 351912345678 — Enter para adicionar"
-        className="w-full border-0 bg-transparent p-1 text-sm outline-none focus:ring-0"
-      />
-    </div>
-  );
-}
 
 function formatDtPt(iso: string): string {
   const d = new Date(iso);
@@ -407,10 +334,10 @@ export default function AdminWhatsappScanPage() {
             <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
               Números monitorizados (opcional)
             </span>
-            <NumbersInput value={formNumbers} onChange={setFormNumbers} />
+            <WhatsappScanNumbersInput value={formNumbers} onChange={setFormNumbers} />
             <span className="mt-1 block text-xs text-zinc-500">
-              Adiciona um número por vez (Enter, vírgula ou espaço). Apenas dígitos, com indicativo
-              do país. Vazio = monitoriza todas as mensagens do grupo.
+              Escreve o número e clica em Adicionar (ou Enter). Apenas dígitos, com indicativo do
+              país. Lista vazia = monitoriza todas as mensagens do grupo.
             </span>
           </div>
         </div>
@@ -574,7 +501,7 @@ export default function AdminWhatsappScanPage() {
                 <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
                   Números monitorizados
                 </span>
-                <NumbersInput value={editNumbers} onChange={setEditNumbers} />
+                <WhatsappScanNumbersInput value={editNumbers} onChange={setEditNumbers} />
                 <span className="mt-1 block text-xs text-zinc-500">Vazio = monitoriza todos.</span>
               </div>
               <label className="flex items-center gap-2 text-sm text-zinc-800">

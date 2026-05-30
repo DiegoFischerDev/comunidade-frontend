@@ -6,6 +6,7 @@ import { AddHouseModal } from "@/components/house/AddHouseModal";
 import { isActivePublished } from "@/components/house/HousePublicationStatusBadge";
 import { AddAdvertisingBalanceModal } from "@/components/house/AddAdvertisingBalanceModal";
 import { AdvertisingBalanceCard } from "@/components/house/AdvertisingBalanceCard";
+import { PartnerWhatsappScanPanel } from "@/components/whatsapp-scan/PartnerWhatsappScanPanel";
 import { PartnerHousesList, type HouseListSelection } from "@/components/house/PartnerHousesList";
 import { PublishHouseConfirmModal } from "@/components/house/PublishHouseConfirmModal";
 import { PublishHousesBulkConfirmModal } from "@/components/house/PublishHousesBulkConfirmModal";
@@ -559,7 +560,7 @@ export default function PartnerHousesPage() {
   }
 
   return (
-    <div>
+    <div className="min-w-0 max-w-full overflow-x-hidden">
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
         <p className="mt-2 text-sm text-zinc-600">
@@ -571,6 +572,8 @@ export default function PartnerHousesPage() {
         balanceEurCents={balanceEurCents}
         onAddBalance={() => setShowTopupModal(true)}
       />
+
+      <PartnerWhatsappScanPanel />
 
       {showTopupSuccessBanner && (
         <div className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
@@ -610,8 +613,22 @@ export default function PartnerHousesPage() {
         </div>
       ) : (
         <>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="min-w-0 flex-1 max-w-md">
+          <div className="mt-6 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="shrink-0 sm:order-2 sm:ml-auto">
+              <CardButton
+                type="button"
+                variant="primary"
+                disabled={bulkBusy}
+                className="w-full sm:w-auto"
+                onClick={() => {
+                  setEditHouseId(null);
+                  setShowHouseModal(true);
+                }}
+              >
+                Adicionar casa
+              </CardButton>
+            </div>
+            <div className="min-w-0 flex-1 sm:order-1 sm:max-w-md">
               <label className="block text-xs font-medium text-zinc-700">Filtrar</label>
               <input
                 value={filter}
@@ -621,23 +638,13 @@ export default function PartnerHousesPage() {
                 className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
               />
             </div>
-            <div className="ml-auto shrink-0">
-              <CardButton
-                type="button"
-                variant="primary"
-                disabled={bulkBusy}
-                onClick={() => {
-                  setEditHouseId(null);
-                  setShowHouseModal(true);
-                }}
-              >
-                Adicionar casa
-              </CardButton>
-            </div>
           </div>
 
-          <div className="mt-4 border-b border-zinc-200">
-            <nav className="-mb-px flex gap-1 sm:gap-2" aria-label="Abas de imóveis">
+          <div className="mt-4 min-w-0 border-b border-zinc-200">
+            <nav
+              className="-mb-px flex w-full min-w-0 justify-between gap-0.5 sm:justify-start sm:gap-2"
+              aria-label="Abas de imóveis"
+            >
               {(
                 [
                   { key: "PUBLISHED", label: "Publicados" },
@@ -652,16 +659,16 @@ export default function PartnerHousesPage() {
                     key={t.key}
                     type="button"
                     onClick={() => setTab(t.key)}
-                    className={`-mb-px inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
+                    className={`-mb-px inline-flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1 whitespace-nowrap border-b-2 px-1.5 py-2 text-xs font-medium transition-colors sm:flex-none sm:justify-start sm:gap-1.5 sm:px-3 sm:py-2.5 sm:text-sm ${
                       active
                         ? "border-blue-600 text-blue-700"
                         : "border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700"
                     }`}
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
+                    <Icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                     {t.label}
                     <span
-                      className={`rounded-full px-1.5 py-0.5 text-xs tabular-nums ${
+                      className={`rounded-full px-1 py-0.5 text-[10px] tabular-nums sm:px-1.5 sm:text-xs ${
                         active ? "bg-blue-100 text-blue-700" : "bg-zinc-100 text-zinc-500"
                       }`}
                     >
