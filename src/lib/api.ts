@@ -735,6 +735,7 @@ export const api = {
             id: string;
             partnerId: string;
             partner: { id: string; name: string; categorySlug: string | null } | null;
+            title: string | null;
             groupJid: string;
             monitoredNumbers: string[];
             active: boolean;
@@ -745,6 +746,7 @@ export const api = {
         }>('/whatsapp-scan/groups', { method: 'GET' }),
       createGroup: (input: {
         partnerId: string;
+        title?: string;
         groupJid: string;
         monitoredNumbers?: string[];
         active?: boolean;
@@ -757,6 +759,7 @@ export const api = {
         id: string,
         input: {
           partnerId?: string;
+          title?: string;
           groupJid?: string;
           monitoredNumbers?: string[];
           active?: boolean;
@@ -768,6 +771,11 @@ export const api = {
         }),
       deleteGroup: (id: string) =>
         request<{ ok: true }>(`/whatsapp-scan/groups/${id}`, { method: 'DELETE' }),
+      groupSubject: (groupJid: string) =>
+        request<{ subject: string | null }>(
+          `/whatsapp-scan/group-subject?groupJid=${encodeURIComponent(groupJid)}`,
+          { method: 'GET' },
+        ),
       listMessages: (groupId?: string) => {
         const q = groupId ? `?groupId=${encodeURIComponent(groupId)}` : '';
         return request<{

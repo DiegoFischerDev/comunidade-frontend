@@ -11,14 +11,77 @@ type MessageRow = MessagesPayload['items'][number];
 
 type RelocationPartner = { id: string; name: string };
 
-function parseNumbers(raw: string): string[] {
-  return Array.from(
-    new Set(
-      raw
-        .split(/[\s,;]+/)
-        .map((s) => s.replace(/\D+/g, ''))
-        .filter((s) => s.length > 0),
-    ),
+/** Input de "chips": digita um número e adiciona com Enter/vírgula/espaço; remove com ×. */
+function NumbersInput({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [draft, setDraft] = useState('');
+
+  const addFromDraft = (raw: string) => {
+    const parts = raw
+      .split(/[\s,;]+/)
+      .map((s) => s.replace(/\D+/g, ''))
+      .filter((s) => s.length > 0);
+    if (parts.length === 0) {
+      setDraft('');
+      return;
+    }
+    onChange(Array.from(new Set([...value, ...parts])));
+    setDraft('');
+  };
+
+  const remove = (n: string) => onChange(value.filter((v) => v !== n));
+
+  return (
+    <div className="mt-1 rounded-lg border border-zinc-200 px-2 py-2 focus-within:border-amber-400">
+      {value.length > 0 ? (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {value.map((n) => (
+            <span
+              key={n}
+              className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800"
+            >
+              +{n}
+              <button
+                type="button"
+                onClick={() => remove(n)}
+                className="leading-none text-amber-600 hover:text-amber-900"
+                aria-label={`Remover ${n}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : null}
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
+            e.preventDefault();
+            addFromDraft(draft);
+          } else if (e.key === 'Backspace' && draft === '' && value.length > 0) {
+            remove(value[value.length - 1]);
+          }
+        }}
+        onBlur={() => addFromDraft(draft)}
+        onPaste={(e) => {
+          const text = e.clipboardData.getData('text');
+          if (/[\s,;]/.test(text)) {
+            e.preventDefault();
+            addFromDraft(text);
+          }
+        }}
+        inputMode="numeric"
+        placeholder="Ex.: 351912345678 — Enter para adicionar"
+        className="w-full border-0 bg-transparent p-1 text-sm outline-none focus:ring-0"
+      />
+    </div>
   );
 }
 
@@ -71,15 +134,18 @@ export default function AdminWhatsappScanPage() {
 
   // formulário de criação
   const [formPartnerId, setFormPartnerId] = useState('');
+  const [formTitle, setFormTitle] = useState('');
   const [formGroupJid, setFormGroupJid] = useState('');
-  const [formNumbers, setFormNumbers] = useState('');
+  const [formNumbers, setFormNumbers] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
+  const [fetchingTitle, setFetchingTitle] = useState(false);
 
   // edição
   const [editing, setEditing] = useState<GroupRow | null>(null);
   const [editPartnerId, setEditPartnerId] = useState('');
+  const [editTitle, setEditTitle] = useState('');
   const [editGroupJid, setEditGroupJid] = useState('');
-  const [editNumbers, setEditNumbers] = useState('');
+  const [editNumbers, setEditNumbers] = useState<string[]>([]);
   const [editActive, setEditActive] = useState(true);
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -88,27 +154,6 @@ export default function AdminWhatsappScanPage() {
   const [logsGroup, setLogsGroup] = useState<GroupRow | null>(null);
   const [logs, setLogs] = useState<MessageRow[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
-
-  // atividade recente (logs de todos os grupos, na própria página)
-  const [activity, setActivity] = useState<MessageRow[]>([]);
-  const [activityLoading, setActivityLoading] = useState(false);
-  const [activityGroupFilter, setActivityGroupFilter] = useState('');
-  const [activityStatusFilter, setActivityStatusFilter] = useState('');
-
-  const loadActivity = useCallback(async () => {
-    if (!canSee) return;
-    setActivityLoading(true);
-    try {
-      const res = await api.admin.whatsappScan.listMessages(
-        activityGroupFilter || undefined,
-      );
-      setActivity(res.items);
-    } catch {
-      setActivity([]);
-    } finally {
-      setActivityLoading(false);
-    }
-  }, [canSee, activityGroupFilter]);
 
   const load = useCallback(async () => {
     if (!canSee) return;
@@ -137,18 +182,6 @@ export default function AdminWhatsappScanPage() {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    void loadActivity();
-  }, [loadActivity]);
-
-  const visibleActivity = useMemo(
-    () =>
-      activity.filter(
-        (m) => !activityStatusFilter || m.status === activityStatusFilter,
-      ),
-    [activity, activityStatusFilter],
-  );
-
   const handleCreate = useCallback(async () => {
     setError('');
     setSuccess('');
@@ -164,12 +197,14 @@ export default function AdminWhatsappScanPage() {
     try {
       await api.admin.whatsappScan.createGroup({
         partnerId: formPartnerId,
+        title: formTitle.trim() || undefined,
         groupJid: formGroupJid.trim(),
-        monitoredNumbers: parseNumbers(formNumbers),
+        monitoredNumbers: formNumbers,
       });
       setFormPartnerId('');
+      setFormTitle('');
       setFormGroupJid('');
-      setFormNumbers('');
+      setFormNumbers([]);
       setSuccess('Grupo adicionado ao monitoramento.');
       await load();
     } catch (e) {
@@ -177,13 +212,38 @@ export default function AdminWhatsappScanPage() {
     } finally {
       setCreating(false);
     }
-  }, [formPartnerId, formGroupJid, formNumbers, load]);
+  }, [formPartnerId, formTitle, formGroupJid, formNumbers, load]);
+
+  const fetchTitle = useCallback(
+    async (groupJid: string, apply: (title: string) => void) => {
+      setError('');
+      if (!/@g\.us$/i.test(groupJid.trim())) {
+        setError('Preenche um JID válido (deve terminar em @g.us) antes de buscar o título.');
+        return;
+      }
+      setFetchingTitle(true);
+      try {
+        const res = await api.admin.whatsappScan.groupSubject(groupJid.trim());
+        if (res.subject) {
+          apply(res.subject);
+        } else {
+          setError('Não foi possível obter o nome do grupo na Evolution (verifica o JID/instância).');
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Erro ao buscar o título do grupo.');
+      } finally {
+        setFetchingTitle(false);
+      }
+    },
+    [],
+  );
 
   const openEdit = useCallback((row: GroupRow) => {
     setEditing(row);
     setEditPartnerId(row.partnerId);
+    setEditTitle(row.title ?? '');
     setEditGroupJid(row.groupJid);
-    setEditNumbers(row.monitoredNumbers.join(', '));
+    setEditNumbers(row.monitoredNumbers);
     setEditActive(row.active);
   }, []);
 
@@ -194,8 +254,9 @@ export default function AdminWhatsappScanPage() {
     try {
       await api.admin.whatsappScan.updateGroup(editing.id, {
         partnerId: editPartnerId || undefined,
+        title: editTitle.trim(),
         groupJid: editGroupJid.trim() || undefined,
-        monitoredNumbers: parseNumbers(editNumbers),
+        monitoredNumbers: editNumbers,
         active: editActive,
       });
       setEditing(null);
@@ -205,7 +266,7 @@ export default function AdminWhatsappScanPage() {
     } finally {
       setSavingEdit(false);
     }
-  }, [editing, editPartnerId, editGroupJid, editNumbers, editActive, load]);
+  }, [editing, editPartnerId, editTitle, editGroupJid, editNumbers, editActive, load]);
 
   const deleteGroup = useCallback(
     async (id: string) => {
@@ -308,6 +369,31 @@ export default function AdminWhatsappScanPage() {
           </label>
           <label className="text-sm">
             <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+              Título do grupo
+            </span>
+            <div className="mt-1 flex gap-2">
+              <input
+                value={formTitle}
+                onChange={(e) => setFormTitle(e.target.value)}
+                placeholder="Ex.: Imóveis Figueira da Foz"
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => void fetchTitle(formGroupJid, setFormTitle)}
+                disabled={fetchingTitle}
+                title="Buscar o nome do grupo na Evolution a partir do JID"
+                className="shrink-0 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+              >
+                {fetchingTitle ? 'Buscando…' : 'Buscar'}
+              </button>
+            </div>
+            <span className="mt-1 block text-xs text-zinc-500">
+              Se deixares vazio, tentamos preencher automaticamente pelo JID ao adicionar.
+            </span>
+          </label>
+          <label className="text-sm sm:col-span-2">
+            <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
               JID do grupo
             </span>
             <input
@@ -317,22 +403,16 @@ export default function AdminWhatsappScanPage() {
               className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 font-mono text-sm"
             />
           </label>
-          <label className="text-sm sm:col-span-2">
+          <div className="text-sm sm:col-span-2">
             <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
               Números monitorizados (opcional)
             </span>
-            <textarea
-              value={formNumbers}
-              onChange={(e) => setFormNumbers(e.target.value)}
-              rows={2}
-              placeholder="Ex.: 351912345678, 351999888777 — vazio = monitoriza todos"
-              className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-            />
+            <NumbersInput value={formNumbers} onChange={setFormNumbers} />
             <span className="mt-1 block text-xs text-zinc-500">
-              Separa por vírgula, espaço ou linha. Apenas dígitos (com indicativo do país). Vazio =
-              monitoriza todas as mensagens do grupo.
+              Adiciona um número por vez (Enter, vírgula ou espaço). Apenas dígitos, com indicativo
+              do país. Vazio = monitoriza todas as mensagens do grupo.
             </span>
-          </label>
+          </div>
         </div>
         <div className="mt-3">
           <button
@@ -357,8 +437,9 @@ export default function AdminWhatsappScanPage() {
             <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-600">
               <tr>
                 <th className="px-4 py-3">Parceiro</th>
+                <th className="px-4 py-3">Título</th>
                 <th className="px-4 py-3">Grupo (JID)</th>
-                <th className="px-4 py-3">Números</th>
+                <th className="px-4 py-3">Números monitorados</th>
                 <th className="px-4 py-3">Estado</th>
                 <th className="px-4 py-3">Mensagens</th>
                 <th className="px-4 py-3 text-right">Ações</th>
@@ -369,6 +450,9 @@ export default function AdminWhatsappScanPage() {
                 <tr key={row.id} className="hover:bg-zinc-50/60">
                   <td className="px-4 py-3 text-zinc-800">
                     {row.partner?.name ?? partnersById.get(row.partnerId) ?? '—'}
+                  </td>
+                  <td className="px-4 py-3 text-zinc-800">
+                    {row.title ? row.title : <span className="text-zinc-400">—</span>}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-zinc-700">{row.groupJid}</td>
                   <td className="px-4 py-3 text-zinc-700">
@@ -423,95 +507,6 @@ export default function AdminWhatsappScanPage() {
         </div>
       )}
 
-      {/* Atividade recente (logs) */}
-      <div className="mt-8">
-        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
-          <div>
-            <h2 className="text-lg font-semibold text-zinc-900">Atividade recente</h2>
-            <p className="mt-1 text-sm text-zinc-600">
-              Últimas mensagens capturadas nos grupos monitorizados e o resultado do processamento
-              pela IA.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={activityGroupFilter}
-              onChange={(e) => setActivityGroupFilter(e.target.value)}
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-            >
-              <option value="">Todos os grupos</option>
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.partner?.name ?? g.groupJid}
-                </option>
-              ))}
-            </select>
-            <select
-              value={activityStatusFilter}
-              onChange={(e) => setActivityStatusFilter(e.target.value)}
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-            >
-              <option value="">Todos os status</option>
-              <option value="created">Imóvel criado</option>
-              <option value="media_stored">Mídia guardada</option>
-              <option value="media_attached">Mídia anexada</option>
-              <option value="ignored_not_listing">Não é anúncio</option>
-              <option value="ignored_sender">Número ignorado</option>
-              <option value="error">Erro</option>
-              <option value="received">Recebida</option>
-            </select>
-            <button
-              type="button"
-              onClick={() => void loadActivity()}
-              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-            >
-              Atualizar
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-3">
-          {activityLoading ? (
-            <p className="text-sm text-zinc-600">Carregando…</p>
-          ) : visibleActivity.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-zinc-200 bg-white px-4 py-6 text-center text-sm text-zinc-600">
-              Nenhuma mensagem processada ainda. As mensagens aparecem aqui assim que chegarem nos
-              grupos monitorizados.
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {visibleActivity.map((m) => {
-                const s = statusLabel(m.status);
-                return (
-                  <li key={m.id} className="rounded-xl border border-zinc-200 bg-white p-3">
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-                      <span className={`rounded-full px-2 py-0.5 font-semibold ${s.className}`}>
-                        {s.label}
-                      </span>
-                      {m.group?.partner?.name ? (
-                        <span className="font-medium text-zinc-700">
-                          {m.group.partner.name}
-                        </span>
-                      ) : null}
-                      <span>+{m.senderNumber}</span>
-                      <span>·</span>
-                      <span>{formatDtPt(m.createdAt)}</span>
-                      {m.createdHouseId ? (
-                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700">
-                          imóvel #{m.createdHouseId.slice(-6)}
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-800">{m.rawText}</p>
-                    {m.error ? <p className="mt-1 text-xs text-red-600">{m.error}</p> : null}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      </div>
-
       {/* Modal edição */}
       {editing ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -545,6 +540,28 @@ export default function AdminWhatsappScanPage() {
               </label>
               <label className="text-sm">
                 <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Título do grupo
+                </span>
+                <div className="mt-1 flex gap-2">
+                  <input
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    placeholder="Ex.: Imóveis Figueira da Foz"
+                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void fetchTitle(editGroupJid, setEditTitle)}
+                    disabled={fetchingTitle}
+                    title="Buscar o nome do grupo na Evolution a partir do JID"
+                    className="shrink-0 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+                  >
+                    {fetchingTitle ? 'Buscando…' : 'Buscar'}
+                  </button>
+                </div>
+              </label>
+              <label className="text-sm">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
                   JID do grupo
                 </span>
                 <input
@@ -553,18 +570,13 @@ export default function AdminWhatsappScanPage() {
                   className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 font-mono text-sm"
                 />
               </label>
-              <label className="text-sm">
+              <div className="text-sm">
                 <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
                   Números monitorizados
                 </span>
-                <textarea
-                  value={editNumbers}
-                  onChange={(e) => setEditNumbers(e.target.value)}
-                  rows={2}
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-                />
+                <NumbersInput value={editNumbers} onChange={setEditNumbers} />
                 <span className="mt-1 block text-xs text-zinc-500">Vazio = monitoriza todos.</span>
-              </label>
+              </div>
               <label className="flex items-center gap-2 text-sm text-zinc-800">
                 <input
                   type="checkbox"
