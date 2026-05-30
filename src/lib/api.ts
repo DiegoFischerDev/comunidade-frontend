@@ -786,7 +786,9 @@ export const api = {
               | 'ignored_sender'
               | 'ignored_not_listing'
               | 'created'
-              | 'error';
+              | 'error'
+              | 'media_stored'
+              | 'media_attached';
             createdHouseId: string | null;
             error: string | null;
             createdAt: string;
