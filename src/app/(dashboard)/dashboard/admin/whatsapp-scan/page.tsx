@@ -50,6 +50,10 @@ function statusLabel(status: MessageRow['status']): {
       return { label: 'Número ignorado', className: 'bg-zinc-100 text-zinc-700' };
     case 'error':
       return { label: 'Erro', className: 'bg-red-50 text-red-700' };
+    case 'media_stored':
+      return { label: 'Mídia guardada', className: 'bg-sky-50 text-sky-700' };
+    case 'media_attached':
+      return { label: 'Mídia anexada', className: 'bg-emerald-50 text-emerald-800' };
     default:
       return { label: 'Recebida', className: 'bg-amber-50 text-amber-800' };
   }
@@ -449,6 +453,8 @@ export default function AdminWhatsappScanPage() {
             >
               <option value="">Todos os status</option>
               <option value="created">Imóvel criado</option>
+              <option value="media_stored">Mídia guardada</option>
+              <option value="media_attached">Mídia anexada</option>
               <option value="ignored_not_listing">Não é anúncio</option>
               <option value="ignored_sender">Número ignorado</option>
               <option value="error">Erro</option>
