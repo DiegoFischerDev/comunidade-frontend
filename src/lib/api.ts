@@ -728,6 +728,72 @@ export const api = {
       delete: (id: string) =>
         request<{ ok: true }>(`/leads/admin/${id}`, { method: 'DELETE' }),
     },
+    whatsappScan: {
+      listGroups: () =>
+        request<{
+          items: Array<{
+            id: string;
+            partnerId: string;
+            partner: { id: string; name: string; categorySlug: string | null } | null;
+            groupJid: string;
+            monitoredNumbers: string[];
+            active: boolean;
+            messagesCount: number;
+            createdAt: string;
+            updatedAt: string;
+          }>;
+        }>('/whatsapp-scan/groups', { method: 'GET' }),
+      createGroup: (input: {
+        partnerId: string;
+        groupJid: string;
+        monitoredNumbers?: string[];
+        active?: boolean;
+      }) =>
+        request<{ id: string }>('/whatsapp-scan/groups', {
+          method: 'POST',
+          body: JSON.stringify(input),
+        }),
+      updateGroup: (
+        id: string,
+        input: {
+          partnerId?: string;
+          groupJid?: string;
+          monitoredNumbers?: string[];
+          active?: boolean;
+        },
+      ) =>
+        request<{ id: string }>(`/whatsapp-scan/groups/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(input),
+        }),
+      deleteGroup: (id: string) =>
+        request<{ ok: true }>(`/whatsapp-scan/groups/${id}`, { method: 'DELETE' }),
+      listMessages: (groupId?: string) => {
+        const q = groupId ? `?groupId=${encodeURIComponent(groupId)}` : '';
+        return request<{
+          items: Array<{
+            id: string;
+            groupId: string;
+            group: {
+              id: string;
+              groupJid: string;
+              partner: { id: string; name: string } | null;
+            } | null;
+            senderNumber: string;
+            rawText: string;
+            status:
+              | 'received'
+              | 'ignored_sender'
+              | 'ignored_not_listing'
+              | 'created'
+              | 'error';
+            createdHouseId: string | null;
+            error: string | null;
+            createdAt: string;
+          }>;
+        }>(`/whatsapp-scan/messages${q}`, { method: 'GET' });
+      },
+    },
     rafacall: {
       schedule: (tz?: string) => {
         const q = tz ? `?tz=${encodeURIComponent(tz)}` : '';

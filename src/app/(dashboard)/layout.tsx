@@ -617,6 +617,16 @@ export default function DashboardLayout({
               >
                 Parceiros
               </Link>
+              <Link
+                href="/dashboard/admin/whatsapp-scan"
+                className={`block rounded-md px-3 py-2 text-sm ${
+                  pathname === '/dashboard/admin/whatsapp-scan'
+                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
+                    : 'text-zinc-800 hover:bg-zinc-100'
+                }`}
+              >
+                Whatsapp scan
+              </Link>
             </div>
           )}
           {user?.role === 'PARTNER' && !isRelocationPartner ? (
