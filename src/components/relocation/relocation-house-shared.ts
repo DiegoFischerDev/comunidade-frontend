@@ -72,7 +72,9 @@ export function formatRelocationPriceByBusinessType(
 }
 
 export function formatRelocationFeeEur(raw: string): string {
-  const t = raw.trim().replace(/\s*€\s*$/i, "").trim();
+  const t = (raw ?? "").trim().replace(/\s*€\s*$/i, "").trim();
+  const digits = t.replace(/[^\d]/g, "");
+  if (!digits || /^0+$/.test(digits)) return "Não informado";
   return `${t} €`;
 }
 

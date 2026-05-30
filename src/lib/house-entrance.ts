@@ -1,5 +1,6 @@
 /** Texto curto para cartões e listagens. */
 export function formatHouseEntradaShort(caucoes: number, rendas: number): string {
+  if ((caucoes ?? 0) <= 0 && (rendas ?? 0) <= 0) return "Não informado";
   const c = caucoes === 1 ? "1 caução" : `${caucoes} cauções`;
   const r = rendas === 1 ? "1 renda" : `${rendas} rendas`;
   return `${c} · ${r}`;

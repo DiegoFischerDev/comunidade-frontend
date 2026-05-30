@@ -4,6 +4,7 @@ import Link from "next/link";
 import { PublishHouseRowButton } from "@/components/house/PublishHouseRowButton";
 import { formatHouseEurFieldDisplay } from "@/lib/format-eur-pt";
 import { formatHouseEntradaWithTotal, orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
+import { formatRelocationFeeEur } from "@/components/relocation/relocation-house-shared";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { api } from "@/lib/api";
 
@@ -418,7 +419,7 @@ export function PartnerHousesList({
                 </td>
                 <td className="px-4 py-3 text-zinc-700">
                   <div className="text-xs text-zinc-500">
-                    Taxa: {formatHouseEurFieldDisplay(r.relocationFeeEur)}
+                    Taxa: {formatRelocationFeeEur(r.relocationFeeEur)}
                   </div>
                   <div>
                     {formatHouseEntradaWithTotal(
