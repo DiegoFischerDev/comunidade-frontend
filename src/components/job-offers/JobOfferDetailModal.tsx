@@ -44,20 +44,22 @@ export function JobOfferDetailModal({ offer, onClose }: Props) {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-amber-800/90">
+            <div className="min-w-0">
+              <span className="inline-flex items-center rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700">
                 {offer.city}
-              </p>
-              <p className="mt-1 text-sm font-medium text-zinc-700">
-                {offer.jobFunction}
-              </p>
+              </span>
               <h2
                 id="job-offer-detail-title"
-                className="mt-1 text-xl font-bold text-zinc-900"
+                className="mt-3 text-xl font-bold leading-snug text-zinc-900 sm:text-2xl"
               >
-                {offer.title}
+                {offer.jobFunction}
               </h2>
-              <p className="mt-2 text-sm text-zinc-500">
+              {offer.title.trim() ? (
+                <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+                  {offer.title}
+                </p>
+              ) : null}
+              <p className="mt-3 text-xs text-zinc-500">
                 Publicado em {formatPublishedAt(offer.publishedAt)}
               </p>
             </div>
