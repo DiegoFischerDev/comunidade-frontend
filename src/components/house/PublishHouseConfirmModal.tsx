@@ -54,6 +54,7 @@ export type HousePublishPreview = {
   priceEur: string;
   imageUrls: string[];
   coverImageUrl?: string | null;
+  videoUrl?: string | null;
   videoPosterUrl?: string | null;
   publicationStatus: "PUBLISHED" | "HIDDEN" | "TRASH";
   publishedUntil?: string | null;
@@ -74,6 +75,78 @@ function formatDatePt(value: string) {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleDateString("pt-PT");
+}
+
+const MAX_PREVIEW_PHOTOS = 6;
+
+function HouseMediaPublishPreview({
+  imageUrls,
+  coverImageUrl,
+  videoUrl,
+  videoPosterUrl,
+}: {
+  imageUrls: string[];
+  coverImageUrl?: string | null;
+  videoUrl?: string | null;
+  videoPosterUrl?: string | null;
+}) {
+  const photos = orderHouseImagesWithCoverFirst(imageUrls ?? [], coverImageUrl).slice(
+    0,
+    MAX_PREVIEW_PHOTOS,
+  );
+  const resolvedVideo = videoUrl ? resolveUploadsUrl(videoUrl) : null;
+  const resolvedPoster = videoPosterUrl ? resolveUploadsUrl(videoPosterUrl) : null;
+  const hasMedia = photos.length > 0 || resolvedVideo || resolvedPoster;
+
+  if (!hasMedia) {
+    return (
+      <p className="text-sm text-zinc-500">Sem fotos nem vídeo neste imóvel.</p>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-start gap-2">
+      {photos.map((url, index) => (
+        <div
+          key={`${url}-${index}`}
+          className="h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={resolveUploadsUrl(url)}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        </div>
+      ))}
+      {resolvedVideo ? (
+        <div className="h-[4.5rem] w-[5.5rem] shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-black">
+          <video
+            src={resolvedVideo}
+            poster={resolvedPoster ?? undefined}
+            className="h-full w-full object-cover"
+            controls
+            muted
+            playsInline
+            preload="metadata"
+            aria-label="Pré-visualização do vídeo"
+          />
+        </div>
+      ) : resolvedPoster ? (
+        <div className="relative h-[4.5rem] w-[5.5rem] shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={resolvedPoster}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+          <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[10px] font-medium text-white">
+            Vídeo
+          </span>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function DetailItem({ label, value }: { label: string; value: string }) {
@@ -121,14 +194,6 @@ export function PublishHouseConfirmModal({
   }, [open]);
 
   if (!open || !house) return null;
-
-  const ordered = orderHouseImagesWithCoverFirst(house.imageUrls ?? [], house.coverImageUrl);
-  const thumb =
-    ordered[0] != null
-      ? resolveUploadsUrl(ordered[0])
-      : house.videoPosterUrl
-        ? resolveUploadsUrl(house.videoPosterUrl)
-        : null;
 
   const activelyPublished = isActivePublished(
     house.publicationStatus,
@@ -194,24 +259,27 @@ export function PublishHouseConfirmModal({
         </p>
 
         <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
-          <div className="flex gap-4 p-4">
-            <div className="h-24 w-32 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100">
-              {thumb ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={thumb} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full items-center justify-center text-xs text-zinc-400">
-                  Sem foto
-                </div>
-              )}
+          <div className="p-4">
+            <p className="font-mono text-xs text-zinc-500">Id {house.houseId}</p>
+            <p className="mt-0.5 text-base font-semibold leading-snug text-zinc-900">
+              {house.title}
+            </p>
+            <div className="mt-2">
+              <HousePublicationStatusBadge
+                publicationStatus={house.publicationStatus}
+                publishedUntil={house.publishedUntil}
+              />
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-mono text-xs text-zinc-500">Id {house.houseId}</p>
-              <p className="mt-0.5 text-base font-semibold leading-snug text-zinc-900">{house.title}</p>
+            <div className="mt-4">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                Fotos e vídeo
+              </p>
               <div className="mt-2">
-                <HousePublicationStatusBadge
-                  publicationStatus={house.publicationStatus}
-                  publishedUntil={house.publishedUntil}
+                <HouseMediaPublishPreview
+                  imageUrls={house.imageUrls}
+                  coverImageUrl={house.coverImageUrl}
+                  videoUrl={house.videoUrl}
+                  videoPosterUrl={house.videoPosterUrl}
                 />
               </div>
             </div>

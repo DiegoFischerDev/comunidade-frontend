@@ -145,7 +145,7 @@ export default function AdminWhatsappScanPage() {
       return;
     }
     if (!formGroupJid.trim()) {
-      setError('Seleciona um grupo WhatsApp.');
+      setError('Seleciona um grupo ou canal WhatsApp.');
       return;
     }
     setCreating(true);
@@ -312,7 +312,7 @@ export default function AdminWhatsappScanPage() {
           </label>
           <label className="text-sm sm:col-span-2">
             <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
-              Grupo WhatsApp
+              Grupo ou canal WhatsApp
             </span>
             <EvolutionGroupSelect
               valueJid={formGroupJid}
@@ -359,7 +359,6 @@ export default function AdminWhatsappScanPage() {
               <tr>
                 <th className="px-4 py-3">Parceiro</th>
                 <th className="px-4 py-3">Título</th>
-                <th className="px-4 py-3">Grupo (JID)</th>
                 <th className="px-4 py-3">Usuários monitorados</th>
                 <th className="px-4 py-3">Estado</th>
                 <th className="px-4 py-3">Mensagens</th>
@@ -375,7 +374,6 @@ export default function AdminWhatsappScanPage() {
                   <td className="px-4 py-3 text-zinc-800">
                     {row.title ? row.title : <span className="text-zinc-400">—</span>}
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-zinc-700">{row.groupJid}</td>
                   <td className="px-4 py-3 text-zinc-700">
                     <MonitoredUsersCell
                       numbers={row.monitoredNumbers}
@@ -459,7 +457,7 @@ export default function AdminWhatsappScanPage() {
               </label>
               <label className="text-sm sm:col-span-2">
                 <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                  Grupo WhatsApp
+                  Grupo ou canal WhatsApp
                 </span>
                 <EvolutionGroupSelect
                   valueJid={editGroupJid}

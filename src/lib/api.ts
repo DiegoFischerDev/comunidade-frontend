@@ -777,7 +777,11 @@ export const api = {
       listEvolutionGroups: () =>
         request<{
           instance: string;
-          items: Array<{ groupJid: string; title: string }>;
+          items: Array<{
+            groupJid: string;
+            title: string;
+            kind: 'group' | 'channel';
+          }>;
         }>('/whatsapp-scan/evolution-groups', { method: 'GET' }),
       groupSubject: (groupJid: string) =>
         request<{ subject: string | null }>(
