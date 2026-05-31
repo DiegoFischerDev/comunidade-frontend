@@ -1331,41 +1331,66 @@ export const api = {
           { method: 'DELETE' },
         ),
       whatsapp: {
-        getConfig: () =>
+        listRoutes: () =>
           request<{
-            sourceGroupJid: string | null;
-            sourceTitle: string | null;
-            destGroupJid: string | null;
-            destTitle: string | null;
-            monitoredNumbers: string[];
-            monitorAllMembers: boolean;
-            active: boolean;
-            automationReady: boolean;
-            updatedAt: string;
-          }>('/job-offers/whatsapp/config', { method: 'GET' }),
-        updateConfig: (body: {
-          sourceGroupJid?: string | null;
-          sourceTitle?: string | null;
-          destGroupJid?: string | null;
-          destTitle?: string | null;
+            items: Array<{
+              id: string;
+              sourceGroupJid: string;
+              sourceTitle: string | null;
+              destGroupJid: string;
+              destTitle: string | null;
+              monitoredNumbers: string[];
+              monitorAllMembers: boolean;
+              active: boolean;
+              createdAt: string;
+              updatedAt: string;
+            }>;
+          }>('/job-offers/whatsapp/routes', { method: 'GET' }),
+        createRoute: (body: {
+          sourceGroupJid: string;
+          sourceTitle?: string;
+          destGroupJid: string;
+          destTitle?: string;
           monitoredNumbers?: string[];
           monitorAllMembers?: boolean;
           active?: boolean;
         }) =>
           request<{
-            sourceGroupJid: string | null;
+            id: string;
+            sourceGroupJid: string;
             sourceTitle: string | null;
-            destGroupJid: string | null;
+            destGroupJid: string;
             destTitle: string | null;
             monitoredNumbers: string[];
             monitorAllMembers: boolean;
             active: boolean;
-            automationReady: boolean;
+            createdAt: string;
             updatedAt: string;
-          }>('/job-offers/whatsapp/config', {
+          }>('/job-offers/whatsapp/routes', {
+            method: 'POST',
+            body: JSON.stringify(body),
+          }),
+        updateRoute: (
+          id: string,
+          body: {
+            sourceTitle?: string;
+            destTitle?: string;
+            sourceGroupJid?: string;
+            destGroupJid?: string;
+            monitoredNumbers?: string[];
+            monitorAllMembers?: boolean;
+            active?: boolean;
+          },
+        ) =>
+          request(`/job-offers/whatsapp/routes/${encodeURIComponent(id)}`, {
             method: 'PATCH',
             body: JSON.stringify(body),
           }),
+        deleteRoute: (id: string) =>
+          request<{ ok: true }>(
+            `/job-offers/whatsapp/routes/${encodeURIComponent(id)}`,
+            { method: 'DELETE' },
+          ),
         listEvolutionGroups: () =>
           request<{
             instance: string;
@@ -1375,10 +1400,14 @@ export const api = {
               kind: 'group' | 'channel';
             }>;
           }>('/job-offers/whatsapp/evolution-groups', { method: 'GET' }),
-        listMessages: (limit = 80) =>
-          request<{
+        listMessages: (limit = 80, routeId?: string) => {
+          const qs = new URLSearchParams({ limit: String(limit) });
+          if (routeId) qs.set('routeId', routeId);
+          return request<{
             items: Array<{
               id: string;
+              routeId: string | null;
+              routeLabel: string | null;
               senderNumber: string;
               rawText: string;
               status: string;
@@ -1386,9 +1415,8 @@ export const api = {
               error: string | null;
               createdAt: string;
             }>;
-          }>(`/job-offers/whatsapp/messages?limit=${limit}`, {
-            method: 'GET',
-          }),
+          }>(`/job-offers/whatsapp/messages?${qs}`, { method: 'GET' });
+        },
       },
     },
     recommendedServices: {

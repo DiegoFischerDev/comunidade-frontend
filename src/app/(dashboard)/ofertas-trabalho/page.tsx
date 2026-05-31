@@ -159,39 +159,57 @@ export default function JobOffersPage() {
       </div>
 
       {!loading && !error && rows.length > 0 ? (
-        <div className="relative">
-          <label htmlFor="job-offers-search" className="sr-only">
+        <div>
+          <label
+            htmlFor="job-offers-search"
+            className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-600"
+          >
+            <svg
+              className="h-3.5 w-3.5 text-amber-700/90"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" />
+            </svg>
             Filtrar ofertas
           </label>
-          <input
-            id="job-offers-search"
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Filtrar por função, cidade, título…"
-            className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-9 text-sm text-zinc-900 shadow-sm outline-none transition placeholder:text-zinc-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/25"
-          />
-          <svg
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            aria-hidden
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="M20 20l-3-3" />
-          </svg>
-          {searchQuery.trim() ? (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
-              aria-label="Limpar filtro"
+          <div className="relative">
+            <input
+              id="job-offers-search"
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Função, cidade, título…"
+              className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-9 text-sm text-zinc-900 shadow-sm outline-none transition placeholder:text-zinc-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/25"
+            />
+            <svg
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
             >
-              ✕
-            </button>
-          ) : null}
+              <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" />
+            </svg>
+            {searchQuery.trim() ? (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                aria-label="Limpar filtro"
+              >
+                ✕
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
