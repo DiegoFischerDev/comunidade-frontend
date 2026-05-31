@@ -566,6 +566,18 @@ export const api = {
         }[]
       >('/recommended-services', { method: 'GET' }),
   },
+  jobOffers: {
+    list: () =>
+      request<
+        {
+          id: string;
+          title: string;
+          city: string;
+          description: string;
+          publishedAt: string;
+        }[]
+      >('/job-offers', { method: 'GET' }),
+  },
   admin: {
     users: {
       stats: () =>
@@ -1249,6 +1261,69 @@ export const api = {
           method: 'GET',
         });
       },
+    },
+    jobOffers: {
+      list: () =>
+        request<
+          {
+            id: string;
+            title: string;
+            city: string;
+            description: string;
+            publishedAt: string;
+            active: boolean;
+            createdAt: string;
+            updatedAt: string;
+          }[]
+        >('/job-offers/admin', { method: 'GET' }),
+      parseFromText: (body: { text: string }) =>
+        request<{
+          title: string;
+          city: string;
+          description: string;
+          publishedAt: string;
+        }>('/job-offers/admin/parse', {
+          method: 'POST',
+          body: JSON.stringify(body),
+          userMessageContext: 'Ao analisar o texto da oferta',
+        }),
+      create: (body: {
+        title: string;
+        city: string;
+        description: string;
+        publishedAt?: string;
+        active?: boolean;
+      }) =>
+        request<{
+          id: string;
+          title: string;
+          city: string;
+          description: string;
+          publishedAt: string;
+          active: boolean;
+        }>('/job-offers/admin', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
+      update: (
+        id: string,
+        body: {
+          title?: string;
+          city?: string;
+          description?: string;
+          publishedAt?: string;
+          active?: boolean;
+        },
+      ) =>
+        request(`/job-offers/admin/${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        }),
+      delete: (id: string) =>
+        request<{ ok: true }>(
+          `/job-offers/admin/${encodeURIComponent(id)}`,
+          { method: 'DELETE' },
+        ),
     },
     recommendedServices: {
       list: () =>

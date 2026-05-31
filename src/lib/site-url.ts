@@ -129,11 +129,22 @@ export function getPublicSiteUrlFromRequestHeaders(
   return normalizePublicSiteOrigin(`${protocol}://${host}`);
 }
 
+/** APIs de deploy onde `/uploads/**` é servido (alinhar com `next.config.ts`). */
+const KNOWN_API_IMAGE_HOSTNAMES = new Set([
+  'api-stage.rafaapelomundo.com',
+  'api.rafaapelomundo.com',
+  'api-comunidade.rafaportugal.com',
+  'api-comunidade.rafaapelomundo.com',
+]);
+
 /**
  * `next/image`: o nosso site ou API = otimizar; alojamento externo (ex. R2) = unoptimized.
  */
 export function isOurImageHostname(hostname: string): boolean {
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return true;
+  }
+  if (KNOWN_API_IMAGE_HOSTNAMES.has(hostname)) {
     return true;
   }
   try {

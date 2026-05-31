@@ -43,6 +43,8 @@ const defaultApiUploadsPatterns: {
 }[] = [
   { protocol: "https", hostname: "api-stage.rafaapelomundo.com", pathname: "/uploads/**" },
   { protocol: "https", hostname: "api.rafaapelomundo.com", pathname: "/uploads/**" },
+  { protocol: "https", hostname: "api-comunidade.rafaportugal.com", pathname: "/uploads/**" },
+  { protocol: "https", hostname: "api-comunidade.rafaapelomundo.com", pathname: "/uploads/**" },
 ];
 
 /** `NEXT_PUBLIC_API_URL` primeiro; defaults para não duplicar o mesmo hostname. */

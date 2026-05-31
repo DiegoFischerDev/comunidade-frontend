@@ -112,7 +112,7 @@ export default function PublicRelocationHousesListPage() {
   const valorMin = searchParams.get("valorMin")?.trim() ?? "";
   const valorMax = searchParams.get("valorMax")?.trim() ?? "";
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
-  const pageSize = 10;
+  const pageSize = 12;
 
   const setRouteFilters = useCallback(
     (next: {
