@@ -5,6 +5,7 @@ import { ModalPortal } from "@/components/ui/ModalPortal";
 export type JobOfferDetail = {
   id: string;
   title: string;
+  jobFunction: string;
   city: string;
   description: string;
   publishedAt: string;
@@ -46,6 +47,9 @@ export function JobOfferDetailModal({ offer, onClose }: Props) {
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-amber-800/90">
                 {offer.city}
+              </p>
+              <p className="mt-1 text-sm font-medium text-zinc-700">
+                {offer.jobFunction}
               </p>
               <h2
                 id="job-offer-detail-title"

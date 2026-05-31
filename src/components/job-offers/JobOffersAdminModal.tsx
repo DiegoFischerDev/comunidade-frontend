@@ -27,6 +27,7 @@ function formatPublishedAt(iso: string): string {
 
 type FormState = {
   title: string;
+  jobFunction: string;
   city: string;
   description: string;
   publishedAt: string;
@@ -35,6 +36,7 @@ type FormState = {
 
 const emptyForm = (): FormState => ({
   title: "",
+  jobFunction: "",
   city: "",
   description: "",
   publishedAt: new Date().toISOString().slice(0, 10),
@@ -99,6 +101,7 @@ export function JobOffersAdminModal({ open, onClose, onChanged }: Props) {
       const parsed = await api.admin.jobOffers.parseFromText({ text });
       setForm({
         title: parsed.title,
+        jobFunction: parsed.jobFunction,
         city: parsed.city,
         description: parsed.description,
         publishedAt: toDateInputValue(parsed.publishedAt),
@@ -115,6 +118,7 @@ export function JobOffersAdminModal({ open, onClose, onChanged }: Props) {
     setEditingId(row.id);
     setForm({
       title: row.title,
+      jobFunction: row.jobFunction,
       city: row.city,
       description: row.description,
       publishedAt: toDateInputValue(row.publishedAt),
@@ -126,10 +130,11 @@ export function JobOffersAdminModal({ open, onClose, onChanged }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const title = form.title.trim();
+    const jobFunction = form.jobFunction.trim();
     const city = form.city.trim();
     const description = form.description.trim();
-    if (!title || !city || !description) {
-      setError("Preencha título, cidade e descrição.");
+    if (!title || !jobFunction || !city || !description) {
+      setError("Preencha título, função, cidade e descrição.");
       return;
     }
     setSaving(true);
@@ -137,6 +142,7 @@ export function JobOffersAdminModal({ open, onClose, onChanged }: Props) {
     try {
       const body = {
         title,
+        jobFunction,
         city,
         description,
         publishedAt: dateInputToIso(form.publishedAt),
@@ -257,6 +263,20 @@ export function JobOffersAdminModal({ open, onClose, onChanged }: Props) {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-700">
+                    Função
+                  </label>
+                  <input
+                    value={form.jobFunction}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, jobFunction: e.target.value }))
+                    }
+                    required
+                    placeholder="Ex.: Empregado de mesa"
+                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700">
                     Cidade
                   </label>
                   <input
@@ -352,7 +372,8 @@ export function JobOffersAdminModal({ open, onClose, onChanged }: Props) {
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-zinc-900">{row.title}</p>
                           <p className="text-sm text-zinc-600">
-                            {row.city} · {formatPublishedAt(row.publishedAt)}
+                            {row.jobFunction} · {row.city} ·{" "}
+                            {formatPublishedAt(row.publishedAt)}
                             {!row.active ? (
                               <span className="ml-2 text-amber-700">(oculta)</span>
                             ) : null}

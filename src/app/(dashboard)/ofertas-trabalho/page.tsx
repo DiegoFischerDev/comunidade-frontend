@@ -90,6 +90,23 @@ export default function JobOffersPage() {
         ) : null}
       </header>
 
+      <div
+        role="note"
+        className="rounded-xl border border-amber-300/80 bg-amber-50 px-4 py-4 text-sm leading-relaxed text-amber-950"
+      >
+        <p className="font-semibold">⚠️ Aviso</p>
+        <p className="mt-2">
+          Cuidado para não cair em burlas! Nós não nos responsabilizamos por
+          entrevistas, propostas ou processos de recrutamento. Todas as
+          informações apresentadas são da responsabilidade da entidade
+          empregadora. Apenas repostamos neste canal as mensagens relativas a
+          ofertas de trabalho que recebemos pelo WhatsApp. As empresas que
+          postam vagas aqui{" "}
+          <strong>NÃO são parceiras oficiais verificadas pela comunidade</strong>
+          .
+        </p>
+      </div>
+
       {loading ? (
         <ul className="space-y-3">
           {[0, 1, 2].map((i) => (
@@ -120,7 +137,9 @@ export default function JobOffersPage() {
                   <h2 className="mt-1 text-base font-semibold text-zinc-900 sm:text-lg">
                     {offer.title}
                   </h2>
-                  <p className="mt-0.5 text-sm text-zinc-600">{offer.city}</p>
+                  <p className="mt-0.5 text-sm text-zinc-600">
+                    {offer.jobFunction} · {offer.city}
+                  </p>
                 </div>
                 <button
                   type="button"

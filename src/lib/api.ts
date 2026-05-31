@@ -572,6 +572,7 @@ export const api = {
         {
           id: string;
           title: string;
+          jobFunction: string;
           city: string;
           description: string;
           publishedAt: string;
@@ -1268,6 +1269,7 @@ export const api = {
           {
             id: string;
             title: string;
+            jobFunction: string;
             city: string;
             description: string;
             publishedAt: string;
@@ -1279,6 +1281,7 @@ export const api = {
       parseFromText: (body: { text: string }) =>
         request<{
           title: string;
+          jobFunction: string;
           city: string;
           description: string;
           publishedAt: string;
@@ -1289,6 +1292,7 @@ export const api = {
         }),
       create: (body: {
         title: string;
+        jobFunction: string;
         city: string;
         description: string;
         publishedAt?: string;
@@ -1297,6 +1301,7 @@ export const api = {
         request<{
           id: string;
           title: string;
+          jobFunction: string;
           city: string;
           description: string;
           publishedAt: string;
@@ -1309,6 +1314,7 @@ export const api = {
         id: string,
         body: {
           title?: string;
+          jobFunction?: string;
           city?: string;
           description?: string;
           publishedAt?: string;
