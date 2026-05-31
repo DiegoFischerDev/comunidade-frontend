@@ -14,6 +14,20 @@ import {
   HOUSE_PUBLICATION_DURATION_DAYS,
   formatPublicationCostEur,
 } from "@/lib/house-publication";
+import { formatRelocationFeeEur } from "@/components/relocation/relocation-house-shared";
+import {
+  type HousePublishPreview,
+  type PublishMissingField,
+  type PublishMissingFieldKey,
+  type PublishQuickDraft,
+  PUBLISH_MISSING_FIELD_LABELS,
+  buildQuickPatch,
+  draftFromHouse,
+  getMissingPublishFields,
+  mergeHouseWithDraft,
+} from "@/components/house/publish-house-quick-fields";
+
+export type { HousePublishPreview } from "@/components/house/publish-house-quick-fields";
 
 const CITY_LABELS: Record<string, string> = {
   INTERIOR: "Interior",
@@ -43,32 +57,22 @@ const BUSINESS_TYPE_LABELS: Record<"RENT" | "SALE", string> = {
   SALE: "Venda",
 };
 
-export type HousePublishPreview = {
-  id: string;
-  houseId: number;
-  title: string;
-  businessType: "RENT" | "SALE";
-  typology: string;
-  city: string;
-  availableFrom: string;
-  priceEur: string;
-  imageUrls: string[];
-  coverImageUrl?: string | null;
-  videoUrl?: string | null;
-  videoPosterUrl?: string | null;
-  publicationStatus: "PUBLISHED" | "HIDDEN" | "TRASH";
-  publishedUntil?: string | null;
-  whatsappSentAt: string | null;
-  whatsappSends?: { sentAt: string }[];
-};
-
 type Props = {
   open: boolean;
   house: HousePublishPreview | null;
   balanceEurCents: number;
   onClose: () => void;
   onConfirm: () => Promise<void>;
+  onPatchQuickFields?: (
+    patch: {
+      title?: string;
+      priceEur?: string;
+      relocationFeeEur?: string;
+      availableFrom?: string;
+    },
+  ) => Promise<void>;
   onUnpublish?: () => Promise<void>;
+  onEdit?: () => void;
 };
 
 function formatDatePt(value: string) {
@@ -158,6 +162,128 @@ function DetailItem({ label, value }: { label: string; value: string }) {
   );
 }
 
+function QuickFieldInput({
+  fieldKey,
+  draft,
+  businessType,
+  disabled,
+  onDraftChange,
+}: {
+  fieldKey: PublishMissingFieldKey;
+  draft: PublishQuickDraft;
+  businessType: "RENT" | "SALE";
+  disabled: boolean;
+  onDraftChange: (next: PublishQuickDraft) => void;
+}) {
+  const label = PUBLISH_MISSING_FIELD_LABELS[fieldKey];
+  const common =
+    "mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 disabled:bg-zinc-50";
+
+  if (fieldKey === "relocationFeeEur") {
+    return (
+      <div>
+        <label className="text-xs font-medium text-zinc-700">{label}</label>
+        <input
+          value={draft.relocationFeeEur}
+          onChange={(e) =>
+            onDraftChange({ ...draft, relocationFeeEur: e.target.value })
+          }
+          disabled={disabled}
+          inputMode="decimal"
+          placeholder="Ex.: 500"
+          className={common}
+        />
+      </div>
+    );
+  }
+  if (fieldKey === "priceEur") {
+    return (
+      <div>
+        <label className="text-xs font-medium text-zinc-700">{label}</label>
+        <input
+          value={draft.priceEur}
+          onChange={(e) => onDraftChange({ ...draft, priceEur: e.target.value })}
+          disabled={disabled}
+          inputMode="decimal"
+          placeholder={
+            businessType === "SALE" ? "Preço de venda" : "Renda mensal"
+          }
+          className={common}
+        />
+      </div>
+    );
+  }
+  if (fieldKey === "title") {
+    return (
+      <div>
+        <label className="text-xs font-medium text-zinc-700">{label}</label>
+        <input
+          value={draft.title}
+          onChange={(e) => onDraftChange({ ...draft, title: e.target.value })}
+          disabled={disabled}
+          placeholder="Título do anúncio"
+          className={common}
+        />
+      </div>
+    );
+  }
+  if (fieldKey === "availableFrom") {
+    return (
+      <div>
+        <label className="text-xs font-medium text-zinc-700">{label}</label>
+        <input
+          type="date"
+          value={draft.availableFrom}
+          onChange={(e) =>
+            onDraftChange({ ...draft, availableFrom: e.target.value })
+          }
+          disabled={disabled}
+          className={common}
+        />
+      </div>
+    );
+  }
+  return null;
+}
+
+function PublishQuickFieldsSection({
+  missing,
+  draft,
+  businessType,
+  disabled,
+  onDraftChange,
+}: {
+  missing: PublishMissingField[];
+  draft: PublishQuickDraft;
+  businessType: "RENT" | "SALE";
+  disabled: boolean;
+  onDraftChange: (next: PublishQuickDraft) => void;
+}) {
+  const quick = missing.filter((m) => m.quickEdit);
+  if (quick.length === 0) return null;
+
+  return (
+    <div className="mt-4 rounded-xl border border-amber-200/80 bg-amber-50/40 p-4">
+      <p className="text-sm font-semibold text-amber-950">Completar rapidamente</p>
+      <p className="mt-0.5 text-xs text-amber-900/80">
+        Preenche os campos em falta antes de publicar.
+      </p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        {quick.map((m) => (
+          <QuickFieldInput
+            key={m.key}
+            fieldKey={m.key}
+            draft={draft}
+            businessType={businessType}
+            disabled={disabled}
+            onDraftChange={onDraftChange}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function whatsAppGroupPublishDates(house: {
   whatsappSends?: { sentAt: string }[];
   whatsappSentAt: string | null;
@@ -179,22 +305,39 @@ export function PublishHouseConfirmModal({
   balanceEurCents,
   onClose,
   onConfirm,
+  onPatchQuickFields,
   onUnpublish,
+  onEdit,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [unpublishing, setUnpublishing] = useState(false);
   const [error, setError] = useState("");
+  const [phase, setPhase] = useState<"main" | "missing">("main");
+  const [draft, setDraft] = useState<PublishQuickDraft>({
+    relocationFeeEur: "",
+    priceEur: "",
+    title: "",
+    availableFrom: "",
+  });
 
   useEffect(() => {
     if (!open) {
       setLoading(false);
       setUnpublishing(false);
       setError("");
+      setPhase("main");
+      return;
     }
-  }, [open]);
+    if (house) {
+      setDraft(draftFromHouse(house));
+      setPhase("main");
+    }
+  }, [open, house?.id]);
 
   if (!open || !house) return null;
 
+  const effective = mergeHouseWithDraft(house, draft);
+  const missingFields = getMissingPublishFields(effective);
   const activelyPublished = isActivePublished(
     house.publicationStatus,
     house.publishedUntil,
@@ -205,7 +348,17 @@ export function PublishHouseConfirmModal({
 
   const busy = loading || unpublishing;
 
-  async function handleConfirm() {
+  const currentHouse = house;
+
+  async function applyDraftIfNeeded() {
+    if (!onPatchQuickFields) return;
+    const patch = buildQuickPatch(currentHouse, draft);
+    if (Object.keys(patch).length > 0) {
+      await onPatchQuickFields(patch);
+    }
+  }
+
+  async function runPublish() {
     setError("");
     setLoading(true);
     try {
@@ -214,6 +367,54 @@ export function PublishHouseConfirmModal({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível publicar.");
     } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleConfirm() {
+    const merged = mergeHouseWithDraft(currentHouse, draft);
+    const missing = getMissingPublishFields(merged);
+    if (missing.length > 0) {
+      setPhase("missing");
+      return;
+    }
+    try {
+      await applyDraftIfNeeded();
+      await runPublish();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível guardar.");
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveAndPublish() {
+    const merged = mergeHouseWithDraft(currentHouse, draft);
+    const stillMissing = getMissingPublishFields(merged).filter((m) => m.quickEdit);
+    if (stillMissing.length > 0) {
+      setError(
+        `Ainda falta: ${stillMissing.map((m) => m.label.toLowerCase()).join(", ")}.`,
+      );
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      await applyDraftIfNeeded();
+      await runPublish();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível publicar.");
+      setLoading(false);
+    }
+  }
+
+  async function handlePublishAnyway() {
+    setError("");
+    setLoading(true);
+    try {
+      await applyDraftIfNeeded();
+      await runPublish();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível publicar.");
       setLoading(false);
     }
   }
@@ -237,6 +438,11 @@ export function PublishHouseConfirmModal({
   const publicationCostLabel = formatPublicationCostEur(HOUSE_PUBLICATION_COST_EUR_CENTS);
   const insufficient = balanceEurCents < HOUSE_PUBLICATION_COST_EUR_CENTS;
 
+  const missingForPhase =
+    phase === "missing"
+      ? getMissingPublishFields(mergeHouseWithDraft(currentHouse, draft))
+      : missingFields;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
@@ -244,20 +450,43 @@ export function PublishHouseConfirmModal({
       aria-modal="true"
       aria-labelledby="publish-house-title"
     >
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+      <div className="max-h-[min(92vh,720px)] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
         <h2 id="publish-house-title" className="text-lg font-semibold text-zinc-900">
-          Publicar imóvel
+          {phase === "missing" ? "Informações em falta" : "Publicar imóvel"}
         </h2>
         <p className="mt-2 text-sm font-medium text-zinc-700">
           {publicationCostLabel} por publicação · {HOUSE_PUBLICATION_DURATION_DAYS} dias no site e
           WhatsApp
         </p>
-        <p className="mt-1 text-sm text-zinc-600">
-          {activelyPublished
-            ? `Podes republicar (${publicationCostLabel}) ou remover a publicação para ocultar o anúncio no site.`
-            : "Este imóvel será publicado no nosso site e nos grupos do WhatsApp."}
-        </p>
+        {phase === "main" ? (
+          <p className="mt-1 text-sm text-zinc-600">
+            {activelyPublished
+              ? `Podes republicar (${publicationCostLabel}) ou remover a publicação para ocultar o anúncio no site.`
+              : "Este imóvel será publicado no nosso site e nos grupos do WhatsApp."}
+          </p>
+        ) : (
+          <p className="mt-1 text-sm text-zinc-600">
+            Completa os dados em falta ou envia a publicação mesmo assim.
+          </p>
+        )}
 
+        {phase === "missing" ? (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-sm font-medium text-amber-950">Em falta:</p>
+            <ul className="mt-2 list-inside list-disc text-sm text-amber-900/90">
+              {missingForPhase.map((m) => (
+                <li key={m.key}>{m.label}</li>
+              ))}
+            </ul>
+            {missingForPhase.some((m) => m.key === "media") ? (
+              <p className="mt-2 text-xs text-amber-800">
+                Para fotos ou vídeo, usa o botão «Editar» no passo anterior.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {phase === "main" ? (
         <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
           <div className="p-4">
             <p className="font-mono text-xs text-zinc-500">Id {house.houseId}</p>
@@ -300,9 +529,16 @@ export function PublishHouseConfirmModal({
             />
             <DetailItem
               label="Preço"
-              value={formatHouseEurFieldDisplay(house.priceEur)}
+              value={formatHouseEurFieldDisplay(effective.priceEur)}
             />
-            <DetailItem label="Disponível em" value={formatDatePt(house.availableFrom)} />
+            <DetailItem
+              label="Taxa de relocation"
+              value={formatRelocationFeeEur(effective.relocationFeeEur)}
+            />
+            <DetailItem
+              label="Disponível em"
+              value={formatDatePt(effective.availableFrom)}
+            />
             {activelyPublished && house.publishedUntil ? (
               <DetailItem
                 label="Publicado até"
@@ -328,6 +564,15 @@ export function PublishHouseConfirmModal({
             )}
           </div>
         </div>
+        ) : null}
+
+        <PublishQuickFieldsSection
+          missing={missingForPhase}
+          draft={draft}
+          businessType={house.businessType}
+          disabled={busy}
+          onDraftChange={setDraft}
+        />
 
         {insufficient && (
           <p className="mt-3 text-sm text-red-700">
@@ -340,28 +585,72 @@ export function PublishHouseConfirmModal({
         )}
 
         <div className="mt-6 flex flex-wrap justify-end gap-2">
-          <CardButton type="button" variant="outline" onClick={onClose} disabled={busy}>
-            Cancelar
-          </CardButton>
-          {canUnpublish ? (
-            <CardButton
-              type="button"
-              variant="outline"
-              onClick={() => void handleUnpublish()}
-              disabled={busy}
-              className="border-red-200 text-red-700 hover:bg-red-50"
-            >
-              {unpublishing ? "A remover…" : "Remover publicação"}
-            </CardButton>
-          ) : null}
-          <CardButton
-            type="button"
-            variant="primary"
-            onClick={() => void handleConfirm()}
-            disabled={busy || insufficient}
-          >
-            {loading ? "A processar…" : `Enviar ${publicationCostLabel}`}
-          </CardButton>
+          {phase === "missing" ? (
+            <>
+              <CardButton
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setPhase("main");
+                  setError("");
+                }}
+                disabled={busy}
+              >
+                Voltar
+              </CardButton>
+              <CardButton
+                type="button"
+                variant="outline"
+                onClick={() => void handlePublishAnyway()}
+                disabled={busy || insufficient}
+              >
+                {loading ? "A processar…" : "Enviar assim mesmo"}
+              </CardButton>
+              <CardButton
+                type="button"
+                variant="primary"
+                onClick={() => void handleSaveAndPublish()}
+                disabled={busy || insufficient}
+              >
+                {loading ? "A processar…" : "Guardar e publicar"}
+              </CardButton>
+            </>
+          ) : (
+            <>
+              <CardButton type="button" variant="outline" onClick={onClose} disabled={busy}>
+                Cancelar
+              </CardButton>
+              {onEdit ? (
+                <CardButton
+                  type="button"
+                  variant="outline"
+                  onClick={onEdit}
+                  disabled={busy}
+                >
+                  Editar
+                </CardButton>
+              ) : null}
+              {canUnpublish ? (
+                <CardButton
+                  type="button"
+                  variant="outline"
+                  onClick={() => void handleUnpublish()}
+                  disabled={busy}
+                  className="border-red-200 text-red-700 hover:bg-red-50"
+                >
+                  {unpublishing ? "A remover…" : "Remover publicação"}
+                </CardButton>
+              ) : null}
+              <CardButton
+                type="button"
+                variant="primary"
+                onClick={() => void handleConfirm()}
+                disabled={busy || insufficient}
+              >
+                {loading ? "A processar…" : `Enviar ${publicationCostLabel}`}
+              </CardButton>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -468,6 +468,7 @@ export function PartnerWhatsappScanPanel() {
   }
 
   const mainToggleOn = importEnabled || modalOpen;
+  const activeGroups = groups.filter((g) => g.active);
 
   return (
     <>
@@ -485,8 +486,25 @@ export function PartnerWhatsappScanPanel() {
             <p className="text-xs text-zinc-600 sm:text-sm">
               Quero importar os imóveis do meu grupo automaticamente
             </p>
-            {importEnabled && !modalOpen ? (
-              <span className="mt-0.5 inline-block text-xs font-medium text-emerald-700">
+            {activeGroups.length > 0 ? (
+              <div className="mt-1.5">
+                <p className="text-[11px] font-medium text-zinc-500">
+                  Grupos ativos
+                </p>
+                <ul className="mt-1 flex flex-wrap gap-1.5">
+                  {activeGroups.map((g) => (
+                    <li
+                      key={g.id}
+                      className="max-w-full truncate rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200/70"
+                      title={g.groupJid}
+                    >
+                      {groupLabel(g)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : importEnabled && !modalOpen ? (
+              <span className="mt-1 inline-block text-xs font-medium text-emerald-700">
                 Configurar grupos
               </span>
             ) : null}

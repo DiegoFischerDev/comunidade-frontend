@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Link from "next/link";
 import { PublishHouseRowButton } from "@/components/house/PublishHouseRowButton";
 import { formatHouseEurFieldDisplay } from "@/lib/format-eur-pt";
 import { formatHouseEntradaWithTotal, orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
@@ -186,19 +185,20 @@ function getHouseListThumbSrc(h: {
 function HouseThumb({
   house,
   className = "h-10 w-14",
+  onClick,
 }: {
   house: PartnerHouseRow;
   className?: string;
+  onClick: () => void;
 }) {
   const { imageSrc, videoSrc } = getHouseListThumbSrc(house);
   const hasVideo = Boolean(house.videoUrl?.trim());
   return (
-    <Link
-      href={`/dashboard/casas/${house.houseId}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`Ver anúncio ${house.title}`}
-      className={`relative block shrink-0 overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 ${className}`}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`Editar imóvel ${house.title}`}
+      className={`relative block shrink-0 cursor-pointer overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 transition hover:ring-2 hover:ring-amber-400/60 ${className}`}
     >
       {imageSrc ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -217,7 +217,7 @@ function HouseThumb({
         </div>
       )}
       {hasVideo ? <HouseVideoBadge /> : null}
-    </Link>
+    </button>
   );
 }
 
@@ -440,7 +440,11 @@ function PartnerHouseMobileCard({
             />
           </div>
         ) : null}
-        <HouseThumb house={house} className="h-[72px] w-[96px] shrink-0" />
+        <HouseThumb
+          house={house}
+          className="h-[72px] w-[96px] shrink-0"
+          onClick={onEdit}
+        />
         <div className="min-w-0 flex-1">
           <p className="line-clamp-3 text-base leading-snug text-zinc-900">
             <span className="mr-1.5 inline-flex flex-wrap items-center gap-1.5 font-mono text-xs font-medium tabular-nums text-zinc-500">
@@ -627,7 +631,7 @@ export function PartnerHousesList({
                   <HouseBusinessTypeBadge businessType={r.businessType} />
                 </td>
                 <td className="px-4 py-3">
-                  <HouseThumb house={r} />
+                  <HouseThumb house={r} onClick={() => onEdit(r.id)} />
                 </td>
                 <td className="px-3 py-3 align-top">
                   {isTrash ? (

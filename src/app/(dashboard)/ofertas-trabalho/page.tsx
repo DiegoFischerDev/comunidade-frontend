@@ -7,6 +7,7 @@ import {
   JobOfferCardSkeleton,
 } from "@/components/job-offers/JobOfferCard";
 import { JobOfferDetailModal } from "@/components/job-offers/JobOfferDetailModal";
+import { JobOfferWhatsappConfigPanel } from "@/components/job-offers/JobOfferWhatsappConfigPanel";
 import { JobOffersAdminModal } from "@/components/job-offers/JobOffersAdminModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
@@ -134,6 +135,8 @@ export default function JobOffersPage() {
           </button>
         ) : null}
       </header>
+
+      {isAdmin ? <JobOfferWhatsappConfigPanel /> : null}
 
       <div
         role="note"

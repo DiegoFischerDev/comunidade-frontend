@@ -15,6 +15,7 @@ export function EvolutionGroupSelect({
   excludeJids,
   disabled,
   placeholder = 'Seleciona um grupo ou canal…',
+  listGroups,
 }: {
   valueJid: string;
   onChange: (group: EvolutionGroupOption) => void;
@@ -22,6 +23,8 @@ export function EvolutionGroupSelect({
   excludeJids?: Set<string>;
   disabled?: boolean;
   placeholder?: string;
+  /** Por omissão usa grupos da instância Evolution (whatsapp-scan admin). */
+  listGroups?: () => Promise<{ instance: string; items: EvolutionGroupOption[] }>;
 }) {
   const [items, setItems] = useState<EvolutionGroupOption[]>([]);
   const [instance, setInstance] = useState('');
@@ -34,7 +37,9 @@ export function EvolutionGroupSelect({
     setLoadError('');
     (async () => {
       try {
-        const res = await api.admin.whatsappScan.listEvolutionGroups();
+        const fetchGroups =
+          listGroups ?? (() => api.admin.whatsappScan.listEvolutionGroups());
+        const res = await fetchGroups();
         if (!cancelled) {
           setItems(res.items);
           setInstance(res.instance);
@@ -55,7 +60,7 @@ export function EvolutionGroupSelect({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [listGroups]);
 
   const { groups, channels } = useMemo(() => {
     const list = items.filter((g) => {

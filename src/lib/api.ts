@@ -1330,6 +1330,66 @@ export const api = {
           `/job-offers/admin/${encodeURIComponent(id)}`,
           { method: 'DELETE' },
         ),
+      whatsapp: {
+        getConfig: () =>
+          request<{
+            sourceGroupJid: string | null;
+            sourceTitle: string | null;
+            destGroupJid: string | null;
+            destTitle: string | null;
+            monitoredNumbers: string[];
+            monitorAllMembers: boolean;
+            active: boolean;
+            automationReady: boolean;
+            updatedAt: string;
+          }>('/job-offers/whatsapp/config', { method: 'GET' }),
+        updateConfig: (body: {
+          sourceGroupJid?: string | null;
+          sourceTitle?: string | null;
+          destGroupJid?: string | null;
+          destTitle?: string | null;
+          monitoredNumbers?: string[];
+          monitorAllMembers?: boolean;
+          active?: boolean;
+        }) =>
+          request<{
+            sourceGroupJid: string | null;
+            sourceTitle: string | null;
+            destGroupJid: string | null;
+            destTitle: string | null;
+            monitoredNumbers: string[];
+            monitorAllMembers: boolean;
+            active: boolean;
+            automationReady: boolean;
+            updatedAt: string;
+          }>('/job-offers/whatsapp/config', {
+            method: 'PATCH',
+            body: JSON.stringify(body),
+          }),
+        listEvolutionGroups: () =>
+          request<{
+            instance: string;
+            items: Array<{
+              groupJid: string;
+              title: string;
+              kind: 'group' | 'channel';
+            }>;
+          }>('/job-offers/whatsapp/evolution-groups', { method: 'GET' }),
+        listMessages: (limit = 80) =>
+          request<{
+            items: Array<{
+              id: string;
+              senderNumber: string;
+              rawText: string;
+              status: string;
+              createdJobOfferId: string | null;
+              error: string | null;
+              createdAt: string;
+            }>;
+          }>(`/job-offers/whatsapp/messages?limit=${limit}`, {
+            method: 'GET',
+          }),
+      },
     },
     recommendedServices: {
       list: () =>

@@ -133,7 +133,7 @@ export default function PartnerHousesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("");
-  const [tab, setTab] = useState<"PUBLISHED" | "HIDDEN" | "TRASH">("PUBLISHED");
+  const [tab, setTab] = useState<"PUBLISHED" | "HIDDEN" | "TRASH">("HIDDEN");
   const [savingById, setSavingById] = useState<Record<string, boolean>>({});
   const [deletingById, setDeletingById] = useState<Record<string, boolean>>({});
   const [restoringById, setRestoringById] = useState<Record<string, boolean>>({});
@@ -647,8 +647,8 @@ export default function PartnerHousesPage() {
             >
               {(
                 [
-                  { key: "PUBLISHED", label: "Publicados" },
                   { key: "HIDDEN", label: "Ocultos" },
+                  { key: "PUBLISHED", label: "Publicados" },
                   { key: "TRASH", label: "Lixeira" },
                 ] as const
               ).map((t) => {
@@ -819,7 +819,26 @@ export default function PartnerHousesPage() {
         balanceEurCents={balanceEurCents}
         onClose={() => setPublishHouse(null)}
         onConfirm={handlePublishConfirm}
+        onPatchQuickFields={async (patch) => {
+          if (!publishHouse) return;
+          const id = publishHouse.id;
+          await api.partner.houses.update(id, {
+            ...patch,
+            keepImageUrls: publishHouse.imageUrls,
+          });
+          const data = await api.partner.houses.list();
+          setRows(data);
+          const updated = data.find((h) => h.id === id);
+          if (updated) setPublishHouse(updated);
+        }}
         onUnpublish={handleUnpublish}
+        onEdit={() => {
+          if (!publishHouse) return;
+          const id = publishHouse.id;
+          setPublishHouse(null);
+          setEditHouseId(id);
+          setShowHouseModal(true);
+        }}
       />
 
       <PublishHousesBulkConfirmModal
