@@ -15,6 +15,11 @@ export const WHATSAPP_GROUP_IMOVEIS_VENDA_URL =
   process.env.NEXT_PUBLIC_WHATSAPP_GROUP_IMOVEIS_VENDA_URL?.trim() ||
   "https://chat.whatsapp.com/EneiignxdnuHVy17rh5MTX";
 
+/** Grupão de ofertas de emprego (Rafa Portugal). */
+export const WHATSAPP_GROUP_OFERTAS_TRABALHO_URL =
+  process.env.NEXT_PUBLIC_WHATSAPP_GROUP_OFERTAS_TRABALHO_URL?.trim() ||
+  "https://chat.whatsapp.com/EONaquXnkDx6NmdAdCIouM?mode=gi_t";
+
 /** @deprecated Use `WHATSAPP_GROUP_DUVIDAS_GERAL_URL`. */
 export const COMMUNITY_WHATSAPP_GROUPS_URL = WHATSAPP_GROUP_DUVIDAS_GERAL_URL;
 
@@ -42,5 +47,10 @@ export const COMMUNITY_WHATSAPP_NAV_GROUPS: CommunityWhatsAppNavGroup[] = [
     id: "imoveis-venda",
     label: "Imóveis a venda",
     href: WHATSAPP_GROUP_IMOVEIS_VENDA_URL,
+  },
+  {
+    id: "ofertas-trabalho",
+    label: "Ofertas de trabalho",
+    href: WHATSAPP_GROUP_OFERTAS_TRABALHO_URL,
   },
 ];

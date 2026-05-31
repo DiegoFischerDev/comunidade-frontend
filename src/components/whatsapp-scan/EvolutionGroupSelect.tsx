@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 
 export type EvolutionGroupOption = {
@@ -28,39 +28,39 @@ export function EvolutionGroupSelect({
 }) {
   const [items, setItems] = useState<EvolutionGroupOption[]>([]);
   const [instance, setInstance] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const fetchInFlight = useRef(false);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadGroups = useCallback(async () => {
+    if (fetchInFlight.current || hasLoaded) return;
+    fetchInFlight.current = true;
     setLoading(true);
     setLoadError('');
-    (async () => {
-      try {
-        const fetchGroups =
-          listGroups ?? (() => api.admin.whatsappScan.listEvolutionGroups());
-        const res = await fetchGroups();
-        if (!cancelled) {
-          setItems(res.items);
-          setInstance(res.instance);
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setLoadError(
-            e instanceof Error
-              ? e.message
-              : 'Erro ao carregar grupos e canais da Evolution.',
-          );
-          setItems([]);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [listGroups]);
+    try {
+      const fetchGroups =
+        listGroups ?? (() => api.admin.whatsappScan.listEvolutionGroups());
+      const res = await fetchGroups();
+      setItems(res.items);
+      setInstance(res.instance);
+      setHasLoaded(true);
+    } catch (e) {
+      setLoadError(
+        e instanceof Error
+          ? e.message
+          : 'Erro ao carregar grupos e canais da Evolution.',
+      );
+      setItems([]);
+    } finally {
+      setLoading(false);
+      fetchInFlight.current = false;
+    }
+  }, [hasLoaded, listGroups]);
+
+  const handleOpenSelector = useCallback(() => {
+    void loadGroups();
+  }, [loadGroups]);
 
   const { groups, channels } = useMemo(() => {
     const list = items.filter((g) => {
@@ -88,20 +88,37 @@ export function EvolutionGroupSelect({
 
   const hasOptions = groups.length > 0 || channels.length > 0;
 
+  const emptyLabel = loading
+    ? 'A carregar…'
+    : !hasLoaded
+      ? 'Clica para carregar grupos e canais…'
+      : placeholder;
+
+  const showPendingValue =
+    !hasLoaded &&
+    !loading &&
+    valueJid &&
+    /@(g\.us|newsletter)$/i.test(valueJid);
+
   return (
     <div>
       <select
         value={valueJid}
-        disabled={disabled || loading}
+        disabled={disabled || (loading && !hasLoaded)}
+        onFocus={handleOpenSelector}
+        onMouseDown={handleOpenSelector}
         onChange={(e) => {
           const g = [...groups, ...channels].find((x) => x.groupJid === e.target.value);
           if (g) onChange(g);
         }}
         className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm disabled:opacity-60"
       >
-        <option value="">
-          {loading ? 'A carregar…' : placeholder}
-        </option>
+        <option value="">{emptyLabel}</option>
+        {showPendingValue ? (
+          <option value={valueJid}>
+            {valueJid.replace(/@(g\.us|newsletter)$/i, '').slice(0, 28)}…
+          </option>
+        ) : null}
         {groups.length > 0 ? (
           <optgroup label="Grupos">
             {groups.map((g) => (
@@ -121,15 +138,20 @@ export function EvolutionGroupSelect({
           </optgroup>
         ) : null}
       </select>
-      {instance && !loading ? (
+      {instance && hasLoaded && !loading ? (
         <span className="mt-1 block text-xs text-zinc-500">
           Grupos e canais da instância Evolution «{instance}».
+        </span>
+      ) : null}
+      {!hasLoaded && !loading && !loadError ? (
+        <span className="mt-1 block text-xs text-zinc-500">
+          A lista só é pedida à Evolution quando abres o seletor.
         </span>
       ) : null}
       {loadError ? (
         <span className="mt-1 block text-xs text-red-600">{loadError}</span>
       ) : null}
-      {!loading && !loadError && !hasOptions ? (
+      {hasLoaded && !loading && !loadError && !hasOptions ? (
         <span className="mt-1 block text-xs text-amber-700">
           Nenhum grupo ou canal disponível. Na Evolution, canais só aparecem após haver
           mensagens no histórico da instância.
