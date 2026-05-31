@@ -217,13 +217,12 @@ export function FinanciamentoQuizView() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
-      <div
-        ref={cardRef}
-        className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
-      >
-        {phase === 'intro' ? (
-          <IntroPanel onStart={() => setPhase('quiz')} />
-        ) : phase === 'quiz' ? (
+      {phase === 'quiz' || phase === 'result' ? (
+        <div
+          ref={cardRef}
+          className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
+        >
+          {phase === 'quiz' ? (
           <QuizPanel
             currentStep={currentStep}
             answers={answers}
@@ -266,7 +265,8 @@ export function FinanciamentoQuizView() {
             onSubmit={handleRequestAtendimento}
           />
         )}
-      </div>
+        </div>
+      ) : null}
 
       {phase === 'intro' ? (
         <AtendimentoPanel
@@ -394,37 +394,6 @@ function ManagersStrip(props: {
 }
 
 // ===== Sub-painéis =====
-
-function IntroPanel({ onStart }: { onStart: () => void }) {
-  return (
-    <div className="px-6 py-10 sm:px-10 sm:py-14">
-      <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
-        Questionário gratuito
-      </p>
-      <h2 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
-        Rafa, Consigo financiar uma casa em Portugal?
-      </h2>
-
-      <ul className="mt-6 space-y-3 text-sm text-zinc-700">
-        <Bullet>Apenas 4 a 6 perguntas, todas simples (Sim/Não).</Bullet>
-        <Bullet>Resultado imediato, com um exemplo prático.</Bullet>
-      </ul>
-
-
-      <p className="mt-6 text-center text-xs text-zinc-500">
-        Os resultados são indicativos e não substituem a análise de um gestor de crédito.
-      </p>
-
-      <button
-        type="button"
-        onClick={onStart}
-        className="mt-8 inline-flex w-full items-center justify-center rounded-xl bg-amber-600 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-      >
-        Começar questionário
-      </button>
-    </div>
-  );
-}
 
 /**
  * Container alternativo, mostrado abaixo do quiz, para utilizadores que querem ir direto
@@ -718,19 +687,4 @@ function ResultPanel({
     </div>
   );
 }
-
-function Bullet({ children }: { children: React.ReactNode }) {
-  return (
-    <li className="flex items-start gap-2">
-      <span
-        aria-hidden
-        className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700"
-      >
-        ✓
-      </span>
-      <span>{children}</span>
-    </li>
-  );
-}
-
 

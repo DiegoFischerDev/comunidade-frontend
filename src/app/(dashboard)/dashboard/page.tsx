@@ -11,7 +11,6 @@ import { COMMUNITY_WHATSAPP_GROUPS_URL } from "@/lib/community-whatsapp-groups";
 import { AffiliateEnrollModal } from "@/components/affiliate/AffiliateEnrollModal";
 import { DashboardImmigrationPlanSection } from "@/components/dashboard/DashboardImmigrationPlanSection";
 import { DashboardWelcomeVideoPlayer } from "@/components/dashboard/DashboardWelcomeVideoPlayer";
-import { RafaCallCard } from "@/components/RafaCallCard";
 type AffiliateMe = NonNullable<Awaited<ReturnType<typeof api.affiliate.me>>>;
 
 /** Desktop: snap ao início; mobile: cartão centrado (~76vw) com ~12vw de “peek” de cada lado. */
@@ -268,11 +267,6 @@ export default function DashboardPage() {
                 sizes={DASHBOARD_CAROUSEL_IMAGE_SIZES}
               />
             </a>
-          </section>
-          <section
-            className={`${DASHBOARD_CARD_CAROUSEL_ITEM} relative h-full min-h-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 shadow-sm transition-shadow hover:shadow-md`}
-          >
-            <RafaCallCard carouselImageSizes={DASHBOARD_CAROUSEL_IMAGE_SIZES} />
           </section>
         </div>
 
