@@ -247,32 +247,32 @@ function QuickFieldInput({
 }
 
 function PublishQuickFieldsSection({
-  missing,
+  fieldKeys,
   draft,
   businessType,
   disabled,
   onDraftChange,
 }: {
-  missing: PublishMissingField[];
+  /** Campos a mostrar (fixos até enviar — não desaparecem ao digitar). */
+  fieldKeys: PublishMissingFieldKey[];
   draft: PublishQuickDraft;
   businessType: "RENT" | "SALE";
   disabled: boolean;
   onDraftChange: (next: PublishQuickDraft) => void;
 }) {
-  const quick = missing.filter((m) => m.quickEdit);
-  if (quick.length === 0) return null;
+  if (fieldKeys.length === 0) return null;
 
   return (
     <div className="mt-4 rounded-xl border border-amber-200/80 bg-amber-50/40 p-4">
       <p className="text-sm font-semibold text-amber-950">Completar rapidamente</p>
       <p className="mt-0.5 text-xs text-amber-900/80">
-        Preenche os campos em falta antes de publicar.
+        Preenche os campos em falta. Os dados só são guardados quando clicares em Enviar.
       </p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        {quick.map((m) => (
+        {fieldKeys.map((key) => (
           <QuickFieldInput
-            key={m.key}
-            fieldKey={m.key}
+            key={key}
+            fieldKey={key}
             draft={draft}
             businessType={businessType}
             disabled={disabled}
@@ -319,6 +319,8 @@ export function PublishHouseConfirmModal({
     title: "",
     availableFrom: "",
   });
+  /** Campos «completar rapidamente» fixos ao abrir o modal (evita sumirem ao digitar). */
+  const [quickFieldKeys, setQuickFieldKeys] = useState<PublishMissingFieldKey[]>([]);
 
   useEffect(() => {
     if (!open) {
@@ -326,11 +328,17 @@ export function PublishHouseConfirmModal({
       setUnpublishing(false);
       setError("");
       setPhase("main");
+      setQuickFieldKeys([]);
       return;
     }
     if (house) {
       setDraft(draftFromHouse(house));
       setPhase("main");
+      setQuickFieldKeys(
+        getMissingPublishFields(house)
+          .filter((m) => m.quickEdit)
+          .map((m) => m.key),
+      );
     }
   }, [open, house?.id]);
 
@@ -442,6 +450,11 @@ export function PublishHouseConfirmModal({
     phase === "missing"
       ? getMissingPublishFields(mergeHouseWithDraft(currentHouse, draft))
       : missingFields;
+
+  const quickFieldsToShow: PublishMissingFieldKey[] =
+    phase === "missing"
+      ? missingForPhase.filter((m) => m.quickEdit).map((m) => m.key)
+      : quickFieldKeys;
 
   return (
     <div
@@ -567,7 +580,7 @@ export function PublishHouseConfirmModal({
         ) : null}
 
         <PublishQuickFieldsSection
-          missing={missingForPhase}
+          fieldKeys={quickFieldsToShow}
           draft={draft}
           businessType={house.businessType}
           disabled={busy}

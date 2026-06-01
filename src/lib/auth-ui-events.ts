@@ -1,6 +1,11 @@
 /** Dashboard layout escuta este evento para abrir o modal de login. */
 export const OPEN_AUTH_LOGIN_EVENT = 'rpm-open-auth-login';
 
+export function openAuthLoginModal() {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(OPEN_AUTH_LOGIN_EVENT));
+}
+
 /** Abre o fluxo de membro VIP (página de checkout ou modal promocional). */
 export const OPEN_MEMBERSHIP_MODAL_EVENT = 'open-membership-modal';
 

@@ -12,6 +12,7 @@ import { PublishHousesBulkConfirmModal } from "@/components/house/PublishHousesB
 import { api } from "@/lib/api";
 import { formatHouseEntradaShort, formatHouseEntradaWithTotal } from "@/lib/house-entrance";
 import { useAuth } from "@/contexts/AuthContext";
+import { openAuthLoginModal } from "@/lib/auth-ui-events";
 import { CardButton } from "@/components/ui/CardButton";
 type HouseRow = Awaited<ReturnType<typeof api.partner.houses.list>>[number];
 
@@ -126,13 +127,13 @@ function houseWhatsAppSendDatesLabel(h: {
 }
 
 export default function PartnerHousesPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [rows, setRows] = useState<HouseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("");
-  const [tab, setTab] = useState<"PUBLISHED" | "HIDDEN" | "TRASH">("HIDDEN");
+  const [tab, setTab] = useState<"PUBLISHED" | "HIDDEN" | "TRASH">("PUBLISHED");
   const [savingById, setSavingById] = useState<Record<string, boolean>>({});
   const [deletingById, setDeletingById] = useState<Record<string, boolean>>({});
   const [restoringById, setRestoringById] = useState<Record<string, boolean>>({});
@@ -526,7 +527,52 @@ export default function PartnerHousesPage() {
     }
   }
 
-  if (!user) return null;
+  if (authLoading) {
+    return (
+      <div>
+        <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
+        <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-lg">
+        <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
+        <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-sm sm:p-8">
+          <div
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#d58901]/15 to-[#f0b23a]/30"
+            aria-hidden
+          >
+            <svg
+              className="h-7 w-7 text-[#c07c01]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+              />
+            </svg>
+          </div>
+          <h2 className="mt-4 text-base font-semibold text-zinc-900">Área de parceiros</h2>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+            Inicia sessão para gerires os teus anúncios, publicar imóveis e usar o saldo de
+            publicidade.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <CardButton type="button" variant="secondary" onClick={() => openAuthLoginModal()}>
+              Iniciar sessão
+            </CardButton>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   if (user.role !== "PARTNER") {
     return (
@@ -644,8 +690,8 @@ export default function PartnerHousesPage() {
             >
               {(
                 [
-                  { key: "HIDDEN", label: "Ocultos" },
                   { key: "PUBLISHED", label: "Publicados" },
+                  { key: "HIDDEN", label: "Ocultos" },
                   { key: "TRASH", label: "Lixeira" },
                 ] as const
               ).map((t) => {
