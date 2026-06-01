@@ -43,13 +43,30 @@ const emptyForm = (): FormState => ({
   active: true,
 });
 
+export type JobOfferAdminEditInput = {
+  id: string;
+  title: string;
+  jobFunction: string;
+  city: string;
+  description: string;
+  publishedAt: string;
+  active?: boolean;
+};
+
 type Props = {
   open: boolean;
   onClose: () => void;
   onChanged: () => void;
+  /** Abre diretamente o formulário de edição desta oferta. */
+  offerToEdit?: JobOfferAdminEditInput | null;
 };
 
-export function JobOffersAdminModal({ open, onClose, onChanged }: Props) {
+export function JobOffersAdminModal({
+  open,
+  onClose,
+  onChanged,
+  offerToEdit = null,
+}: Props) {
   const [rows, setRows] = useState<Listed[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -73,14 +90,32 @@ export function JobOffersAdminModal({ open, onClose, onChanged }: Props) {
     }
   }, []);
 
+  const openEditForm = useCallback((row: JobOfferAdminEditInput) => {
+    setEditingId(row.id);
+    setForm({
+      title: row.title,
+      jobFunction: row.jobFunction,
+      city: row.city,
+      description: row.description,
+      publishedAt: toDateInputValue(row.publishedAt),
+      active: row.active ?? true,
+    });
+    setPasteText("");
+    setShowForm(true);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     void load();
+    if (offerToEdit) {
+      openEditForm(offerToEdit);
+      return;
+    }
     setEditingId(null);
     setShowForm(false);
     setForm(emptyForm());
     setPasteText("");
-  }, [open, load]);
+  }, [open, load, offerToEdit, openEditForm]);
 
   const startCreate = () => {
     setEditingId(null);
@@ -115,16 +150,7 @@ export function JobOffersAdminModal({ open, onClose, onChanged }: Props) {
   };
 
   const startEdit = (row: Listed) => {
-    setEditingId(row.id);
-    setForm({
-      title: row.title,
-      jobFunction: row.jobFunction,
-      city: row.city,
-      description: row.description,
-      publishedAt: toDateInputValue(row.publishedAt),
-      active: row.active,
-    });
-    setShowForm(true);
+    openEditForm(row);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

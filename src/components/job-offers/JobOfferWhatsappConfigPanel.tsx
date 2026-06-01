@@ -11,30 +11,8 @@ type RouteRow = Awaited<
   ReturnType<typeof api.admin.jobOffers.whatsapp.listRoutes>
 >['items'][number];
 
-type MessageRow = {
-  id: string;
-  routeId: string | null;
-  routeLabel: string | null;
-  senderNumber: string;
-  rawText: string;
-  status: string;
-  createdJobOfferId: string | null;
-  error: string | null;
-  createdAt: string;
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  received: 'Recebida',
-  ignored_sender: 'Remetente ignorado',
-  ignored_not_offer: 'Não é oferta',
-  ignored_no_contact: 'Sem contacto (tel./email)',
-  created: 'Publicada',
-  error: 'Erro',
-};
-
 export function JobOfferWhatsappConfigPanel() {
   const [routes, setRoutes] = useState<RouteRow[]>([]);
-  const [messages, setMessages] = useState<MessageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -52,12 +30,8 @@ export function JobOfferWhatsappConfigPanel() {
     setLoading(true);
     setError('');
     try {
-      const [routesRes, msgs] = await Promise.all([
-        api.admin.jobOffers.whatsapp.listRoutes(),
-        api.admin.jobOffers.whatsapp.listMessages(40),
-      ]);
+      const routesRes = await api.admin.jobOffers.whatsapp.listRoutes();
       setRoutes(routesRes.items);
-      setMessages(msgs.items);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar configuração.');
     } finally {
@@ -324,33 +298,6 @@ export function JobOfferWhatsappConfigPanel() {
           </table>
         </div>
       )}
-
-      {messages.length > 0 ? (
-        <div className="mt-6">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-            Últimas mensagens processadas
-          </h3>
-          <ul className="mt-2 max-h-48 space-y-2 overflow-y-auto text-xs">
-            {messages.map((m) => (
-              <li
-                key={m.id}
-                className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2"
-              >
-                <span className="font-medium text-zinc-800">
-                  {STATUS_LABELS[m.status] ?? m.status}
-                </span>
-                {m.routeLabel ? (
-                  <span className="ml-2 text-zinc-500">· {m.routeLabel}</span>
-                ) : null}
-                {m.createdJobOfferId ? (
-                  <span className="ml-2 text-emerald-700">· oferta criada</span>
-                ) : null}
-                <p className="mt-1 line-clamp-2 text-zinc-600">{m.rawText}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
     </section>
   );
 }

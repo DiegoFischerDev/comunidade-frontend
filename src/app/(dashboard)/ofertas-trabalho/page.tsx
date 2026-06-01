@@ -31,23 +31,6 @@ function WhatsappBrandIcon({ className }: { className?: string }) {
 
 type OfferRow = Awaited<ReturnType<typeof api.jobOffers.list>>[number];
 
-function PlusIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  );
-}
-
 function WarningIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -74,7 +57,10 @@ export default function JobOffersPage() {
   const [error, setError] = useState("");
   const [detailOffer, setDetailOffer] = useState<OfferRow | null>(null);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
+  const [adminModalEditOffer, setAdminModalEditOffer] =
+    useState<OfferRow | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -111,6 +97,40 @@ export default function JobOffersPage() {
     });
   }, [rows, searchQuery]);
 
+  const handleDeleteOffer = useCallback(
+    async (offer: OfferRow) => {
+      const label = offer.jobFunction.trim() || offer.title.trim() || "esta oferta";
+      if (
+        !window.confirm(
+          `Excluir a oferta «${label}»? Esta ação não pode ser desfeita.`,
+        )
+      ) {
+        return;
+      }
+      setDeletingId(offer.id);
+      setError("");
+      try {
+        await api.admin.jobOffers.delete(offer.id);
+        setRows((prev) => prev.filter((r) => r.id !== offer.id));
+        setDetailOffer((current) =>
+          current?.id === offer.id ? null : current,
+        );
+      } catch (e) {
+        setError(
+          e instanceof Error ? e.message : "Não foi possível excluir a oferta.",
+        );
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [],
+  );
+
+  const openCreateOfferModal = useCallback(() => {
+    setAdminModalEditOffer(null);
+    setAdminModalOpen(true);
+  }, []);
+
   const offerCountLabel = useMemo(() => {
     const n = filteredRows.length;
     const total = rows.length;
@@ -123,7 +143,7 @@ export default function JobOffersPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-6 sm:max-w-3xl sm:space-y-8 sm:px-6 sm:py-10">
-      <header className="flex flex-wrap items-start justify-between gap-4">
+      <header>
         <div className="max-w-2xl">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800/90">
             Comunidade Rafa Portugal
@@ -141,16 +161,6 @@ export default function JobOffersPage() {
             </p>
           ) : null}
         </div>
-        {isAdmin ? (
-          <button
-            type="button"
-            onClick={() => setAdminModalOpen(true)}
-            className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3.5 py-2.5 text-sm font-medium text-zinc-800 shadow-sm transition hover:border-amber-300 hover:bg-amber-50"
-          >
-            <PlusIcon className="h-4 w-4" />
-            Adicionar oferta
-          </button>
-        ) : null}
       </header>
 
       <section
@@ -275,6 +285,16 @@ export default function JobOffersPage() {
         </div>
       ) : null}
 
+      {isAdmin ? (
+        <button
+          type="button"
+          onClick={openCreateOfferModal}
+          className="w-full cursor-pointer rounded-xl bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 sm:w-auto"
+        >
+          Adicionar oferta de trabalho
+        </button>
+      ) : null}
+
       {loading ? (
         <ul className="space-y-2.5" aria-busy="true" aria-label="A carregar ofertas">
           {[0, 1, 2].map((i) => (
@@ -330,6 +350,21 @@ export default function JobOffersPage() {
               <JobOfferCard
                 offer={offer}
                 onOpenDetail={() => setDetailOffer(offer)}
+                isAdmin={isAdmin}
+                onEdit={
+                  isAdmin
+                    ? () => {
+                        setAdminModalEditOffer(offer);
+                        setAdminModalOpen(true);
+                      }
+                    : undefined
+                }
+                onDelete={
+                  isAdmin
+                    ? () => void handleDeleteOffer(offer)
+                    : undefined
+                }
+                deleting={deletingId === offer.id}
               />
             </li>
           ))}
@@ -344,8 +379,12 @@ export default function JobOffersPage() {
       {isAdmin ? (
         <JobOffersAdminModal
           open={adminModalOpen}
-          onClose={() => setAdminModalOpen(false)}
+          onClose={() => {
+            setAdminModalOpen(false);
+            setAdminModalEditOffer(null);
+          }}
           onChanged={() => void load()}
+          offerToEdit={adminModalEditOffer}
         />
       ) : null}
     </div>
