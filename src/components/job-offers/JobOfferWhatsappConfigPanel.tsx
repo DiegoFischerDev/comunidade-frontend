@@ -27,6 +27,7 @@ const STATUS_LABELS: Record<string, string> = {
   received: 'Recebida',
   ignored_sender: 'Remetente ignorado',
   ignored_not_offer: 'Não é oferta',
+  ignored_no_contact: 'Sem contacto (tel./email)',
   created: 'Publicada',
   error: 'Erro',
 };
