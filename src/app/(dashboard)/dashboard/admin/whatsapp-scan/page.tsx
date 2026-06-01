@@ -66,6 +66,8 @@ export default function AdminWhatsappScanPage() {
   const [formTitle, setFormTitle] = useState('');
   const [formGroupJid, setFormGroupJid] = useState('');
   const [formNumbers, setFormNumbers] = useState<string[]>([]);
+  const [formScanActive, setFormScanActive] = useState(true);
+  const [formAutoShare, setFormAutoShare] = useState(false);
   const [creating, setCreating] = useState(false);
 
   // edição
@@ -75,6 +77,7 @@ export default function AdminWhatsappScanPage() {
   const [editGroupJid, setEditGroupJid] = useState('');
   const [editNumbers, setEditNumbers] = useState<string[]>([]);
   const [editActive, setEditActive] = useState(true);
+  const [editAutoShare, setEditAutoShare] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -155,11 +158,15 @@ export default function AdminWhatsappScanPage() {
         title: formTitle.trim() || undefined,
         groupJid: formGroupJid.trim(),
         monitoredNumbers: formNumbers,
+        active: formScanActive,
+        autoShareEnabled: formAutoShare,
       });
       setFormPartnerId('');
       setFormTitle('');
       setFormGroupJid('');
       setFormNumbers([]);
+      setFormScanActive(true);
+      setFormAutoShare(false);
       setSuccess('Grupo adicionado ao monitoramento.');
       await load();
     } catch (e) {
@@ -167,7 +174,15 @@ export default function AdminWhatsappScanPage() {
     } finally {
       setCreating(false);
     }
-  }, [formPartnerId, formTitle, formGroupJid, formNumbers, load]);
+  }, [
+    formPartnerId,
+    formTitle,
+    formGroupJid,
+    formNumbers,
+    formScanActive,
+    formAutoShare,
+    load,
+  ]);
 
   const openEdit = useCallback((row: GroupRow) => {
     setEditing(row);
@@ -176,6 +191,7 @@ export default function AdminWhatsappScanPage() {
     setEditGroupJid(row.groupJid);
     setEditNumbers(row.monitoredNumbers);
     setEditActive(row.active);
+    setEditAutoShare(row.autoShareEnabled);
   }, []);
 
   const saveEdit = useCallback(async () => {
@@ -189,6 +205,7 @@ export default function AdminWhatsappScanPage() {
         groupJid: editGroupJid.trim() || undefined,
         monitoredNumbers: editNumbers,
         active: editActive,
+        autoShareEnabled: editAutoShare,
       });
       setEditing(null);
       await load();
@@ -197,7 +214,16 @@ export default function AdminWhatsappScanPage() {
     } finally {
       setSavingEdit(false);
     }
-  }, [editing, editPartnerId, editTitle, editGroupJid, editNumbers, editActive, load]);
+  }, [
+    editing,
+    editPartnerId,
+    editTitle,
+    editGroupJid,
+    editNumbers,
+    editActive,
+    editAutoShare,
+    load,
+  ]);
 
   const deleteGroup = useCallback(
     async (id: string) => {
@@ -266,9 +292,10 @@ export default function AdminWhatsappScanPage() {
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900">Whatsapp scan</h1>
           <p className="mt-2 max-w-2xl text-sm text-zinc-600">
-            Monitoriza grupos de WhatsApp e usa IA para identificar anúncios de imóveis. Cada
-            anúncio detetado cria um imóvel <strong>rascunho (oculto)</strong> atribuído ao parceiro
-            relocation escolhido, para revisão e publicação manual.
+            Monitoriza grupos de WhatsApp e usa IA para identificar anúncios de imóveis. Com o{' '}
+            <strong>scan ativo</strong>, cada anúncio cria um imóvel rascunho (oculto). Com o{' '}
+            <strong>compartilhamento automático</strong>, o anúncio é também enviado aos grupos
+            WhatsApp de arrendamento ou venda (~10 s depois).
           </p>
         </div>
         <button
@@ -334,6 +361,22 @@ export default function AdminWhatsappScanPage() {
               país. Lista vazia = monitoriza todas as mensagens do grupo.
             </span>
           </div>
+          <label className="flex items-center gap-2 text-sm text-zinc-800 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={formScanActive}
+              onChange={(e) => setFormScanActive(e.target.checked)}
+            />
+            Scan ativo
+          </label>
+          <label className="flex items-center gap-2 text-sm text-zinc-800 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={formAutoShare}
+              onChange={(e) => setFormAutoShare(e.target.checked)}
+            />
+            Compartilhamento automático
+          </label>
         </div>
         <div className="mt-3">
           <button
@@ -360,7 +403,8 @@ export default function AdminWhatsappScanPage() {
                 <th className="px-4 py-3">Parceiro</th>
                 <th className="px-4 py-3">Título</th>
                 <th className="px-4 py-3">Usuários monitorados</th>
-                <th className="px-4 py-3">Estado</th>
+                <th className="px-4 py-3">Scan</th>
+                <th className="px-4 py-3">Compartilhamento</th>
                 <th className="px-4 py-3">Mensagens</th>
                 <th className="px-4 py-3 text-right">Ações</th>
               </tr>
@@ -384,6 +428,17 @@ export default function AdminWhatsappScanPage() {
                   <td className="px-4 py-3">
                     {row.active ? (
                       <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800">
+                        Ativo
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-700">
+                        Inativo
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {row.autoShareEnabled ? (
+                      <span className="rounded-full bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-800">
                         Ativo
                       </span>
                     ) : (
@@ -482,8 +537,21 @@ export default function AdminWhatsappScanPage() {
                   checked={editActive}
                   onChange={(e) => setEditActive(e.target.checked)}
                 />
-                Ativo
+                Scan ativo
               </label>
+              <label className="flex items-center gap-2 text-sm text-zinc-800">
+                <input
+                  type="checkbox"
+                  checked={editAutoShare}
+                  onChange={(e) => setEditAutoShare(e.target.checked)}
+                />
+                Compartilhamento automático
+              </label>
+              <p className="text-xs leading-relaxed text-zinc-500">
+                Com compartilhamento ativo, cada imóvel identificado pelo scan é guardado na
+                plataforma e, ~10 segundos depois, enviado aos grupos WhatsApp de relocation ou
+                venda conforme a finalidade do anúncio.
+              </p>
             </div>
             <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button

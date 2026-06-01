@@ -6,7 +6,6 @@ import { AddHouseModal } from "@/components/house/AddHouseModal";
 import { isActivePublished } from "@/components/house/HousePublicationStatusBadge";
 import { AddAdvertisingBalanceModal } from "@/components/house/AddAdvertisingBalanceModal";
 import { AdvertisingBalanceCard } from "@/components/house/AdvertisingBalanceCard";
-import { PartnerWhatsappScanPanel } from "@/components/whatsapp-scan/PartnerWhatsappScanPanel";
 import { PartnerHousesList, type HouseListSelection } from "@/components/house/PartnerHousesList";
 import { PublishHouseConfirmModal } from "@/components/house/PublishHouseConfirmModal";
 import { PublishHousesBulkConfirmModal } from "@/components/house/PublishHousesBulkConfirmModal";
@@ -572,8 +571,6 @@ export default function PartnerHousesPage() {
         balanceEurCents={balanceEurCents}
         onAddBalance={() => setShowTopupModal(true)}
       />
-
-      <PartnerWhatsappScanPanel />
 
       {showTopupSuccessBanner && (
         <div className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">

@@ -753,6 +753,7 @@ export const api = {
             monitoredNumbers: string[];
             monitorAllMembers: boolean;
             active: boolean;
+            autoShareEnabled: boolean;
             messagesCount: number;
             createdAt: string;
             updatedAt: string;
@@ -765,6 +766,7 @@ export const api = {
         monitoredNumbers?: string[];
         monitorAllMembers?: boolean;
         active?: boolean;
+        autoShareEnabled?: boolean;
       }) =>
         request<{ id: string }>('/whatsapp-scan/groups', {
           method: 'POST',
@@ -779,6 +781,7 @@ export const api = {
           monitoredNumbers?: string[];
           monitorAllMembers?: boolean;
           active?: boolean;
+          autoShareEnabled?: boolean;
         },
       ) =>
         request<{ id: string }>(`/whatsapp-scan/groups/${id}`, {
