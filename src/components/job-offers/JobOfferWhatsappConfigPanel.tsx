@@ -246,14 +246,14 @@ export function JobOfferWhatsappConfigPanel() {
                   <td className="px-4 py-3 text-zinc-800">
                     {row.sourceTitle ?? (
                       <span className="font-mono text-xs text-zinc-500">
-                        {row.sourceGroupJid.replace(/@(g\.us|newsletter)$/i, '')}
+                        {row.sourceGroupJid.replace(/@g\.us$/i, '')}
                       </span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-zinc-800">
                     {row.destTitle ?? (
                       <span className="font-mono text-xs text-zinc-500">
-                        {row.destGroupJid.replace(/@(g\.us|newsletter)$/i, '')}
+                        {row.destGroupJid.replace(/@g\.us$/i, '')}
                       </span>
                     )}
                   </td>

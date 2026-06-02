@@ -6,7 +6,6 @@ import { api } from '@/lib/api';
 export type EvolutionGroupOption = {
   groupJid: string;
   title: string;
-  kind: 'group' | 'channel';
 };
 
 export function EvolutionGroupSelect({
@@ -14,7 +13,7 @@ export function EvolutionGroupSelect({
   onChange,
   excludeJids,
   disabled,
-  placeholder = 'Seleciona um grupo ou canal…',
+  placeholder = 'Seleciona um grupo…',
   listGroups,
 }: {
   valueJid: string;
@@ -49,7 +48,7 @@ export function EvolutionGroupSelect({
       setLoadError(
         e instanceof Error
           ? e.message
-          : 'Erro ao carregar grupos e canais da Evolution.',
+          : 'Erro ao carregar grupos da Evolution.',
       );
       setItems([]);
     } finally {
@@ -62,7 +61,7 @@ export function EvolutionGroupSelect({
     void loadGroups();
   }, [loadGroups]);
 
-  const { groups, channels } = useMemo(() => {
+  const groups = useMemo(() => {
     const list = items.filter((g) => {
       if (!excludeJids?.size) return true;
       if (g.groupJid === valueJid) return true;
@@ -70,35 +69,27 @@ export function EvolutionGroupSelect({
     });
     if (
       valueJid &&
-      /@(g\.us|newsletter)$/i.test(valueJid) &&
+      /@g\.us$/i.test(valueJid) &&
       !list.some((g) => g.groupJid === valueJid)
     ) {
-      const kind = valueJid.endsWith('@newsletter') ? 'channel' : 'group';
       list.unshift({
         groupJid: valueJid,
-        title: valueJid.replace(/@(g\.us|newsletter)$/i, '').slice(0, 20) + '…',
-        kind,
+        title: valueJid.replace(/@g\.us$/i, '').slice(0, 20) + '…',
       });
     }
-    return {
-      groups: list.filter((x) => x.kind === 'group'),
-      channels: list.filter((x) => x.kind === 'channel'),
-    };
+    return list;
   }, [items, excludeJids, valueJid]);
 
-  const hasOptions = groups.length > 0 || channels.length > 0;
+  const hasOptions = groups.length > 0;
 
   const emptyLabel = loading
     ? 'A carregar…'
     : !hasLoaded
-      ? 'Clica para carregar grupos e canais…'
+      ? 'Clica para carregar grupos…'
       : placeholder;
 
   const showPendingValue =
-    !hasLoaded &&
-    !loading &&
-    valueJid &&
-    /@(g\.us|newsletter)$/i.test(valueJid);
+    !hasLoaded && !loading && valueJid && /@g\.us$/i.test(valueJid);
 
   return (
     <div>
@@ -108,7 +99,7 @@ export function EvolutionGroupSelect({
         onFocus={handleOpenSelector}
         onMouseDown={handleOpenSelector}
         onChange={(e) => {
-          const g = [...groups, ...channels].find((x) => x.groupJid === e.target.value);
+          const g = groups.find((x) => x.groupJid === e.target.value);
           if (g) onChange(g);
         }}
         className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm disabled:opacity-60"
@@ -116,31 +107,18 @@ export function EvolutionGroupSelect({
         <option value="">{emptyLabel}</option>
         {showPendingValue ? (
           <option value={valueJid}>
-            {valueJid.replace(/@(g\.us|newsletter)$/i, '').slice(0, 28)}…
+            {valueJid.replace(/@g\.us$/i, '').slice(0, 28)}…
           </option>
         ) : null}
-        {groups.length > 0 ? (
-          <optgroup label="Grupos">
-            {groups.map((g) => (
-              <option key={g.groupJid} value={g.groupJid}>
-                {g.title}
-              </option>
-            ))}
-          </optgroup>
-        ) : null}
-        {channels.length > 0 ? (
-          <optgroup label="Canais">
-            {channels.map((g) => (
-              <option key={g.groupJid} value={g.groupJid}>
-                {g.title}
-              </option>
-            ))}
-          </optgroup>
-        ) : null}
+        {groups.map((g) => (
+          <option key={g.groupJid} value={g.groupJid}>
+            {g.title}
+          </option>
+        ))}
       </select>
       {instance && hasLoaded && !loading ? (
         <span className="mt-1 block text-xs text-zinc-500">
-          Grupos e canais da instância Evolution «{instance}».
+          Grupos da instância Evolution «{instance}».
         </span>
       ) : null}
       {!hasLoaded && !loading && !loadError ? (
@@ -153,8 +131,7 @@ export function EvolutionGroupSelect({
       ) : null}
       {hasLoaded && !loading && !loadError && !hasOptions ? (
         <span className="mt-1 block text-xs text-amber-700">
-          Nenhum grupo ou canal disponível. Na Evolution, canais só aparecem após haver
-          mensagens no histórico da instância.
+          Nenhum grupo disponível na instância Evolution.
         </span>
       ) : null}
     </div>

@@ -1,12 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import {
-  JobOfferCard,
-  JobOfferCardSkeleton,
-} from "@/components/job-offers/JobOfferCard";
-import { JobOfferDetailModal } from "@/components/job-offers/JobOfferDetailModal";
+import { JobOffersDateCarousels } from "@/components/job-offers/JobOffersDateCarousels";
 import { JobOfferWhatsappConfigPanel } from "@/components/job-offers/JobOfferWhatsappConfigPanel";
 import { JobOffersAdminModal } from "@/components/job-offers/JobOffersAdminModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -50,12 +47,12 @@ function WarningIcon({ className }: { className?: string }) {
 }
 
 export default function JobOffersPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
   const [rows, setRows] = useState<OfferRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [detailOffer, setDetailOffer] = useState<OfferRow | null>(null);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [adminModalEditOffer, setAdminModalEditOffer] =
     useState<OfferRow | null>(null);
@@ -114,9 +111,6 @@ export default function JobOffersPage() {
       try {
         await api.admin.jobOffers.delete(offer.id);
         setRows((prev) => prev.filter((r) => r.id !== offer.id));
-        setDetailOffer((current) =>
-          current?.id === offer.id ? null : current,
-        );
       } catch (e) {
         setError(
           e instanceof Error ? e.message : "Não foi possível excluir a oferta.",
@@ -144,9 +138,9 @@ export default function JobOffersPage() {
   }, [filteredRows.length, rows.length, searchQuery]);
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-6 sm:max-w-3xl sm:space-y-8 sm:px-6 sm:py-10">
+    <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-6 sm:max-w-3xl sm:space-y-8 sm:px-6 md:max-w-4xl lg:max-w-5xl xl:max-w-6xl sm:py-10">
       <header>
-        <div className="max-w-2xl">
+        <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800/90">
             Comunidade Rafa Portugal
           </p>
@@ -298,13 +292,11 @@ export default function JobOffersPage() {
       ) : null}
 
       {loading ? (
-        <ul className="space-y-2.5" aria-busy="true" aria-label="A carregar ofertas">
-          {[0, 1, 2].map((i) => (
-            <li key={i}>
-              <JobOfferCardSkeleton />
-            </li>
-          ))}
-        </ul>
+        <JobOffersDateCarousels
+          offers={[]}
+          loading
+          onOpenDetail={() => {}}
+        />
       ) : error ? (
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800">
           {error}
@@ -346,37 +338,24 @@ export default function JobOffersPage() {
           </button>
         </div>
       ) : (
-        <ul className="space-y-2.5">
-          {filteredRows.map((offer) => (
-            <li key={offer.id}>
-              <JobOfferCard
-                offer={offer}
-                onOpenDetail={() => setDetailOffer(offer)}
-                isAdmin={isAdmin}
-                onEdit={
-                  isAdmin
-                    ? () => {
-                        setAdminModalEditOffer(offer);
-                        setAdminModalOpen(true);
-                      }
-                    : undefined
+        <JobOffersDateCarousels
+          offers={filteredRows}
+          onOpenDetail={(offer) =>
+            router.push(`/ofertas-trabalho/${offer.id}`)
+          }
+          isAdmin={isAdmin}
+          onEdit={
+            isAdmin
+              ? (offer) => {
+                  setAdminModalEditOffer(offer);
+                  setAdminModalOpen(true);
                 }
-                onDelete={
-                  isAdmin
-                    ? () => void handleDeleteOffer(offer)
-                    : undefined
-                }
-                deleting={deletingId === offer.id}
-              />
-            </li>
-          ))}
-        </ul>
+              : undefined
+          }
+          onDelete={isAdmin ? (offer) => void handleDeleteOffer(offer) : undefined}
+          deletingId={deletingId}
+        />
       )}
-
-      <JobOfferDetailModal
-        offer={detailOffer}
-        onClose={() => setDetailOffer(null)}
-      />
 
       {isAdmin ? (
         <JobOffersAdminModal

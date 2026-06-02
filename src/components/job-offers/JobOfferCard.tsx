@@ -9,25 +9,6 @@ type JobOfferListItem = {
   publishedAt: string;
 };
 
-function formatPublishedDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("pt-PT", {
-    day: "2-digit",
-    month: "short",
-  });
-}
-
-function publishedRecencyLabel(iso: string): string | null {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  const days = Math.floor((Date.now() - d.getTime()) / 86_400_000);
-  if (days <= 0) return "Hoje";
-  if (days === 1) return "Há 1 dia";
-  if (days < 7) return `Há ${days} dias`;
-  return null;
-}
-
 function PencilIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -81,6 +62,9 @@ function MapPinIcon({ className }: { className?: string }) {
   );
 }
 
+/** Altura mínima partilhada (carrossel e skeleton). */
+export const JOB_OFFER_CARD_MIN_HEIGHT_CLASS = "min-h-[10rem]";
+
 type Props = {
   offer: JobOfferListItem;
   onOpenDetail: () => void;
@@ -88,6 +72,8 @@ type Props = {
   onEdit?: () => void;
   onDelete?: () => void;
   deleting?: boolean;
+  /** Carrossel: altura mínima fixa e conteúdo centrado verticalmente. */
+  variant?: "default" | "carousel";
 };
 
 export function JobOfferCard({
@@ -97,96 +83,97 @@ export function JobOfferCard({
   onEdit,
   onDelete,
   deleting = false,
+  variant = "default",
 }: Props) {
-  const recency = publishedRecencyLabel(offer.publishedAt);
-  const dateLabel = formatPublishedDate(offer.publishedAt);
+  const isCarousel = variant === "carousel";
+  const local = offer.city.trim() || "—";
+  const jobFunction = offer.jobFunction.trim() || "—";
+  const company = offer.company?.trim() || "—";
 
   return (
-    <article className="group rounded-xl border border-zinc-200/90 bg-white px-3.5 py-3 shadow-sm ring-1 ring-zinc-900/5 transition hover:border-amber-200/80 hover:shadow-md sm:px-4">
-      <div className="flex items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {recency ? (
-              <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800 ring-1 ring-emerald-200/70">
-                {recency}
-              </span>
-            ) : (
-              <span className="text-[11px] text-zinc-500">{dateLabel}</span>
-            )}
-            <span className="inline-flex items-center gap-1 rounded-md bg-zinc-50 px-2 py-0.5 text-[11px] font-medium text-zinc-700 ring-1 ring-zinc-200/70">
-              <MapPinIcon className="h-3 w-3 shrink-0 text-amber-700" />
-              {offer.city}
-            </span>
-            {recency ? (
-              <span className="text-[11px] text-zinc-400">{dateLabel}</span>
-            ) : null}
-          </div>
-
-          <h2 className="mt-1.5 text-base font-bold leading-snug text-zinc-900">
-            {offer.jobFunction}
-          </h2>
-
-          {offer.company?.trim() ? (
-            <p className="mt-0.5 line-clamp-1 text-xs font-medium text-zinc-600">
-              {offer.company}
-            </p>
-          ) : offer.title.trim() ? (
-            <p className="mt-0.5 line-clamp-1 text-xs text-zinc-500">
-              {offer.title}
-            </p>
-          ) : null}
-        </div>
-
-        <div className="flex shrink-0 items-center gap-1.5">
-          {isAdmin && onEdit ? (
+    <article
+      className={`group flex flex-col rounded-xl border border-zinc-200/90 bg-white px-3.5 py-3 shadow-sm ring-1 ring-zinc-900/5 transition hover:border-amber-200/80 hover:shadow-md sm:px-4 ${
+        isCarousel ? `h-full w-full ${JOB_OFFER_CARD_MIN_HEIGHT_CLASS}` : ""
+      }`}
+    >
+      {isAdmin && (onEdit || onDelete) ? (
+        <div className="mb-2 flex justify-end gap-1.5">
+          {onEdit ? (
             <button
               type="button"
               onClick={onEdit}
               aria-label="Editar oferta"
-              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-900"
+              className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-900"
             >
               <PencilIcon className="h-4 w-4" />
             </button>
           ) : null}
-          {isAdmin && onDelete ? (
+          {onDelete ? (
             <button
               type="button"
               onClick={onDelete}
               disabled={deleting}
               aria-label="Excluir oferta"
-              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-red-200 bg-white text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-red-200 bg-white text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <TrashIcon className="h-4 w-4" />
             </button>
           ) : null}
-          <button
-            type="button"
-            onClick={onOpenDetail}
-            className="cursor-pointer rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 sm:px-3.5 sm:text-sm"
-          >
-            Saber mais
-          </button>
         </div>
+      ) : null}
+
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <p className="inline-flex min-h-[1.25rem] items-center gap-1.5 text-sm font-medium leading-snug text-zinc-700">
+          <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-amber-700" />
+          <span className="line-clamp-1">{local}</span>
+        </p>
+
+        <h2 className="line-clamp-2 text-base font-bold leading-snug text-zinc-900">
+          {jobFunction}
+        </h2>
+
+        <p className="line-clamp-2 min-h-[1.25rem] text-sm leading-snug text-zinc-600">
+          {company}
+        </p>
       </div>
+
+      <button
+        type="button"
+        onClick={onOpenDetail}
+        className={`mt-3 w-full cursor-pointer rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 sm:text-sm ${
+          isCarousel ? "mt-auto" : ""
+        }`}
+      >
+        Saber mais
+      </button>
     </article>
   );
 }
 
-export function JobOfferCardSkeleton() {
+export function JobOfferCardSkeleton({
+  variant = "default",
+}: {
+  variant?: "default" | "carousel";
+} = {}) {
+  const isCarousel = variant === "carousel";
+
   return (
     <div
-      className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm"
+      className={`flex flex-col rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm ${
+        isCarousel ? `h-full w-full ${JOB_OFFER_CARD_MIN_HEIGHT_CLASS}` : ""
+      }`}
       aria-hidden
     >
       <div className="min-w-0 flex-1 space-y-2">
-        <div className="flex gap-2">
-          <div className="h-4 w-14 animate-pulse rounded-full bg-zinc-200" />
-          <div className="h-4 w-20 animate-pulse rounded-md bg-zinc-100" />
-        </div>
-        <div className="h-5 w-3/5 max-w-[200px] animate-pulse rounded bg-zinc-200" />
-        <div className="h-3 w-2/5 animate-pulse rounded bg-zinc-100" />
+        <div className="h-4 w-2/5 animate-pulse rounded bg-zinc-100" />
+        <div className="h-5 w-4/5 animate-pulse rounded bg-zinc-200" />
+        <div className="h-4 w-3/5 animate-pulse rounded bg-zinc-100" />
       </div>
-      <div className="h-8 w-20 shrink-0 animate-pulse rounded-lg bg-zinc-200" />
+      <div
+        className={`h-9 w-full animate-pulse rounded-lg bg-zinc-200 ${
+          isCarousel ? "mt-auto" : "mt-3"
+        }`}
+      />
     </div>
   );
 }

@@ -584,6 +584,22 @@ export const api = {
           publishedAt: string;
         }[]
       >('/job-offers', { method: 'GET' }),
+    get: (id: string) =>
+      request<{
+        id: string;
+        title: string;
+        jobFunction: string;
+        city: string;
+        company: string;
+        summary: string;
+        description: string;
+        sourceMessage: string;
+        advertiserContacts: Array<{
+          type: 'email' | 'phone' | 'url';
+          value: string;
+        }>;
+        publishedAt: string;
+      }>(`/job-offers/${encodeURIComponent(id)}`, { method: 'GET' }),
   },
   admin: {
     users: {
@@ -802,7 +818,6 @@ export const api = {
           items: Array<{
             groupJid: string;
             title: string;
-            kind: 'group' | 'channel';
           }>;
         }>('/whatsapp-scan/evolution-groups', { method: 'GET' }),
       groupSubject: (groupJid: string) =>
@@ -1436,7 +1451,6 @@ export const api = {
             items: Array<{
               groupJid: string;
               title: string;
-              kind: 'group' | 'channel';
             }>;
           }>('/job-offers/whatsapp/evolution-groups', { method: 'GET' }),
         listMessages: (limit = 80, routeId?: string) => {

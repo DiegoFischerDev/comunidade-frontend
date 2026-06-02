@@ -19,12 +19,33 @@ const CAROUSEL_NAV_BTN_BASE =
 export const HORIZONTAL_CAROUSEL_NAV_BTN =
   `${CAROUSEL_NAV_BTN_BASE} opacity-50 sm:opacity-0 sm:group-hover:opacity-50 sm:group-focus-within:opacity-50 hover:opacity-100 focus-visible:opacity-100`;
 
+/** Setas sempre visíveis (sem depender de hover no contentor). */
+export const HORIZONTAL_CAROUSEL_NAV_BTN_VISIBLE =
+  `${CAROUSEL_NAV_BTN_BASE} opacity-100`;
+
+/** Mobile semitransparentes; desktop opacas (ofertas de trabalho). */
+export const HORIZONTAL_CAROUSEL_NAV_BTN_FADE_MOBILE =
+  `${CAROUSEL_NAV_BTN_BASE} opacity-50 max-md:opacity-50 md:opacity-100 hover:opacity-100 max-md:hover:opacity-100 focus-visible:opacity-100`;
+
 /** Setas sempre visíveis e em destaque (ex.: fotos de imóveis). */
 export const HORIZONTAL_CAROUSEL_NAV_BTN_PROMINENT =
   `${CAROUSEL_NAV_BTN_BASE} opacity-100`;
 
 export const HORIZONTAL_CAROUSEL_TRACK =
   "flex snap-x snap-mandatory gap-0 overflow-x-auto scroll-smooth pb-0 pt-0 [-webkit-overflow-scrolling:touch] overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden";
+
+/**
+ * Mobile: cartão centrado (~76vw) com ~12vw de “peek” do cartão anterior/seguinte.
+ * Alinhado ao carrossel do dashboard principal.
+ */
+export const CENTERED_PEEK_CAROUSEL_ITEM =
+  "flex-none max-md:snap-center md:snap-start max-md:w-[76vw] max-md:max-w-[288px]";
+
+export const CENTERED_PEEK_CAROUSEL_TRACK =
+  "gap-3 pb-3 pt-1 max-md:pl-[12vw] max-md:pr-[12vw] md:justify-center md:gap-5 md:px-0";
+
+const CENTERED_PEEK_EDGE_BTN =
+  "pointer-events-auto absolute bottom-[8%] top-[8%] z-[18] m-0 hidden w-[12vw] min-w-[44px] cursor-pointer border-0 bg-transparent p-0 outline-none max-md:block md:hidden touch-manipulation disabled:pointer-events-none disabled:opacity-0 focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2";
 
 function getCarouselScrollStep(el: HTMLDivElement): number {
   const first = el.firstElementChild as HTMLElement | null;
@@ -45,12 +66,25 @@ type HorizontalSnapCarouselProps = {
   hideNavWhenSingle?: boolean;
   /** Ref opcional no contentor com scroll (ex.: contador de slides). */
   trackRef?: Ref<HTMLDivElement>;
-  /** `prominent`: setas sempre opacas e coloridas; `subtle`: estilo do dashboard. */
-  navStyle?: "subtle" | "prominent";
+  /**
+   * `subtle`: discretas, aparecem sobretudo em hover (dashboard).
+   * `visible`: sempre visíveis com opacidade estável.
+   * `prominent`: sempre opacas a 100%.
+   */
+  navStyle?: "subtle" | "visible" | "prominent" | "fadeMobile";
   /** Chamado quando o utilizador usa as setas (ex.: pausar auto-avanço). */
   onNavInteract?: () => void;
   /** Na última volta à primeira (e vice-versa); setas sempre ativas. */
   loop?: boolean;
+  /**
+   * `inset`: setas sobre a faixa de scroll (predefinido).
+   * `outset`: em `md+` as setas ficam fora, à esquerda/direita, sem tapar os slides.
+   */
+  navPlacement?: "inset" | "outset";
+  /** Dashboard mobile: peek 12vw + zonas de toque nas laterais para avançar. */
+  centeredPeek?: boolean;
+  prevAriaLabel?: string;
+  nextAriaLabel?: string;
 };
 
 export function HorizontalSnapCarousel({
@@ -64,11 +98,33 @@ export function HorizontalSnapCarousel({
   navStyle = "subtle",
   onNavInteract,
   loop = false,
+  navPlacement = "inset",
+  centeredPeek = false,
+  prevAriaLabel = "Anterior",
+  nextAriaLabel = "Seguinte",
 }: HorizontalSnapCarouselProps) {
+  const navPosPrev = centeredPeek
+    ? navPlacement === "outset"
+      ? "left-0 md:-left-14 lg:-left-16"
+      : "left-0 md:left-2"
+    : navPlacement === "outset"
+      ? "left-2 md:-left-14 lg:-left-16"
+      : "left-2 md:left-3";
+  const navPosNext = centeredPeek
+    ? navPlacement === "outset"
+      ? "right-0 md:-right-14 lg:-right-16"
+      : "right-0 md:right-2"
+    : navPlacement === "outset"
+      ? "right-2 md:-right-14 lg:-right-16"
+      : "right-2 md:right-3";
   const navBtnClass =
     navStyle === "prominent"
       ? HORIZONTAL_CAROUSEL_NAV_BTN_PROMINENT
-      : HORIZONTAL_CAROUSEL_NAV_BTN;
+      : navStyle === "visible"
+        ? HORIZONTAL_CAROUSEL_NAV_BTN_VISIBLE
+        : navStyle === "fadeMobile"
+          ? HORIZONTAL_CAROUSEL_NAV_BTN_FADE_MOBILE
+          : HORIZONTAL_CAROUSEL_NAV_BTN;
   const internalTrackRef = useRef<HTMLDivElement | null>(null);
   const setTrackRef = useCallback(
     (el: HTMLDivElement | null) => {
@@ -137,16 +193,20 @@ export function HorizontalSnapCarousel({
   const showNav = slideCount > 1 || !hideNavWhenSingle;
 
   return (
-    <div className={`group relative ${className}`.trim()}>
+    <div
+      className={`group relative ${
+        navPlacement === "outset" ? "overflow-visible" : ""
+      } ${className}`.trim()}
+    >
       {showNav ? (
         <>
           <button
             type="button"
-            aria-label="Imagem anterior"
+            aria-label={prevAriaLabel}
             aria-disabled={!canPrev}
             disabled={!canPrev}
             onClick={() => scrollByDir(-1)}
-            className={`${navBtnClass} left-2 md:left-3`}
+            className={`${navBtnClass} ${navPosPrev}`}
           >
             <svg
               aria-hidden
@@ -165,11 +225,11 @@ export function HorizontalSnapCarousel({
           </button>
           <button
             type="button"
-            aria-label="Imagem seguinte"
+            aria-label={nextAriaLabel}
             aria-disabled={!canNext}
             disabled={!canNext}
             onClick={() => scrollByDir(1)}
-            className={`${navBtnClass} right-2 md:right-3`}
+            className={`${navBtnClass} ${navPosNext}`}
           >
             <svg
               aria-hidden
@@ -195,6 +255,32 @@ export function HorizontalSnapCarousel({
       >
         {children}
       </div>
+      {centeredPeek && showNav ? (
+        <>
+          <button
+            type="button"
+            aria-label={`${prevAriaLabel} — toque na zona lateral`}
+            disabled={!canPrev}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              scrollByDir(-1);
+            }}
+            className={`${CENTERED_PEEK_EDGE_BTN} left-0`}
+          />
+          <button
+            type="button"
+            aria-label={`${nextAriaLabel} — toque na zona lateral`}
+            disabled={!canNext}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              scrollByDir(1);
+            }}
+            className={`${CENTERED_PEEK_EDGE_BTN} right-0`}
+          />
+        </>
+      ) : null}
     </div>
   );
 }
