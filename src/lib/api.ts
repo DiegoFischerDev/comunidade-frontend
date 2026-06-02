@@ -1491,6 +1491,8 @@ export const api = {
               status: string;
               createdJobOfferId: string | null;
               error: string | null;
+              parsedJson: unknown;
+              imageUrl: string | null;
               createdAt: string;
             }>;
           }>(`/job-offers/whatsapp/messages?${qs}`, { method: 'GET' });

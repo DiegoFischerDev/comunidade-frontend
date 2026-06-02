@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { EvolutionGroupSelect } from '@/components/whatsapp-scan/EvolutionGroupSelect';
@@ -10,10 +11,27 @@ import {
   JOB_OFFER_REGION_LABELS,
   type JobOfferRegion,
 } from '@/lib/job-offer-regions';
+import { jobOfferWhatsappStatusLabel } from '@/lib/job-offer-whatsapp-message-status';
+import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
 
 type ScanRow = Awaited<
   ReturnType<typeof api.admin.jobOffers.whatsapp.listScans>
 >['items'][number];
+
+type MessageLogRow = Awaited<
+  ReturnType<typeof api.admin.jobOffers.whatsapp.listMessages>
+>['items'][number];
+
+function formatDtPt(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString('pt-PT', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 type DestinationRow = Awaited<
   ReturnType<typeof api.admin.jobOffers.whatsapp.listDestinations>
@@ -31,6 +49,10 @@ export function JobOfferWhatsappConfigPanel() {
   const [savingDestRegion, setSavingDestRegion] = useState<JobOfferRegion | null>(
     null,
   );
+  const [logsScan, setLogsScan] = useState<ScanRow | null>(null);
+  const [logsAll, setLogsAll] = useState(false);
+  const [logs, setLogs] = useState<MessageLogRow[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -153,6 +175,26 @@ export function JobOfferWhatsappConfigPanel() {
     [load],
   );
 
+  const openLogs = useCallback(async (scan: ScanRow | null, all = false) => {
+    setLogsScan(scan);
+    setLogsAll(all);
+    setLogsLoading(true);
+    setLogs([]);
+    try {
+      const res = await api.admin.jobOffers.whatsapp.listMessages(
+        100,
+        all ? undefined : scan?.id,
+      );
+      setLogs(res.items);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : 'Erro ao carregar logs de mensagens.',
+      );
+    } finally {
+      setLogsLoading(false);
+    }
+  }, []);
+
   const saveDestination = useCallback(
     async (region: JobOfferRegion) => {
       const jid = destJids[region].trim();
@@ -190,7 +232,8 @@ export function JobOfferWhatsappConfigPanel() {
           <p className="mt-1 max-w-xl text-xs leading-relaxed text-zinc-600">
             Adiciona grupos de origem para scan. As vagas válidas entram no site e
             são republicadas automaticamente no grupo fixo da região da cidade
-            (Norte, Centro ou Sul).
+            (Norte, Centro ou Sul). Usa <strong className="font-medium">Logs</strong>{' '}
+            para ver o que a OpenAI extraiu e o motivo de rejeição.
           </p>
           {!loading && scans.length > 0 ? (
             <p className="mt-2 text-xs text-zinc-500">
@@ -200,14 +243,23 @@ export function JobOfferWhatsappConfigPanel() {
             </p>
           ) : null}
         </div>
-        <button
-          type="button"
-          onClick={() => void load()}
-          disabled={loading}
-          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
-        >
-          Atualizar
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => void openLogs(null, true)}
+            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+          >
+            Logs (todos)
+          </button>
+          <button
+            type="button"
+            onClick={() => void load()}
+            disabled={loading}
+            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+          >
+            Atualizar
+          </button>
+        </div>
       </div>
 
       {error ? (
@@ -389,14 +441,23 @@ export function JobOfferWhatsappConfigPanel() {
                     </button>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => void deleteScan(row.id)}
-                      disabled={deletingId === row.id}
-                      className="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
-                    >
-                      {deletingId === row.id ? 'A remover…' : 'Excluir'}
-                    </button>
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void openLogs(row)}
+                        className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
+                      >
+                        Logs
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void deleteScan(row.id)}
+                        disabled={deletingId === row.id}
+                        className="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+                      >
+                        {deletingId === row.id ? 'A remover…' : 'Excluir'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -404,6 +465,111 @@ export function JobOfferWhatsappConfigPanel() {
           </table>
         </div>
       )}
+
+      {logsScan !== null || logsAll ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-2xl bg-white p-5 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-zinc-900">
+                  Logs de processamento
+                </h3>
+                <p className="mt-1 text-xs text-zinc-600">
+                  {logsAll
+                    ? 'Todas as mensagens dos grupos de scan'
+                    : (logsScan?.sourceTitle ?? logsScan?.sourceGroupJid)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setLogsScan(null);
+                  setLogsAll(false);
+                  setLogs([]);
+                }}
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+              >
+                Fechar
+              </button>
+            </div>
+            <div className="mt-4 flex-1 overflow-y-auto">
+              {logsLoading ? (
+                <p className="text-sm text-zinc-600">A carregar…</p>
+              ) : logs.length === 0 ? (
+                <p className="text-sm text-zinc-600">
+                  Nenhum registo. Se enviaste uma imagem e não aparece aqui, a
+                  mensagem pode não ter chegado ao backend (grupo não está em
+                  scan, remetente filtrado, ou webhook sem imagem).
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {logs.map((m) => {
+                    const s = jobOfferWhatsappStatusLabel(m.status);
+                    const parsed =
+                      m.parsedJson != null
+                        ? JSON.stringify(m.parsedJson, null, 2)
+                        : null;
+                    const logImageSrc = resolveUploadsUrl(m.imageUrl);
+                    return (
+                      <li
+                        key={m.id}
+                        className="rounded-xl border border-zinc-200 p-3"
+                      >
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                          <span
+                            className={`rounded-full px-2 py-0.5 font-semibold ${s.className}`}
+                          >
+                            {s.label}
+                          </span>
+                          <span>+{m.senderNumber}</span>
+                          <span>·</span>
+                          <span>{formatDtPt(m.createdAt)}</span>
+                          {m.createdJobOfferId ? (
+                            <>
+                              <span>·</span>
+                              <span className="text-emerald-700">
+                                oferta criada
+                              </span>
+                            </>
+                          ) : null}
+                        </div>
+                        {logImageSrc ? (
+                          <div className="relative mt-3 aspect-[4/3] max-h-64 w-full overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100">
+                            <Image
+                              src={logImageSrc}
+                              alt="Imagem analisada"
+                              fill
+                              className="object-contain object-top"
+                              sizes="400px"
+                              unoptimized
+                            />
+                          </div>
+                        ) : null}
+                        <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-800">
+                          {m.rawText || '—'}
+                        </p>
+                        {m.error ? (
+                          <p className="mt-1 text-xs text-red-600">{m.error}</p>
+                        ) : null}
+                        {parsed ? (
+                          <details className="mt-2">
+                            <summary className="cursor-pointer text-xs font-semibold text-amber-800">
+                              Resposta OpenAI (JSON)
+                            </summary>
+                            <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-zinc-50 p-2 text-[11px] leading-relaxed text-zinc-800">
+                              {parsed}
+                            </pre>
+                          </details>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
