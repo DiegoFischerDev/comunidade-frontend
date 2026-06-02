@@ -3,11 +3,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { JobOfferRegionFilter } from "@/components/job-offers/JobOfferRegionFilter";
 import { JobOffersDateCarousels } from "@/components/job-offers/JobOffersDateCarousels";
 import { JobOfferWhatsappConfigPanel } from "@/components/job-offers/JobOfferWhatsappConfigPanel";
 import { JobOffersAdminModal } from "@/components/job-offers/JobOffersAdminModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
+import {
+  JOB_OFFER_REGION_LABELS,
+  type JobOfferRegion,
+} from "@/lib/job-offer-regions";
 import { WHATSAPP_GROUP_OFERTAS_TRABALHO_URL } from "@/lib/community-whatsapp-groups";
 
 function WhatsappBrandIcon({ className }: { className?: string }) {
@@ -57,7 +62,11 @@ export default function JobOffersPage() {
   const [adminModalEditOffer, setAdminModalEditOffer] =
     useState<OfferRow | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [regionFilter, setRegionFilter] = useState<JobOfferRegion | "">("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const hasActiveFilters =
+    searchQuery.trim().length > 0 || regionFilter !== "";
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -79,9 +88,13 @@ export default function JobOffersPage() {
   }, [load]);
 
   const filteredRows = useMemo(() => {
+    let list = rows;
+    if (regionFilter) {
+      list = list.filter((offer) => offer.region === regionFilter);
+    }
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((offer) => {
+    if (!q) return list;
+    return list.filter((offer) => {
       const haystack = [
         offer.jobFunction,
         offer.title,
@@ -94,7 +107,7 @@ export default function JobOffersPage() {
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [rows, searchQuery]);
+  }, [rows, searchQuery, regionFilter]);
 
   const handleDeleteOffer = useCallback(
     async (offer: OfferRow) => {
@@ -131,11 +144,16 @@ export default function JobOffersPage() {
     const n = filteredRows.length;
     const total = rows.length;
     const base = n === 1 ? "1 vaga" : `${n} vagas`;
-    if (searchQuery.trim() && total !== n) {
+    if (hasActiveFilters && total !== n) {
       return `${base} de ${total}`;
     }
     return base;
-  }, [filteredRows.length, rows.length, searchQuery]);
+  }, [filteredRows.length, rows.length, hasActiveFilters]);
+
+  const clearFilters = useCallback(() => {
+    setSearchQuery("");
+    setRegionFilter("");
+  }, []);
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-6 sm:max-w-3xl sm:space-y-8 sm:px-6 md:max-w-4xl lg:max-w-5xl xl:max-w-6xl sm:py-10">
@@ -162,7 +180,12 @@ export default function JobOffersPage() {
       {isAdmin ? <JobOfferWhatsappConfigPanel /> : null}
 
       {!loading && !error && rows.length > 0 ? (
-        <div>
+        <div className="space-y-5">
+          <JobOfferRegionFilter
+            value={regionFilter}
+            onChange={setRegionFilter}
+          />
+          <div>
           <label
             htmlFor="job-offers-search"
             className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-600"
@@ -213,6 +236,7 @@ export default function JobOffersPage() {
               </button>
             ) : null}
           </div>
+          </div>
         </div>
       ) : null}
 
@@ -262,14 +286,16 @@ export default function JobOffersPage() {
         <div className="rounded-xl border border-zinc-200 bg-white px-4 py-8 text-center text-sm text-zinc-600">
           <p className="font-medium text-zinc-800">Nenhuma oferta encontrada</p>
           <p className="mt-1">
-            Tenta outras palavras (função, cidade ou empresa).
+            {regionFilter && !searchQuery.trim()
+              ? `Não há vagas na região ${JOB_OFFER_REGION_LABELS[regionFilter]} com os critérios atuais.`
+              : "Tenta outra região ou outras palavras (função, cidade ou empresa)."}
           </p>
           <button
             type="button"
-            onClick={() => setSearchQuery("")}
+            onClick={clearFilters}
             className="mt-3 text-sm font-medium text-amber-800 underline hover:text-amber-900"
           >
-            Limpar filtro
+            Limpar filtros
           </button>
         </div>
       ) : (
@@ -311,17 +337,23 @@ export default function JobOffersPage() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800/85">
-                WhatsApp · comunidade
+                WhatsApp · região {JOB_OFFER_REGION_LABELS.NORTE}
               </p>
-              <h2
-                id="job-offers-grupao-heading"
-                className="mt-1 text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl"
-              >
-                Grupão de ofertas de emprego
-              </h2>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <h2
+                  id="job-offers-grupao-heading"
+                  className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl"
+                >
+                  Grupão de ofertas de emprego
+                </h2>
+                <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-900 ring-1 ring-amber-200/80">
+                  {JOB_OFFER_REGION_LABELS.NORTE}
+                </span>
+              </div>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600 sm:text-[0.9375rem]">
-                Junta-te ao grupo para receber vagas em tempo real e partilhar
-                oportunidades com a comunidade Rafa Portugal.
+                Grupo do {JOB_OFFER_REGION_LABELS.NORTE} de Portugal — recebe
+                vagas desta região em tempo real e partilha oportunidades com a
+                comunidade Rafa Portugal.
               </p>
             </div>
           </div>

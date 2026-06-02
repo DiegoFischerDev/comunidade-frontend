@@ -15,7 +15,7 @@ export const WHATSAPP_GROUP_IMOVEIS_VENDA_URL =
   process.env.NEXT_PUBLIC_WHATSAPP_GROUP_IMOVEIS_VENDA_URL?.trim() ||
   "https://chat.whatsapp.com/EneiignxdnuHVy17rh5MTX";
 
-/** Grupão de ofertas de emprego (Rafa Portugal). */
+/** Grupão de ofertas de emprego — região Norte (Rafa Portugal). */
 export const WHATSAPP_GROUP_OFERTAS_TRABALHO_URL =
   process.env.NEXT_PUBLIC_WHATSAPP_GROUP_OFERTAS_TRABALHO_URL?.trim() ||
   "https://chat.whatsapp.com/EONaquXnkDx6NmdAdCIouM?mode=gi_t";
@@ -50,7 +50,7 @@ export const COMMUNITY_WHATSAPP_NAV_GROUPS: CommunityWhatsAppNavGroup[] = [
   },
   {
     id: "ofertas-trabalho",
-    label: "Ofertas de trabalho",
+    label: "Ofertas de trabalho (Norte)",
     href: WHATSAPP_GROUP_OFERTAS_TRABALHO_URL,
   },
 ];

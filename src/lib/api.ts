@@ -583,6 +583,7 @@ export const api = {
             value: string;
           }>;
           publishedAt: string;
+          region: 'NORTE' | 'CENTRO' | 'SUL';
         }[]
       >('/job-offers', { method: 'GET' }),
     get: (id: string | number) =>
@@ -1388,71 +1389,84 @@ export const api = {
           { method: 'DELETE' },
         ),
       whatsapp: {
-        listRoutes: () =>
+        listScans: () =>
           request<{
             items: Array<{
               id: string;
               sourceGroupJid: string;
               sourceTitle: string | null;
-              destGroupJid: string;
-              destTitle: string | null;
               monitoredNumbers: string[];
               monitorAllMembers: boolean;
               active: boolean;
-              publishRegion: string | null;
-              publishRegionLabel: string;
               createdAt: string;
               updatedAt: string;
             }>;
-          }>('/job-offers/whatsapp/routes', { method: 'GET' }),
-        createRoute: (body: {
+          }>('/job-offers/whatsapp/scans', { method: 'GET' }),
+        createScan: (body: {
           sourceGroupJid: string;
           sourceTitle?: string;
-          destGroupJid: string;
-          destTitle?: string;
           monitoredNumbers?: string[];
           monitorAllMembers?: boolean;
           active?: boolean;
-          publishRegion?: string;
         }) =>
           request<{
             id: string;
             sourceGroupJid: string;
             sourceTitle: string | null;
-            destGroupJid: string;
-            destTitle: string | null;
             monitoredNumbers: string[];
             monitorAllMembers: boolean;
             active: boolean;
-            publishRegion: string | null;
-            publishRegionLabel: string;
             createdAt: string;
             updatedAt: string;
-          }>('/job-offers/whatsapp/routes', {
+          }>('/job-offers/whatsapp/scans', {
             method: 'POST',
             body: JSON.stringify(body),
           }),
-        updateRoute: (
+        updateScan: (
           id: string,
           body: {
             sourceTitle?: string;
-            destTitle?: string;
             sourceGroupJid?: string;
-            destGroupJid?: string;
             monitoredNumbers?: string[];
             monitorAllMembers?: boolean;
             active?: boolean;
-            publishRegion?: string | null;
           },
         ) =>
-          request(`/job-offers/whatsapp/routes/${encodeURIComponent(id)}`, {
+          request(`/job-offers/whatsapp/scans/${encodeURIComponent(id)}`, {
             method: 'PATCH',
             body: JSON.stringify(body),
           }),
-        deleteRoute: (id: string) =>
+        deleteScan: (id: string) =>
           request<{ ok: true }>(
-            `/job-offers/whatsapp/routes/${encodeURIComponent(id)}`,
+            `/job-offers/whatsapp/scans/${encodeURIComponent(id)}`,
             { method: 'DELETE' },
+          ),
+        listDestinations: () =>
+          request<{
+            items: Array<{
+              region: 'NORTE' | 'CENTRO' | 'SUL';
+              regionLabel: string;
+              destGroupJid: string | null;
+              destTitle: string | null;
+              active: boolean;
+              configured: boolean;
+              updatedAt: string;
+            }>;
+          }>('/job-offers/whatsapp/destinations', { method: 'GET' }),
+        updateDestination: (
+          region: 'NORTE' | 'CENTRO' | 'SUL',
+          body: {
+            destGroupJid?: string | null;
+            destTitle?: string | null;
+            active?: boolean;
+          },
+        ) =>
+          request(
+            `/job-offers/whatsapp/destinations/${encodeURIComponent(region)}`,
+            {
+              method: 'PATCH',
+              body: JSON.stringify(body),
+            },
           ),
         listEvolutionGroups: () =>
           request<{
@@ -1462,14 +1476,14 @@ export const api = {
               title: string;
             }>;
           }>('/job-offers/whatsapp/evolution-groups', { method: 'GET' }),
-        listMessages: (limit = 80, routeId?: string) => {
+        listMessages: (limit = 80, scanId?: string) => {
           const qs = new URLSearchParams({ limit: String(limit) });
-          if (routeId) qs.set('routeId', routeId);
+          if (scanId) qs.set('scanId', scanId);
           return request<{
             items: Array<{
               id: string;
-              routeId: string | null;
-              routeLabel: string | null;
+              scanId: string | null;
+              scanLabel: string | null;
               senderNumber: string;
               rawText: string;
               status: string;
