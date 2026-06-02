@@ -6,6 +6,10 @@ import { EvolutionGroupSelect } from '@/components/whatsapp-scan/EvolutionGroupS
 import { MonitoredUsersCell } from '@/components/whatsapp-scan/MonitoredUsersCell';
 import { WhatsappScanNumbersInput } from '@/components/whatsapp-scan/WhatsappScanNumbersInput';
 import { api } from '@/lib/api';
+import {
+  JOB_OFFER_REGION_OPTIONS,
+  type JobOfferRegion,
+} from '@/lib/job-offer-regions';
 
 type RouteRow = Awaited<
   ReturnType<typeof api.admin.jobOffers.whatsapp.listRoutes>
@@ -17,6 +21,7 @@ export function JobOfferWhatsappConfigPanel() {
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [updatingRegionId, setUpdatingRegionId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -25,6 +30,9 @@ export function JobOfferWhatsappConfigPanel() {
   const [formDestJid, setFormDestJid] = useState('');
   const [formDestTitle, setFormDestTitle] = useState('');
   const [formNumbers, setFormNumbers] = useState<string[]>([]);
+  const [formPublishRegion, setFormPublishRegion] = useState<
+    JobOfferRegion | ''
+  >('NORTE');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -67,12 +75,16 @@ export function JobOfferWhatsappConfigPanel() {
         destGroupJid: formDestJid.trim(),
         destTitle: formDestTitle.trim() || undefined,
         monitoredNumbers: formNumbers,
+        ...(formPublishRegion
+          ? { publishRegion: formPublishRegion }
+          : {}),
       });
       setFormSourceJid('');
       setFormSourceTitle('');
       setFormDestJid('');
       setFormDestTitle('');
       setFormNumbers([]);
+      setFormPublishRegion('NORTE');
       setSuccess('Rota adicionada.');
       await load();
     } catch (e) {
@@ -86,6 +98,7 @@ export function JobOfferWhatsappConfigPanel() {
     formDestJid,
     formDestTitle,
     formNumbers,
+    formPublishRegion,
     load,
   ]);
 
@@ -102,6 +115,24 @@ export function JobOfferWhatsappConfigPanel() {
         setError(e instanceof Error ? e.message : 'Erro ao remover.');
       } finally {
         setDeletingId(null);
+      }
+    },
+    [load],
+  );
+
+  const updatePublishRegion = useCallback(
+    async (row: RouteRow, publishRegion: JobOfferRegion | '') => {
+      setUpdatingRegionId(row.id);
+      setError('');
+      try {
+        await api.admin.jobOffers.whatsapp.updateRoute(row.id, {
+          publishRegion: publishRegion || null,
+        });
+        await load();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Erro ao atualizar região.');
+      } finally {
+        setUpdatingRegionId(null);
       }
     },
     [load],
@@ -133,9 +164,9 @@ export function JobOfferWhatsappConfigPanel() {
             Configuração WhatsApp
           </h2>
           <p className="mt-1 max-w-xl text-xs leading-relaxed text-zinc-600">
-            Define vários pares origem → destino. Mensagens nos grupos de origem
-            ativos são analisadas com IA; vagas entram nesta página e são
-            republicadas no respetivo grupo de destino.
+            Define vários pares origem → destino. Todas as vagas válidas entram no
+            site; no WhatsApp de destino só são publicadas as da região
+            configurada (ex.: Norte).
           </p>
           {!loading && routes.length > 0 ? (
             <p className="mt-2 text-xs text-zinc-500">
@@ -199,6 +230,29 @@ export function JobOfferWhatsappConfigPanel() {
               }}
             />
           </label>
+          <label className="text-sm">
+            <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+              Região no destino
+            </span>
+            <select
+              value={formPublishRegion}
+              onChange={(e) =>
+                setFormPublishRegion(e.target.value as JobOfferRegion | '')
+              }
+              disabled={creating}
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900"
+            >
+              {JOB_OFFER_REGION_OPTIONS.map((opt) => (
+                <option key={opt.value || 'all'} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <span className="mt-1 block text-xs text-zinc-500">
+              Só republica no grupo de destino vagas cuja cidade pertence a esta
+              região. O site mostra todas as ofertas.
+            </span>
+          </label>
           <div className="text-sm sm:col-span-2">
             <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
               Números monitorizados (opcional)
@@ -235,6 +289,7 @@ export function JobOfferWhatsappConfigPanel() {
               <tr>
                 <th className="px-4 py-3">Origem</th>
                 <th className="px-4 py-3">Destino</th>
+                <th className="px-4 py-3">Região</th>
                 <th className="px-4 py-3">Números</th>
                 <th className="px-4 py-3">Estado</th>
                 <th className="px-4 py-3 text-right">Ações</th>
@@ -256,6 +311,25 @@ export function JobOfferWhatsappConfigPanel() {
                         {row.destGroupJid.replace(/@g\.us$/i, '')}
                       </span>
                     )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <select
+                      value={row.publishRegion ?? ''}
+                      disabled={updatingRegionId === row.id}
+                      onChange={(e) =>
+                        void updatePublishRegion(
+                          row,
+                          e.target.value as JobOfferRegion | '',
+                        )
+                      }
+                      className="max-w-[11rem] rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-xs text-zinc-800"
+                    >
+                      {JOB_OFFER_REGION_OPTIONS.map((opt) => (
+                        <option key={opt.value || 'all'} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   <td className="px-4 py-3">
                     <MonitoredUsersCell

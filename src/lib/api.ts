@@ -1399,6 +1399,8 @@ export const api = {
               monitoredNumbers: string[];
               monitorAllMembers: boolean;
               active: boolean;
+              publishRegion: string | null;
+              publishRegionLabel: string;
               createdAt: string;
               updatedAt: string;
             }>;
@@ -1411,6 +1413,7 @@ export const api = {
           monitoredNumbers?: string[];
           monitorAllMembers?: boolean;
           active?: boolean;
+          publishRegion?: string;
         }) =>
           request<{
             id: string;
@@ -1421,6 +1424,8 @@ export const api = {
             monitoredNumbers: string[];
             monitorAllMembers: boolean;
             active: boolean;
+            publishRegion: string | null;
+            publishRegionLabel: string;
             createdAt: string;
             updatedAt: string;
           }>('/job-offers/whatsapp/routes', {
@@ -1437,6 +1442,7 @@ export const api = {
             monitoredNumbers?: string[];
             monitorAllMembers?: boolean;
             active?: boolean;
+            publishRegion?: string | null;
           },
         ) =>
           request(`/job-offers/whatsapp/routes/${encodeURIComponent(id)}`, {
