@@ -7,10 +7,10 @@ import {
   HorizontalSnapCarousel,
 } from "@/components/ui/horizontal-snap-carousel";
 
-/** Mobile: 76vw centrado + peek 12vw (dashboard); desktop: cartão mais largo. */
-export const JOB_OFFER_CAROUSEL_ITEM = `${CENTERED_PEEK_CAROUSEL_ITEM} flex flex-col sm:w-[272px] md:w-[360px] lg:w-[380px] xl:w-[400px]`;
+/** Mobile: 76vw + peek; desktop (md+): 3 cartões visíveis (gap 1.25rem entre eles). */
+export const JOB_OFFER_CAROUSEL_ITEM = `${CENTERED_PEEK_CAROUSEL_ITEM} flex flex-col md:!w-[calc((100%-2*1.25rem)/3)] md:!max-w-none`;
 
-export const JOB_OFFER_CAROUSEL_TRACK = `items-stretch ${CENTERED_PEEK_CAROUSEL_TRACK}`;
+export const JOB_OFFER_CAROUSEL_TRACK = `items-stretch ${CENTERED_PEEK_CAROUSEL_TRACK} md:justify-start`;
 
 /** Contentor do carrossel: full-bleed no telemóvel; mais largo no desktop. */
 export const JOB_OFFER_CAROUSEL_SHELL =
@@ -47,6 +47,11 @@ export function JobOffersCarouselSection<T extends JobOfferCarouselItem>({
 }: Props<T>) {
   if (offers.length === 0) return null;
 
+  const trackClassName =
+    offers.length < 3
+      ? `${JOB_OFFER_CAROUSEL_TRACK} md:justify-center`
+      : JOB_OFFER_CAROUSEL_TRACK;
+
   return (
     <div className={JOB_OFFER_CAROUSEL_SHELL}>
       <HorizontalSnapCarousel
@@ -57,7 +62,7 @@ export function JobOffersCarouselSection<T extends JobOfferCarouselItem>({
         centeredPeek
         prevAriaLabel="Vaga anterior"
         nextAriaLabel="Vaga seguinte"
-        trackClassName={JOB_OFFER_CAROUSEL_TRACK}
+        trackClassName={trackClassName}
       >
         {offers.map((offer) => (
           <div key={offer.id} className={JOB_OFFER_CAROUSEL_ITEM}>

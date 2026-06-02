@@ -39,7 +39,7 @@ function CarouselSkeleton() {
   return (
     <div className={JOB_OFFER_CAROUSEL_SHELL}>
       <HorizontalSnapCarousel
-        slideCount={2}
+        slideCount={3}
         ariaLabel="A carregar vagas"
         hideNavWhenSingle={false}
         navStyle="fadeMobile"
@@ -47,7 +47,7 @@ function CarouselSkeleton() {
         centeredPeek
         trackClassName={JOB_OFFER_CAROUSEL_TRACK}
       >
-        {[0, 1].map((i) => (
+        {[0, 1, 2].map((i) => (
           <div key={i} className={JOB_OFFER_CAROUSEL_ITEM}>
             <JobOfferCardSkeleton variant="carousel" />
           </div>
