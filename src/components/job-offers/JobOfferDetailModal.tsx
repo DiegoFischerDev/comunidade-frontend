@@ -2,12 +2,20 @@
 
 import { ModalPortal } from "@/components/ui/ModalPortal";
 
+export type JobOfferContact = {
+  type: "email" | "phone" | "url";
+  value: string;
+};
+
 export type JobOfferDetail = {
   id: string;
   title: string;
   jobFunction: string;
   city: string;
+  company: string;
+  summary: string;
   description: string;
+  advertiserContacts: JobOfferContact[];
   publishedAt: string;
 };
 
@@ -21,6 +29,12 @@ function formatPublishedAt(iso: string): string {
   });
 }
 
+function formatContactLabel(c: JobOfferContact): string {
+  if (c.type === "email") return `📧 ${c.value}`;
+  if (c.type === "phone") return `📲 ${c.value}`;
+  return `🔗 ${c.value}`;
+}
+
 type Props = {
   offer: JobOfferDetail | null;
   onClose: () => void;
@@ -28,6 +42,9 @@ type Props = {
 
 export function JobOfferDetailModal({ offer, onClose }: Props) {
   if (!offer) return null;
+
+  const bodyText =
+    offer.summary.trim() || offer.description.trim();
 
   return (
     <ModalPortal>
@@ -54,6 +71,11 @@ export function JobOfferDetailModal({ offer, onClose }: Props) {
               >
                 {offer.jobFunction}
               </h2>
+              {offer.company.trim() ? (
+                <p className="mt-2 text-sm font-semibold text-zinc-800">
+                  🏢 {offer.company}
+                </p>
+              ) : null}
               {offer.title.trim() ? (
                 <p className="mt-2 text-sm leading-relaxed text-zinc-600">
                   {offer.title}
@@ -72,9 +94,37 @@ export function JobOfferDetailModal({ offer, onClose }: Props) {
               ✕
             </button>
           </div>
+
+          {offer.advertiserContacts.length > 0 ? (
+            <div className="mt-5 rounded-xl border border-emerald-200/80 bg-emerald-50/40 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900">
+                Candidaturas
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-zinc-800">
+                {offer.advertiserContacts.map((c, i) => (
+                  <li key={`${c.type}-${c.value}-${i}`}>
+                    {formatContactLabel(c)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           <div className="mt-6 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">
-            {offer.description}
+            {bodyText}
           </div>
+          {offer.summary.trim() &&
+          offer.description.trim() &&
+          offer.summary.trim() !== offer.description.trim() ? (
+            <details className="mt-4">
+              <summary className="cursor-pointer text-sm font-medium text-amber-800">
+                Ver descrição completa
+              </summary>
+              <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-zinc-600">
+                {offer.description}
+              </div>
+            </details>
+          ) : null}
           <div className="mt-6 flex justify-end">
             <button
               type="button"

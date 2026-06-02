@@ -89,6 +89,8 @@ export default function JobOffersPage() {
         offer.jobFunction,
         offer.title,
         offer.city,
+        offer.company,
+        offer.summary,
         offer.description,
       ]
         .join(" ")

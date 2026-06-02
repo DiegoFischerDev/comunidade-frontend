@@ -574,7 +574,13 @@ export const api = {
           title: string;
           jobFunction: string;
           city: string;
+          company: string;
+          summary: string;
           description: string;
+          advertiserContacts: Array<{
+            type: 'email' | 'phone' | 'url';
+            value: string;
+          }>;
           publishedAt: string;
         }[]
       >('/job-offers', { method: 'GET' }),
@@ -1274,7 +1280,13 @@ export const api = {
             title: string;
             jobFunction: string;
             city: string;
+            company: string;
+            summary: string;
             description: string;
+            advertiserContacts: Array<{
+              type: 'email' | 'phone' | 'url';
+              value: string;
+            }>;
             publishedAt: string;
             active: boolean;
             createdAt: string;
@@ -1286,7 +1298,13 @@ export const api = {
           title: string;
           jobFunction: string;
           city: string;
+          company: string;
+          summary: string;
           description: string;
+          advertiserContacts: Array<{
+            type: 'email' | 'phone' | 'url';
+            value: string;
+          }>;
           publishedAt: string;
         }>('/job-offers/admin/parse', {
           method: 'POST',
@@ -1297,7 +1315,13 @@ export const api = {
         title: string;
         jobFunction: string;
         city: string;
+        company?: string;
+        summary?: string;
         description: string;
+        advertiserContacts?: Array<{
+          type: 'email' | 'phone' | 'url';
+          value: string;
+        }>;
         publishedAt?: string;
         active?: boolean;
       }) =>
@@ -1306,7 +1330,13 @@ export const api = {
           title: string;
           jobFunction: string;
           city: string;
+          company: string;
+          summary: string;
           description: string;
+          advertiserContacts: Array<{
+            type: 'email' | 'phone' | 'url';
+            value: string;
+          }>;
           publishedAt: string;
           active: boolean;
         }>('/job-offers/admin', {
@@ -1319,7 +1349,13 @@ export const api = {
           title?: string;
           jobFunction?: string;
           city?: string;
+          company?: string;
+          summary?: string;
           description?: string;
+          advertiserContacts?: Array<{
+            type: 'email' | 'phone' | 'url';
+            value: string;
+          }>;
           publishedAt?: string;
           active?: boolean;
         },

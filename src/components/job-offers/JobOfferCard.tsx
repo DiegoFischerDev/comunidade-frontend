@@ -5,6 +5,7 @@ type JobOfferListItem = {
   title: string;
   jobFunction: string;
   city: string;
+  company?: string;
   publishedAt: string;
 };
 
@@ -125,7 +126,11 @@ export function JobOfferCard({
             {offer.jobFunction}
           </h2>
 
-          {offer.title.trim() ? (
+          {offer.company?.trim() ? (
+            <p className="mt-0.5 line-clamp-1 text-xs font-medium text-zinc-600">
+              {offer.company}
+            </p>
+          ) : offer.title.trim() ? (
             <p className="mt-0.5 line-clamp-1 text-xs text-zinc-500">
               {offer.title}
             </p>

@@ -25,11 +25,19 @@ function formatPublishedAt(iso: string): string {
   return d.toLocaleDateString("pt-PT");
 }
 
+type JobOfferContact = {
+  type: "email" | "phone" | "url";
+  value: string;
+};
+
 type FormState = {
   title: string;
   jobFunction: string;
   city: string;
+  company: string;
+  summary: string;
   description: string;
+  advertiserContacts: JobOfferContact[];
   publishedAt: string;
   active: boolean;
 };
@@ -38,7 +46,10 @@ const emptyForm = (): FormState => ({
   title: "",
   jobFunction: "",
   city: "",
+  company: "",
+  summary: "",
   description: "",
+  advertiserContacts: [],
   publishedAt: new Date().toISOString().slice(0, 10),
   active: true,
 });
@@ -48,10 +59,24 @@ export type JobOfferAdminEditInput = {
   title: string;
   jobFunction: string;
   city: string;
+  company: string;
+  summary: string;
   description: string;
+  advertiserContacts: JobOfferContact[];
   publishedAt: string;
   active?: boolean;
 };
+
+function formatContactsPreview(contacts: JobOfferContact[]): string {
+  if (!contacts.length) return "—";
+  return contacts
+    .map((c) => {
+      if (c.type === "email") return c.value;
+      if (c.type === "phone") return c.value;
+      return c.value;
+    })
+    .join(" · ");
+}
 
 type Props = {
   open: boolean;
@@ -96,7 +121,10 @@ export function JobOffersAdminModal({
       title: row.title,
       jobFunction: row.jobFunction,
       city: row.city,
+      company: row.company ?? "",
+      summary: row.summary ?? "",
       description: row.description,
+      advertiserContacts: row.advertiserContacts ?? [],
       publishedAt: toDateInputValue(row.publishedAt),
       active: row.active ?? true,
     });
@@ -138,7 +166,10 @@ export function JobOffersAdminModal({
         title: parsed.title,
         jobFunction: parsed.jobFunction,
         city: parsed.city,
+        company: parsed.company ?? "",
+        summary: parsed.summary ?? "",
         description: parsed.description,
+        advertiserContacts: parsed.advertiserContacts ?? [],
         publishedAt: toDateInputValue(parsed.publishedAt),
         active: form.active,
       });
@@ -159,8 +190,13 @@ export function JobOffersAdminModal({
     const jobFunction = form.jobFunction.trim();
     const city = form.city.trim();
     const description = form.description.trim();
+    const summary = form.summary.trim();
     if (!title || !jobFunction || !city || !description) {
       setError("Preencha título, função, cidade e descrição.");
+      return;
+    }
+    if (summary.length > 500) {
+      setError("O resumo pode ter no máximo 500 caracteres.");
       return;
     }
     setSaving(true);
@@ -170,7 +206,10 @@ export function JobOffersAdminModal({
         title,
         jobFunction,
         city,
+        company: form.company.trim(),
+        summary: summary || description.slice(0, 500),
         description,
+        advertiserContacts: form.advertiserContacts,
         publishedAt: dateInputToIso(form.publishedAt),
         active: form.active,
       };
@@ -314,6 +353,48 @@ export function JobOffersAdminModal({
                     placeholder="Ex.: Lisboa"
                     className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                   />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700">
+                    Empresa
+                  </label>
+                  <input
+                    value={form.company}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, company: e.target.value }))
+                    }
+                    placeholder="Ex.: BECRI GROUP"
+                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700">
+                    Resumo breve (máx. 500 caracteres)
+                  </label>
+                  <textarea
+                    value={form.summary}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, summary: e.target.value }))
+                    }
+                    maxLength={500}
+                    rows={4}
+                    placeholder="Resumo para WhatsApp e listagem"
+                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                  />
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {form.summary.length}/500
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700">
+                    Contactos para candidatura
+                  </label>
+                  <p className="mt-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
+                    {formatContactsPreview(form.advertiserContacts)}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Preenchidos automaticamente pela IA ao colar o anúncio.
+                  </p>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-700">
