@@ -1,3 +1,8 @@
+"use client";
+
+import { useState } from "react";
+
+import { JobOfferWhatsappInviteModal } from "@/components/job-offers/JobOfferWhatsappInviteModal";
 import { COMMUNITY_WHATSAPP_NAV_GROUPS } from "@/lib/community-whatsapp-groups";
 
 function WhatsappIcon({ className }: { className?: string }) {
@@ -16,26 +21,51 @@ function WhatsappIcon({ className }: { className?: string }) {
   );
 }
 
+const linkClassName =
+  "mt-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-zinc-800 hover:bg-zinc-100";
+
 /** Links dos grupos WhatsApp da comunidade — visíveis para todos os utilizadores. */
 export function SidebarWhatsAppGroupLinks() {
+  const [jobOffersModalOpen, setJobOffersModalOpen] = useState(false);
+
   return (
-    <div className="mt-2 border-t border-zinc-200 pt-2">
-      <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
-        Grupos WhatsApp
-      </p>
-      {COMMUNITY_WHATSAPP_NAV_GROUPS.map((group) => (
-        <a
-          key={group.id}
-          href={group.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-0.5 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-800 hover:bg-zinc-100"
-          aria-label={`Entrar no grupo WhatsApp: ${group.label}`}
-        >
-          <WhatsappIcon className="h-5 w-5 shrink-0 text-[#25D366]" />
-          <span>{group.label}</span>
-        </a>
-      ))}
-    </div>
+    <>
+      <div className="mt-2 border-t border-zinc-200 pt-2">
+        <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+          Grupos WhatsApp
+        </p>
+        {COMMUNITY_WHATSAPP_NAV_GROUPS.map((group) =>
+          group.opensJobOfferModal ? (
+            <button
+              key={group.id}
+              type="button"
+              onClick={() => setJobOffersModalOpen(true)}
+              className={linkClassName}
+              aria-label={`Escolher grupo WhatsApp: ${group.label}`}
+            >
+              <WhatsappIcon className="h-5 w-5 shrink-0 text-[#25D366]" />
+              <span>{group.label}</span>
+            </button>
+          ) : (
+            <a
+              key={group.id}
+              href={group.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={linkClassName}
+              aria-label={`Entrar no grupo WhatsApp: ${group.label}`}
+            >
+              <WhatsappIcon className="h-5 w-5 shrink-0 text-[#25D366]" />
+              <span>{group.label}</span>
+            </a>
+          ),
+        )}
+      </div>
+
+      <JobOfferWhatsappInviteModal
+        open={jobOffersModalOpen}
+        onClose={() => setJobOffersModalOpen(false)}
+      />
+    </>
   );
 }

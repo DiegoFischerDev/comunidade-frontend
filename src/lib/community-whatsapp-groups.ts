@@ -15,10 +15,47 @@ export const WHATSAPP_GROUP_IMOVEIS_VENDA_URL =
   process.env.NEXT_PUBLIC_WHATSAPP_GROUP_IMOVEIS_VENDA_URL?.trim() ||
   "https://chat.whatsapp.com/EneiignxdnuHVy17rh5MTX";
 
-/** Grupão de ofertas de emprego — região Norte (Rafa Portugal). */
-export const WHATSAPP_GROUP_OFERTAS_TRABALHO_URL =
+/** Convite WhatsApp — ofertas de trabalho por região. */
+export const WHATSAPP_GROUP_OFERTAS_NORTE_URL =
+  process.env.NEXT_PUBLIC_WHATSAPP_GROUP_OFERTAS_NORTE_URL?.trim() ||
   process.env.NEXT_PUBLIC_WHATSAPP_GROUP_OFERTAS_TRABALHO_URL?.trim() ||
-  "https://chat.whatsapp.com/EONaquXnkDx6NmdAdCIouM?mode=gi_t";
+  "https://chat.whatsapp.com/EONaquXnkDx6NmdAdCIouM";
+
+export const WHATSAPP_GROUP_OFERTAS_CENTRO_URL =
+  process.env.NEXT_PUBLIC_WHATSAPP_GROUP_OFERTAS_CENTRO_URL?.trim() ||
+  "https://chat.whatsapp.com/LRTOsPySDTdAD5AEY7lvmP";
+
+export const WHATSAPP_GROUP_OFERTAS_SUL_URL =
+  process.env.NEXT_PUBLIC_WHATSAPP_GROUP_OFERTAS_SUL_URL?.trim() ||
+  "https://chat.whatsapp.com/DLGVjkVEdlr7u44BwEHOeJ";
+
+/** @deprecated Use `WHATSAPP_GROUP_OFERTAS_NORTE_URL`. */
+export const WHATSAPP_GROUP_OFERTAS_TRABALHO_URL =
+  WHATSAPP_GROUP_OFERTAS_NORTE_URL;
+
+export type JobOfferWhatsappInviteGroup = {
+  region: "NORTE" | "CENTRO" | "SUL";
+  label: string;
+  href: string;
+};
+
+export const JOB_OFFER_WHATSAPP_INVITE_GROUPS: JobOfferWhatsappInviteGroup[] = [
+  {
+    region: "NORTE",
+    label: "Norte",
+    href: WHATSAPP_GROUP_OFERTAS_NORTE_URL,
+  },
+  {
+    region: "CENTRO",
+    label: "Centro",
+    href: WHATSAPP_GROUP_OFERTAS_CENTRO_URL,
+  },
+  {
+    region: "SUL",
+    label: "Sul",
+    href: WHATSAPP_GROUP_OFERTAS_SUL_URL,
+  },
+];
 
 /** @deprecated Use `WHATSAPP_GROUP_DUVIDAS_GERAL_URL`. */
 export const COMMUNITY_WHATSAPP_GROUPS_URL = WHATSAPP_GROUP_DUVIDAS_GERAL_URL;
@@ -29,7 +66,9 @@ export const RELOCATION_HOUSES_WHATSAPP_GROUP_URL = WHATSAPP_GROUP_RELOCACAO_URL
 export type CommunityWhatsAppNavGroup = {
   id: string;
   label: string;
-  href: string;
+  href?: string;
+  /** Abre modal com os 3 grupos regionais de ofertas de trabalho. */
+  opensJobOfferModal?: boolean;
 };
 
 export const COMMUNITY_WHATSAPP_NAV_GROUPS: CommunityWhatsAppNavGroup[] = [
@@ -50,7 +89,7 @@ export const COMMUNITY_WHATSAPP_NAV_GROUPS: CommunityWhatsAppNavGroup[] = [
   },
   {
     id: "ofertas-trabalho",
-    label: "Ofertas de trabalho (Norte)",
-    href: WHATSAPP_GROUP_OFERTAS_TRABALHO_URL,
+    label: "Ofertas de trabalho",
+    opensJobOfferModal: true,
   },
 ];
