@@ -571,6 +571,7 @@ export const api = {
       request<
         {
           id: string;
+          publicNumber: number;
           title: string;
           jobFunction: string;
           city: string;
@@ -584,9 +585,10 @@ export const api = {
           publishedAt: string;
         }[]
       >('/job-offers', { method: 'GET' }),
-    get: (id: string) =>
+    get: (id: string | number) =>
       request<{
         id: string;
+        publicNumber: number;
         title: string;
         jobFunction: string;
         city: string;
@@ -1292,6 +1294,7 @@ export const api = {
         request<
           {
             id: string;
+            publicNumber: number;
             title: string;
             jobFunction: string;
             city: string;

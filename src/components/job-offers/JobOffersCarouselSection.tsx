@@ -18,6 +18,7 @@ export const JOB_OFFER_CAROUSEL_SHELL =
 
 export type JobOfferCarouselItem = {
   id: string;
+  publicNumber: number;
   title: string;
   jobFunction: string;
   city: string;

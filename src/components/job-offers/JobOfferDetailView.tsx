@@ -112,9 +112,6 @@ export function JobOfferDetailView({
       ) : null}
 
       <section className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 sm:px-5">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-          Mensagem original
-        </h2>
         <div className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-800">
           {offer.sourceMessage.trim() || offer.description.trim() || "—"}
         </div>

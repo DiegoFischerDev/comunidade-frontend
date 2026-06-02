@@ -145,7 +145,7 @@ export default function JobOffersPage() {
             Comunidade Rafa Portugal
           </p>
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-            Ofertas de trabalho da semana
+            Ofertas de trabalho em tempo real
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600 sm:text-base">
             Oportunidades partilhadas com a comunidade — republicadas a partir do
@@ -159,72 +159,7 @@ export default function JobOffersPage() {
         </div>
       </header>
 
-      <section
-        className="relative overflow-hidden rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-white via-emerald-50/50 to-amber-50/40 shadow-md ring-1 ring-emerald-100/70"
-        aria-labelledby="job-offers-grupao-heading"
-      >
-        <div
-          className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#25D366]/10 blur-3xl"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute -bottom-16 -left-12 h-40 w-40 rounded-full bg-[#d58901]/10 blur-2xl"
-          aria-hidden
-        />
-        <div className="relative flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:p-6">
-          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white shadow-md ring-2 ring-[#25D366]/30">
-              <WhatsappBrandIcon className="h-9 w-9 text-[#25D366]" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800/85">
-                WhatsApp · comunidade
-              </p>
-              <h2
-                id="job-offers-grupao-heading"
-                className="mt-1 text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl"
-              >
-                Grupão de ofertas de emprego
-              </h2>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600 sm:text-[0.9375rem]">
-                Junta-te ao grupo para receber vagas em tempo real e partilhar
-                oportunidades com a comunidade Rafa Portugal.
-              </p>
-            </div>
-          </div>
-          <a
-            href={WHATSAPP_GROUP_OFERTAS_TRABALHO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex w-full shrink-0 items-center justify-center gap-2.5 rounded-xl bg-[#25D366] px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#20bd5a] hover:shadow active:scale-[0.99] sm:w-auto sm:self-center sm:px-6"
-          >
-            <WhatsappBrandIcon className="h-5 w-5 shrink-0 text-white" />
-            Entrar no Grupão
-          </a>
-        </div>
-      </section>
-
       {isAdmin ? <JobOfferWhatsappConfigPanel /> : null}
-
-      <div
-        role="note"
-        className="flex gap-3 rounded-2xl border border-amber-200/90 bg-gradient-to-br from-amber-50 to-amber-50/40 px-4 py-4 text-sm leading-relaxed text-amber-950 shadow-sm sm:px-5"
-      >
-        <WarningIcon className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
-        <div>
-          <p className="font-semibold text-amber-900">Aviso importante</p>
-          <p className="mt-1.5 text-amber-950/90">
-            Cuidado para não cair em burlas! Nós não nos responsabilizamos por
-            entrevistas, propostas ou processos de recrutamento. Todas as
-            informações são da entidade empregadora. Apenas republicamos neste
-            canal mensagens de ofertas recebidas pelo WhatsApp. As empresas que
-            postam vagas aqui{" "}
-            <strong className="font-semibold text-amber-950">
-              não são parceiras oficiais verificadas
-            </strong>.
-          </p>
-        </div>
-      </div>
 
       {!loading && !error && rows.length > 0 ? (
         <div>
@@ -341,7 +276,7 @@ export default function JobOffersPage() {
         <JobOffersDateCarousels
           offers={filteredRows}
           onOpenDetail={(offer) =>
-            router.push(`/ofertas-trabalho/${offer.id}`)
+            router.push(`/ofertas-trabalho/${offer.publicNumber}`)
           }
           isAdmin={isAdmin}
           onEdit={
@@ -356,6 +291,71 @@ export default function JobOffersPage() {
           deletingId={deletingId}
         />
       )}
+
+      <section
+        className="relative overflow-hidden rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-white via-emerald-50/50 to-amber-50/40 shadow-md ring-1 ring-emerald-100/70"
+        aria-labelledby="job-offers-grupao-heading"
+      >
+        <div
+          className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#25D366]/10 blur-3xl"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute -bottom-16 -left-12 h-40 w-40 rounded-full bg-[#d58901]/10 blur-2xl"
+          aria-hidden
+        />
+        <div className="relative flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:p-6">
+          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white shadow-md ring-2 ring-[#25D366]/30">
+              <WhatsappBrandIcon className="h-9 w-9 text-[#25D366]" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800/85">
+                WhatsApp · comunidade
+              </p>
+              <h2
+                id="job-offers-grupao-heading"
+                className="mt-1 text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl"
+              >
+                Grupão de ofertas de emprego
+              </h2>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600 sm:text-[0.9375rem]">
+                Junta-te ao grupo para receber vagas em tempo real e partilhar
+                oportunidades com a comunidade Rafa Portugal.
+              </p>
+            </div>
+          </div>
+          <a
+            href={WHATSAPP_GROUP_OFERTAS_TRABALHO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex w-full shrink-0 items-center justify-center gap-2.5 rounded-xl bg-[#25D366] px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#20bd5a] hover:shadow active:scale-[0.99] sm:w-auto sm:self-center sm:px-6"
+          >
+            <WhatsappBrandIcon className="h-5 w-5 shrink-0 text-white" />
+            Entrar no Grupão
+          </a>
+        </div>
+      </section>
+
+      <div
+        role="note"
+        className="flex gap-3 rounded-2xl border border-amber-200/90 bg-gradient-to-br from-amber-50 to-amber-50/40 px-4 py-4 text-sm leading-relaxed text-amber-950 shadow-sm sm:px-5"
+      >
+        <WarningIcon className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+        <div>
+          <p className="font-semibold text-amber-900">Aviso importante</p>
+          <p className="mt-1.5 text-amber-950/90">
+            Cuidado para não cair em burlas! Nós não nos responsabilizamos por
+            entrevistas, propostas ou processos de recrutamento. Todas as
+            informações são da entidade empregadora. Apenas republicamos neste
+            canal mensagens de ofertas recebidas pelo WhatsApp. As empresas que
+            postam vagas aqui{" "}
+            <strong className="font-semibold text-amber-950">
+              não são parceiras oficiais verificadas
+            </strong>.
+          </p>
+        </div>
+      </div>
 
       {isAdmin ? (
         <JobOffersAdminModal
