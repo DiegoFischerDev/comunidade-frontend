@@ -1,9 +1,5 @@
 "use client";
 
-import Image from "next/image";
-
-import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
-
 type JobOfferListItem = {
   id: string;
   title: string;
@@ -11,7 +7,6 @@ type JobOfferListItem = {
   city: string;
   company?: string;
   publishedAt: string;
-  imageUrl?: string | null;
 };
 
 function PencilIcon({ className }: { className?: string }) {
@@ -94,28 +89,13 @@ export function JobOfferCard({
   const local = offer.city.trim() || "—";
   const jobFunction = offer.jobFunction.trim() || "—";
   const company = offer.company?.trim() || "—";
-  const imageSrc = resolveUploadsUrl(offer.imageUrl);
 
   return (
     <article
-      className={`group flex flex-col overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-sm ring-1 ring-zinc-900/5 transition hover:border-amber-200/80 hover:shadow-md ${
+      className={`group flex flex-col rounded-xl border border-zinc-200/90 bg-white px-3.5 py-3 shadow-sm ring-1 ring-zinc-900/5 transition hover:border-amber-200/80 hover:shadow-md sm:px-4 ${
         isCarousel ? `h-full w-full ${JOB_OFFER_CARD_MIN_HEIGHT_CLASS}` : ""
       }`}
     >
-      {imageSrc ? (
-        <div className="relative aspect-[16/10] w-full shrink-0 bg-zinc-100">
-          <Image
-            src={imageSrc}
-            alt=""
-            fill
-            className="object-cover object-top"
-            sizes="(max-width: 640px) 76vw, 360px"
-            unoptimized
-          />
-        </div>
-      ) : null}
-
-      <div className={`flex min-h-0 flex-1 flex-col px-3.5 py-3 sm:px-4 ${imageSrc ? "" : ""}`}>
       {isAdmin && (onEdit || onDelete) ? (
         <div className="mb-2 flex justify-end gap-1.5">
           {onEdit ? (
@@ -166,7 +146,6 @@ export function JobOfferCard({
       >
         Saber mais
       </button>
-      </div>
     </article>
   );
 }

@@ -1,4 +1,8 @@
 import { JOB_OFFER_WHATSAPP_INVITE_GROUPS } from "@/lib/community-whatsapp-groups";
+import {
+  formatJobOfferRegionExampleCities,
+  type JobOfferRegion,
+} from "@/lib/job-offer-regions";
 
 function WhatsappBrandIcon({ className }: { className?: string }) {
   return (
@@ -45,7 +49,11 @@ export function JobOfferWhatsappRegionBanners() {
               <span className="block text-sm font-semibold text-zinc-900">
                 {group.label}
               </span>
-              <span className="mt-0.5 block text-xs text-zinc-600 group-hover:text-emerald-800">
+              <span className="mt-0.5 block text-xs leading-snug text-zinc-600">
+                Ex.:{" "}
+                {formatJobOfferRegionExampleCities(group.region as JobOfferRegion)}
+              </span>
+              <span className="mt-1 block text-xs font-medium text-emerald-800/90 group-hover:text-emerald-900">
                 Entrar no grupo
               </span>
             </span>

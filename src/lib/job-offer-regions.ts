@@ -6,6 +6,20 @@ export const JOB_OFFER_REGION_LABELS: Record<JobOfferRegion, string> = {
   SUL: 'Sul',
 };
 
+/** Três cidades de referência por região (exemplos nos banners WhatsApp). */
+export const JOB_OFFER_REGION_EXAMPLE_CITIES: Record<
+  JobOfferRegion,
+  readonly [string, string, string]
+> = {
+  NORTE: ['Porto', 'Braga', 'Guimarães'],
+  CENTRO: ['Coimbra', 'Aveiro', 'Leiria'],
+  SUL: ['Lisboa', 'Faro', 'Setúbal'],
+};
+
+export function formatJobOfferRegionExampleCities(region: JobOfferRegion): string {
+  return JOB_OFFER_REGION_EXAMPLE_CITIES[region].join(', ');
+}
+
 export const JOB_OFFER_REGION_OPTIONS: {
   value: JobOfferRegion | '';
   label: string;
