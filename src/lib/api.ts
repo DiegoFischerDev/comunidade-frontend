@@ -584,6 +584,7 @@ export const api = {
           }>;
           publishedAt: string;
           region: 'NORTE' | 'CENTRO' | 'SUL';
+          imageUrl: string | null;
         }[]
       >('/job-offers', { method: 'GET' }),
     get: (id: string | number) =>
@@ -602,6 +603,7 @@ export const api = {
           value: string;
         }>;
         publishedAt: string;
+        imageUrl: string | null;
       }>(`/job-offers/${encodeURIComponent(id)}`, { method: 'GET' }),
   },
   admin: {

@@ -1,6 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
+
+import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 
 export type JobOfferContact = {
   type: "email" | "phone" | "url";
@@ -18,6 +21,7 @@ export type JobOfferDetailData = {
   sourceMessage: string;
   advertiserContacts: JobOfferContact[];
   publishedAt: string;
+  imageUrl?: string | null;
 };
 
 function formatPublishedAt(iso: string): string {
@@ -47,6 +51,7 @@ export function JobOfferDetailView({
   backHref = "/ofertas-trabalho",
   backLabel = "Voltar às ofertas",
 }: Props) {
+  const imageSrc = resolveUploadsUrl(offer.imageUrl);
   const summaryTrim = offer.summary.trim();
   const showSummary =
     summaryTrim.length > 0 &&
@@ -64,6 +69,20 @@ export function JobOfferDetailView({
           {backLabel}
         </Link>
       </div>
+
+      {imageSrc ? (
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-zinc-200/90 bg-zinc-100 shadow-sm sm:aspect-[16/10]">
+          <Image
+            src={imageSrc}
+            alt={`Anúncio: ${offer.jobFunction}`}
+            fill
+            className="object-contain object-top"
+            sizes="(max-width: 768px) 100vw, 672px"
+            priority
+            unoptimized
+          />
+        </div>
+      ) : null}
 
       <header className="rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-sm ring-1 ring-zinc-900/5 sm:p-6">
         <span className="inline-flex items-center rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700">

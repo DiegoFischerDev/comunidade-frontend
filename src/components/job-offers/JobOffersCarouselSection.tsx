@@ -24,6 +24,7 @@ export type JobOfferCarouselItem = {
   city: string;
   company?: string;
   publishedAt: string;
+  imageUrl?: string | null;
 };
 
 type Props<T extends JobOfferCarouselItem = JobOfferCarouselItem> = {
