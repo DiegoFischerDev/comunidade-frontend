@@ -149,8 +149,7 @@ export default function JobOffersPage() {
             Ofertas de trabalho em tempo real
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600 sm:text-base">
-            Oportunidades partilhadas com a comunidade — republicadas a partir do
-            nosso WhatsApp.
+            Oportunidades partilhadas no WhatsApp
           </p>
           {!loading && !error && rows.length > 0 ? (
             <p className="mt-3 inline-flex rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700">

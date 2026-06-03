@@ -24,6 +24,11 @@ export function jobOfferWhatsappStatusLabel(status: string): {
         label: 'Sem cidade identificada',
         className: 'bg-amber-100 text-amber-900',
       };
+    case 'ignored_duplicate_offer':
+      return {
+        label: 'Duplicada (já publicada)',
+        className: 'bg-violet-100 text-violet-900',
+      };
     case 'skipped_no_destination':
       return {
         label: 'Oferta guardada; destino WA em falta',
