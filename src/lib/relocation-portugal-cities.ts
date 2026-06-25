@@ -123,13 +123,15 @@ export function relocationCityDisplayName(city: string): string {
   return city;
 }
 
-/** Para formulários: converte valor antigo da API para chave da lista (ou "" se for região / desconhecido). */
+/** Para formulários: converte códigos legados da API; mantém texto livre já gravado. */
 export function migrateLegacyHouseCityToCanonical(city: string): string {
   const c = city.trim();
   if (!c) return "";
   if (LEGACY_CITY_TO_CANONICAL[c]) return LEGACY_CITY_TO_CANONICAL[c];
-  if (CITY_SET.has(c)) return c;
-  return "";
+  if (LEGACY_CITY_DISPLAY[c] && !LEGACY_CITY_TO_CANONICAL[c]) {
+    return LEGACY_CITY_DISPLAY[c];
+  }
+  return c;
 }
 
 export function isRelocationPortugalCity(city: string): boolean {

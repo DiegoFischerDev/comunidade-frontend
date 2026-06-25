@@ -310,9 +310,7 @@ export default function JobOffersPage() {
         <div>
           <p className="font-semibold text-amber-900">Aviso importante</p>
           <p className="mt-1.5 text-amber-950/90">
-            Cuidado para não cair em burlas! Nós não nos responsabilizamos por
-            entrevistas, propostas ou processos de recrutamento. Todas as
-            informações são da entidade empregadora. Apenas republicamos neste
+            Apenas republicamos neste
             canal mensagens de ofertas recebidas pelo WhatsApp. As empresas que
             postam vagas aqui{" "}
             <strong className="font-semibold text-amber-950">

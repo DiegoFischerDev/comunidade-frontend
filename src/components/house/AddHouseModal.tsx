@@ -1,7 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { RelocationCityCombobox } from '@/components/relocation/RelocationCityCombobox';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import {
   HouseCreateMediaFields,
   type HouseMediaEditState,
@@ -14,7 +13,7 @@ import {
 } from '@/lib/house-form-constants';
 import { api } from '@/lib/api';
 import {
-  isRelocationPortugalCity,
+  RELOCATION_PORTUGAL_CITIES,
   migrateLegacyHouseCityToCanonical,
 } from '@/lib/relocation-portugal-cities';
 
@@ -80,6 +79,7 @@ export function AddHouseModal({
   const isEdit = Boolean(houseId?.trim());
   /** Parceiro a criar: só mídia + descrição; campos extraídos pela OpenAI no servidor. */
   const isPartnerAiCreate = !isAdmin && !isEdit;
+  const cityDatalistId = useId();
 
   const [relocationPartners, setRelocationPartners] = useState<{ id: string; name: string }[]>([]);
   const [assignedPartnerId, setAssignedPartnerId] = useState('');
@@ -112,6 +112,14 @@ export function AddHouseModal({
   const extraCityOptions = [...new Set([...extraCityOptionsProp, ...storedExtraCities])].sort((a, b) =>
     a.localeCompare(b, 'pt'),
   );
+
+  const citySuggestions = useMemo(() => {
+    const set = new Set<string>(RELOCATION_PORTUGAL_CITIES);
+    for (const c of extraCityOptions) set.add(c);
+    const current = city.trim();
+    if (current) set.add(current);
+    return [...set].sort((a, b) => a.localeCompare(b, 'pt'));
+  }, [extraCityOptions, city]);
 
   const resetForm = useCallback(() => {
     setAssignedPartnerId('');
@@ -165,7 +173,7 @@ export function AddHouseModal({
       setDescription(h.description);
       setBusinessType(h.businessType);
       setTypology(h.typology);
-      setCity(isAdmin ? h.city?.trim() ?? '' : migrateLegacyHouseCityToCanonical(h.city));
+      setCity(migrateLegacyHouseCityToCanonical(h.city ?? ''));
       setAvailableFrom(toDateInputValue(h.availableFrom));
       setPriceEur(h.priceEur);
       setRelocationFeeEur(h.relocationFeeEur);
@@ -251,10 +259,9 @@ export function AddHouseModal({
     };
   }, [open, houseId, isAdmin, populateFromHouse, resetForm]);
 
-  const handleCityChange = (next: string) => {
-    setCity(next);
+  const rememberCustomCity = (next: string) => {
     const t = next.trim();
-    if (!t || isRelocationPortugalCity(t)) return;
+    if (!t) return;
     setStoredExtraCities((prev) => {
       if (prev.includes(t)) return prev;
       const merged = [...prev, t].sort((a, b) => a.localeCompare(b, 'pt'));
@@ -301,9 +308,6 @@ export function AddHouseModal({
       if (!cleanTitle) return setError('Preenche o título do imóvel.');
       if (!cleanDesc) return setError('Preenche a descrição.');
       if (!cleanCity) return setError('Preenche a cidade.');
-      if (!isAdmin && isEdit && !isRelocationPortugalCity(cleanCity)) {
-        return setError('Escolhe uma cidade da lista.');
-      }
       if (!availableFrom) return setError('Seleciona a data em "Disponível a partir".');
       if (!cleanPrice) {
         return setError(
@@ -404,6 +408,7 @@ export function AddHouseModal({
           ...(images.length ? { coverImageIndex } : {}),
         });
       }
+      rememberCustomCity(cleanCity);
       resetForm();
       onSuccess();
       onClose();
@@ -483,21 +488,27 @@ export function AddHouseModal({
                     placeholder="Ex.: T2 mobilado no Porto"
                   />
                 </label>
-                <div className="text-sm">
-                  <RelocationCityCombobox
+                <label className="text-sm">
+                  <span className="mb-1 block text-xs font-medium text-zinc-700">
+                    Cidade
+                    {!isAdmin || isEdit ? <span className="text-red-600"> *</span> : null}
+                  </span>
+                  <input
                     id={isAdmin ? 'admin-house-city' : 'partner-house-city'}
-                    label="Cidade"
-                    labelClassName="mb-1 block text-xs font-medium text-zinc-700"
+                    type="text"
+                    list={cityDatalistId}
                     value={city}
-                    onChange={isAdmin ? setCity : handleCityChange}
-                    allowEmpty={isAdmin && !isEdit}
-                    allowCustomValue
-                    extraCityOptions={extraCityOptions}
-                    placeholder="Pesquisar cidade…"
-                    variant={isAdmin ? 'amber' : 'blue'}
-                    required={!isAdmin || isEdit}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    placeholder="Ex.: Nelas, Lisboa, Porto…"
+                    autoComplete="address-level2"
                   />
-                </div>
+                  <datalist id={cityDatalistId}>
+                    {citySuggestions.map((c) => (
+                      <option key={c} value={c} />
+                    ))}
+                  </datalist>
+                </label>
                 <label className="text-sm">
                   <span className="mb-1 block text-xs font-medium text-zinc-700">Tipologia</span>
                   <select
