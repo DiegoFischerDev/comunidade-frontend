@@ -96,15 +96,6 @@ export function getMembershipCancelUrl(): string {
   return `${window.location.origin}/dashboard/membership/cancel`;
 }
 
-export function readAffiliateCodeFromStorage(): string | undefined {
-  if (typeof window === 'undefined') return undefined;
-  const refRaw = window.localStorage.getItem('comunidade_ref_affiliate');
-  if (refRaw && refRaw !== 'nenhum' && refRaw.trim()) {
-    return refRaw.trim();
-  }
-  return undefined;
-}
-
 export type SignupFormFields = {
   name: string;
   email: string;

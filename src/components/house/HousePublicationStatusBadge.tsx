@@ -58,10 +58,3 @@ export function HousePublicationStatusBadge({
     </span>
   );
 }
-
-export function formatAdvertisingBalanceEur(cents: number): string {
-  return (cents / 100).toLocaleString("pt-PT", {
-    style: "currency",
-    currency: "EUR",
-  });
-}

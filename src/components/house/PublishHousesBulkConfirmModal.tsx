@@ -9,11 +9,7 @@ import {
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 import { formatHouseEurFieldDisplay } from "@/lib/format-eur-pt";
-import {
-  HOUSE_PUBLICATION_COST_EUR_CENTS,
-  HOUSE_PUBLICATION_DURATION_DAYS,
-  formatPublicationCostEur,
-} from "@/lib/house-publication";
+import { HOUSE_PUBLICATION_DURATION_DAYS } from "@/lib/house-publication";
 
 const CITY_LABELS: Record<string, string> = {
   INTERIOR: "Interior",
@@ -41,7 +37,6 @@ const TYPOLOGY_LABELS: Record<string, string> = {
 type Props = {
   open: boolean;
   houses: HousePublishPreview[];
-  balanceEurCents: number;
   publishDelayMs: number;
   onClose: () => void;
   onConfirm: () => Promise<void>;
@@ -57,7 +52,6 @@ function houseThumb(house: HousePublishPreview): string | null {
 export function PublishHousesBulkConfirmModal({
   open,
   houses,
-  balanceEurCents,
   publishDelayMs,
   onClose,
   onConfirm,
@@ -75,10 +69,6 @@ export function PublishHousesBulkConfirmModal({
   if (!open || houses.length === 0) return null;
 
   const count = houses.length;
-  const costCents = count * HOUSE_PUBLICATION_COST_EUR_CENTS;
-  const costLabel = formatPublicationCostEur(costCents);
-  const perLabel = formatPublicationCostEur(HOUSE_PUBLICATION_COST_EUR_CENTS);
-  const insufficient = balanceEurCents < costCents;
   const estMin =
     count > 1 ? Math.ceil(((count - 1) * publishDelayMs) / 60_000) : 0;
 
@@ -106,19 +96,16 @@ export function PublishHousesBulkConfirmModal({
             Publicar {count} imóvel{count === 1 ? "" : "s"}
           </h2>
           <p className="mt-2 text-sm font-medium text-zinc-700">
-            {perLabel} por publicação · {HOUSE_PUBLICATION_DURATION_DAYS} dias no site e WhatsApp
+            {HOUSE_PUBLICATION_DURATION_DAYS} dias no site e WhatsApp por publicação
           </p>
           <p className="mt-1 text-sm text-zinc-600">
-            Custo total: <span className="font-semibold text-zinc-900">{costLabel}</span>
             {count > 1 ? (
               <>
-                {" "}
-                · publicação em sequência com pelo menos {publishDelayMs / 1000} segundos entre
-                cada
+                Publicação em sequência com pelo menos {publishDelayMs / 1000} segundos entre cada
                 {estMin > 0 ? ` (cerca de ${estMin} min no total)` : ""}
               </>
             ) : (
-              ". Os imóveis serão publicados no site e nos grupos do WhatsApp."
+              "O imóvel será publicado no site e nos grupos do WhatsApp."
             )}
           </p>
           {count > 1 ? (
@@ -167,12 +154,6 @@ export function PublishHousesBulkConfirmModal({
         </ul>
 
         <div className="shrink-0 p-6 pt-4">
-          {insufficient ? (
-            <p className="text-sm text-red-700">
-              Saldo insuficiente. São necessários {costLabel}; adiciona saldo para continuar.
-            </p>
-          ) : null}
-
           {error ? (
             <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
           ) : null}
@@ -185,9 +166,9 @@ export function PublishHousesBulkConfirmModal({
               type="button"
               variant="primary"
               onClick={() => void handleConfirm()}
-              disabled={loading || insufficient}
+              disabled={loading}
             >
-              {loading ? "A iniciar…" : `Enviar ${costLabel}`}
+              {loading ? "A iniciar…" : `Publicar ${count} imóvel${count === 1 ? "" : "s"}`}
             </CardButton>
           </div>
         </div>

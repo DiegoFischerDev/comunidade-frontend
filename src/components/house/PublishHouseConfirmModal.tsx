@@ -9,11 +9,7 @@ import {
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 import { formatHouseEurFieldDisplay } from "@/lib/format-eur-pt";
-import {
-  HOUSE_PUBLICATION_COST_EUR_CENTS,
-  HOUSE_PUBLICATION_DURATION_DAYS,
-  formatPublicationCostEur,
-} from "@/lib/house-publication";
+import { HOUSE_PUBLICATION_DURATION_DAYS } from "@/lib/house-publication";
 import { formatRelocationFeeEur } from "@/components/relocation/relocation-house-shared";
 import {
   type HousePublishPreview,
@@ -60,7 +56,6 @@ const BUSINESS_TYPE_LABELS: Record<"RENT" | "SALE", string> = {
 type Props = {
   open: boolean;
   house: HousePublishPreview | null;
-  balanceEurCents: number;
   onClose: () => void;
   onConfirm: () => Promise<void>;
   onPatchQuickFields?: (
@@ -302,7 +297,6 @@ function whatsAppGroupPublishDates(house: {
 export function PublishHouseConfirmModal({
   open,
   house,
-  balanceEurCents,
   onClose,
   onConfirm,
   onPatchQuickFields,
@@ -443,8 +437,7 @@ export function PublishHouseConfirmModal({
     }
   }
 
-  const publicationCostLabel = formatPublicationCostEur(HOUSE_PUBLICATION_COST_EUR_CENTS);
-  const insufficient = balanceEurCents < HOUSE_PUBLICATION_COST_EUR_CENTS;
+  const publicationDurationLabel = `${HOUSE_PUBLICATION_DURATION_DAYS} dias no site e WhatsApp`;
 
   const missingForPhase =
     phase === "missing"
@@ -468,13 +461,12 @@ export function PublishHouseConfirmModal({
           {phase === "missing" ? "Informações em falta" : "Publicar imóvel"}
         </h2>
         <p className="mt-2 text-sm font-medium text-zinc-700">
-          {publicationCostLabel} por publicação · {HOUSE_PUBLICATION_DURATION_DAYS} dias no site e
-          WhatsApp
+          {publicationDurationLabel}
         </p>
         {phase === "main" ? (
           <p className="mt-1 text-sm text-zinc-600">
             {activelyPublished
-              ? `Podes republicar (${publicationCostLabel}) ou remover a publicação para ocultar o anúncio no site.`
+              ? "Podes republicar para prolongar a visibilidade ou remover a publicação para ocultar o anúncio no site."
               : "Este imóvel será publicado no nosso site e nos grupos do WhatsApp."}
           </p>
         ) : (
@@ -587,12 +579,6 @@ export function PublishHouseConfirmModal({
           onDraftChange={setDraft}
         />
 
-        {insufficient && (
-          <p className="mt-3 text-sm text-red-700">
-            Saldo insuficiente. Adiciona saldo para continuar.
-          </p>
-        )}
-
         {error && (
           <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
         )}
@@ -615,7 +601,7 @@ export function PublishHouseConfirmModal({
                 type="button"
                 variant="outline"
                 onClick={() => void handlePublishAnyway()}
-                disabled={busy || insufficient}
+                disabled={busy}
               >
                 {loading ? "A processar…" : "Enviar assim mesmo"}
               </CardButton>
@@ -623,7 +609,7 @@ export function PublishHouseConfirmModal({
                 type="button"
                 variant="primary"
                 onClick={() => void handleSaveAndPublish()}
-                disabled={busy || insufficient}
+                disabled={busy}
               >
                 {loading ? "A processar…" : "Guardar e publicar"}
               </CardButton>
@@ -658,9 +644,9 @@ export function PublishHouseConfirmModal({
                 type="button"
                 variant="primary"
                 onClick={() => void handleConfirm()}
-                disabled={busy || insufficient}
+                disabled={busy}
               >
-                {loading ? "A processar…" : `Enviar ${publicationCostLabel}`}
+                {loading ? "A processar…" : "Publicar"}
               </CardButton>
             </>
           )}

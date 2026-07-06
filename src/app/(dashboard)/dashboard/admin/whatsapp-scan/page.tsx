@@ -294,8 +294,8 @@ export default function AdminWhatsappScanPage() {
           <p className="mt-2 max-w-2xl text-sm text-zinc-600">
             Monitoriza grupos de WhatsApp e usa IA para identificar anúncios de imóveis. Com o{' '}
             <strong>scan ativo</strong>, cada anúncio cria um imóvel rascunho (oculto). Com o{' '}
-            <strong>compartilhamento automático</strong>, o anúncio é publicado na plataforma (1 €
-            de saldo) e enviado aos grupos WhatsApp de arrendamento ou venda (~10 s depois).
+            <strong>compartilhamento automático</strong>, o anúncio é publicado na plataforma e
+            enviado aos grupos WhatsApp de arrendamento ou venda (~10 s depois).
           </p>
         </div>
         <button
@@ -549,8 +549,8 @@ export default function AdminWhatsappScanPage() {
               </label>
               <p className="text-xs leading-relaxed text-zinc-500">
                 Com compartilhamento ativo, cada imóvel identificado pelo scan fica oculto até ser
-                publicado (~10 s depois), com débito de 1 € no saldo de publicidade e envio aos
-                grupos WhatsApp de relocation ou venda conforme a finalidade do anúncio.
+                publicado (~10 s depois) e enviado aos grupos WhatsApp de relocation ou venda
+                conforme a finalidade do anúncio.
               </p>
             </div>
             <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

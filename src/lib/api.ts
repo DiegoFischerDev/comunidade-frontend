@@ -79,11 +79,6 @@ type RequestOptions = RequestInit & {
   userMessageContext?: string;
 };
 
-/** Mensagem antiga da API que não queremos mostrar ao utilizador (ex.: stage ainda no deploy anterior). */
-function shouldHideApiMessage(text: string): boolean {
-  return text.includes('Perfil de afiliado não encontrado');
-}
-
 async function request<T>(
   path: string,
   options: RequestOptions = {},
@@ -119,15 +114,6 @@ async function request<T>(
       ? data.message[0]
       : data.message || data.error || fallbackHttpErrorMessagePt(res.status);
     msg = typeof msg === 'string' ? msg : String(msg);
-    if (shouldHideApiMessage(msg)) {
-      const err = new Error(
-        getUserFacingApiError(
-          { message: '', status: res.status } as ApiHttpError,
-          { context: userMessageContext },
-        ),
-      ) as ApiHttpError;
-      throw enrichApiHttpError(err, res, data);
-    }
     const err = new Error(
       getUserFacingApiError(
         Object.assign(new Error(msg), { status: res.status }),
@@ -176,15 +162,6 @@ async function requestFormData<T>(
         (data as { error?: string }).error ||
         fallbackHttpErrorMessagePt(res.status);
     msg = typeof msg === 'string' ? msg : String(msg);
-    if (shouldHideApiMessage(msg)) {
-      const err = new Error(
-        getUserFacingApiError(
-          { message: '', status: res.status } as ApiHttpError,
-          { context: msgContext, isMultipart },
-        ),
-      ) as ApiHttpError;
-      throw enrichApiHttpError(err, res, data);
-    }
     const err = new Error(
       getUserFacingApiError(
         Object.assign(new Error(msg), { status: res.status }),
@@ -297,7 +274,6 @@ export const api = {
       successUrl: string;
       cancelUrl: string;
       paymentMethod: 'card' | 'mbway' | 'pix';
-      affiliateCode?: string;
     }) =>
       request<{ url: string }>('/stripe/create-guest-membership-checkout', {
         method: 'POST',
@@ -879,8 +855,7 @@ export const api = {
               userName: string;
               whatsappDigits: string;
               bookingTimezone: string;
-              bookingOrigin: 'USER_PAID' | 'AFFILIATE_FREE';
-              affiliateInstagram: string | null;
+              bookingOrigin: 'USER_PAID';
             }[];
           }[];
         }>(`/admin/rafacall/schedule${q}`, { method: 'GET' });
@@ -963,14 +938,6 @@ export const api = {
           { method: 'POST', body: JSON.stringify({ groupJid: groupJid.trim() }) },
         ),
     },
-    checklist: {
-      getByUserId: (userId: string) =>
-        request<{
-          updatedAt: string | null;
-          version: number;
-          meta: Record<string, unknown>;
-        }>(`/checklist/admin/${encodeURIComponent(userId)}`, { method: 'GET' }),
-    },
     partners: {
       list: () =>
         request<
@@ -979,7 +946,6 @@ export const api = {
             name: string;
             whatsapp: string;
             logoUrl: string | null;
-            advertisingBalanceEurCents: number;
             user: { id: string; email: string | null; role: string };
             categorySlug: string | null;
             heroShareLink: {
@@ -1030,27 +996,6 @@ export const api = {
           method: 'POST',
           body: JSON.stringify({}),
         }),
-      getAdvertisingBalance: (partnerId: string) =>
-        request<{ balanceEurCents: number }>(
-          `/partners/admin/${encodeURIComponent(partnerId)}/advertising-balance`,
-          { method: 'GET' },
-        ),
-      creditAdvertisingBalance: (
-        partnerId: string,
-        body: { amountEurCents: number; note?: string },
-      ) =>
-        request<{ balanceEurCents: number }>(
-          `/partners/admin/${encodeURIComponent(partnerId)}/advertising-balance/credit`,
-          { method: 'POST', body: JSON.stringify(body) },
-        ),
-      setAdvertisingBalance: (
-        partnerId: string,
-        body: { balanceEurCents: number; note?: string },
-      ) =>
-        request<{ balanceEurCents: number }>(
-          `/partners/admin/${encodeURIComponent(partnerId)}/advertising-balance`,
-          { method: 'PATCH', body: JSON.stringify(body) },
-        ),
       create: (input: {
         password: string;
         name: string;
@@ -2066,21 +2011,6 @@ export const api = {
       delete: (id: string) =>
         request<void>(`/partners/me/services/${id}`, { method: 'DELETE' }),
     },
-    advertising: {
-      getBalance: () =>
-        request<{ balanceEurCents: number }>('/partners/me/advertising-balance', {
-          method: 'GET',
-        }),
-      startTopupCheckout: (body: {
-        amountEurCents: number;
-        successUrl?: string;
-        cancelUrl?: string;
-      }) =>
-        request<{ url: string; sessionId: string }>(
-          '/partners/me/advertising-topup-checkout',
-          { method: 'POST', body: JSON.stringify(body) },
-        ),
-    },
     houses: {
       list: () =>
         request<
@@ -2321,7 +2251,6 @@ export const api = {
         request<{
           ok: true;
           publishedUntil: string;
-          balanceEurCents: number;
           sentToGroups?: number;
           failed?: string[];
         }>(`/partners/me/houses/${encodeURIComponent(id)}/publish`, { method: 'POST' }),
@@ -2715,177 +2644,6 @@ export const api = {
         page: number;
         pageSize: number;
       }>(`/partners/relocation/houses${qs ? `?${qs}` : ''}`, { method: 'GET' });
-    },
-    },
-  checklist: {
-    me: () =>
-      request<{ data: Record<string, unknown>; version: number; updatedAt: string | null }>('/checklist/me', {
-        method: 'GET',
-      }),
-    updateMe: (body: { data: Record<string, unknown>; version?: number }) =>
-      request<{ data: Record<string, unknown>; version: number; updatedAt: string }>(
-        '/checklist/me',
-        {
-          method: 'PUT',
-          body: JSON.stringify(body),
-        },
-      ),
-  },
-  affiliate: {
-    enroll: (body: {
-      instagramHandle: string;
-      termsAccepted: boolean;
-      payoutMethod: 'MBWAY' | 'PIX';
-      mbwayNumber?: string;
-      mbwayName?: string;
-      pixKey?: string;
-      pixName?: string;
-    }) =>
-      request<{
-        id: string;
-        instagramHandle: string;
-        affiliateCode: string;
-        payoutMethod: 'MBWAY' | 'PIX';
-        mbwayNumber?: string | null;
-        mbwayName?: string | null;
-        pixKey?: string | null;
-        pixName?: string | null;
-        createdAt: string;
-      }>('/affiliate/enroll', {
-        method: 'POST',
-        body: JSON.stringify(body),
-      }),
-    me: () =>
-      request<{
-        id: string;
-        affiliateCode: string;
-        instagramHandle: string;
-        payoutMethod: 'MBWAY' | 'PIX';
-        mbwayNumber?: string | null;
-        mbwayName?: string | null;
-        pixKey?: string | null;
-        pixName?: string | null;
-        totals: { pending: number; paid: number };
-      } | null>('/affiliate/me', { method: 'GET' }),
-    updatePayout: (body: {
-      payoutMethod: 'MBWAY' | 'PIX';
-      mbwayNumber?: string;
-      mbwayName?: string;
-      pixKey?: string;
-      pixName?: string;
-    }) =>
-      request<{
-        id: string;
-        payoutMethod: 'MBWAY' | 'PIX';
-        mbwayNumber?: string | null;
-        mbwayName?: string | null;
-        pixKey?: string | null;
-        pixName?: string | null;
-      }>('/affiliate/me/payout', {
-        method: 'PATCH',
-        body: JSON.stringify(body),
-      }),
-    myReferrals: () =>
-      request<{
-        affiliateCode: string;
-        referrals: {
-          id: string;
-          name: string;
-          instagram: string | null;
-          tier: 'MEMBER';
-          membershipExpiresAt: string | null;
-          role: 'USER' | 'PARTNER' | 'ADMIN';
-          createdAt: string;
-          commission: { amount: number; currency: 'EUR' | 'BRL' } | null;
-        }[];
-      }>('/affiliate/my-referrals', { method: 'GET' }),
-    myCommissions: () =>
-      request<{
-        totals: { pending: number; paid: number };
-        commissions: {
-          id: string;
-          amount: number;
-          currency: 'EUR' | 'BRL';
-          status: 'PENDING' | 'PAID';
-          paymentProofUrl?: string | null;
-          paidAt?: string | null;
-          createdAt: string;
-          referredUser: { id: string; name: string; email: string; tier: 'MEMBER' };
-        }[];
-      }>('/affiliate/my-commissions', { method: 'GET' }),
-    adminList: () =>
-      request<
-        {
-          id: string;
-          affiliateCode: string;
-          instagramHandle: string;
-          payoutMethod: 'MBWAY' | 'PIX';
-          mbwayNumber?: string | null;
-          mbwayName?: string | null;
-          pixKey?: string | null;
-          pixName?: string | null;
-          user: {
-            id: string;
-            name: string;
-            email: string;
-            role: 'USER' | 'PARTNER' | 'ADMIN';
-            tier: 'MEMBER';
-            instagram: string | null;
-          };
-          totals: { pending: number; paid: number };
-          referralsByTier: { inactive: number; member: number; partner: number; admin: number };
-        }[]
-      >('/affiliate/admin/list', { method: 'GET' }),
-    adminPaidCommissions: (affiliateId: string) =>
-      request<
-        {
-          id: string;
-          amount: number;
-          currency: 'EUR' | 'BRL';
-          paidAt: string | null;
-          createdAt: string;
-          paymentProofUrl: string | null;
-        }[]
-      >(`/affiliate/admin/${affiliateId}/paid-commissions`, { method: 'GET' }),
-    adminDelete: (affiliateId: string) =>
-      request<{ ok: true }>(`/affiliate/admin/${encodeURIComponent(affiliateId)}`, {
-        method: 'DELETE',
-      }),
-    adminPay: (affiliateId: string, file: File, commissionIds?: string[]) => {
-      const token = getToken();
-      const form = new FormData();
-      form.append('file', file);
-      if (commissionIds?.length) {
-        commissionIds.forEach((id) => form.append('commissionIds', id));
-      }
-      const path = `/affiliate/admin/${affiliateId}/pay`;
-      return (async () => {
-        let res: Response;
-        try {
-          res = await fetch(`${API_URL}${path}`, {
-            method: 'POST',
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-            body: form,
-          });
-        } catch (e) {
-          rethrowAsUserFacingError(e, path, { isMultipart: true });
-        }
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          const raw = Array.isArray((data as { message?: unknown }).message)
-            ? (data as { message: string[] }).message[0]
-            : (data as { message?: string; error?: string }).message ||
-              (data as { error?: string }).error ||
-              fallbackHttpErrorMessagePt(res.status);
-          throw new Error(
-            getUserFacingApiError(
-              Object.assign(new Error(String(raw)), { status: res.status }),
-              { isMultipart: true },
-            ),
-          );
-        }
-        return data as { paidCount: number; paymentProofUrl: string };
-      })();
     },
   },
 

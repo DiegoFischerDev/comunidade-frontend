@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { api, getAuthToken } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CardButton } from '@/components/ui/CardButton';
-import { formatAdvertisingBalanceEur } from '@/components/house/HousePublicationStatusBadge';
 import { PARTNER_CATEGORIES, partnerCategoryName } from '@/lib/partner-categories';
 
 type PartnerRow = {
@@ -12,7 +11,6 @@ type PartnerRow = {
   name: string;
   whatsapp: string;
   logoUrl: string | null;
-  advertisingBalanceEurCents: number;
   user: { id: string; email: string | null; role: string };
   categorySlug: string | null;
   heroShareLink: {
@@ -31,8 +29,6 @@ export default function PartnersPage() {
   const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(
     null,
   );
-  const [balanceInputByPartnerId, setBalanceInputByPartnerId] = useState<Record<string, string>>({});
-  const [savingBalancePartnerId, setSavingBalancePartnerId] = useState<string | null>(null);
 
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -104,7 +100,6 @@ export default function PartnersPage() {
           name: result.partner.name,
           whatsapp: result.partner.whatsapp,
           logoUrl: result.partner.logoUrl,
-          advertisingBalanceEurCents: 0,
           user: result.user,
           categorySlug: null,
           heroShareLink: null,
@@ -277,7 +272,6 @@ export default function PartnersPage() {
                 <th className="px-4 py-2 text-left">E-mail</th>
                 <th className="px-4 py-2 text-left">WhatsApp</th>
                 <th className="px-4 py-2 text-left">Categoria</th>
-                <th className="px-4 py-2 text-left">Saldo publicidade</th>
                 <th className="px-4 py-2 text-left">Links de contacto</th>
                 <th className="px-4 py-2 text-right">Ações</th>
               </tr>
@@ -344,83 +338,6 @@ export default function PartnersPage() {
                         </option>
                       ))}
                     </select>
-                  </td>
-                  <td className="px-4 py-2 align-top">
-                    <p className="font-medium tabular-nums text-zinc-900">
-                      {formatAdvertisingBalanceEur(p.advertisingBalanceEurCents ?? 0)}
-                    </p>
-                    {p.categorySlug === 'relocation' ? (
-                      <div className="mt-2 flex flex-wrap items-center gap-1">
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="Novo saldo €"
-                          title="Saldo em euros (ex.: 25 ou 25,50)"
-                          value={
-                            balanceInputByPartnerId[p.id] ??
-                            String((p.advertisingBalanceEurCents ?? 0) / 100)
-                          }
-                          onChange={(e) =>
-                            setBalanceInputByPartnerId((prev) => ({
-                              ...prev,
-                              [p.id]: e.target.value,
-                            }))
-                          }
-                          className="w-20 rounded border border-zinc-300 px-2 py-1 text-xs tabular-nums"
-                        />
-                        <button
-                          type="button"
-                          disabled={savingBalancePartnerId === p.id}
-                          onClick={async () => {
-                            const displayed =
-                              balanceInputByPartnerId[p.id] ??
-                              String((p.advertisingBalanceEurCents ?? 0) / 100);
-                            const raw = displayed.trim().replace(',', '.');
-                            const euros = Number(raw);
-                            if (!Number.isFinite(euros) || euros < 0) {
-                              setError('Indica um saldo válido em euros (≥ 0).');
-                              return;
-                            }
-                            setSavingBalancePartnerId(p.id);
-                            setError('');
-                            try {
-                              const res = await api.admin.partners.setAdvertisingBalance(
-                                p.id,
-                                { balanceEurCents: Math.round(euros * 100) },
-                              );
-                              setPartners((prev) =>
-                                prev.map((row) =>
-                                  row.id === p.id
-                                    ? {
-                                        ...row,
-                                        advertisingBalanceEurCents: res.balanceEurCents,
-                                      }
-                                    : row,
-                                ),
-                              );
-                              setBalanceInputByPartnerId((prev) => {
-                                const next = { ...prev };
-                                delete next[p.id];
-                                return next;
-                              });
-                            } catch (err) {
-                              setError(
-                                err instanceof Error
-                                  ? err.message
-                                  : 'Erro ao definir saldo.',
-                              );
-                            } finally {
-                              setSavingBalancePartnerId(null);
-                            }
-                          }}
-                          className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
-                        >
-                          {savingBalancePartnerId === p.id ? 'A guardar…' : 'Definir'}
-                        </button>
-                      </div>
-                    ) : (
-                      <p className="mt-1 text-xs text-zinc-500">—</p>
-                    )}
                   </td>
                   <td className="px-4 py-2 align-top">
                     {(() => {

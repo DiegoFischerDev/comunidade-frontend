@@ -27,7 +27,7 @@ export default function PrivacidadePage() {
           Política de privacidade
         </h1>
         <p className="mt-2 text-sm text-zinc-500">
-          Última atualização: abril de 2026. Este texto descreve, de forma simples, como tratamos dados na
+          Última atualização: julho de 2026. Este texto descreve, de forma simples, como tratamos dados na
           plataforma <strong className="font-semibold text-zinc-700">Comunidade Rafa Portugal</strong>. Não
           substitui aconselhamento jurídico; para questões específicas contacte-nos pelos canais indicados em
           baixo.
@@ -64,10 +64,6 @@ export default function PrivacidadePage() {
               aplicação web.
             </li>
             <li>
-              <strong className="font-medium text-zinc-800">Plano de imigração / checklist:</strong> respostas e
-              estado que guarda na sua área reservada.
-            </li>
-            <li>
               <strong className="font-medium text-zinc-800">Parceiros e marketplace:</strong> dados do perfil de
               parceiro (nome comercial, WhatsApp de contacto, descrições, media), serviços, vendas e comissões
               quando utilizados na plataforma; registos de contactos / leads quando um utilizador autenticado
@@ -80,18 +76,12 @@ export default function PrivacidadePage() {
               conforme descrito na própria área de publicação (sem envio repetido de médias ao grupo).
             </li>
             <li>
-              <strong className="font-medium text-zinc-800">Pagamentos:</strong> quando paga serviços na
-              plataforma (por exemplo subscrição ou taxas associadas), os dados de pagamento são tratados pelo
-              prestador de pagamentos (<strong className="font-medium text-zinc-800">Stripe</strong> ou fluxo
-              equivalente). Nós não armazenamos o número completo do seu cartão.
-            </li>
-            <li>
               <strong className="font-medium text-zinc-800">Suporte e reclamações:</strong> mensagens que nos
               envia através do sistema de tickets; estado de cada pedido (registado, em análise, concluído).
             </li>
             <li>
-              <strong className="font-medium text-zinc-800">Programa de afiliados e chamadas com a Rafa:</strong>
-              dados necessários para participação e agendamento quando utiliza essas funcionalidades.
+              <strong className="font-medium text-zinc-800">Chamadas com a Rafa:</strong> dados necessários para
+              agendamento quando utiliza essa funcionalidade.
             </li>
             <li>
               <strong className="font-medium text-zinc-800">Registos técnicos:</strong> dados de utilização da API
@@ -105,7 +95,6 @@ export default function PrivacidadePage() {
           <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-zinc-700">
             <li>Criar e gerir a sua conta e dar acesso às áreas reservadas da comunidade.</li>
             <li>Prestar os serviços que contratou ou solicitou (conteúdos, parceiros, imóveis, suporte).</li>
-            <li>Processar pagamentos e cumprir obrigações contabilísticas e fiscais aplicáveis.</li>
             <li>Comunicar consigo sobre o serviço, tickets ou pedidos que tenha feito.</li>
             <li>Garantir segurança, prevenir abuso e melhorar a estabilidade da plataforma.</li>
             <li>Cumprir obrigações legais quando aplicável.</li>
@@ -127,10 +116,7 @@ export default function PrivacidadePage() {
           <p className="text-sm leading-relaxed text-zinc-700">
             A sessão na nossa aplicação web assenta principalmente em&nbsp;
             <strong className="font-medium text-zinc-800">localStorage</strong>, não em cookies HTTP próprios para
-            login. Serviços de terceiros integrados (por exemplo <strong className="font-medium text-zinc-800">
-            Stripe</strong> no checkout) podem definir cookies ou tecnologias equivalentes nos seus domínios,
-            subordinados às respetivas políticas. Recomendamos que reveja as definições do seu browser e as
-            políticas desses prestadores quando utiliza pagamentos online.
+            login. Recomendamos que reveja as definições do seu browser.
           </p>
         </section>
 
@@ -147,7 +133,7 @@ export default function PrivacidadePage() {
           <h2 className="text-lg font-semibold text-zinc-900">Com quem partilhamos dados?</h2>
           <p className="text-sm leading-relaxed text-zinc-700">
             Podemos partilhar dados com prestadores que nos ajudam a operar o serviço (alojamento, base de dados,
-            pagamentos, envio de mensagens quando configurado), sempre no âmbito do necessário à prestação do
+            envio de mensagens quando configurado), sempre no âmbito do necessário à prestação do
             serviço e com salvaguardas adequadas. Alguns prestadores podem estar situados fora do Espaço
             Económico Europeu; nesses casos aplicamos as garantias previstas na lei aplicável (por exemplo
             cláusulas contratuais-tipo da Comissão Europeia, quando relevante).

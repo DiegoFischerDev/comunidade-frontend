@@ -4,8 +4,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AddHouseModal } from "@/components/house/AddHouseModal";
 import { isActivePublished } from "@/components/house/HousePublicationStatusBadge";
-import { AddAdvertisingBalanceModal } from "@/components/house/AddAdvertisingBalanceModal";
-import { AdvertisingBalanceCard } from "@/components/house/AdvertisingBalanceCard";
 import { PartnerHousesList, type HouseListSelection } from "@/components/house/PartnerHousesList";
 import { PublishHouseConfirmModal } from "@/components/house/PublishHouseConfirmModal";
 import { PublishHousesBulkConfirmModal } from "@/components/house/PublishHousesBulkConfirmModal";
@@ -141,12 +139,9 @@ export default function PartnerHousesPage() {
   const [showUpdatedBanner, setShowUpdatedBanner] = useState(false);
   const [showHouseModal, setShowHouseModal] = useState(false);
   const [editHouseId, setEditHouseId] = useState<string | null>(null);
-  const [balanceEurCents, setBalanceEurCents] = useState(0);
-  const [showTopupModal, setShowTopupModal] = useState(false);
   const [publishHouse, setPublishHouse] = useState<HouseRow | null>(null);
   const [bulkPublishHouses, setBulkPublishHouses] = useState<HouseRow[] | null>(null);
   const [publishingById, setPublishingById] = useState<Record<string, boolean>>({});
-  const [showTopupSuccessBanner, setShowTopupSuccessBanner] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const bulkPublishCancelRef = useRef(false);
@@ -168,20 +163,7 @@ export default function PartnerHousesPage() {
       setShowHouseModal(true);
       router.replace("/dashboard/casas", { scroll: false });
     }
-    if (q.get("topup") === "success") {
-      setShowTopupSuccessBanner(true);
-      router.replace("/dashboard/casas", { scroll: false });
-    }
   }, [router]);
-
-  async function refreshBalance() {
-    try {
-      const b = await api.partner.advertising.getBalance();
-      setBalanceEurCents(b.balanceEurCents);
-    } catch {
-      /* ignore */
-    }
-  }
 
   useEffect(() => {
     if (!user) return;
@@ -197,13 +179,9 @@ export default function PartnerHousesPage() {
         const ok = me.categorySlug === "relocation";
         if (!cancelled) setCanManageHouses(ok);
         if (!ok) return;
-        const [data, balance] = await Promise.all([
-          api.partner.houses.list(),
-          api.partner.advertising.getBalance(),
-        ]);
+        const data = await api.partner.houses.list();
         if (!cancelled) {
           setRows(data);
-          setBalanceEurCents(balance.balanceEurCents);
         }
       } catch (err) {
         if (!cancelled) {
@@ -316,12 +294,11 @@ export default function PartnerHousesPage() {
     const id = publishHouse.id;
     setPublishingById((s) => ({ ...s, [id]: true }));
     try {
-      const res = await api.partner.houses.publish(id);
+      await api.partner.houses.publish(id);
       setPublishHouse(null);
       setPublishingById((s) => ({ ...s, [id]: false }));
       const data = await api.partner.houses.list();
       setRows(data);
-      setBalanceEurCents(res.balanceEurCents);
     } catch (err) {
       setPublishingById((s) => ({ ...s, [id]: false }));
       throw err;
@@ -397,8 +374,7 @@ export default function PartnerHousesPage() {
       const id = ids[i]!;
       setPublishingById((s) => ({ ...s, [id]: true }));
       try {
-        const res = await api.partner.houses.publish(id);
-        setBalanceEurCents(res.balanceEurCents);
+        await api.partner.houses.publish(id);
       } catch (err) {
         setError(
           err instanceof Error
@@ -561,8 +537,7 @@ export default function PartnerHousesPage() {
           </div>
           <h2 className="mt-4 text-base font-semibold text-zinc-900">Área de parceiros</h2>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-            Inicia sessão para gerires os teus anúncios, publicar imóveis e usar o saldo de
-            publicidade.
+            Inicia sessão para gerires os teus anúncios e publicar imóveis no site e nos grupos WhatsApp.
           </p>
           <div className="mt-6 flex justify-center">
             <CardButton type="button" variant="secondary" onClick={() => openAuthLoginModal()}>
@@ -609,20 +584,9 @@ export default function PartnerHousesPage() {
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
         <p className="mt-2 text-sm text-zinc-600">
-          Gere os teus anúncios e publica-os no site e nos grupos WhatsApp com o saldo de publicidade.
+          Gere os teus anúncios e publica-os no site e nos grupos WhatsApp.
         </p>
       </div>
-
-      <AdvertisingBalanceCard
-        balanceEurCents={balanceEurCents}
-        onAddBalance={() => setShowTopupModal(true)}
-      />
-
-      {showTopupSuccessBanner && (
-        <div className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          Pagamento recebido. O saldo foi atualizado.
-        </div>
-      )}
 
       {showUpdatedBanner && (
         <div className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
@@ -850,16 +814,9 @@ export default function PartnerHousesPage() {
         mode="partner"
       />
 
-      <AddAdvertisingBalanceModal
-        open={showTopupModal}
-        onClose={() => setShowTopupModal(false)}
-        onSuccess={refreshBalance}
-      />
-
       <PublishHouseConfirmModal
         open={publishHouse != null}
         house={publishHouse}
-        balanceEurCents={balanceEurCents}
         onClose={() => setPublishHouse(null)}
         onConfirm={handlePublishConfirm}
         onPatchQuickFields={async (patch) => {
@@ -887,7 +844,6 @@ export default function PartnerHousesPage() {
       <PublishHousesBulkConfirmModal
         open={bulkPublishHouses != null}
         houses={bulkPublishHouses ?? []}
-        balanceEurCents={balanceEurCents}
         publishDelayMs={BULK_PUBLISH_DELAY_MS}
         onClose={() => setBulkPublishHouses(null)}
         onConfirm={handleBulkPublishConfirm}

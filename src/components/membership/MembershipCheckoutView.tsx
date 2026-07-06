@@ -18,7 +18,6 @@ import {
   getMembershipSuccessUrl,
   MEMBERSHIP_PRODUCT_SUBTITLE,
   MEMBERSHIP_PRODUCT_TITLE,
-  readAffiliateCodeFromStorage,
   type MembershipAmounts,
   type MembershipPaymentMethod,
   type SignupFieldKey,
@@ -189,7 +188,6 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
 
     const successUrl = getMembershipSuccessUrl();
     const cancelUrl = getMembershipCancelUrl();
-    const affiliateCode = readAffiliateCodeFromStorage();
 
     try {
       const { url } = needsSignupForm
@@ -202,7 +200,6 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
             successUrl,
             cancelUrl,
             paymentMethod,
-            affiliateCode,
           })
         : paymentMethod === 'pix'
           ? await api.stripe.createPixCheckoutSession({ successUrl, cancelUrl })

@@ -4,14 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { api } from "@/lib/api";
-import { useAuth } from "@/contexts/AuthContext";
-import { isActiveMember } from "@/lib/membership-access";
 import { COMMUNITY_WHATSAPP_GROUPS_URL } from "@/lib/community-whatsapp-groups";
-import { AffiliateEnrollModal } from "@/components/affiliate/AffiliateEnrollModal";
-import { DashboardImmigrationPlanSection } from "@/components/dashboard/DashboardImmigrationPlanSection";
 import { DashboardWelcomeVideoPlayer } from "@/components/dashboard/DashboardWelcomeVideoPlayer";
-type AffiliateMe = NonNullable<Awaited<ReturnType<typeof api.affiliate.me>>>;
 
 /** Desktop: snap ao início; mobile: cartão centrado (~76vw) com ~12vw de “peek” de cada lado. */
 const DASHBOARD_CARD_CAROUSEL_ITEM =
@@ -65,86 +59,6 @@ export default function DashboardPage() {
     const step = getDashboardCarouselScrollStep(el);
     el.scrollBy({ left: dir * step, behavior: "smooth" });
   }, []);
-
-  const { user } = useAuth();
-  const isMember = isActiveMember(user);
-  const canSeeAffiliateCard =
-    isMember || user?.role === "PARTNER" || user?.role === "ADMIN";
-
-  const [affiliateModalOpen, setAffiliateModalOpen] = useState(false);
-  const [affiliateSaving, setAffiliateSaving] = useState(false);
-  const [affiliateError, setAffiliateError] = useState("");
-  const [affiliateTerms, setAffiliateTerms] = useState(false);
-  const [affiliateInstagram, setAffiliateInstagram] = useState(
-    user?.instagram
-      ? user.instagram.startsWith("@")
-        ? user.instagram
-        : `@${user.instagram}`
-      : "",
-  );
-  const [affiliatePayoutMethod, setAffiliatePayoutMethod] = useState<"MBWAY" | "PIX">("MBWAY");
-  const [affiliateMbwayNumber, setAffiliateMbwayNumber] = useState("");
-  const [affiliateMbwayName, setAffiliateMbwayName] = useState("");
-  const [affiliatePixKey, setAffiliatePixKey] = useState("");
-  const [affiliatePixName, setAffiliatePixName] = useState("");
-  /** undefined = a carregar; null = sem perfil de afiliado */
-  const [affiliate, setAffiliate] = useState<AffiliateMe | null | undefined>(undefined);
-
-  useEffect(() => {
-    setAffiliateInstagram(
-      user?.instagram
-        ? user.instagram.startsWith("@")
-          ? user.instagram
-          : `@${user.instagram}`
-        : "",
-    );
-  }, [user?.instagram]);
-
-  useEffect(() => {
-    if (!user?.id || !canSeeAffiliateCard) {
-      setAffiliate(undefined);
-      return;
-    }
-    let cancelled = false;
-    setAffiliate(undefined);
-    (async () => {
-      try {
-        const data = await api.affiliate.me();
-        if (!cancelled) setAffiliate(data ?? null);
-      } catch {
-        if (!cancelled) setAffiliate(null);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id, canSeeAffiliateCard]);
-
-  async function handleAffiliateSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setAffiliateError("");
-    setAffiliateSaving(true);
-    try {
-      await api.affiliate.enroll({
-        instagramHandle: affiliateInstagram,
-        termsAccepted: affiliateTerms,
-        payoutMethod: affiliatePayoutMethod,
-        mbwayNumber: affiliatePayoutMethod === "MBWAY" ? affiliateMbwayNumber : undefined,
-        mbwayName: affiliatePayoutMethod === "MBWAY" ? affiliateMbwayName : undefined,
-        pixKey: affiliatePayoutMethod === "PIX" ? affiliatePixKey : undefined,
-        pixName: affiliatePayoutMethod === "PIX" ? affiliatePixName : undefined,
-      });
-      const data = await api.affiliate.me();
-      setAffiliate(data ?? null);
-      setAffiliateModalOpen(false);
-    } catch (err) {
-      setAffiliateError(
-        err instanceof Error ? err.message : "Erro ao ativar programa de afiliados.",
-      );
-    } finally {
-      setAffiliateSaving(false);
-    }
-  }
 
   return (
     <div className="space-y-0">
@@ -293,30 +207,6 @@ export default function DashboardPage() {
           className="pointer-events-auto absolute bottom-[8%] right-0 top-[8%] z-[18] m-0 hidden w-[12vw] min-w-[44px] cursor-pointer border-0 bg-transparent p-0 outline-none max-md:block md:hidden touch-manipulation disabled:pointer-events-none disabled:opacity-0 focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
         />
       </div>
-
-      <DashboardImmigrationPlanSection />
-
-      <AffiliateEnrollModal
-        open={affiliateModalOpen}
-        saving={affiliateSaving}
-        error={affiliateError}
-        instagram={affiliateInstagram}
-        payoutMethod={affiliatePayoutMethod}
-        mbwayNumber={affiliateMbwayNumber}
-        mbwayName={affiliateMbwayName}
-        pixKey={affiliatePixKey}
-        pixName={affiliatePixName}
-        termsAccepted={affiliateTerms}
-        onClose={() => setAffiliateModalOpen(false)}
-        onSubmit={handleAffiliateSubmit}
-        onInstagramChange={setAffiliateInstagram}
-        onPayoutMethodChange={setAffiliatePayoutMethod}
-        onMbwayNumberChange={setAffiliateMbwayNumber}
-        onMbwayNameChange={setAffiliateMbwayName}
-        onPixKeyChange={setAffiliatePixKey}
-        onPixNameChange={setAffiliatePixName}
-        onTermsAcceptedChange={setAffiliateTerms}
-      />
     </div>
   );
 }

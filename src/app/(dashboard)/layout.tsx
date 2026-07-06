@@ -799,7 +799,6 @@ export default function DashboardLayout({
     <div className="flex min-h-screen flex-col bg-zinc-50 md:pl-56">
       {/* Preload de imagens usadas em modais (evita carregar só quando abre) */}
       <div className="pointer-events-none fixed -left-[9999px] -top-[9999px] h-0 w-0 overflow-hidden opacity-0">
-        <Image src="/afiliados.png" alt="" width={1200} height={630} priority />
         <Image src="/rafa_cards/modal_novo_agendamento.png" alt="" width={256} height={256} priority />
         {/* Membership modal usa <img> com este SVG; pré-carrega via img escondida */}
         <img src="/comunidade_bg.svg" alt="" loading="eager" />
@@ -1231,9 +1230,7 @@ export default function DashboardLayout({
                 atualizada e apoio de quem já passou por aí.
               </p>
               <p>
-                A partir de agora tens acesso ao teu{' '}
-                <span className="font-semibold">checklist de imigração</span> e
-                a uma rede de{' '}
+                A partir de agora tens acesso a uma rede de{' '}
                 <span className="font-semibold">
                   parceiros e profissionais especializados
                 </span>{' '}
