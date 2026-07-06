@@ -90,7 +90,7 @@ function relocationImoveisClipboardUrlNoProtocol(): string {
   const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "")
     .replace(/^https?:\/\//i, "")
     .replace(/\/$/, "");
-  return `${base || "comunidade.rafaportugal.com"}${RELOCATION_IMOVEIS_PATH}`;
+  return `${base || "movecasa.pt"}${RELOCATION_IMOVEIS_PATH}`;
 }
 
 export default function PublicRelocationHousesListPage() {

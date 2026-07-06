@@ -131,8 +131,7 @@ export function getPublicSiteUrlFromRequestHeaders(
 
 /** APIs de deploy onde `/uploads/**` é servido (alinhar com `next.config.ts`). */
 const KNOWN_API_IMAGE_HOSTNAMES = new Set([
-  'api-stage.rafaapelomundo.com',
-  'api.rafaapelomundo.com',
+  'api.movecasa.pt',
   'api-comunidade.rafaportugal.com',
   'api-comunidade.rafaapelomundo.com',
 ]);

@@ -41,8 +41,7 @@ const defaultApiUploadsPatterns: {
   hostname: string;
   pathname: string;
 }[] = [
-  { protocol: "https", hostname: "api-stage.rafaapelomundo.com", pathname: "/uploads/**" },
-  { protocol: "https", hostname: "api.rafaapelomundo.com", pathname: "/uploads/**" },
+  { protocol: "https", hostname: "api.movecasa.pt", pathname: "/uploads/**" },
   { protocol: "https", hostname: "api-comunidade.rafaportugal.com", pathname: "/uploads/**" },
   { protocol: "https", hostname: "api-comunidade.rafaapelomundo.com", pathname: "/uploads/**" },
 ];
