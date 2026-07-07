@@ -839,7 +839,11 @@ export default function DashboardLayout({
       <button
         type="button"
         onClick={() => setIsMenuOpen((open) => !open)}
-        className={`fixed right-4 top-4 z-50 inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center text-brand-primary transition-all duration-300 ease-out active:scale-[0.97] md:hidden ${
+        className={`fixed right-4 top-4 z-50 inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center transition-all duration-300 ease-out active:scale-[0.97] md:hidden ${
+          isDashboardHome
+            ? 'rounded-[14px] border border-white/20 bg-brand-primary/65 text-brand-on-primary shadow-lg backdrop-blur-md hover:bg-brand-primary/80'
+            : 'text-brand-primary'
+        } ${
           isHomeScrolled || isMenuOpen
             ? 'pointer-events-auto translate-y-0 opacity-100'
             : 'pointer-events-none -translate-y-1 opacity-0'
@@ -854,9 +858,15 @@ export default function DashboardLayout({
           </span>
         ) : (
           <span className="flex h-3.5 w-4 flex-col justify-between" aria-hidden>
-            <span className="h-[2px] w-full rounded bg-brand-primary" />
-            <span className="h-[2px] w-full rounded bg-brand-primary" />
-            <span className="h-[2px] w-full rounded bg-brand-primary" />
+            <span
+              className={`h-[2px] w-full rounded ${isDashboardHome ? 'bg-brand-on-primary' : 'bg-brand-primary'}`}
+            />
+            <span
+              className={`h-[2px] w-full rounded ${isDashboardHome ? 'bg-brand-on-primary' : 'bg-brand-primary'}`}
+            />
+            <span
+              className={`h-[2px] w-full rounded ${isDashboardHome ? 'bg-brand-on-primary' : 'bg-brand-primary'}`}
+            />
           </span>
         )}
       </button>
