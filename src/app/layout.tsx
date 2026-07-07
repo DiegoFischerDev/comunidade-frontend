@@ -8,8 +8,9 @@ import {
   BRAND_FAVICON_32_URL,
   BRAND_FAVICON_ICO_URL,
   BRAND_MANIFEST,
-  BRAND_OG_IMAGE,
   BRAND_OG_IMAGE_HEIGHT,
+  BRAND_OG_IMAGE_TYPE,
+  BRAND_OG_IMAGE_URL,
   BRAND_OG_IMAGE_WIDTH,
   SITE_DESCRIPTION,
   SITE_NAME,
@@ -22,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const h = await headers();
   const siteUrl = getPublicSiteUrlFromRequestHeaders(h);
   const base = new URL(siteUrl);
-  const ogImageUrl = new URL(BRAND_OG_IMAGE, base).href;
+  const ogImageUrl = new URL(BRAND_OG_IMAGE_URL, base).href;
 
   return {
     metadataBase: base,
@@ -56,6 +57,7 @@ export async function generateMetadata(): Promise<Metadata> {
           url: ogImageUrl,
           width: BRAND_OG_IMAGE_WIDTH,
           height: BRAND_OG_IMAGE_HEIGHT,
+          type: BRAND_OG_IMAGE_TYPE,
           alt: SITE_NAME_FULL,
         },
       ],

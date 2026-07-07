@@ -1,15 +1,17 @@
 'use client';
 
 import { CardLinkButton } from '@/components/ui/CardButton';
-import { MagneticButton } from '@/components/ui/magnetic-button';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
-import { RAFA_CALL_CHECKOUT_PATH } from '@/lib/auth-ui-events';
+import { MagneticButton } from '@/components/ui/magnetic-button';
+import { SITE_FOUNDERS_WHATSAPP_URL } from '@/lib/site-branding';
 
 export function DashboardHomeHeroCta() {
   return (
     <MagneticButton className="block w-full sm:inline-block sm:w-auto" distance={0.55}>
       <CardLinkButton
-        href={RAFA_CALL_CHECKOUT_PATH}
+        href={SITE_FOUNDERS_WHATSAPP_URL}
+        target="_blank"
+        rel="noopener noreferrer"
         variant="secondary"
         className="w-full sm:w-auto md:min-h-[42px] md:px-4 md:text-sm lg:min-h-[clamp(42px,6cqh,52px)] lg:px-6 lg:text-[clamp(0.875rem,2cqh,1.125rem)]"
       >

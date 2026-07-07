@@ -6,6 +6,9 @@ export const SITE_NAME = "Move Casa";
 export const SITE_NAME_FULL = "Move Casa Relocation";
 export const SITE_CONTACT_EMAIL = "atendimento@movecasa.pt";
 export const SITE_FOUNDERS = "Rafa e Carol";
+/** WhatsApp das fundadoras (hero CTA «Quero falar com as meninas»). */
+export const SITE_FOUNDERS_WHATSAPP_DIGITS = "351926977469";
+export const SITE_FOUNDERS_WHATSAPP_URL = `https://wa.me/${SITE_FOUNDERS_WHATSAPP_DIGITS}`;
 
 export const SITE_TAGLINE =
   "Mude para Portugal com ajuda de quem já viveu esse processo.";
@@ -16,9 +19,11 @@ export const SITE_DESCRIPTION =
 /** Prefixo `/brand/` — URLs novas para não reutilizar cache de assets antigos. */
 export const BRAND_ASSET_BASE = "/brand";
 
-export const BRAND_OG_IMAGE = `${BRAND_ASSET_BASE}/og-image.png`;
-export const BRAND_OG_IMAGE_WIDTH = 1731;
-export const BRAND_OG_IMAGE_HEIGHT = 909;
+/** JPEG 1200×630 — tamanho recomendado para WhatsApp / Facebook (evita timeout com PNG >2MB). */
+export const BRAND_OG_IMAGE = `${BRAND_ASSET_BASE}/og-image.jpg`;
+export const BRAND_OG_IMAGE_WIDTH = 1200;
+export const BRAND_OG_IMAGE_HEIGHT = 630;
+export const BRAND_OG_IMAGE_TYPE = "image/jpeg";
 
 export const BRAND_LOGO_HORIZONTAL = `${BRAND_ASSET_BASE}/logo-horizontal.png`;
 export const BRAND_LOGO_HORIZONTAL_GREEN = `${BRAND_ASSET_BASE}/logo-horizontal-green.png`;
@@ -47,7 +52,7 @@ export const BRAND_HERO_FOUNDERS_WIDTH = 1200;
 export const BRAND_HERO_FOUNDERS_HEIGHT = 1800;
 
 /** Incrementar quando favicons/assets em `/brand/` forem substituídos (cache bust). */
-export const BRAND_ASSET_VERSION = "3";
+export const BRAND_ASSET_VERSION = "4";
 
 export const BRAND_FAVICON_ICO = `${BRAND_ASSET_BASE}/favicon.ico`;
 export const BRAND_APPLE_TOUCH_ICON = `${BRAND_ASSET_BASE}/apple-touch-icon.png`;
@@ -56,6 +61,8 @@ export const BRAND_MANIFEST = `${BRAND_ASSET_BASE}/site.webmanifest`;
 function withBrandVersion(path: string): string {
   return `${path}?v=${BRAND_ASSET_VERSION}`;
 }
+
+export const BRAND_OG_IMAGE_URL = withBrandVersion(BRAND_OG_IMAGE);
 
 export const BRAND_FAVICON_ICO_URL = withBrandVersion(BRAND_FAVICON_ICO);
 export const BRAND_FAVICON_32_URL = withBrandVersion(`${BRAND_ASSET_BASE}/favicon-32x32.png`);
