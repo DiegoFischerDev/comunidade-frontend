@@ -19,6 +19,13 @@ export const SITE_DESCRIPTION =
 /** Prefixo `/brand/` — URLs novas para não reutilizar cache de assets antigos. */
 export const BRAND_ASSET_BASE = "/brand";
 
+/** Incrementar quando favicons/assets em `/brand/` forem substituídos (cache bust). */
+export const BRAND_ASSET_VERSION = "5";
+
+function withBrandVersion(path: string): string {
+  return `${path}?v=${BRAND_ASSET_VERSION}`;
+}
+
 /** JPEG 1200×630 — tamanho recomendado para WhatsApp / Facebook (evita timeout com PNG >2MB). */
 export const BRAND_OG_IMAGE = `${BRAND_ASSET_BASE}/og-image.jpg`;
 export const BRAND_OG_IMAGE_WIDTH = 1200;
@@ -51,16 +58,9 @@ export const BRAND_HERO_BG_MOBILE_HEIGHT = 1672;
 export const BRAND_HERO_FOUNDERS_WIDTH = 1200;
 export const BRAND_HERO_FOUNDERS_HEIGHT = 1800;
 
-/** Incrementar quando favicons/assets em `/brand/` forem substituídos (cache bust). */
-export const BRAND_ASSET_VERSION = "4";
-
 export const BRAND_FAVICON_ICO = `${BRAND_ASSET_BASE}/favicon.ico`;
 export const BRAND_APPLE_TOUCH_ICON = `${BRAND_ASSET_BASE}/apple-touch-icon.png`;
 export const BRAND_MANIFEST = `${BRAND_ASSET_BASE}/site.webmanifest`;
-
-function withBrandVersion(path: string): string {
-  return `${path}?v=${BRAND_ASSET_VERSION}`;
-}
 
 export const BRAND_OG_IMAGE_URL = withBrandVersion(BRAND_OG_IMAGE);
 

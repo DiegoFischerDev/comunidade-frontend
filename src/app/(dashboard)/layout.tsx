@@ -12,7 +12,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getAuthToken, clearAuthToken, api } from '@/lib/api';
 import {
-  BRAND_ICON_LIGHT,
   BRAND_LOGO_SQUARE,
   BRAND_LOGO_SQUARE_TRANSPARENT,
   SITE_NAME_FULL,
@@ -836,30 +835,11 @@ export default function DashboardLayout({
         <img src="/comunidade_bg.svg" alt="" loading="eager" />
       </div>
 
-      {/* Mobile: atalho flutuante para início (oculto na página principal — a hero já tem logo) */}
-      {!isDashboardHomePath(pathname) ? (
-        <button
-          type="button"
-          onClick={() => router.push(DASHBOARD_HOME_PATH)}
-          className="fixed left-4 top-4 z-50 md:hidden"
-          aria-label="Ir para o início"
-        >
-          <Image
-            src={BRAND_ICON_LIGHT}
-            alt={SITE_NAME_FULL}
-            width={800}
-            height={800}
-            className="h-10 w-10 object-contain"
-            priority
-          />
-        </button>
-      ) : null}
-
       {/* Mobile: menu hambúrguer flutuante (na home, só após scroll) */}
       <button
         type="button"
         onClick={() => setIsMenuOpen((open) => !open)}
-        className={`fixed right-4 top-4 z-50 inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-[14px] border border-white/20 bg-brand-primary/65 text-brand-on-primary shadow-lg backdrop-blur-md transition-all duration-300 ease-out hover:bg-brand-primary/80 active:scale-[0.97] md:hidden ${
+        className={`fixed right-4 top-4 z-50 inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center text-brand-primary transition-all duration-300 ease-out active:scale-[0.97] md:hidden ${
           isHomeScrolled || isMenuOpen
             ? 'pointer-events-auto translate-y-0 opacity-100'
             : 'pointer-events-none -translate-y-1 opacity-0'
@@ -874,9 +854,9 @@ export default function DashboardLayout({
           </span>
         ) : (
           <span className="flex h-3.5 w-4 flex-col justify-between" aria-hidden>
-            <span className="h-[2px] w-full rounded bg-brand-on-primary" />
-            <span className="h-[2px] w-full rounded bg-brand-on-primary" />
-            <span className="h-[2px] w-full rounded bg-brand-on-primary" />
+            <span className="h-[2px] w-full rounded bg-brand-primary" />
+            <span className="h-[2px] w-full rounded bg-brand-primary" />
+            <span className="h-[2px] w-full rounded bg-brand-primary" />
           </span>
         )}
       </button>

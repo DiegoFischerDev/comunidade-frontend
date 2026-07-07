@@ -29,7 +29,7 @@ export function SiteFooter() {
     <footer className="border-t border-border/60 px-4 py-5 text-xs text-muted">
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-3 sm:flex-row sm:gap-6">
         <p className="text-center sm:text-left">
-          Copyright © {year} {SITE_NAME}. Todos os direitos reservados.
+          {SITE_NAME} © {year} Todos os direitos reservados.
         </p>
 
         <nav aria-label="Links do rodapé">
@@ -48,6 +48,8 @@ export function SiteFooter() {
             ))}
           </ul>
         </nav>
+
+        <p className="text-center sm:text-left">atendimento@movecasa.pt | +351 926 977 469</p>
       </div>
     </footer>
   );
