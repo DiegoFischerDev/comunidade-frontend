@@ -27,9 +27,9 @@ function statusLabel(s: Payload['items'][number]['status']): string {
 }
 
 function statusClass(s: Payload['items'][number]['status']): string {
-  if (s === 'IN_REVIEW') return 'bg-amber-50 text-amber-800';
+  if (s === 'IN_REVIEW') return 'bg-brand-accent/10 text-brand-primary';
   if (s === 'DONE') return 'bg-emerald-50 text-emerald-800';
-  return 'bg-zinc-100 text-zinc-800';
+  return 'bg-primary-1 text-foreground';
 }
 
 /** Só edita se o ticket não estiver concluído e ainda não houver resposta da equipa. */
@@ -154,8 +154,8 @@ export default function ReclameAquiUserPage() {
     return (
       <div className="mx-auto w-full max-w-[820px]">
         <div className="text-center">
-          <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
-          <p className="mt-2 text-sm text-zinc-600">
+          <h1 className="text-2xl font-semibold text-foreground">Reclame aqui</h1>
+          <p className="mt-2 text-sm text-muted">
             Queremos ouvir-te e resolver o teu problema. Podes abrir um pedido sem criar conta — indica
             o teu nome e WhatsApp para te contactarmos.
           </p>
@@ -214,8 +214,8 @@ export default function ReclameAquiUserPage() {
   return (
     <div className="mx-auto w-full max-w-[1000px]">
       <div className="text-center">
-        <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Reclame aqui</h1>
+        <p className="mt-2 text-sm text-muted">
           Queremos te ouvir e resolver o seu problema. Encontrou algum bug, teve uma experiência ruim ou
           quer compartilhar um elogio? Conta pra gente — estamos aqui pra ajudar.
         </p>
@@ -226,7 +226,7 @@ export default function ReclameAquiUserPage() {
       ) : null}
 
       {loading ? (
-        <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
+        <p className="mt-4 text-sm text-muted">Carregando…</p>
       ) : (
         <>
           <div className="mt-4 flex justify-center">
@@ -244,17 +244,17 @@ export default function ReclameAquiUserPage() {
           </div>
 
           {items.length === 0 ? (
-            <p className="mt-4 text-center text-sm text-zinc-500">
+            <p className="mt-4 text-center text-sm text-muted">
               Ainda não enviaste nenhum pedido. Usa o botão acima para o primeiro.
             </p>
           ) : (
             <>
               <div className="mt-4 space-y-3 md:hidden">
                 {items.map((t) => (
-                  <div key={t.id} className="rounded-2xl border border-zinc-200 bg-white p-4">
+                  <div key={t.id} className="rounded-2xl border border-border bg-card p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-xs font-medium text-zinc-500">{prettyDtPt(t.createdAt)}</p>
+                        <p className="text-xs font-medium text-muted">{prettyDtPt(t.createdAt)}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-2">
                           <span
                             className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(t.status)}`}
@@ -262,7 +262,7 @@ export default function ReclameAquiUserPage() {
                             {statusLabel(t.status)}
                           </span>
                           {t.status === 'DONE' ? (
-                            <span className="text-xs text-zinc-500">Finalizado</span>
+                            <span className="text-xs text-muted">Finalizado</span>
                           ) : null}
                         </div>
                       </div>
@@ -276,7 +276,7 @@ export default function ReclameAquiUserPage() {
                                 setEditMsg(t.message);
                                 setError('');
                               }}
-                              className="cursor-pointer rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-200"
+                              className="cursor-pointer rounded-full bg-primary-1 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-zinc-200"
                             >
                               Editar
                             </button>
@@ -312,16 +312,16 @@ export default function ReclameAquiUserPage() {
 
                     <div className="mt-3 grid gap-3">
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
                           Mensagem
                         </p>
-                        <div className="mt-1 whitespace-pre-wrap text-sm text-zinc-800">{t.message}</div>
+                        <div className="mt-1 whitespace-pre-wrap text-sm text-foreground">{t.message}</div>
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
                           Resposta do admin
                         </p>
-                        <div className="mt-1 whitespace-pre-wrap text-sm text-zinc-700">
+                        <div className="mt-1 whitespace-pre-wrap text-sm text-foreground/90">
                           {t.adminReply || '—'}
                         </div>
                       </div>
@@ -330,9 +330,9 @@ export default function ReclameAquiUserPage() {
                 ))}
               </div>
 
-              <div className="mt-4 hidden overflow-x-auto rounded-lg border border-zinc-200 bg-white md:block">
+              <div className="mt-4 hidden overflow-x-auto rounded-lg border border-border bg-card md:block">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  <thead className="bg-page text-xs font-semibold uppercase tracking-wide text-muted">
                     <tr>
                       <th className="px-4 py-3">Data</th>
                       <th className="px-4 py-3">Status</th>
@@ -343,8 +343,8 @@ export default function ReclameAquiUserPage() {
                   </thead>
                   <tbody className="divide-y divide-zinc-100">
                     {items.map((t) => (
-                      <tr key={t.id} className="text-zinc-800">
-                        <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-900">
+                      <tr key={t.id} className="text-foreground">
+                        <td className="whitespace-nowrap px-4 py-3 font-medium text-foreground">
                           {prettyDtPt(t.createdAt)}
                         </td>
                         <td className="px-4 py-3">
@@ -355,14 +355,14 @@ export default function ReclameAquiUserPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="whitespace-pre-wrap text-zinc-800">{t.message}</div>
+                          <div className="whitespace-pre-wrap text-foreground">{t.message}</div>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="whitespace-pre-wrap text-zinc-700">{t.adminReply || '—'}</div>
+                          <div className="whitespace-pre-wrap text-foreground/90">{t.adminReply || '—'}</div>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-right">
                           {t.status === 'DONE' ? (
-                            <span className="text-xs text-zinc-500">—</span>
+                            <span className="text-xs text-muted">—</span>
                           ) : (
                             <>
                               {canUserEditTicket(t) ? (
@@ -373,7 +373,7 @@ export default function ReclameAquiUserPage() {
                                     setEditMsg(t.message);
                                     setError('');
                                   }}
-                                  className="mr-2 cursor-pointer rounded bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
+                                  className="mr-2 cursor-pointer rounded bg-primary-1 px-3 py-1 text-xs font-medium text-foreground hover:bg-zinc-200"
                                 >
                                   Editar
                                 </button>
@@ -418,18 +418,18 @@ export default function ReclameAquiUserPage() {
 
       {editing && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4"
           role="presentation"
           onClick={() => !saving && setEditing(null)}
         >
           <div
-            className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl"
+            className="w-full max-w-2xl rounded-2xl bg-card p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-base font-semibold text-zinc-900">Editar ticket</h3>
-                <p className="mt-1 text-sm text-zinc-600">
+                <h3 className="text-base font-semibold text-foreground">Editar ticket</h3>
+                <p className="mt-1 text-sm text-muted">
                   {statusLabel(editing.status)} · {prettyDtPt(editing.createdAt)}
                 </p>
               </div>
@@ -437,7 +437,7 @@ export default function ReclameAquiUserPage() {
                 type="button"
                 onClick={() => setEditing(null)}
                 disabled={saving}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50 disabled:opacity-50"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-xs text-muted hover:bg-page disabled:opacity-50"
                 aria-label="Fechar"
               >
                 ✕
@@ -445,13 +445,13 @@ export default function ReclameAquiUserPage() {
             </div>
 
             <div className="mt-4">
-              <label className="block text-sm font-medium text-zinc-700">Mensagem</label>
+              <label className="block text-sm font-medium text-foreground/90">Mensagem</label>
               <textarea
                 value={editMsg}
                 onChange={(e) => setEditMsg(e.target.value)}
                 rows={8}
                 disabled={saving}
-                className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+                className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 disabled:opacity-60"
               />
             </div>
 
@@ -460,7 +460,7 @@ export default function ReclameAquiUserPage() {
                 type="button"
                 onClick={() => setEditing(null)}
                 disabled={saving}
-                className="cursor-pointer rounded bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-200 disabled:opacity-50"
+                className="cursor-pointer rounded bg-primary-1 px-3 py-2 text-sm font-medium text-foreground hover:bg-zinc-200 disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -480,7 +480,7 @@ export default function ReclameAquiUserPage() {
                     setSaving(false);
                   }
                 }}
-                className="cursor-pointer rounded bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                className="cursor-pointer rounded bg-brand-accent/10 px-3 py-2 text-sm font-medium text-brand-primary hover:bg-page disabled:opacity-50"
               >
                 {saving ? 'Salvando…' : 'Salvar'}
               </button>

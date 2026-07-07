@@ -15,10 +15,10 @@ export function JobOfferRegionFilter({ value, onChange }: Props) {
     <div>
       <p
         id="job-offers-region-label"
-        className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-600"
+        className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted"
       >
         <svg
-          className="h-3.5 w-3.5 text-amber-700/90"
+          className="h-3.5 w-3.5 text-brand-primary/90"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -45,10 +45,10 @@ export function JobOfferRegionFilter({ value, onChange }: Props) {
               type="button"
               aria-pressed={selected}
               onClick={() => onChange(opt.value)}
-              className={`rounded-full border px-3.5 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40 ${
+              className={`rounded-full border px-3.5 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/25/40 ${
                 selected
-                  ? "border-amber-500 bg-amber-500 text-white shadow-sm"
-                  : "border-zinc-200 bg-white text-zinc-700 hover:border-amber-300 hover:bg-amber-50/80"
+                  ? "border-brand-primary bg-brand-primary text-white shadow-sm"
+                  : "border-border bg-card text-foreground/90 hover:border-brand-accent/50 hover:bg-page"
               }`}
             >
               {opt.label}

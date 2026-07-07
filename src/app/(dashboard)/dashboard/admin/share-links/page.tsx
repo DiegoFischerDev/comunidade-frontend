@@ -395,8 +395,8 @@ export default function AdminShareLinksPage() {
   if (!isAdmin) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Links de redirecionamento</h1>
-        <p className="mt-2 text-zinc-600">Acesso restrito a administradores.</p>
+        <h1 className="text-2xl font-semibold text-foreground">Links de redirecionamento</h1>
+        <p className="mt-2 text-muted">Acesso restrito a administradores.</p>
       </div>
     );
   }
@@ -405,11 +405,11 @@ export default function AdminShareLinksPage() {
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Links de redirecionamento</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Links de redirecionamento</h1>
         </div>
         <Link
           href="/dashboard/admin/share-links/clicks"
-          className="shrink-0 text-sm font-medium text-amber-700 hover:underline"
+          className="shrink-0 text-sm font-medium text-brand-primary hover:underline"
         >
           Histórico de cliques →
         </Link>
@@ -418,21 +418,21 @@ export default function AdminShareLinksPage() {
       <section className="">
         <div className="mt-3 flex flex-wrap items-end gap-3">
           <label className="block text-sm">
-            <span className="block text-xs font-medium text-zinc-600">De</span>
+            <span className="block text-xs font-medium text-muted">De</span>
             <input
               type="date"
               value={periodFrom}
               onChange={(e) => setPeriodFrom(e.target.value)}
-              className="mt-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+              className="mt-1 rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
             />
           </label>
           <label className="block text-sm">
-            <span className="block text-xs font-medium text-zinc-600">Até</span>
+            <span className="block text-xs font-medium text-muted">Até</span>
             <input
               type="date"
               value={periodTo}
               onChange={(e) => setPeriodTo(e.target.value)}
-              className="mt-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+              className="mt-1 rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
             />
           </label>
           <button
@@ -441,14 +441,14 @@ export default function AdminShareLinksPage() {
               setPeriodFrom("");
               setPeriodTo("");
             }}
-            className="cursor-pointer rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+            className="cursor-pointer rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-page"
           >
             Limpar período
           </button>
         </div>
         {((periodFrom.trim() && !periodTo.trim()) ||
           (!periodFrom.trim() && periodTo.trim())) ? (
-          <p className="mt-2 text-xs text-amber-800">
+          <p className="mt-2 text-xs text-brand-primary">
             Preenche data inicial e final, ou limpa ambas para ver totais.
           </p>
         ) : null}
@@ -462,7 +462,7 @@ export default function AdminShareLinksPage() {
 
       {addModalOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4"
           role="presentation"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeAddModal();
@@ -472,16 +472,16 @@ export default function AdminShareLinksPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="share-link-modal-title"
-            className="max-h-[min(90vh,720px)] w-full max-w-lg overflow-y-auto rounded-xl border border-zinc-200 bg-white p-6 shadow-xl"
+            className="max-h-[min(90vh,720px)] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-xl"
           >
             <div className="flex items-start justify-between gap-3">
-              <h2 id="share-link-modal-title" className="text-lg font-medium text-zinc-900">
+              <h2 id="share-link-modal-title" className="text-lg font-medium text-foreground">
                 Novo link (contacto / parceiro)
               </h2>
               <button
                 type="button"
                 onClick={() => closeAddModal()}
-                className="cursor-pointer rounded-md p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                className="cursor-pointer rounded-md p-1 text-muted hover:bg-primary-1 hover:text-foreground"
                 aria-label="Fechar"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -496,9 +496,9 @@ export default function AdminShareLinksPage() {
             ) : null}
             <form onSubmit={handleCreate} className="mt-4 grid gap-4 sm:grid-cols-2">
               <fieldset className="block sm:col-span-2">
-                <legend className="text-sm font-medium text-zinc-700">Tipo de destino</legend>
+                <legend className="text-sm font-medium text-foreground/90">Tipo de destino</legend>
                 <div className="mt-2 flex flex-wrap gap-4">
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
                     <input
                       type="radio"
                       name="add-link-kind"
@@ -507,7 +507,7 @@ export default function AdminShareLinksPage() {
                     />
                     WhatsApp
                   </label>
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
                     <input
                       type="radio"
                       name="add-link-kind"
@@ -519,9 +519,9 @@ export default function AdminShareLinksPage() {
                 </div>
               </fieldset>
               <label className="block sm:col-span-2">
-                <span className="text-sm font-medium text-zinc-700">Título</span>
+                <span className="text-sm font-medium text-foreground/90">Título</span>
                 <input
-                  className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Ex.: Parceiro João — Lisboa"
@@ -530,10 +530,10 @@ export default function AdminShareLinksPage() {
               </label>
               {linkKind === "url" ? (
                 <label className="block sm:col-span-2">
-                  <span className="text-sm font-medium text-zinc-700">URL de destino</span>
+                  <span className="text-sm font-medium text-foreground/90">URL de destino</span>
                   <input
                     type="url"
-                    className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm"
                     value={destinationUrl}
                     onChange={(e) => setDestinationUrl(e.target.value)}
                     placeholder="https://exemplo.com/pagina"
@@ -543,9 +543,9 @@ export default function AdminShareLinksPage() {
               ) : (
                 <>
                   <label className="block sm:col-span-2">
-                    <span className="text-sm font-medium text-zinc-700">WhatsApp do destino</span>
+                    <span className="text-sm font-medium text-foreground/90">WhatsApp do destino</span>
                     <input
-                      className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                      className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm"
                       value={whatsapp}
                       onChange={(e) => setWhatsapp(e.target.value)}
                       placeholder="+351 912 345 678"
@@ -554,11 +554,11 @@ export default function AdminShareLinksPage() {
                     />
                   </label>
                   <label className="block sm:col-span-2">
-                    <span className="text-sm font-medium text-zinc-700">
+                    <span className="text-sm font-medium text-foreground/90">
                       Frase pré-preenchida no WhatsApp
                     </span>
                     <textarea
-                      className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                      className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm"
                       rows={3}
                       value={phrase}
                       onChange={(e) => setPhrase(e.target.value)}
@@ -572,14 +572,14 @@ export default function AdminShareLinksPage() {
                 <button
                   type="button"
                   onClick={() => closeAddModal()}
-                  className="cursor-pointer rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                  className="cursor-pointer rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-page"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="cursor-pointer rounded-md bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                  className="cursor-pointer rounded-md brand-cta-accent px-4 py-2 text-sm font-medium disabled:opacity-50"
                 >
                   {creating ? "A criar…" : "Gerar link"}
                 </button>
@@ -591,7 +591,7 @@ export default function AdminShareLinksPage() {
 
       {editingRow ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4"
           role="presentation"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeEditModal();
@@ -601,16 +601,16 @@ export default function AdminShareLinksPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="share-link-edit-modal-title"
-            className="max-h-[min(90vh,720px)] w-full max-w-lg overflow-y-auto rounded-xl border border-zinc-200 bg-white p-6 shadow-xl"
+            className="max-h-[min(90vh,720px)] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-xl"
           >
             <div className="flex items-start justify-between gap-3">
-              <h2 id="share-link-edit-modal-title" className="text-lg font-medium text-zinc-900">
+              <h2 id="share-link-edit-modal-title" className="text-lg font-medium text-foreground">
                 Editar link
               </h2>
               <button
                 type="button"
                 onClick={() => closeEditModal()}
-                className="cursor-pointer rounded-md p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                className="cursor-pointer rounded-md p-1 text-muted hover:bg-primary-1 hover:text-foreground"
                 aria-label="Fechar"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -618,8 +618,8 @@ export default function AdminShareLinksPage() {
                 </svg>
               </button>
             </div>
-            <p className="mt-2 text-xs text-zinc-500">
-              O identificador na URL (<code className="rounded bg-zinc-100 px-1">{editingRow.slug}</code>) mantém-se;
+            <p className="mt-2 text-xs text-muted">
+              O identificador na URL (<code className="rounded bg-primary-1 px-1">{editingRow.slug}</code>) mantém-se;
               os links já partilhados continuam válidos.
             </p>
             {error ? (
@@ -629,9 +629,9 @@ export default function AdminShareLinksPage() {
             ) : null}
             <form onSubmit={(e) => void handleEditSubmit(e)} className="mt-4 grid gap-4 sm:grid-cols-2">
               <fieldset className="block sm:col-span-2">
-                <legend className="text-sm font-medium text-zinc-700">Tipo de destino</legend>
+                <legend className="text-sm font-medium text-foreground/90">Tipo de destino</legend>
                 <div className="mt-2 flex flex-wrap gap-4">
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
                     <input
                       type="radio"
                       name="edit-link-kind"
@@ -640,7 +640,7 @@ export default function AdminShareLinksPage() {
                     />
                     WhatsApp
                   </label>
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
                     <input
                       type="radio"
                       name="edit-link-kind"
@@ -652,9 +652,9 @@ export default function AdminShareLinksPage() {
                 </div>
               </fieldset>
               <label className="block sm:col-span-2">
-                <span className="text-sm font-medium text-zinc-700">Título</span>
+                <span className="text-sm font-medium text-foreground/90">Título</span>
                 <input
-                  className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                   placeholder="Ex.: Parceiro João — Lisboa"
@@ -663,10 +663,10 @@ export default function AdminShareLinksPage() {
               </label>
               {editLinkKind === "url" ? (
                 <label className="block sm:col-span-2">
-                  <span className="text-sm font-medium text-zinc-700">URL de destino</span>
+                  <span className="text-sm font-medium text-foreground/90">URL de destino</span>
                   <input
                     type="url"
-                    className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm"
                     value={editDestinationUrl}
                     onChange={(e) => setEditDestinationUrl(e.target.value)}
                     placeholder="https://exemplo.com/pagina"
@@ -676,9 +676,9 @@ export default function AdminShareLinksPage() {
               ) : (
                 <>
                   <label className="block sm:col-span-2">
-                    <span className="text-sm font-medium text-zinc-700">WhatsApp do destino</span>
+                    <span className="text-sm font-medium text-foreground/90">WhatsApp do destino</span>
                     <input
-                      className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                      className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm"
                       value={editWhatsapp}
                       onChange={(e) => setEditWhatsapp(e.target.value)}
                       placeholder="+351 912 345 678"
@@ -687,11 +687,11 @@ export default function AdminShareLinksPage() {
                     />
                   </label>
                   <label className="block sm:col-span-2">
-                    <span className="text-sm font-medium text-zinc-700">
+                    <span className="text-sm font-medium text-foreground/90">
                       Frase pré-preenchida no WhatsApp
                     </span>
                     <textarea
-                      className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                      className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm"
                       rows={3}
                       value={editPhrase}
                       onChange={(e) => setEditPhrase(e.target.value)}
@@ -701,11 +701,11 @@ export default function AdminShareLinksPage() {
                   </label>
                 </>
               )}
-              <div className="sm:col-span-2 rounded-lg border border-zinc-200 bg-zinc-50/80 p-4">
-                <p className="text-sm font-medium text-zinc-800">
+              <div className="sm:col-span-2 rounded-lg border border-border bg-page/80 p-4">
+                <p className="text-sm font-medium text-foreground">
                   Imagem ao partilhar o link (WhatsApp)
                 </p>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-muted">
                   Formato recomendado: horizontal. A imagem é optimizada automaticamente (1200×630).
                 </p>
                 <div className="mt-3 flex flex-wrap items-start gap-4">
@@ -714,10 +714,10 @@ export default function AdminShareLinksPage() {
                     <img
                       src={ogImageAbsoluteUrl(editingRow.ogImageUrl)!}
                       alt="Pré-visualização OG"
-                      className="max-h-28 rounded border border-zinc-200 object-contain shadow-sm"
+                      className="max-h-28 rounded border border-border object-contain shadow-sm"
                     />
                   ) : (
-                    <span className="text-xs text-zinc-500">Sem imagem personalizada.</span>
+                    <span className="text-xs text-muted">Sem imagem personalizada.</span>
                   )}
                   <div className="flex min-w-[180px] flex-col gap-2">
                     <label className="inline-block">
@@ -726,7 +726,7 @@ export default function AdminShareLinksPage() {
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/gif"
                         disabled={ogBusy || savingEdit}
-                        className="block w-full max-w-xs text-xs text-zinc-600 file:mr-2 file:cursor-pointer file:rounded file:border-0 file:bg-amber-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-amber-900 hover:file:bg-amber-200 disabled:opacity-50"
+                        className="block w-full max-w-xs text-xs text-muted file:mr-2 file:cursor-pointer file:rounded file:border-0 file:bg-brand-accent/15 file:px-2 file:py-1 file:text-xs file:font-medium file:text-brand-primary hover:file:bg-brand-accent/20 disabled:opacity-50"
                         onChange={(e) => {
                           const f = e.target.files?.[0] ?? null;
                           e.target.value = "";
@@ -739,7 +739,7 @@ export default function AdminShareLinksPage() {
                         type="button"
                         disabled={ogBusy || savingEdit}
                         onClick={() => void handleOgImageRemove()}
-                        className="cursor-pointer self-start rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                        className="cursor-pointer self-start rounded-md border border-red-200 bg-card px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
                       >
                         {ogBusy ? "A processar…" : "Remover imagem"}
                       </button>
@@ -751,14 +751,14 @@ export default function AdminShareLinksPage() {
                 <button
                   type="button"
                   onClick={() => closeEditModal()}
-                  className="cursor-pointer rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                  className="cursor-pointer rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-page"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={savingEdit || ogBusy}
-                  className="cursor-pointer rounded-md bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                  className="cursor-pointer rounded-md brand-cta-accent px-4 py-2 text-sm font-medium disabled:opacity-50"
                 >
                   {savingEdit ? "A guardar…" : "Guardar"}
                 </button>
@@ -768,14 +768,14 @@ export default function AdminShareLinksPage() {
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-zinc-200">
+      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border">
         <div className="flex gap-2">
           <button
             type="button"
             className={`border-b-2 px-3 py-2 text-sm font-medium ${
               tab === "custom"
-                ? "border-amber-600 text-zinc-900"
-                : "border-transparent text-zinc-500 hover:text-zinc-800"
+                ? "border-brand-primary text-foreground"
+                : "border-transparent text-muted hover:text-foreground"
             }`}
             onClick={() => setTab("custom")}
           >
@@ -785,8 +785,8 @@ export default function AdminShareLinksPage() {
             type="button"
             className={`border-b-2 px-3 py-2 text-sm font-medium ${
               tab === "houses"
-                ? "border-amber-600 text-zinc-900"
-                : "border-transparent text-zinc-500 hover:text-zinc-800"
+                ? "border-brand-primary text-foreground"
+                : "border-transparent text-muted hover:text-foreground"
             }`}
             onClick={() => setTab("houses")}
           >
@@ -800,7 +800,7 @@ export default function AdminShareLinksPage() {
               setError("");
               setAddModalOpen(true);
             }}
-            className="mb-1 cursor-pointer rounded-md bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-medium text-white shadow-sm hover:opacity-95"
+            className="mb-1 cursor-pointer rounded-md brand-cta-accent px-4 py-2 text-sm font-medium shadow-sm hover:opacity-95"
           >
             Adicionar link
           </button>
@@ -808,18 +808,18 @@ export default function AdminShareLinksPage() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-zinc-500">A carregar…</p>
+        <p className="text-sm text-muted">A carregar…</p>
       ) : data && tab === "custom" ? (
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-xs uppercase text-zinc-600">
+            <thead className="border-b border-border bg-page text-xs uppercase text-muted">
               <tr>
                 <th className="px-4 py-3">Título</th>
                 <th className="px-4 py-3">Imagem</th>
                 <th className="px-4 py-3 align-bottom">
                   <span className="block">Cliques</span>
                   {data.clickPeriod ? (
-                    <span className="mt-1 block text-[10px] font-normal normal-case tracking-normal text-zinc-500">
+                    <span className="mt-1 block text-[10px] font-normal normal-case tracking-normal text-muted">
                       {data.clickPeriod.from} — {data.clickPeriod.to}
                     </span>
                   ) : null}
@@ -832,16 +832,16 @@ export default function AdminShareLinksPage() {
             <tbody>
               {data.customLinks.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-zinc-500">
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted">
                     Ainda não há links personalizados.
                   </td>
                 </tr>
               ) : (
                 data.customLinks.map((row) => (
-                  <tr key={row.id} className="border-b border-zinc-100 last:border-0">
+                  <tr key={row.id} className="border-b border-border/60 last:border-0">
                     <td className="px-4 py-3 align-top">
-                      <div className="font-medium text-zinc-900">{row.title}</div>
-                      <div className="mt-1 text-xs text-zinc-500">
+                      <div className="font-medium text-foreground">{row.title}</div>
+                      <div className="mt-1 text-xs text-muted">
                         slug: <code>{row.slug}</code>
                       </div>
                     </td>
@@ -851,23 +851,23 @@ export default function AdminShareLinksPage() {
                         <img
                           src={ogImageAbsoluteUrl(row.ogImageUrl)!}
                           alt=""
-                          className="h-12 w-[76px] rounded border border-zinc-200 object-cover"
+                          className="h-12 w-[76px] rounded border border-border object-cover"
                         />
                       ) : (
-                        <span className="text-xs text-zinc-400">—</span>
+                        <span className="text-xs text-muted/80">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 align-top font-semibold tabular-nums">
                       {row.clickCount}
                     </td>
                     <td className="px-4 py-3 align-top">
-                      <div className="font-medium tabular-nums text-zinc-900">
+                      <div className="font-medium tabular-nums text-foreground">
                         {isTrackedUrlLink(row) ? (
                           <a
                             href={row.destinationUrl!}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block max-w-[min(220px,40vw)] truncate text-sm font-medium text-amber-800 underline"
+                            className="block max-w-[min(220px,40vw)] truncate text-sm font-medium text-brand-primary underline"
                             title={row.destinationUrl ?? undefined}
                           >
                             {row.destinationUrl}
@@ -879,7 +879,7 @@ export default function AdminShareLinksPage() {
                     </td>
                     <td className="px-4 py-3 align-top">
                       <div className="flex flex-wrap items-center gap-2">
-                        <code className="max-w-[min(420px,55vw)] truncate rounded bg-zinc-100 px-2 py-1 text-xs">
+                        <code className="max-w-[min(420px,55vw)] truncate rounded bg-primary-1 px-2 py-1 text-xs">
                           {row.entryUrl}
                         </code>
                         <button
@@ -895,7 +895,7 @@ export default function AdminShareLinksPage() {
                           className={`inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border shadow-sm transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
                             copiedLinkKey === `custom:${row.id}`
                               ? "animate-copy-link-pop border-emerald-500 bg-emerald-50 text-emerald-700 focus-visible:ring-emerald-500"
-                              : "border-zinc-200 bg-white text-amber-700 hover:border-amber-300 hover:bg-amber-50 focus-visible:ring-amber-500"
+                              : "border-border bg-card text-brand-primary hover:border-brand-accent/50 hover:bg-page focus-visible:ring-brand-primary/25"
                           }`}
                           onClick={() => void copyEntryUrl(`custom:${row.id}`, row.entryUrl)}
                         >
@@ -908,11 +908,11 @@ export default function AdminShareLinksPage() {
                       </div>
                       {!isTrackedUrlLink(row) && row.whatsappPhrase.trim() ? (
                         <p
-                          className="mt-2 max-w-[min(480px,60vw)] text-xs leading-snug text-zinc-500"
+                          className="mt-2 max-w-[min(480px,60vw)] text-xs leading-snug text-muted"
                           title={row.whatsappPhrase}
                         >
                           frase:{" "}
-                          <span className="text-zinc-700">{row.whatsappPhrase}</span>
+                          <span className="text-foreground/90">{row.whatsappPhrase}</span>
                         </p>
                       ) : null}
                     </td>
@@ -922,7 +922,7 @@ export default function AdminShareLinksPage() {
                           href={`/dashboard/admin/share-links/${row.id}/clicks`}
                           title="Ver cliques deste link"
                           aria-label="Ver cliques deste link"
-                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-700 shadow-sm transition-colors hover:border-amber-300 hover:bg-amber-50"
+                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border bg-card text-foreground/90 shadow-sm transition-colors hover:border-brand-accent/50 hover:bg-page"
                         >
                           <ClickListIcon className="h-4 w-4" />
                         </Link>
@@ -932,7 +932,7 @@ export default function AdminShareLinksPage() {
                           aria-label="Editar link"
                           disabled={busyDeleteCustomId === row.id || savingEdit || ogBusy}
                           onClick={() => openEditModal(row)}
-                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-700 shadow-sm transition-colors hover:border-amber-300 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border bg-card text-foreground/90 shadow-sm transition-colors hover:border-brand-accent/50 hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <PencilIcon className="h-4 w-4" />
                         </button>
@@ -942,7 +942,7 @@ export default function AdminShareLinksPage() {
                           aria-label="Eliminar link"
                           disabled={busyDeleteCustomId === row.id}
                           onClick={() => void handleDeleteCustomLink(row.id, row.title)}
-                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-red-200 bg-white text-red-700 shadow-sm transition-colors hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-red-200 bg-card text-red-700 shadow-sm transition-colors hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {busyDeleteCustomId === row.id ? (
                             <svg
@@ -978,9 +978,9 @@ export default function AdminShareLinksPage() {
           </table>
         </div>
       ) : data && tab === "houses" ? (
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-xs uppercase text-zinc-600">
+            <thead className="border-b border-border bg-page text-xs uppercase text-muted">
               <tr>
                 <th className="px-4 py-3">Imóvel</th>
                 <th className="px-4 py-3">Imagem</th>
@@ -988,7 +988,7 @@ export default function AdminShareLinksPage() {
                 <th className="px-4 py-3 align-bottom">
                   <span className="block">Cliques</span>
                   {data.clickPeriod ? (
-                    <span className="mt-1 block text-[10px] font-normal normal-case tracking-normal text-zinc-500">
+                    <span className="mt-1 block text-[10px] font-normal normal-case tracking-normal text-muted">
                       {data.clickPeriod.from} — {data.clickPeriod.to}
                     </span>
                   ) : null}
@@ -999,16 +999,16 @@ export default function AdminShareLinksPage() {
             <tbody>
               {data.houseLinks.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted">
                     Nenhum anúncio encontrado.
                   </td>
                 </tr>
               ) : (
                 data.houseLinks.map((row) => (
-                  <tr key={row.id} className="border-b border-zinc-100 last:border-0">
+                  <tr key={row.id} className="border-b border-border/60 last:border-0">
                     <td className="px-4 py-3 align-top">
-                      <div className="font-medium text-zinc-900">{row.title}</div>
-                      <div className="mt-1 text-xs text-zinc-500">
+                      <div className="font-medium text-foreground">{row.title}</div>
+                      <div className="mt-1 text-xs text-muted">
                         ref. #{row.houseId} · {row.priceEur}
                       </div>
                     </td>
@@ -1018,19 +1018,19 @@ export default function AdminShareLinksPage() {
                         <img
                           src={ogImageAbsoluteUrl(row.previewImageUrl)!}
                           alt=""
-                          className="h-12 w-[76px] rounded border border-zinc-200 object-cover"
+                          className="h-12 w-[76px] rounded border border-border object-cover"
                         />
                       ) : (
-                        <span className="text-xs text-zinc-400">—</span>
+                        <span className="text-xs text-muted/80">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 align-top text-zinc-700">{row.partnerName}</td>
+                    <td className="px-4 py-3 align-top text-foreground/90">{row.partnerName}</td>
                     <td className="px-4 py-3 align-top font-semibold tabular-nums">
                       {row.clickCount}
                     </td>
                     <td className="px-4 py-3 align-top">
                       <div className="flex flex-wrap items-center gap-2">
-                        <code className="max-w-[min(420px,55vw)] truncate rounded bg-zinc-100 px-2 py-1 text-xs">
+                        <code className="max-w-[min(420px,55vw)] truncate rounded bg-primary-1 px-2 py-1 text-xs">
                           {row.entryUrl}
                         </code>
                         <button
@@ -1046,7 +1046,7 @@ export default function AdminShareLinksPage() {
                           className={`inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border shadow-sm transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
                             copiedLinkKey === `house:${row.id}`
                               ? "animate-copy-link-pop border-emerald-500 bg-emerald-50 text-emerald-700 focus-visible:ring-emerald-500"
-                              : "border-zinc-200 bg-white text-amber-700 hover:border-amber-300 hover:bg-amber-50 focus-visible:ring-amber-500"
+                              : "border-border bg-card text-brand-primary hover:border-brand-accent/50 hover:bg-page focus-visible:ring-brand-primary/25"
                           }`}
                           onClick={() => void copyEntryUrl(`house:${row.id}`, row.entryUrl)}
                         >
@@ -1057,7 +1057,7 @@ export default function AdminShareLinksPage() {
                           )}
                         </button>
                       </div>
-                      <p className="mt-2 text-xs text-zinc-500">
+                      <p className="mt-2 text-xs text-muted">
                         Mensagem: {row.messagePreview}
                       </p>
                     </td>

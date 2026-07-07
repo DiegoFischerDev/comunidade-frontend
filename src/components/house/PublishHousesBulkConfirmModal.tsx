@@ -85,20 +85,20 @@ export function PublishHousesBulkConfirmModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="publish-houses-bulk-title"
     >
-      <div className="flex max-h-[min(90vh,720px)] w-full max-w-lg flex-col rounded-2xl bg-white shadow-xl">
+      <div className="flex max-h-[min(90vh,720px)] w-full max-w-lg flex-col rounded-2xl bg-card shadow-xl">
         <div className="shrink-0 p-6 pb-4">
-          <h2 id="publish-houses-bulk-title" className="text-lg font-semibold text-zinc-900">
+          <h2 id="publish-houses-bulk-title" className="text-lg font-semibold text-foreground">
             Publicar {count} imóvel{count === 1 ? "" : "s"}
           </h2>
-          <p className="mt-2 text-sm font-medium text-zinc-700">
+          <p className="mt-2 text-sm font-medium text-foreground/90">
             {HOUSE_PUBLICATION_DURATION_DAYS} dias no site e WhatsApp por publicação
           </p>
-          <p className="mt-1 text-sm text-zinc-600">
+          <p className="mt-1 text-sm text-muted">
             {count > 1 ? (
               <>
                 Publicação em sequência com pelo menos {publishDelayMs / 1000} segundos entre cada
@@ -109,34 +109,34 @@ export function PublishHousesBulkConfirmModal({
             )}
           </p>
           {count > 1 ? (
-            <p className="mt-2 text-xs text-zinc-500">
+            <p className="mt-2 text-xs text-muted">
               Podes cancelar a fila na página enquanto publica; o imóvel em curso termina primeiro.
             </p>
           ) : null}
         </div>
 
-        <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto border-y border-zinc-200 px-6 py-3">
+        <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto border-y border-border px-6 py-3">
           {houses.map((house) => {
             const thumb = houseThumb(house);
             return (
               <li
                 key={house.id}
-                className="flex gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3"
+                className="flex gap-3 rounded-xl border border-border bg-page p-3"
               >
-                <div className="h-16 w-20 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100">
+                <div className="h-16 w-20 shrink-0 overflow-hidden rounded-lg border border-border bg-primary-1">
                   {thumb ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={thumb} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-[10px] text-zinc-400">
+                    <div className="flex h-full items-center justify-center text-[10px] text-muted/80">
                       Sem foto
                     </div>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-mono text-[11px] text-zinc-500">Id {house.houseId}</p>
-                  <p className="truncate text-sm font-semibold text-zinc-900">{house.title}</p>
-                  <p className="mt-0.5 text-xs text-zinc-600">
+                  <p className="font-mono text-[11px] text-muted">Id {house.houseId}</p>
+                  <p className="truncate text-sm font-semibold text-foreground">{house.title}</p>
+                  <p className="mt-0.5 text-xs text-muted">
                     {CITY_LABELS[house.city] ?? house.city} ·{" "}
                     {TYPOLOGY_LABELS[house.typology] ?? house.typology} ·{" "}
                     {formatHouseEurFieldDisplay(house.priceEur)}

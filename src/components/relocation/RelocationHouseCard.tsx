@@ -45,10 +45,10 @@ export function RelocationHouseCard({
   };
 
   return (
-    <article className="group flex w-full flex-col overflow-hidden rounded-xl border border-zinc-200/90 bg-white text-left shadow-sm ring-1 ring-zinc-900/5 transition-shadow duration-200 hover:border-zinc-300 hover:shadow-md">
+    <article className="group flex w-full flex-col overflow-hidden rounded-xl border border-border/90 bg-card text-left shadow-sm transition-shadow duration-200 hover:border-border hover:shadow-md">
       <Link
         href={listingHref}
-        className="relative block aspect-[4/3] w-full cursor-pointer overflow-hidden bg-zinc-100 outline-none ring-inset transition hover:opacity-[0.98] focus-visible:ring-2 focus-visible:ring-amber-500/90 focus-visible:ring-offset-0"
+        className="relative block aspect-[4/3] w-full cursor-pointer overflow-hidden bg-primary-1 outline-none ring-inset transition hover:opacity-[0.98] focus-visible:ring-2 focus-visible:ring-brand-primary/25/90 focus-visible:ring-offset-0"
         aria-label={`Ver imóvel: ${h.title}`}
       >
         {primaryImageSrc ? (
@@ -72,10 +72,10 @@ export function RelocationHouseCard({
         ) : videoSrc ? (
           <>
             {/* Mobile (iOS): vídeo pode não pintar 1º frame sem interação → fallback. */}
-            <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-zinc-100 text-zinc-500 md:hidden">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-primary-1 text-muted md:hidden">
               <svg
                 viewBox="0 0 24 24"
-                className="h-9 w-9 text-zinc-400"
+                className="h-9 w-9 text-muted/80"
                 fill="currentColor"
                 aria-hidden
               >
@@ -94,48 +94,48 @@ export function RelocationHouseCard({
             />
           </>
         ) : (
-          <div className="flex h-full min-h-[8rem] items-center justify-center text-sm text-zinc-400">Sem média</div>
+          <div className="flex h-full min-h-[8rem] items-center justify-center text-sm text-muted/80">Sem média</div>
         )}
       </Link>
       <div className="flex flex-1 flex-col gap-3 px-4 pb-1 pt-4">
         <div>
-          <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug text-zinc-900 sm:text-base">
+          <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground sm:text-base">
             {h.title}
           </h2>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-muted">
             Id: {h.houseId} · {typoLabel} · {cityLabel} · {businessTypeLabel}
           </p>
         </div>
 
-        <div className="border-t border-zinc-100 pt-3">
-          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-400">
+        <div className="border-t border-border/60 pt-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted/80">
             {h.businessType === "SALE" ? "Preço de venda" : "Renda mensal"}
           </p>
-          <p className="mt-1 text-lg font-semibold tabular-nums tracking-tight text-zinc-900">
+          <p className="mt-1 text-lg font-semibold tabular-nums tracking-tight text-foreground">
             {formatRelocationPriceByBusinessType(h.priceEur, h.businessType)}
           </p>
         </div>
 
-        <p className="text-xs text-zinc-500">{relocationAvailabilityLabel(h.availableFrom)}</p>
+        <p className="text-xs text-muted">{relocationAvailabilityLabel(h.availableFrom)}</p>
 
         {h.businessType !== "SALE" ? (
           <dl className="space-y-2 text-xs">
             <div className="flex items-start justify-between gap-3">
-              <dt className="shrink-0 text-zinc-500">Taxa relocation</dt>
-              <dd className="text-right font-medium tabular-nums text-zinc-800">
+              <dt className="shrink-0 text-muted">Taxa relocation</dt>
+              <dd className="text-right font-medium tabular-nums text-foreground">
                 {formatRelocationFeeEur(h.relocationFeeEur)}
               </dd>
             </div>
             <div className="flex items-start justify-between gap-3">
-              <dt className="shrink-0 text-zinc-500">Entrada</dt>
-              <dd className="text-right font-medium text-zinc-800">
+              <dt className="shrink-0 text-muted">Entrada</dt>
+              <dd className="text-right font-medium text-foreground">
                 {formatHouseEntradaWithTotal(h.caucoesCount, h.rendasEntradaCount, h.priceEur)}
               </dd>
             </div>
           </dl>
         ) : null}
       </div>
-      <div className="mt-auto border-t border-zinc-100 bg-zinc-50/50 px-4 py-3">
+      <div className="mt-auto border-t border-border/60 bg-page/50 px-4 py-3">
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <CardLinkButton
             href={listingHref}

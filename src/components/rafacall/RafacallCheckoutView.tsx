@@ -7,6 +7,8 @@ import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { KiwiFloatInput } from '@/components/membership/KiwiFloatInput';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import { BRAND_COLORS } from '@/lib/brand-colors';
+import { BRAND_ICON, SITE_NAME_FULL } from '@/lib/site-branding';
 import {
   fetchRafacallAmounts,
   formatRafacallBrl,
@@ -188,20 +190,20 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f4f6] py-4 sm:py-8">
+    <div className="min-h-screen bg-page py-4 sm:py-8">
       <div className="mx-auto max-w-[1000px] px-2 sm:px-4">
         <div className="p-2">
           <div className="flex w-full flex-col items-center justify-center rounded-md bg-transparent p-4 text-center">
             <Image
-              src="/logo_principal2.png"
-              alt=""
+              src={BRAND_ICON}
+              alt={SITE_NAME_FULL}
               width={128}
               height={128}
               className="relative max-h-32 w-auto max-w-[128px] rounded-md object-contain"
             />
             <div className="mt-4 max-w-lg">
               <h1 className="text-2xl font-bold text-black">{RAFA_CALL_PRODUCT_TITLE}</h1>
-              <p className="mt-0.5 text-sm text-zinc-600">{RAFA_CALL_PRODUCT_SUBTITLE}</p>
+              <p className="mt-0.5 text-sm text-muted">{RAFA_CALL_PRODUCT_SUBTITLE}</p>
             </div>
           </div>
         </div>
@@ -209,14 +211,14 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
         <div className="mx-auto max-w-2xl sm:p-2">
           <div
             id="checkoutblock"
-            className="mb-4 w-full rounded-md bg-white px-3 py-4 text-black shadow-sm sm:border sm:border-zinc-200 md:px-6"
+            className="mb-4 w-full rounded-md bg-card px-3 py-4 text-black shadow-sm sm:border sm:border-border md:px-6"
           >
             {error ? (
               <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
             ) : null}
 
             <div className="w-full pt-2">
-              <p className="mb-3 text-sm text-zinc-600">
+              <p className="mb-3 text-sm text-muted">
                 Para agendar a tua chamada com a Rafa preenche o nome e o número de WhatsApp.
                 Vamos enviar a confirmação e o link para gerir o teu agendamento para esse WhatsApp.
               </p>
@@ -268,7 +270,7 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
                         className={`cursor-pointer rounded-md border p-3 text-sm font-semibold shadow-sm transition duration-200 ease-out ${
                           selected
                             ? 'border-[rgb(5,112,222)] text-[rgb(5,112,222)]'
-                            : 'border-zinc-200 text-zinc-600 hover:text-zinc-700'
+                            : 'border-border text-muted hover:text-foreground/90'
                         }`}
                         style={
                           selected
@@ -300,7 +302,7 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
               </div>
             </div>
 
-            <div className="flex w-full items-center gap-2 text-sm text-zinc-600">
+            <div className="flex w-full items-center gap-2 text-sm text-muted">
               <LockIcon />
               <p className="text-xs">
                 Os pagamentos são processados de forma segura pela Stripe, com encriptação ao nível
@@ -309,14 +311,14 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
             </div>
 
             <div className="mt-6 w-full pb-2">
-              <h2 className="pb-2 pt-2 text-base font-extrabold text-zinc-900">Resumo do pedido</h2>
+              <h2 className="pb-2 pt-2 text-base font-extrabold text-foreground">Resumo do pedido</h2>
               <div className="mt-2 w-full">
-                <div className="flex bg-zinc-200 p-2 text-sm font-bold text-zinc-700">
+                <div className="flex bg-zinc-200 p-2 text-sm font-bold text-foreground/90">
                   <div className="flex-1 p-2">Produto</div>
                   <div className="p-2">Preço</div>
                 </div>
               </div>
-              <div className="flex text-sm text-zinc-800">
+              <div className="flex text-sm text-foreground">
                 <div className="flex-1 p-2">
                   <span>
                     {RAFA_CALL_PRODUCT_TITLE} — {RAFA_CALL_PRODUCT_SUBTITLE}
@@ -324,11 +326,11 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
                 </div>
                 <div className="p-2 font-bold">{orderPrice}</div>
               </div>
-              <div className="flex text-sm text-zinc-800">
+              <div className="flex text-sm text-foreground">
                 <div className="flex-1 p-2 font-bold">Total</div>
-                <div className="p-2 font-bold text-[#28b463]">{orderPrice}</div>
+                <div className="p-2 font-bold text-brand-primary">{orderPrice}</div>
               </div>
-              <div className="mt-2 h-2 w-full border-b border-zinc-200" />
+              <div className="mt-2 h-2 w-full border-b border-border" />
             </div>
 
             <div className="mt-4 w-full">
@@ -338,7 +340,7 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
                 onClick={() => void handlePay()}
                 className="w-full cursor-pointer rounded-md p-4 text-center text-lg font-semibold text-white transition duration-75 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
                 style={{
-                  backgroundColor: '#28b463',
+                  backgroundColor: BRAND_COLORS.primary,
                   fontFamily:
                     'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
                 }}
@@ -346,7 +348,7 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
                 {checkoutLoading ? 'A redirecionar…' : payLabel}
               </button>
 
-              <p className="bottom-0 pt-3 text-center text-[11px] leading-relaxed text-zinc-500">
+              <p className="bottom-0 pt-3 text-center text-[11px] leading-relaxed text-muted">
                 Ao clicar em &quot;{payLabel}&quot;, confirmas o pagamento da taxa de agendamento.
                 Após a confirmação, escolhes data e hora da videochamada e recebes o link de gestão
                 no WhatsApp. O pagamento é processado pela <span className="font-semibold">Stripe</span>.
@@ -356,8 +358,8 @@ export function RafacallCheckoutView({ initialAmounts }: Props) {
 
           <p className="pb-8 text-center">
             <Link
-              href="/dashboard"
-              className="text-sm font-medium text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
+              href="/"
+              className="text-sm font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
             >
               Voltar ao dashboard
             </Link>

@@ -161,8 +161,8 @@ export default function AdminShareLinkDetailClicksPage() {
   if (!isAdmin) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Cliques do link</h1>
-        <p className="mt-2 text-zinc-600">Acesso restrito a administradores.</p>
+        <h1 className="text-2xl font-semibold text-foreground">Cliques do link</h1>
+        <p className="mt-2 text-muted">Acesso restrito a administradores.</p>
       </div>
     );
   }
@@ -170,7 +170,7 @@ export default function AdminShareLinkDetailClicksPage() {
   if (!linkId) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-6">
-        <p className="text-sm text-zinc-600">Identificador do link em falta.</p>
+        <p className="text-sm text-muted">Identificador do link em falta.</p>
       </div>
     );
   }
@@ -182,24 +182,24 @@ export default function AdminShareLinkDetailClicksPage() {
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Cliques do link</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Cliques do link</h1>
           {meta ? (
             <>
-              <p className="mt-1 text-lg font-medium text-zinc-800">{meta.title}</p>
-              <p className="mt-1 text-sm text-zinc-500">
-                slug: <code className="rounded bg-zinc-100 px-1">{meta.slug}</code>
+              <p className="mt-1 text-lg font-medium text-foreground">{meta.title}</p>
+              <p className="mt-1 text-sm text-muted">
+                slug: <code className="rounded bg-primary-1 px-1">{meta.slug}</code>
               </p>
             </>
           ) : metaError ? (
             <p className="mt-2 text-sm text-red-700">{metaError}</p>
           ) : loading ? (
-            <p className="mt-2 text-sm text-zinc-500">A carregar…</p>
+            <p className="mt-2 text-sm text-muted">A carregar…</p>
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/dashboard/admin/share-links"
-            className="text-sm font-medium text-amber-700 hover:underline"
+            className="text-sm font-medium text-brand-primary hover:underline"
           >
             ← Voltar a links
           </Link>
@@ -208,7 +208,7 @@ export default function AdminShareLinkDetailClicksPage() {
               type="button"
               disabled={clearing}
               onClick={() => void handleClearClicks()}
-              className="cursor-pointer rounded-md border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-800 hover:bg-red-50 disabled:opacity-50"
+              className="cursor-pointer rounded-md border border-red-200 bg-card px-3 py-2 text-sm font-medium text-red-800 hover:bg-red-50 disabled:opacity-50"
             >
               {clearing ? "A apagar…" : "Zerar dados"}
             </button>
@@ -220,21 +220,21 @@ export default function AdminShareLinkDetailClicksPage() {
         <section>
           <div className="flex flex-wrap items-end gap-3">
             <label className="block text-sm">
-              <span className="block text-xs font-medium text-zinc-600">De</span>
+              <span className="block text-xs font-medium text-muted">De</span>
               <input
                 type="date"
                 value={periodFrom}
                 onChange={(e) => setPeriodFrom(e.target.value)}
-                className="mt-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+                className="mt-1 rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
               />
             </label>
             <label className="block text-sm">
-              <span className="block text-xs font-medium text-zinc-600">Até</span>
+              <span className="block text-xs font-medium text-muted">Até</span>
               <input
                 type="date"
                 value={periodTo}
                 onChange={(e) => setPeriodTo(e.target.value)}
-                className="mt-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+                className="mt-1 rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
               />
             </label>
             <button
@@ -243,13 +243,13 @@ export default function AdminShareLinkDetailClicksPage() {
                 setPeriodFrom("");
                 setPeriodTo("");
               }}
-              className="cursor-pointer rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+              className="cursor-pointer rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-page"
             >
               Limpar período
             </button>
           </div>
           {periodInvalid ? (
-            <p className="mt-2 text-xs text-amber-800">
+            <p className="mt-2 text-xs text-brand-primary">
               Preenche data inicial e final, ou limpa ambas para ver todo o histórico.
             </p>
           ) : null}
@@ -257,16 +257,16 @@ export default function AdminShareLinkDetailClicksPage() {
       ) : null}
 
       {meta && !metaError && !periodInvalid ? (
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-muted">
           Cada linha corresponde a um dispositivo/browser que abriu o link (após a deduplicação
-          por cookie). Total: <strong className="font-semibold text-zinc-900">{total}</strong>
+          por cookie). Total: <strong className="font-semibold text-foreground">{total}</strong>
           {dates.from && dates.to ? (
-            <span className="text-zinc-500">
+            <span className="text-muted">
               {" "}
               (período: {dates.from} — {dates.to})
             </span>
           ) : (
-            <span className="text-zinc-500"> (todo o período)</span>
+            <span className="text-muted"> (todo o período)</span>
           )}
         </p>
       ) : null}
@@ -278,12 +278,12 @@ export default function AdminShareLinkDetailClicksPage() {
       ) : null}
 
       {loading && !meta ? (
-        <p className="text-sm text-zinc-500">A carregar…</p>
+        <p className="text-sm text-muted">A carregar…</p>
       ) : metaError ? null : periodInvalid ? null : (
         <>
-          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+          <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
             <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-zinc-200 bg-zinc-50 text-xs uppercase text-zinc-600">
+              <thead className="border-b border-border bg-page text-xs uppercase text-muted">
                 <tr>
                   <th className="px-4 py-3">Data / hora</th>
                   <th className="px-4 py-3">Identificador (visitante)</th>
@@ -292,7 +292,7 @@ export default function AdminShareLinkDetailClicksPage() {
               <tbody>
                 {items.length === 0 ? (
                   <tr>
-                    <td colSpan={2} className="px-4 py-10 text-center text-zinc-500">
+                    <td colSpan={2} className="px-4 py-10 text-center text-muted">
                       Nenhum clique registado para este link.
                     </td>
                   </tr>
@@ -300,30 +300,30 @@ export default function AdminShareLinkDetailClicksPage() {
                   items.map((row) => {
                     const countryName = visitorCountryDisplayName(row.visitorCountryCode);
                     return (
-                    <tr key={row.id} className="border-b border-zinc-100 last:border-0">
-                      <td className="whitespace-nowrap px-4 py-3 text-zinc-800 tabular-nums">
+                    <tr key={row.id} className="border-b border-border/60 last:border-0">
+                      <td className="whitespace-nowrap px-4 py-3 text-foreground tabular-nums">
                         {new Date(row.clickedAt).toLocaleString("pt-PT", {
                           dateStyle: "short",
                           timeStyle: "medium",
                         })}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="text-xs text-zinc-600">
+                        <div className="text-xs text-muted">
                           País:{" "}
                           {countryName ? (
                             <>
-                              <span className="font-medium text-zinc-800">{countryName}</span>
-                              <span className="text-zinc-500">
+                              <span className="font-medium text-foreground">{countryName}</span>
+                              <span className="text-muted">
                                 {" "}
                                 ({row.visitorCountryCode})
                               </span>
                             </>
                           ) : (
-                            <span className="text-zinc-400">—</span>
+                            <span className="text-muted/80">—</span>
                           )}
                         </div>
                         <code
-                          className="mt-1 block break-all text-xs text-zinc-800"
+                          className="mt-1 block break-all text-xs text-foreground"
                           title={row.visitorKey ?? undefined}
                         >
                           {formatVisitorLabel(row.visitorKey)}
@@ -342,7 +342,7 @@ export default function AdminShareLinkDetailClicksPage() {
               <button
                 type="button"
                 onClick={() => void loadMore()}
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                className="rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-page"
               >
                 Carregar mais
               </button>

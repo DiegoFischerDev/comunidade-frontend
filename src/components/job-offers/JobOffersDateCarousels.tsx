@@ -71,7 +71,7 @@ export function JobOffersDateCarousels<T extends JobOfferCarouselItem>({
       <div className="space-y-8">
         {SECTIONS.map((s) => (
           <section key={s.key} aria-busy="true">
-            <h2 className="text-lg font-semibold tracking-tight text-zinc-900 sm:text-xl">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
               {s.title}
             </h2>
             <div className="mt-3">
@@ -88,8 +88,8 @@ export function JobOffersDateCarousels<T extends JobOfferCarouselItem>({
 
   if (visibleSections.length === 0) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-white px-4 py-8 text-center text-sm text-zinc-600">
-        <p className="font-medium text-zinc-800">Nenhuma oferta encontrada</p>
+      <div className="rounded-xl border border-border bg-card px-4 py-8 text-center text-sm text-muted">
+        <p className="font-medium text-foreground">Nenhuma oferta encontrada</p>
         <p className="mt-1">
           Tenta outras palavras (função, cidade ou empresa).
         </p>
@@ -102,10 +102,10 @@ export function JobOffersDateCarousels<T extends JobOfferCarouselItem>({
       {visibleSections.map((s) => (
         <section key={s.key}>
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-lg font-semibold tracking-tight text-zinc-900 sm:text-xl">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
               {s.title}
             </h2>
-            <span className="text-xs font-medium text-zinc-500">
+            <span className="text-xs font-medium text-muted">
               {buckets[s.key].length === 1
                 ? "1 vaga"
                 : `${buckets[s.key].length} vagas`}

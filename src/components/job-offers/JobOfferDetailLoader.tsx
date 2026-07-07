@@ -34,7 +34,7 @@ export function JobOfferDetailLoader({ offerId }: Props) {
   if (offer === undefined) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center px-4">
-        <p className="text-sm text-zinc-500">A carregar oferta…</p>
+        <p className="text-sm text-muted">A carregar oferta…</p>
       </div>
     );
   }

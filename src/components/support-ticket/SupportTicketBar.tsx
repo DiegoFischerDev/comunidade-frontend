@@ -10,11 +10,11 @@ const PRIVACIDADE_HREF = '/privacidade';
  */
 export function SupportTicketBar() {
   return (
-    <aside className="border-t border-zinc-200/80 bg-white">
+    <aside className="border-t border-border/80 bg-card">
       <div className="mx-auto flex w-full max-w-[1200px] flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 pb-1 pt-3 text-xs md:px-6">
         <Link
           href={PRIVACIDADE_HREF}
-          className="text-zinc-500 transition hover:text-zinc-800"
+          className="text-muted transition hover:text-foreground"
         >
           Política de privacidade
         </Link>
@@ -23,7 +23,7 @@ export function SupportTicketBar() {
         </span>
         <Link
           href={RECLAME_AQUI_HREF}
-          className="text-zinc-500 transition hover:text-zinc-800"
+          className="text-muted transition hover:text-foreground"
         >
           Suporte e reclamações aqui
         </Link>

@@ -31,7 +31,7 @@ export function HousePublicationStatusBadge({
   const label = isPublic ? (active ? "Disponível" : "Oculto") : active ? "Publicado" : "Oculto";
   const defaultClass = active
     ? "bg-emerald-100 text-emerald-900 ring-emerald-200"
-    : "bg-zinc-200 text-zinc-800 ring-zinc-300";
+    : "bg-zinc-200 text-foreground ring-zinc-300";
 
   const untilLabel =
     !isPublic && active && publishedUntil

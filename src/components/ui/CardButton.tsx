@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { forwardRef } from 'react';
+import { BRAND_BUTTON_BASE } from '@/lib/brand-ui';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'tertiary' | 'danger' | 'navGold';
 type Size = 'sm' | 'md';
@@ -8,32 +9,23 @@ function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(' ');
 }
 
-const base =
-  'inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+/** CTA primário — fundo verde com texto claro. */
+export const cardButtonPrimaryClass = 'brand-cta-primary';
 
-/** Cor primária padrão da app (alinhada ao CTA “Contactar” dos cartões de imóveis). */
-export const cardButtonPrimaryClass =
-  'bg-gradient-to-r from-[#055700] to-[#0a7a0a] text-white font-semibold shadow-sm hover:from-[#044400] hover:to-[#055700] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#055700]/80 focus-visible:ring-offset-2';
+/** Secundário — destaque dourado. */
+export const cardButtonSecondaryClass = 'brand-cta-accent';
 
-/**
- * Secundário = mesmo gradiente dourado dos itens principais activos do menu (Início, Plano, etc.).
- */
-export const cardButtonSecondaryClass =
-  'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-semibold text-white shadow-sm hover:from-[#c07c01] hover:to-[#e7a01f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/75 focus-visible:ring-offset-2';
-
-/** Contorno claro (antigo “secondary” branco) — ações secundárias discretas. */
+/** Contorno claro — ações secundárias discretas. */
 export const cardButtonOutlineClass =
-  'font-semibold border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 focus-visible:ring-offset-2';
+  'border border-border bg-card font-semibold text-foreground/90 hover:bg-page focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/25 focus-visible:ring-offset-2';
 
-/** Terciário = vermelho (cancelar, recusar, destaque de alerta). */
+/** Terciário — vermelho (cancelar, recusar). */
 export const cardButtonTertiaryClass =
-  'bg-gradient-to-r from-red-800 to-red-600 font-semibold text-white shadow-sm hover:from-red-900 hover:to-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/80 focus-visible:ring-offset-2';
+  'bg-red-800 font-semibold text-white hover:bg-red-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/40 focus-visible:ring-offset-2';
 
-/** Badge / etiqueta dourada (alinhada ao secundário e ao menu activo). */
-export const cardBadgeGoldClass =
-  'inline-flex items-center rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-2.5 py-1 text-[10px] font-bold tracking-widest text-white shadow-sm ring-1 ring-amber-200/90 ring-inset';
+/** Badge com estilo da marca. */
+export const cardBadgeGoldClass = 'brand-badge-accent';
 
-/** Dourado — alias de {@link cardButtonSecondaryClass} (CTA em cartões como Contactar). */
 const cardButtonNavGoldClass = cardButtonSecondaryClass;
 
 const variantClass: Record<Variant, string> = {
@@ -41,13 +33,13 @@ const variantClass: Record<Variant, string> = {
   secondary: cardButtonSecondaryClass,
   outline: cardButtonOutlineClass,
   tertiary: cardButtonTertiaryClass,
-  danger: 'font-medium bg-red-600 text-white hover:bg-red-700',
+  danger: 'bg-red-700 font-semibold text-white hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/40',
   navGold: cardButtonNavGoldClass,
 };
 
 const sizeClass: Record<Size, string> = {
-  sm: 'px-3 py-1.5 text-xs rounded-md',
-  md: 'px-4 py-2',
+  sm: 'min-h-[40px] px-4 text-sm',
+  md: 'px-5',
 };
 
 export const CardButton = forwardRef<
@@ -67,7 +59,7 @@ export const CardButton = forwardRef<
     <button
       ref={ref}
       disabled={Boolean(disabled || loading)}
-      className={cx(base, variantClass[variant], sizeClass[size], fullWidth && 'w-full', className)}
+      className={cx(BRAND_BUTTON_BASE, variantClass[variant], sizeClass[size], fullWidth && 'w-full', className)}
       {...rest}
     >
       {children}
@@ -92,11 +84,10 @@ export function CardLinkButton({
   return (
     <Link
       href={href}
-      className={cx(base, variantClass[variant], sizeClass[size], fullWidth && 'w-full', className)}
+      className={cx(BRAND_BUTTON_BASE, variantClass[variant], sizeClass[size], fullWidth && 'w-full', className)}
       {...rest}
     >
       {children}
     </Link>
   );
 }
-

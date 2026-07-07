@@ -23,12 +23,12 @@ export function WhatsappScanNumbersInput({
 
   const addBtnClass =
     variant === 'blue'
-      ? 'bg-blue-600 text-white hover:bg-blue-700'
-      : 'bg-amber-600 text-white hover:bg-amber-700';
+      ? 'bg-brand-primary text-white hover:bg-brand-primary-dark'
+      : 'bg-brand-primary text-white hover:bg-brand-primary-dark';
   const removeBtnClass =
     variant === 'blue'
-      ? 'text-zinc-500 hover:bg-zinc-100 hover:text-red-600'
-      : 'text-zinc-500 hover:bg-zinc-100 hover:text-red-600';
+      ? 'text-muted hover:bg-primary-1 hover:text-red-600'
+      : 'text-muted hover:bg-primary-1 hover:text-red-600';
 
   const addFromDraft = () => {
     const parts = parseNumbers(draft);
@@ -43,13 +43,13 @@ export function WhatsappScanNumbersInput({
   const remove = (n: string) => onChange(value.filter((v) => v !== n));
 
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white">
+    <div className="rounded-lg border border-border bg-card">
       {value.length > 0 ? (
-        <ul className="divide-y divide-zinc-100 border-b border-zinc-100">
+        <ul className="divide-y divide-zinc-100 border-b border-border/60">
           {value.map((n) => (
             <li
               key={n}
-              className="flex items-center justify-between gap-2 px-3 py-2 text-sm text-zinc-800"
+              className="flex items-center justify-between gap-2 px-3 py-2 text-sm text-foreground"
             >
               <span className="font-mono tabular-nums">+{n}</span>
               <button
@@ -65,7 +65,7 @@ export function WhatsappScanNumbersInput({
           ))}
         </ul>
       ) : (
-        <p className="border-b border-zinc-100 px-3 py-2 text-xs text-zinc-500">
+        <p className="border-b border-border/60 px-3 py-2 text-xs text-muted">
           Nenhum número na lista — serão monitorizadas todas as mensagens do grupo.
         </p>
       )}
@@ -82,7 +82,7 @@ export function WhatsappScanNumbersInput({
           }}
           inputMode="numeric"
           placeholder="Ex.: 351912345678"
-          className="min-w-0 flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-300"
+          className="min-w-0 flex-1 rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/25"
         />
         <button
           type="button"

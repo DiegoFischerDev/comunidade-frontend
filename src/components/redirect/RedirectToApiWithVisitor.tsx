@@ -61,9 +61,9 @@ function resolveTarget(
 
 function RedirectFallback() {
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-card">
       <div className="flex-1" />
-      <p className="px-4 pb-6 text-center text-xs text-zinc-400">A redirecionar…</p>
+      <p className="px-4 pb-6 text-center text-xs text-muted/80">A redirecionar…</p>
     </div>
   );
 }
@@ -145,13 +145,13 @@ function RedirectInner({ variant }: { variant: "share" | "imovel" }) {
 
   if (notFound) {
     return (
-      <div className="flex min-h-screen flex-col bg-white">
+      <div className="flex min-h-screen flex-col bg-card">
         <div className="flex-1" />
-        <p className="px-4 pb-6 text-center text-xs text-zinc-400">
+        <p className="px-4 pb-6 text-center text-xs text-muted/80">
           Este link já não está disponível.{" "}
           <Link
             href="/"
-            className="text-zinc-500 underline underline-offset-2 hover:text-zinc-700"
+            className="text-muted underline underline-offset-2 hover:text-foreground/90"
           >
             Ir para o site
           </Link>
@@ -162,14 +162,14 @@ function RedirectInner({ variant }: { variant: "share" | "imovel" }) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-card">
       <div className="flex-1" />
       {manualHref ? (
-        <p className="px-4 pb-6 text-center text-xs text-zinc-400">
+        <p className="px-4 pb-6 text-center text-xs text-muted/80">
           Se não fores redirecionado automaticamente,{" "}
           <a
             href={manualHref}
-            className="text-zinc-500 underline underline-offset-2 hover:text-zinc-700"
+            className="text-muted underline underline-offset-2 hover:text-foreground/90"
           >
             clica aqui
           </a>

@@ -28,7 +28,7 @@ export function PartnerCatalogVideo({
   return (
     <section className={`flex flex-col items-center ${className}`.trim()}>
       <div className="w-full max-w-[min(100%,26rem)] sm:max-w-[min(100%,28rem)]">
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-black shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-border bg-black shadow-sm">
           <video
             src={src}
             controls

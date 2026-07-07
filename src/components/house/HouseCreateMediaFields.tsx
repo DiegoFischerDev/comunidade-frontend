@@ -71,7 +71,7 @@ function MediaDropzone({
 
   return (
     <div>
-      {label ? <span className="mb-1.5 block text-xs font-medium text-zinc-700">{label}</span> : null}
+      {label ? <span className="mb-1.5 block text-xs font-medium text-foreground/90">{label}</span> : null}
       <input
         ref={inputRef}
         id={id}
@@ -91,24 +91,24 @@ function MediaDropzone({
         onClick={() => inputRef.current?.click()}
         className={`flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${
           disabled
-            ? 'cursor-not-allowed border-zinc-200 bg-zinc-50 text-zinc-400'
-            : 'border-zinc-300 bg-zinc-50/80 text-zinc-600 hover:border-amber-400 hover:bg-amber-50/50 hover:text-zinc-800'
+            ? 'cursor-not-allowed border-border bg-page text-muted/80'
+            : 'border-border bg-page/80 text-muted hover:border-brand-accent/50 hover:bg-page hover:text-foreground'
         }`}
       >
         <span
           className={`flex h-12 w-12 items-center justify-center rounded-full ${
-            disabled ? 'bg-zinc-100 text-zinc-400' : 'bg-white text-amber-700 shadow-sm ring-1 ring-amber-100'
+            disabled ? 'bg-primary-1 text-muted/80' : 'bg-card text-brand-primary shadow-sm ring-1 ring-brand-accent/20'
           }`}
         >
           <Icon className="h-6 w-6" />
         </span>
-        <span className="text-sm font-medium text-zinc-800">
+        <span className="text-sm font-medium text-foreground">
           {fileName ? 'Trocar ficheiro' : 'Clique para escolher'}
         </span>
         {fileName ? (
-          <span className="max-w-full truncate px-2 text-xs text-amber-800">{fileName}</span>
+          <span className="max-w-full truncate px-2 text-xs text-brand-primary">{fileName}</span>
         ) : (
-          <span className="text-xs text-zinc-500">{hint}</span>
+          <span className="text-xs text-muted">{hint}</span>
         )}
       </button>
     </div>
@@ -230,8 +230,8 @@ export function HouseCreateMediaFields({
     <div className="space-y-5">
       <div>
         <div className="mb-2 flex items-center justify-between gap-2">
-          <span className="text-xs font-medium text-zinc-700">Fotos do imóvel</span>
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs font-medium text-foreground/90">Fotos do imóvel</span>
+          <span className="text-xs text-muted">
             {totalImageCount}/{MAX_IMAGES}
           </span>
         </div>
@@ -250,8 +250,8 @@ export function HouseCreateMediaFields({
             {editMedia?.retainedImageUrls.map((url, i) => (
               <div
                 key={`retained-${url}`}
-                className={`relative aspect-video overflow-hidden rounded-xl border bg-zinc-100 ${
-                  coverImageIndex === i ? 'border-amber-500 ring-2 ring-amber-400/50' : 'border-zinc-200'
+                className={`relative aspect-video overflow-hidden rounded-xl border bg-primary-1 ${
+                  coverImageIndex === i ? 'border-brand-primary ring-2 ring-brand-primary/25' : 'border-border'
                 }`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -260,7 +260,7 @@ export function HouseCreateMediaFields({
                   <input
                     type="radio"
                     name={`${idPrefix}-cover`}
-                    className="accent-amber-400"
+                    className="accent-brand-primary"
                     checked={coverImageIndex === i}
                     onChange={() => onCoverImageIndexChange(i)}
                   />
@@ -281,10 +281,10 @@ export function HouseCreateMediaFields({
               return (
                 <div
                   key={`${p.file.name}-${p.file.size}-${j}`}
-                  className={`relative aspect-video overflow-hidden rounded-xl border bg-zinc-100 ${
+                  className={`relative aspect-video overflow-hidden rounded-xl border bg-primary-1 ${
                     coverImageIndex === globalIndex
-                      ? 'border-amber-500 ring-2 ring-amber-400/50'
-                      : 'border-zinc-200'
+                      ? 'border-brand-primary ring-2 ring-brand-primary/25'
+                      : 'border-border'
                   }`}
                 >
                   <Image src={p.url} alt="" fill className="object-cover" unoptimized />
@@ -292,7 +292,7 @@ export function HouseCreateMediaFields({
                     <input
                       type="radio"
                       name={`${idPrefix}-cover`}
-                      className="accent-amber-400"
+                      className="accent-brand-primary"
                       checked={coverImageIndex === globalIndex}
                       onChange={() => onCoverImageIndexChange(globalIndex)}
                     />
@@ -312,7 +312,7 @@ export function HouseCreateMediaFields({
           </div>
         ) : null}
         {hasAnyPhotoPreview ? (
-          <p className="mt-2 text-xs text-zinc-500">
+          <p className="mt-2 text-xs text-muted">
             Marca a foto principal usada na pré-visualização ao partilhar o anúncio.
           </p>
         ) : null}
@@ -376,7 +376,7 @@ export function HouseCreateMediaFields({
               onFiles={(list) => onThumbnailChange(list?.[0] ?? null)}
             />
             {thumbnailPreviewUrl ? (
-              <div className="relative mt-3 aspect-video overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100">
+              <div className="relative mt-3 aspect-video overflow-hidden rounded-xl border border-border bg-primary-1">
                 <Image src={thumbnailPreviewUrl} alt="" fill className="object-cover" unoptimized />
                 <button
                   type="button"
@@ -387,7 +387,7 @@ export function HouseCreateMediaFields({
                 </button>
               </div>
             ) : existingThumbnailSrc ? (
-              <div className="relative mt-3 aspect-video overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100">
+              <div className="relative mt-3 aspect-video overflow-hidden rounded-xl border border-border bg-primary-1">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={existingThumbnailSrc} alt="" className="h-full w-full object-cover" />
                 <span className="absolute bottom-1.5 left-1.5 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
@@ -395,7 +395,7 @@ export function HouseCreateMediaFields({
                 </span>
               </div>
             ) : (
-              <p className="mt-2 text-xs text-zinc-500">
+              <p className="mt-2 text-xs text-muted">
               </p>
             )}
           </div>

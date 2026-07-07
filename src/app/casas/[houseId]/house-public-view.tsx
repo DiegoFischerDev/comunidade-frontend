@@ -13,6 +13,7 @@ import { HouseImageCarousel } from "./house-image-carousel";
 import { relocationCityDisplayName } from "@/lib/relocation-portugal-cities";
 import { partnerPublicPagePath } from "@/lib/partner-public-shared";
 import { partnerCategoryName } from "@/lib/partner-categories";
+import { BRAND_LOGO_HORIZONTAL, SITE_NAME_FULL } from "@/lib/site-branding";
 
 const TYPOLOGY_LABELS: Record<string, string> = {
   T0: "T0",
@@ -116,29 +117,26 @@ export function HousePublicView({
       }
     >
       {!isDashboard ? (
-        <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/85 shadow-sm backdrop-blur-md">
+        <header className="sticky top-0 z-50 border-b border-border/80 bg-card/85 shadow-sm backdrop-blur-md">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
             <Link
               href="/"
               className="inline-flex min-w-0 flex-1 items-center gap-2 pr-3 sm:gap-3 sm:pr-4"
-              aria-label="Comunidade Rafa Portugal — início"
+              aria-label={`${SITE_NAME_FULL} — início`}
             >
               <Image
-                src="/logo-RP.png"
-                alt=""
-                width={800}
-                height={192}
+                src={BRAND_LOGO_HORIZONTAL}
+                alt={SITE_NAME_FULL}
+                width={1200}
+                height={600}
                 priority
-                className="h-24 w-auto max-w-[22rem] shrink-0 object-contain sm:h-28 sm:max-w-[25rem]"
+                className="h-16 w-auto max-w-[16rem] shrink-0 object-contain sm:h-20 sm:max-w-[20rem]"
               />
-              <span className="min-w-0 text-[10px] font-semibold uppercase leading-snug tracking-wide text-zinc-900 sm:text-xs md:text-sm">
-                COMUNIDADE RAFA PELO MUNDO - RELOCATION PORTUGAL
-              </span>
             </Link>
             <nav className="shrink-0">
               <Link
                 href="/relocation/imoveis"
-                className="inline-flex rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 sm:px-4 sm:text-sm"
+                className="inline-flex rounded-full brand-cta-accent px-3 py-1.5 text-xs font-semibold shadow-sm transition hover:brightness-105 sm:px-4 sm:text-sm"
               >
                 Catálogo de imóveis
               </Link>
@@ -158,11 +156,11 @@ export function HousePublicView({
             </Link>
           </nav>
         ) : null}
-        <article className="overflow-hidden rounded-3xl border border-zinc-200/90 bg-white shadow-xl shadow-zinc-200/50">
+        <article className="overflow-hidden rounded-3xl border border-border/90 bg-card shadow-xl shadow-zinc-200/50">
           {photos.length > 0 ? (
             <HouseImageCarousel photos={photos} />
           ) : !videoSrc ? (
-            <div className="flex min-h-[200px] w-full items-center justify-center bg-zinc-100 text-sm text-zinc-500 aspect-[16/10] sm:aspect-[2/1]">
+            <div className="flex min-h-[200px] w-full items-center justify-center bg-primary-1 text-sm text-muted aspect-[16/10] sm:aspect-[2/1]">
               Sem fotos nem vídeo
             </div>
           ) : (
@@ -178,8 +176,8 @@ export function HousePublicView({
           )}
 
           {photos.length > 0 && videoSrc ? (
-            <div className="flex flex-col border-t border-zinc-100 bg-black px-4 py-4 sm:px-6">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Vídeo</p>
+            <div className="flex flex-col border-t border-border/60 bg-black px-4 py-4 sm:px-6">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted/80">Vídeo</p>
               <div className="flex w-full justify-center">
                 <video
                   src={videoSrc}
@@ -193,9 +191,9 @@ export function HousePublicView({
           ) : null}
 
           <div className="space-y-6 p-5 sm:p-8">
-            <header className="space-y-2 border-b border-zinc-100 pb-6">
+            <header className="space-y-2 border-b border-border/60 pb-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800/90">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-primary/90">
                   Relocation · {cityLabel}
                 </p>
                 <HousePublicationStatusBadge
@@ -204,13 +202,13 @@ export function HousePublicView({
                   displayVariant="public"
                 />
               </div>
-              <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">{house.title}</h1>
-              <p className="text-xs font-medium tabular-nums text-zinc-500">Id: {house.houseId}</p>
-              <p className="text-sm text-zinc-600">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{house.title}</h1>
+              <p className="text-xs font-medium tabular-nums text-muted">Id: {house.houseId}</p>
+              <p className="text-sm text-muted">
                 {typoLabel} · {availabilityLabel(house.availableFrom)}
               </p>
-              <p className="text-sm text-zinc-600">
-                Mobilado: <span className="font-medium text-zinc-800">{house.furnished ? "Sim" : "Não"}</span>
+              <p className="text-sm text-muted">
+                Mobilado: <span className="font-medium text-foreground">{house.furnished ? "Sim" : "Não"}</span>
               </p>
             </header>
 
@@ -225,11 +223,11 @@ export function HousePublicView({
               </div>
               {!isSale ? (
                 <>
-                  <div className="rounded-2xl border border-amber-200/90 bg-amber-50/80 px-4 py-3 sm:col-span-2">
-                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-900/75">
+                  <div className="rounded-2xl border border-brand-accent/30 bg-brand-accent/10 px-4 py-3 sm:col-span-2">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-brand-primary/75">
                       Taxa relocation
                     </dt>
-                    <dd className="mt-1 text-lg font-semibold tabular-nums text-amber-950">
+                    <dd className="mt-1 text-lg font-semibold tabular-nums text-brand-primary">
                       {formatRelocationFeeEur(house.relocationFeeEur)}
                     </dd>
                   </div>
@@ -246,8 +244,8 @@ export function HousePublicView({
             </dl>
 
             <section>
-              <h2 className="text-sm font-semibold text-zinc-900">Descrição</h2>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">{house.description}</p>
+              <h2 className="text-sm font-semibold text-foreground">Descrição</h2>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">{house.description}</p>
             </section>
 
             <HouseContactSection
@@ -259,14 +257,14 @@ export function HousePublicView({
               allowUnpublished={variant === "dashboard"}
             />
 
-            <section className="border-t border-zinc-100 pt-6">
-              <h2 className="text-sm font-semibold text-zinc-900">Anunciante</h2>
-              <p className="mt-1 text-xs text-zinc-600">
+            <section className="border-t border-border/60 pt-6">
+              <h2 className="text-sm font-semibold text-foreground">Anunciante</h2>
+              <p className="mt-1 text-xs text-muted">
                 Este imóvel é anunciado por um parceiro relocation da comunidade.
               </p>
               <Link
                 href={partnerPublicPagePath(partner.id, partner.publicSlug)}
-                className="mt-4 flex items-center gap-4 rounded-2xl border border-zinc-200 bg-zinc-50/90 p-4 transition hover:border-amber-200/90 hover:bg-amber-50/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
+                className="mt-4 flex items-center gap-4 rounded-2xl border border-border bg-page/90 p-4 transition hover:border-brand-accent/40 hover:bg-page focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/25 focus-visible:ring-offset-2"
               >
                 {logoSrc ? (
                   <Image
@@ -274,30 +272,30 @@ export function HousePublicView({
                     alt=""
                     width={56}
                     height={56}
-                    className="h-14 w-14 shrink-0 rounded-full border border-zinc-200 bg-white object-contain p-1"
+                    className="h-14 w-14 shrink-0 rounded-full border border-border bg-card object-contain p-1"
                     unoptimized={nextImageUnoptimized(logoSrc)}
                   />
                 ) : (
                   <div
-                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#d58901] to-[#f0b23a] text-lg font-semibold text-white"
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full brand-cta-accent text-lg font-semibold"
                     aria-hidden
                   >
                     {partner.name.charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-zinc-900">{partner.name}</p>
+                  <p className="font-semibold text-foreground">{partner.name}</p>
                   {partnerCategoryName(partner.categorySlug) ? (
-                    <p className="mt-0.5 text-xs text-zinc-600">
+                    <p className="mt-0.5 text-xs text-muted">
                       {partnerCategoryName(partner.categorySlug)}
                     </p>
                   ) : null}
                   {partner.shortDescription?.trim() ? (
-                    <p className="mt-1 line-clamp-2 text-sm text-zinc-600">
+                    <p className="mt-1 line-clamp-2 text-sm text-muted">
                       {partner.shortDescription.trim()}
                     </p>
                   ) : null}
-                  <p className="mt-2 text-sm font-medium text-amber-800">
+                  <p className="mt-2 text-sm font-medium text-brand-primary">
                     Ver página do parceiro →
                   </p>
                 </div>

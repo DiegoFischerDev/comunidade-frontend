@@ -220,7 +220,7 @@ export function FinanciamentoQuizView() {
       {phase === 'quiz' || phase === 'result' ? (
         <div
           ref={cardRef}
-          className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
+          className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
         >
           {phase === 'quiz' ? (
           <QuizPanel
@@ -271,7 +271,7 @@ export function FinanciamentoQuizView() {
       {phase === 'intro' ? (
         <div
           ref={cardRef}
-          className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
+          className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
         >
           <IntroPanel onStart={() => setPhase('quiz')} />
         </div>
@@ -327,10 +327,10 @@ function StepsSection() {
   return (
     <section className="px-1 py-2 sm:px-0">
       <header className="text-center">
-        <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
+        <p className="text-xs font-semibold uppercase tracking-wider text-brand-primary">
           Conheça as Etapas
         </p>
-        <h2 className="mt-1 text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+        <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
           Do primeiro contacto à chave na mão
         </h2>
       </header>
@@ -340,13 +340,13 @@ function StepsSection() {
           <li key={s.num} className="relative pl-12">
             <span
               aria-hidden
-              className="absolute left-0 top-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-800"
+              className="absolute left-0 top-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-accent/15 text-sm font-semibold text-brand-primary"
             >
               {s.num}
             </span>
 
-            <h3 className="text-lg font-semibold text-zinc-900">{s.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-600">{s.body}</p>
+            <h3 className="text-lg font-semibold text-foreground">{s.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{s.body}</p>
             <div
               aria-hidden
               className="mt-4 h-px w-full bg-gradient-to-r from-zinc-200 via-zinc-200/40 to-transparent"
@@ -363,12 +363,12 @@ function ManagersStrip(props: {
 }) {
   return (
     <section className="px-1 py-2 sm:px-0">
-      <div className="rounded-2xl bg-gradient-to-b from-amber-50/70 via-transparent to-transparent px-4 py-5 sm:px-6">
+      <div className="rounded-2xl bg-gradient-to-b from-brand-accent/10 via-transparent to-transparent px-4 py-5 sm:px-6">
         <header className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
+          <p className="text-xs font-semibold uppercase tracking-wider text-brand-primary">
             Gestoras de crédito
           </p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
             Conhece quem vai acompanhar gratuitamente o teu processo do início ao fim.
           </h2>
         </header>
@@ -377,23 +377,23 @@ function ManagersStrip(props: {
           {props.items.map((m) => (
             <li
               key={m.id}
-              className="rounded-2xl bg-white/70 px-4 py-5 text-center ring-1 ring-zinc-200/70 backdrop-blur-sm"
+              className="rounded-2xl bg-card/70 px-4 py-5 text-center ring-1 ring-zinc-200/70 backdrop-blur-sm"
             >
-              <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-white ring-1 ring-zinc-200 sm:h-40 sm:w-40">
+              <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-card ring-1 ring-zinc-200 sm:h-40 sm:w-40">
                 {m.logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={m.logoUrl}
                     alt={m.name}
-                    className="h-28 w-28 rounded-full bg-white object-contain sm:h-36 sm:w-36"
+                    className="h-28 w-28 rounded-full bg-card object-contain sm:h-36 sm:w-36"
                   />
                 ) : (
-                  <span className="text-3xl font-semibold text-amber-800">
+                  <span className="text-3xl font-semibold text-brand-primary">
                     {(m.name?.trim()?.[0] ?? 'G').toUpperCase()}
                   </span>
                 )}
               </div>
-              <p className="mt-4 text-base font-semibold text-zinc-900">{m.name}</p>
+              <p className="mt-4 text-base font-semibold text-foreground">{m.name}</p>
             </li>
           ))}
         </ul>
@@ -409,7 +409,7 @@ function Bullet({ children }: { children: React.ReactNode }) {
     <li className="flex items-start gap-2">
       <span
         aria-hidden
-        className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700"
+        className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-accent/15 text-brand-primary"
       >
         ✓
       </span>
@@ -422,14 +422,14 @@ function Bullet({ children }: { children: React.ReactNode }) {
 function IntroPanel({ onStart }: { onStart: () => void }) {
   return (
     <div className="px-6 py-10 sm:px-10 sm:py-14">
-      <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
+      <p className="text-xs font-semibold uppercase tracking-wider text-brand-primary">
         Questionário gratuito
       </p>
-      <h2 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+      <h2 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
         Rafa, consigo financiar uma casa em Portugal?
       </h2>
 
-      <ul className="mt-6 space-y-3 text-sm text-zinc-700">
+      <ul className="mt-6 space-y-3 text-sm text-foreground/90">
         <Bullet>Apenas 4 a 6 perguntas, todas simples (Sim/Não).</Bullet>
         <Bullet>Resultado imediato, com um exemplo prático.</Bullet>
       </ul>
@@ -437,7 +437,7 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
       <button
         type="button"
         onClick={onStart}
-        className="mt-8 inline-flex w-full items-center justify-center rounded-xl bg-amber-600 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+        className="mt-8 inline-flex w-full items-center justify-center rounded-xl bg-brand-primary px-6 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-brand-primary-dark focus:outline-none focus:ring-2 focus:ring-brand-primary/25 focus:ring-offset-2"
       >
         Começar questionário
       </button>
@@ -473,12 +473,12 @@ function AtendimentoPanel({
         e.preventDefault();
         if (!loading) onSubmit();
       }}
-      className="overflow-hidden rounded-2xl border border-zinc-200 bg-white px-6 py-8 shadow-sm sm:px-10 sm:py-10"
+      className="overflow-hidden rounded-2xl border border-border bg-card px-6 py-8 shadow-sm sm:px-10 sm:py-10"
     >
       <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
         Atendimento gratuito
       </p>
-      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
         Quero iniciar o meu atendimento gratuito com uma gestora de crédito
       </h2>
 
@@ -532,7 +532,7 @@ function QuizPanel({
     // Última pergunta respondida; à espera do POST /submit.
     return (
       <div className="px-6 py-12 text-center sm:px-10">
-        <p className="text-sm text-zinc-700">A calcular o teu resultado…</p>
+        <p className="text-sm text-foreground/90">A calcular o teu resultado…</p>
       </div>
     );
   }
@@ -540,33 +540,33 @@ function QuizPanel({
 
   return (
     <div>
-      <div className="h-1.5 w-full bg-zinc-100">
+      <div className="h-1.5 w-full bg-primary-1">
         <div
-          className="h-full bg-amber-500 transition-[width] duration-500 ease-out"
+          className="h-full bg-brand-primary transition-[width] duration-500 ease-out"
           style={{ width: `${Math.max(progress * 100, 8)}%` }}
         />
       </div>
 
       <div className="px-6 py-8 sm:px-10 sm:py-10">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted">
             Pergunta {stepNumber}
           </p>
           <button
             type="button"
             onClick={onBack}
             disabled={loading}
-            className="text-xs font-medium text-zinc-500 underline-offset-4 hover:text-zinc-700 hover:underline disabled:opacity-50"
+            className="text-xs font-medium text-muted underline-offset-4 hover:text-foreground/90 hover:underline disabled:opacity-50"
           >
             ← Voltar
           </button>
         </div>
 
-        <h2 className="mt-3 text-2xl font-semibold leading-snug tracking-tight text-zinc-900 sm:text-3xl">
+        <h2 className="mt-3 text-2xl font-semibold leading-snug tracking-tight text-foreground sm:text-3xl">
           {question.title}
         </h2>
         {question.subtitle ? (
-          <p className="mt-2 text-sm leading-relaxed text-zinc-600">{question.subtitle}</p>
+          <p className="mt-2 text-sm leading-relaxed text-muted">{question.subtitle}</p>
         ) : null}
 
         <div className="mt-8 grid gap-3">
@@ -576,12 +576,12 @@ function QuizPanel({
               type="button"
               onClick={() => onChoose(opt.value)}
               disabled={loading}
-              className="group flex w-full items-center justify-between rounded-xl border border-zinc-200 bg-white px-5 py-4 text-left transition hover:border-amber-400 hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              className="group flex w-full items-center justify-between rounded-xl border border-border bg-card px-5 py-4 text-left transition hover:border-brand-accent/50 hover:bg-page focus:outline-none focus:ring-2 focus:ring-brand-primary/25 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <span className="text-base font-medium text-zinc-900">{opt.label}</span>
+              <span className="text-base font-medium text-foreground">{opt.label}</span>
               <span
                 aria-hidden
-                className="text-amber-500 transition-transform group-hover:translate-x-0.5"
+                className="text-brand-accent transition-transform group-hover:translate-x-0.5"
               >
                 →
               </span>
@@ -633,16 +633,16 @@ function ResultPanel({
     ? 'border-red-200 bg-red-50'
     : result.outcome.key === '100'
       ? 'border-emerald-200 bg-emerald-50'
-      : 'border-amber-200 bg-amber-50';
+      : 'border-brand-accent/30 bg-brand-accent/10';
 
   return (
     <div className="px-6 py-8 sm:px-10 sm:py-10">
-      <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
+      <p className="text-xs font-semibold uppercase tracking-wider text-brand-primary">
         Resultado do questionário
       </p>
 
       <div
-        className={`mt-4 whitespace-pre-line rounded-xl border p-5 text-sm leading-relaxed text-zinc-800 ${accent}`}
+        className={`mt-4 whitespace-pre-line rounded-xl border p-5 text-sm leading-relaxed text-foreground ${accent}`}
       >
         {result.outcome.body}
       </div>
@@ -650,9 +650,9 @@ function ResultPanel({
       {result.example ? (
         <div className="mt-6">
           {result.example.intro ? (
-            <p className="mb-2 text-sm leading-relaxed text-zinc-700">{result.example.intro}</p>
+            <p className="mb-2 text-sm leading-relaxed text-foreground/90">{result.example.intro}</p>
           ) : null}
-          <pre className="whitespace-pre-wrap break-words rounded-xl border border-zinc-200 bg-zinc-50 p-5 font-sans text-sm leading-relaxed text-zinc-800">
+          <pre className="whitespace-pre-wrap break-words rounded-xl border border-border bg-page p-5 font-sans text-sm leading-relaxed text-foreground">
             {result.example.body}
           </pre>
         </div>
@@ -671,7 +671,7 @@ function ResultPanel({
           </div>
 
           <div className="px-6 py-7 sm:px-8 sm:py-8">
-            <h3 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+            <h3 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
               Quero iniciar o meu atendimento com a gestora de crédito
             </h3>
 
@@ -703,7 +703,7 @@ function ResultPanel({
             </div>
 
             {error ? (
-              <div className="mt-4 rounded-lg border border-red-200 bg-white p-3 text-sm text-red-800">
+              <div className="mt-4 rounded-lg border border-red-200 bg-card p-3 text-sm text-red-800">
                 {error}
               </div>
             ) : null}
@@ -720,14 +720,14 @@ function ResultPanel({
           </div>
         </form>
       ) : (
-        <div className="mt-8 rounded-xl border border-zinc-200 bg-zinc-50 p-5 text-sm leading-relaxed text-zinc-700">
+        <div className="mt-8 rounded-xl border border-border bg-page p-5 text-sm leading-relaxed text-foreground/90">
           Se as condições mudarem, volta a esta página e refaz o questionário. Entretanto, fica
           à vontade para entrares no nosso grupo gratuito de imóveis a venda em Portugal:&nbsp;
           <a
             href="https://chat.whatsapp.com/EneiignxdnuHVy17rh5MTX"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-medium text-amber-800 underline-offset-2 hover:underline"
+            className="font-medium text-brand-primary underline-offset-2 hover:underline"
           >
             entrar no grupo
           </a>

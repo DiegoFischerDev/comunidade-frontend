@@ -143,8 +143,8 @@ export default function BusinessPage() {
   if (user.role !== 'PARTNER') {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Minha empresa</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Minha empresa</h1>
+        <p className="mt-2 text-sm text-muted">
           Esta área é exclusiva para parceiros da Comunidade Rafa Portugal.
         </p>
       </div>
@@ -404,11 +404,11 @@ export default function BusinessPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-zinc-900">Minha empresa</h1>
-      <p className="mt-2 text-sm text-zinc-600">
+      <h1 className="text-2xl font-semibold text-foreground">Minha empresa</h1>
+      <p className="mt-2 text-sm text-muted">
         Se você quer ter um site gratuito para que a sua empresa seja exibida no Google, basta
         preencher as informações abaixo — em especial o{' '}
-        <span className="font-medium text-zinc-800">endereço público da página (URL)</span>, que
+        <span className="font-medium text-foreground">endereço público da página (URL)</span>, que
         ativa a página pública quando estiver definido.
       </p>
       {partnerId && publicSlug.trim() ? (
@@ -417,20 +417,20 @@ export default function BusinessPage() {
             href={`/${encodeURIComponent(publicSlug.trim())}`}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="inline-flex items-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground/90 hover:bg-page"
           >
             Ver minha página no Google
           </Link>
-          <p className="mt-2 text-xs text-zinc-600">
+          <p className="mt-2 text-xs text-muted">
             clicks nos botões da minha página:{' '}
-            <span className="font-semibold text-zinc-900">
+            <span className="font-semibold text-foreground">
               {pageLinksLoading ? '…' : totalPageLinkClicks}
             </span>{' '}
             click{!pageLinksLoading && totalPageLinkClicks === 1 ? '' : 's'}
           </p>
         </div>
       ) : partnerId ? (
-        <p className="mt-4 text-sm text-amber-800/95">
+        <p className="mt-4 text-sm text-brand-primary/95">
           A página pública só fica acessível depois de definires e guardares o endereço público
           (URL) no formulário abaixo.
         </p>
@@ -448,20 +448,20 @@ export default function BusinessPage() {
       )}
 
       {loading ? (
-        <p className="mt-4 text-sm text-zinc-600">Carregando dados da empresa…</p>
+        <p className="mt-4 text-sm text-muted">Carregando dados da empresa…</p>
       ) : (
         <>
         <form
           onSubmit={handleSubmit}
-          className="mt-6 space-y-4 rounded-lg border border-zinc-200 bg-white p-4"
+          className="mt-6 space-y-4 rounded-lg border border-border bg-card p-4"
         >
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1 md:col-span-2">
-              <label className="block text-sm font-medium text-zinc-700">
+              <label className="block text-sm font-medium text-foreground/90">
                 Endereço público da página (URL)
               </label>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm text-zinc-500">/</span>
+                <span className="text-sm text-muted">/</span>
                 <input
                   type="text"
                   value={publicSlug}
@@ -469,16 +469,16 @@ export default function BusinessPage() {
                   placeholder="defina para publicar (ex.: minha-empresa)"
                   autoComplete="off"
                   spellCheck={false}
-                  className="min-w-[12rem] flex-1 rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="min-w-[12rem] flex-1 rounded-lg border border-border px-3 py-2 font-mono text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                 />
               </div>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-muted">
                 Só letras minúsculas, números e hífens (4–80 caracteres). Enquanto estiver vazio, a
                 página pública não existe. Evita palavras reservadas como «dashboard» ou «casas».
               </p>
             </div>
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-zinc-700">
+              <label className="block text-sm font-medium text-foreground/90">
                 Nome da empresa
               </label>
               <input
@@ -486,11 +486,11 @@ export default function BusinessPage() {
                 value={name}
                 required
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
               />
             </div>
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-zinc-700">
+              <label className="block text-sm font-medium text-foreground/90">
                 WhatsApp comercial
               </label>
               <input
@@ -498,11 +498,11 @@ export default function BusinessPage() {
                 value={whatsapp}
                 onChange={(e) => setWhatsapp(e.target.value)}
                 placeholder="Ex.: 351912345678"
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
               />
             </div>
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-zinc-700">
+              <label className="block text-sm font-medium text-foreground/90">
                 Email da conta
               </label>
               <input
@@ -510,11 +510,11 @@ export default function BusinessPage() {
                 value={accountEmail}
                 onChange={(e) => setAccountEmail(e.target.value)}
                 placeholder="exemplo@email.com"
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
               />
             </div>
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-zinc-700">
+              <label className="block text-sm font-medium text-foreground/90">
                 Instagram da empresa
               </label>
               <input
@@ -527,21 +527,21 @@ export default function BusinessPage() {
                   else setInstagram('@' + v);
                 }}
                 placeholder="@empresa"
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
               />
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-muted">
                 Apenas utilizador com @ (ex: @minha_empresa)
               </p>
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-medium text-zinc-700">Senha</p>
+              <p className="text-sm font-medium text-foreground/90">Senha</p>
               <button
                 type="button"
                 onClick={() => {
                   setPasswordError('');
                   setPasswordModalOpen(true);
                 }}
-                className="inline-flex items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+                className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-page"
               >
                 Alterar senha
               </button>
@@ -554,20 +554,20 @@ export default function BusinessPage() {
                 <img
                   src={logoUrl}
                   alt="Logo da empresa"
-                  className="h-12 w-12 rounded object-contain border border-zinc-200 bg-white"
+                  className="h-12 w-12 rounded object-contain border border-border bg-card"
                 />
               </div>
             )}
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-foreground/90">
               Logo da empresa ou sua foto do perfil (upload)
             </label>
             <input
               type="file"
               accept="image/*"
               onChange={handleLogoUpload}
-              className="block w-full text-sm text-zinc-900 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
+              className="block w-full text-sm text-foreground file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-primary-1 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground/90 hover:file:bg-zinc-200"
             />
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-muted">
               {uploadingLogo
                 ? 'Enviando logo…'
                 : logoUrl
@@ -577,40 +577,40 @@ export default function BusinessPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-foreground/90">
               Breve descrição (apresentação rápida)
             </label>
             <textarea
               value={shortDescription}
               onChange={(e) => setShortDescription(e.target.value)}
               rows={2}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-foreground/90">
               Descrição completa
             </label>
             <textarea
               value={fullDescription}
               onChange={(e) => setFullDescription(e.target.value)}
               rows={4}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-foreground/90">
               Imagem de background (upload)
             </label>
             <input
               type="file"
               accept="image/*"
               onChange={handleBackgroundUpload}
-              className="block w-full text-sm text-zinc-900 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
+              className="block w-full text-sm text-foreground file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-primary-1 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground/90 hover:file:bg-zinc-200"
             />
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-muted">
               {uploadingBackground
                 ? 'Enviando imagem de background…'
                 : backgroundImageUrl
@@ -618,7 +618,7 @@ export default function BusinessPage() {
                 : 'Selecione uma imagem para o banner do seu perfil de parceiro.'}
             </p>
             {backgroundImageUrl && (
-              <div className="mt-2 h-56 w-full overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100">
+              <div className="mt-2 h-56 w-full overflow-hidden rounded-lg border border-border bg-primary-1">
                 <div
                   className="h-full w-full bg-cover bg-center"
                   style={{ backgroundImage: `url(${backgroundImageUrl})` }}
@@ -628,12 +628,12 @@ export default function BusinessPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-foreground/90">
               Vídeo de apresentação (opcional)
             </label>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-muted">
               Um único vídeo é mostrado na tua página pública{' '}
-              <span className="font-medium text-zinc-600">antes</span> do carrossel de imagens,
+              <span className="font-medium text-muted">antes</span> do carrossel de imagens,
               centrado num formato vertical semelhante ao dos stories. Formatos: MP4, MOV ou WebM.
             </p>
             <input
@@ -641,9 +641,9 @@ export default function BusinessPage() {
               accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
               disabled={uploadingCatalogVideo}
               onChange={handleCatalogVideoUpload}
-              className="block w-full text-sm text-zinc-900 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200 disabled:opacity-50"
+              className="block w-full text-sm text-foreground file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-primary-1 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground/90 hover:file:bg-zinc-200 disabled:opacity-50"
             />
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-muted">
               {uploadingCatalogVideo
                 ? 'A processar vídeo…'
                 : catalogVideoUrl
@@ -652,7 +652,7 @@ export default function BusinessPage() {
             </p>
             {catalogVideoUrl ? (
               <div className="space-y-2">
-                <div className="mx-auto w-full max-w-[min(100%,26rem)] overflow-hidden rounded-lg border border-zinc-200 bg-black shadow-sm">
+                <div className="mx-auto w-full max-w-[min(100%,26rem)] overflow-hidden rounded-lg border border-border bg-black shadow-sm">
                   <video
                     src={catalogVideoUrl}
                     controls
@@ -674,10 +674,10 @@ export default function BusinessPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-foreground/90">
               Imagens de catálogo (até 5)
             </label>
-            <p className="text-xs text-amber-700">
+            <p className="text-xs text-brand-primary">
               As imagens devem ser verticais, nas mesmas dimensões dos stories do
               Instagram.
             </p>
@@ -691,10 +691,10 @@ export default function BusinessPage() {
                 return (
                   <div
                     key={slotIndex}
-                    className="flex flex-col items-center gap-1 rounded-lg border border-zinc-200 bg-zinc-50 p-2"
+                    className="flex flex-col items-center gap-1 rounded-lg border border-border bg-page p-2"
                   >
                     <div
-                      className="relative overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100"
+                      className="relative overflow-hidden rounded-lg border border-border bg-primary-1"
                       style={{ width: 72, aspectRatio: '9/16' }}
                     >
                       {url ? (
@@ -704,8 +704,8 @@ export default function BusinessPage() {
                             alt={`Catálogo ${slotIndex + 1}`}
                             className="h-full w-full object-cover"
                           />
-                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/40 opacity-0 transition-opacity hover:opacity-100">
-                            <label className="cursor-pointer rounded bg-white/90 px-2 py-1 text-xs font-medium text-zinc-800">
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 brand-modal-scrim opacity-0 transition-opacity hover:opacity-100">
+                            <label className="cursor-pointer rounded bg-card/90 px-2 py-1 text-xs font-medium text-foreground">
                               {isUploading ? 'A enviar…' : 'Substituir'}
                               <input
                                 type="file"
@@ -725,7 +725,7 @@ export default function BusinessPage() {
                           </div>
                         </>
                       ) : canAdd ? (
-                        <label className="flex h-full w-full cursor-pointer flex-col items-center justify-center text-xs text-zinc-500 hover:bg-zinc-200/50">
+                        <label className="flex h-full w-full cursor-pointer flex-col items-center justify-center text-xs text-muted hover:bg-zinc-200/50">
                           {isUploading ? 'A enviar…' : '+ Adicionar'}
                           <input
                             type="file"
@@ -737,7 +737,7 @@ export default function BusinessPage() {
                         </label>
                       ) : null}
                     </div>
-                    <span className="text-xs text-zinc-500">
+                    <span className="text-xs text-muted">
                       {slotIndex + 1}/5
                     </span>
                   </div>
@@ -746,7 +746,7 @@ export default function BusinessPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+          <div className="rounded-lg border border-border bg-page p-4">
             <PartnerServicesManager />
           </div>
 
@@ -758,12 +758,12 @@ export default function BusinessPage() {
         </form>
 
         {passwordModalOpen ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4">
+            <div className="w-full max-w-lg rounded-2xl bg-card p-5 shadow-xl">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-zinc-900">Alterar senha</h2>
-                  <p className="mt-1 text-xs text-zinc-500">Mínimo 8 caracteres.</p>
+                  <h2 className="text-lg font-semibold text-foreground">Alterar senha</h2>
+                  <p className="mt-1 text-xs text-muted">Mínimo 8 caracteres.</p>
                 </div>
                 <button
                   type="button"
@@ -771,7 +771,7 @@ export default function BusinessPage() {
                     if (passwordSaving) return;
                     setPasswordModalOpen(false);
                   }}
-                  className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                  className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground/90 hover:bg-page"
                 >
                   Fechar
                 </button>
@@ -785,25 +785,25 @@ export default function BusinessPage() {
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <label className="text-sm sm:col-span-2">
-                  <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                     Nova senha
                   </span>
                   <input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                   />
                 </label>
                 <label className="text-sm sm:col-span-2">
-                  <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                     Confirmar nova senha
                   </span>
                   <input
                     type="password"
                     value={newPassword2}
                     onChange={(e) => setNewPassword2(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                   />
                 </label>
               </div>
@@ -813,7 +813,7 @@ export default function BusinessPage() {
                   type="button"
                   onClick={() => setPasswordModalOpen(false)}
                   disabled={passwordSaving}
-                  className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-60"
+                  className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-page disabled:opacity-60"
                 >
                   Cancelar
                 </button>
@@ -821,7 +821,7 @@ export default function BusinessPage() {
                   type="button"
                   onClick={() => void handleSavePassword()}
                   disabled={passwordSaving}
-                  className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 disabled:opacity-60"
+                  className="rounded-xl bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-primary-dark disabled:opacity-60"
                 >
                   {passwordSaving ? 'Salvando…' : 'Salvar alterações'}
                 </button>

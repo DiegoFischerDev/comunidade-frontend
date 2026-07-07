@@ -99,7 +99,7 @@ function HouseMediaPublishPreview({
 
   if (!hasMedia) {
     return (
-      <p className="text-sm text-zinc-500">Sem fotos nem vídeo neste imóvel.</p>
+      <p className="text-sm text-muted">Sem fotos nem vídeo neste imóvel.</p>
     );
   }
 
@@ -108,7 +108,7 @@ function HouseMediaPublishPreview({
       {photos.map((url, index) => (
         <div
           key={`${url}-${index}`}
-          className="h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100"
+          className="h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-lg border border-border bg-primary-1"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -119,7 +119,7 @@ function HouseMediaPublishPreview({
         </div>
       ))}
       {resolvedVideo ? (
-        <div className="h-[4.5rem] w-[5.5rem] shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-black">
+        <div className="h-[4.5rem] w-[5.5rem] shrink-0 overflow-hidden rounded-lg border border-border bg-black">
           <video
             src={resolvedVideo}
             poster={resolvedPoster ?? undefined}
@@ -132,7 +132,7 @@ function HouseMediaPublishPreview({
           />
         </div>
       ) : resolvedPoster ? (
-        <div className="relative h-[4.5rem] w-[5.5rem] shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100">
+        <div className="relative h-[4.5rem] w-[5.5rem] shrink-0 overflow-hidden rounded-lg border border-border bg-primary-1">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={resolvedPoster}
@@ -151,8 +151,8 @@ function HouseMediaPublishPreview({
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">{label}</dt>
-      <dd className="mt-0.5 text-sm font-medium text-zinc-900">{value}</dd>
+      <dt className="text-[11px] font-medium uppercase tracking-wide text-muted">{label}</dt>
+      <dd className="mt-0.5 text-sm font-medium text-foreground">{value}</dd>
     </div>
   );
 }
@@ -172,12 +172,12 @@ function QuickFieldInput({
 }) {
   const label = PUBLISH_MISSING_FIELD_LABELS[fieldKey];
   const common =
-    "mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 disabled:bg-zinc-50";
+    "mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/25 disabled:bg-page";
 
   if (fieldKey === "relocationFeeEur") {
     return (
       <div>
-        <label className="text-xs font-medium text-zinc-700">{label}</label>
+        <label className="text-xs font-medium text-foreground/90">{label}</label>
         <input
           value={draft.relocationFeeEur}
           onChange={(e) =>
@@ -194,7 +194,7 @@ function QuickFieldInput({
   if (fieldKey === "priceEur") {
     return (
       <div>
-        <label className="text-xs font-medium text-zinc-700">{label}</label>
+        <label className="text-xs font-medium text-foreground/90">{label}</label>
         <input
           value={draft.priceEur}
           onChange={(e) => onDraftChange({ ...draft, priceEur: e.target.value })}
@@ -211,7 +211,7 @@ function QuickFieldInput({
   if (fieldKey === "title") {
     return (
       <div>
-        <label className="text-xs font-medium text-zinc-700">{label}</label>
+        <label className="text-xs font-medium text-foreground/90">{label}</label>
         <input
           value={draft.title}
           onChange={(e) => onDraftChange({ ...draft, title: e.target.value })}
@@ -225,7 +225,7 @@ function QuickFieldInput({
   if (fieldKey === "availableFrom") {
     return (
       <div>
-        <label className="text-xs font-medium text-zinc-700">{label}</label>
+        <label className="text-xs font-medium text-foreground/90">{label}</label>
         <input
           type="date"
           value={draft.availableFrom}
@@ -258,9 +258,9 @@ function PublishQuickFieldsSection({
   if (fieldKeys.length === 0) return null;
 
   return (
-    <div className="mt-4 rounded-xl border border-amber-200/80 bg-amber-50/40 p-4">
-      <p className="text-sm font-semibold text-amber-950">Completar rapidamente</p>
-      <p className="mt-0.5 text-xs text-amber-900/80">
+    <div className="mt-4 rounded-xl border border-brand-accent/30 bg-brand-accent/10 p-4">
+      <p className="text-sm font-semibold text-brand-primary">Completar rapidamente</p>
+      <p className="mt-0.5 text-xs text-brand-primary/80">
         Preenche os campos em falta. Os dados só são guardados quando clicares em Enviar.
       </p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -451,40 +451,40 @@ export function PublishHouseConfirmModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="publish-house-title"
     >
-      <div className="max-h-[min(92vh,720px)] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-        <h2 id="publish-house-title" className="text-lg font-semibold text-zinc-900">
+      <div className="max-h-[min(92vh,720px)] w-full max-w-lg overflow-y-auto rounded-2xl bg-card p-6 shadow-xl">
+        <h2 id="publish-house-title" className="text-lg font-semibold text-foreground">
           {phase === "missing" ? "Informações em falta" : "Publicar imóvel"}
         </h2>
-        <p className="mt-2 text-sm font-medium text-zinc-700">
+        <p className="mt-2 text-sm font-medium text-foreground/90">
           {publicationDurationLabel}
         </p>
         {phase === "main" ? (
-          <p className="mt-1 text-sm text-zinc-600">
+          <p className="mt-1 text-sm text-muted">
             {activelyPublished
               ? "Podes republicar para prolongar a visibilidade ou remover a publicação para ocultar o anúncio no site."
               : "Este imóvel será publicado no nosso site e nos grupos do WhatsApp."}
           </p>
         ) : (
-          <p className="mt-1 text-sm text-zinc-600">
+          <p className="mt-1 text-sm text-muted">
             Completa os dados em falta ou envia a publicação mesmo assim.
           </p>
         )}
 
         {phase === "missing" ? (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-            <p className="text-sm font-medium text-amber-950">Em falta:</p>
-            <ul className="mt-2 list-inside list-disc text-sm text-amber-900/90">
+          <div className="mt-4 rounded-xl border border-brand-accent/30 bg-brand-accent/10 px-4 py-3">
+            <p className="text-sm font-medium text-brand-primary">Em falta:</p>
+            <ul className="mt-2 list-inside list-disc text-sm text-brand-primary/90">
               {missingForPhase.map((m) => (
                 <li key={m.key}>{m.label}</li>
               ))}
             </ul>
             {missingForPhase.some((m) => m.key === "media") ? (
-              <p className="mt-2 text-xs text-amber-800">
+              <p className="mt-2 text-xs text-brand-primary">
                 Para fotos ou vídeo, usa o botão «Editar» no passo anterior.
               </p>
             ) : null}
@@ -492,10 +492,10 @@ export function PublishHouseConfirmModal({
         ) : null}
 
         {phase === "main" ? (
-        <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
+        <div className="mt-4 overflow-hidden rounded-xl border border-border bg-page">
           <div className="p-4">
-            <p className="font-mono text-xs text-zinc-500">Id {house.houseId}</p>
-            <p className="mt-0.5 text-base font-semibold leading-snug text-zinc-900">
+            <p className="font-mono text-xs text-muted">Id {house.houseId}</p>
+            <p className="mt-0.5 text-base font-semibold leading-snug text-foreground">
               {house.title}
             </p>
             <div className="mt-2">
@@ -505,7 +505,7 @@ export function PublishHouseConfirmModal({
               />
             </div>
             <div className="mt-4">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-muted">
                 Fotos e vídeo
               </p>
               <div className="mt-2">
@@ -519,7 +519,7 @@ export function PublishHouseConfirmModal({
             </div>
           </div>
 
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-zinc-200 bg-white px-4 py-3 sm:grid-cols-3">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border bg-card px-4 py-3 sm:grid-cols-3">
             <DetailItem
               label="Cidade"
               value={CITY_LABELS[house.city] ?? house.city}
@@ -552,12 +552,12 @@ export function PublishHouseConfirmModal({
             ) : null}
           </dl>
 
-          <div className="border-t border-zinc-200 px-4 py-3">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+          <div className="border-t border-border px-4 py-3">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted">
               Publicado nos grupos WhatsApp
             </p>
             {whatsAppDates.length > 0 ? (
-              <ul className="mt-2 space-y-1 text-sm text-zinc-700">
+              <ul className="mt-2 space-y-1 text-sm text-foreground/90">
                 {whatsAppDates.map((date, index) => (
                   <li key={`${date}-${index}`} className="tabular-nums">
                     {date}
@@ -565,7 +565,7 @@ export function PublishHouseConfirmModal({
                 ))}
               </ul>
             ) : (
-              <p className="mt-1 text-sm text-zinc-500">Ainda sem publicações anteriores.</p>
+              <p className="mt-1 text-sm text-muted">Ainda sem publicações anteriores.</p>
             )}
           </div>
         </div>

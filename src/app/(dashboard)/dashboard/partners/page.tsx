@@ -74,8 +74,8 @@ export default function PartnersPage() {
   if (user.role !== 'ADMIN') {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Parceiros</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Parceiros</h1>
+        <p className="mt-2 text-sm text-muted">
           Você não tem permissão para acessar esta página.
         </p>
       </div>
@@ -159,8 +159,8 @@ export default function PartnersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-zinc-900">Parceiros</h1>
-      <p className="mt-2 text-zinc-600">
+      <h1 className="text-2xl font-semibold text-foreground">Parceiros</h1>
+      <p className="mt-2 text-muted">
         Gerencie parceiros da plataforma (criação e remoção).
       </p>
 
@@ -172,10 +172,10 @@ export default function PartnersPage() {
 
       <form
         onSubmit={handleCreatePartner}
-        className="mt-6 grid gap-4 rounded-lg border border-zinc-200 bg-white p-4 md:grid-cols-2"
+        className="mt-6 grid gap-4 rounded-lg border border-border bg-card p-4 md:grid-cols-2"
       >
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-zinc-700">
+          <label className="block text-sm font-medium text-foreground/90">
             Senha inicial
           </label>
           <input
@@ -183,11 +183,11 @@ export default function PartnersPage() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
           />
         </div>
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-zinc-700">
+          <label className="block text-sm font-medium text-foreground/90">
             Nome
           </label>
           <input
@@ -195,11 +195,11 @@ export default function PartnersPage() {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
           />
         </div>
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-zinc-700">
+          <label className="block text-sm font-medium text-foreground/90">
             E-mail da conta (opcional)
           </label>
           <input
@@ -208,14 +208,14 @@ export default function PartnersPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="parceiro@exemplo.com"
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
           />
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted">
             Se preencheres, o parceiro poderá usar este e-mail para login e recuperação de senha. Tem de ser único na plataforma.
           </p>
         </div>
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-zinc-700">
+          <label className="block text-sm font-medium text-foreground/90">
             WhatsApp (com DDI)
           </label>
           <input
@@ -223,20 +223,20 @@ export default function PartnersPage() {
             required
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
           />
         </div>
         <div className="space-y-1 md:col-span-2">
-          <label className="block text-sm font-medium text-zinc-700">
+          <label className="block text-sm font-medium text-foreground/90">
             Logo do parceiro
           </label>
           <input
             type="file"
             accept="image/*"
             onChange={handleLogoUpload}
-            className="block w-full text-sm text-zinc-900 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
+            className="block w-full text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary-1 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground/90 hover:file:bg-zinc-200"
           />
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-muted">
             {uploadingLogo
               ? 'Enviando logo…'
               : logoUrl
@@ -248,7 +248,7 @@ export default function PartnersPage() {
               <img
                 src={logoUrl}
                 alt="Pré-visualização da logo"
-                className="h-12 w-12 rounded object-contain border border-zinc-200 bg-white"
+                className="h-12 w-12 rounded object-contain border border-border bg-card"
               />
             </div>
           )}
@@ -261,11 +261,11 @@ export default function PartnersPage() {
       </form>
 
       {loading ? (
-        <p className="mt-4 text-sm text-zinc-600">Carregando parceiros…</p>
+        <p className="mt-4 text-sm text-muted">Carregando parceiros…</p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+        <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-card">
           <table className="min-w-full text-sm">
-            <thead className="bg-zinc-50 text-zinc-600">
+            <thead className="bg-page text-muted">
               <tr>
                 <th className="px-4 py-2 text-left">Logo</th>
                 <th className="px-4 py-2 text-left">Nome</th>
@@ -278,7 +278,7 @@ export default function PartnersPage() {
             </thead>
             <tbody>
               {partners.map((p) => (
-                <tr key={p.id} className="border-t border-zinc-200">
+                <tr key={p.id} className="border-t border-border">
                   <td className="px-4 py-2">
                     {resolveLogo(p.logoUrl) ? (
                       <img
@@ -287,15 +287,15 @@ export default function PartnersPage() {
                         className="h-8 w-8 rounded object-contain"
                       />
                     ) : (
-                      <span className="text-zinc-400">—</span>
+                      <span className="text-muted/80">—</span>
                     )}
                   </td>
                   <td className="px-4 py-2">{p.name}</td>
-                  <td className="px-4 py-2 text-zinc-700">
+                  <td className="px-4 py-2 text-foreground/90">
                     {p.user.email ? (
                       <span className="break-all">{p.user.email}</span>
                     ) : (
-                      <span className="text-zinc-400">—</span>
+                      <span className="text-muted/80">—</span>
                     )}
                   </td>
                   <td className="px-4 py-2">{p.whatsapp}</td>
@@ -329,7 +329,7 @@ export default function PartnersPage() {
                         }
                       }}
                       disabled={updatingCategoryId === p.id}
-                      className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full rounded-lg border border-border bg-card px-2 py-1 text-xs text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                     >
                       <option value="">Sem categoria</option>
                       {PARTNER_CATEGORIES.map((c) => (
@@ -351,20 +351,20 @@ export default function PartnersPage() {
                         (total === 0 || withLink === total);
                       return (
                         <div className="min-w-[10rem] space-y-2">
-                          <p className="text-xs text-zinc-600">
+                          <p className="text-xs text-muted">
                             {configured ? (
                               <span className="font-medium text-emerald-800">
                                 Configurado
                               </span>
                             ) : (
-                              <span className="text-amber-800">Por configurar</span>
+                              <span className="text-brand-primary">Por configurar</span>
                             )}
                           </p>
-                          <p className="text-[11px] leading-snug text-zinc-500">
+                          <p className="text-[11px] leading-snug text-muted">
                             Hero:{' '}
                             {p.heroShareLink ? (
                               <>
-                                <code className="rounded bg-zinc-100 px-1">
+                                <code className="rounded bg-primary-1 px-1">
                                   {p.heroShareLink.slug}
                                 </code>
                                 {' · '}
@@ -375,7 +375,7 @@ export default function PartnersPage() {
                             )}
                           </p>
                           {total > 0 ? (
-                            <p className="text-[11px] text-zinc-500">
+                            <p className="text-[11px] text-muted">
                               Serviços: {withLink}/{total} com link
                             </p>
                           ) : null}
@@ -465,7 +465,7 @@ export default function PartnersPage() {
                 <tr>
                   <td
                     colSpan={8}
-                    className="px-4 py-4 text-center text-sm text-zinc-500"
+                    className="px-4 py-4 text-center text-sm text-muted"
                   >
                     Nenhum parceiro encontrado.
                   </td>

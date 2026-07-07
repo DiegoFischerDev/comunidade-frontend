@@ -18,8 +18,8 @@ export function HouseStatusBadge({ status, className = "" }: Props) {
     status === "AVAILABLE"
       ? "bg-emerald-100 text-emerald-900 ring-emerald-200"
       : status === "RESERVED"
-        ? "bg-amber-100 text-amber-950 ring-amber-200"
-        : "bg-zinc-200 text-zinc-800 ring-zinc-300";
+        ? "bg-brand-accent/15 text-brand-primary ring-brand-accent/20"
+        : "bg-zinc-200 text-foreground ring-zinc-300";
 
   return (
     <span

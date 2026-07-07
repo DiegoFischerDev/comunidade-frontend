@@ -77,7 +77,7 @@ export function CatalogCarousel({
             style={{ aspectRatio: String(STORY_ASPECT) }}
           >
             <div
-              className="absolute inset-0 rounded-xl border border-zinc-200 bg-zinc-100 overflow-hidden shadow-sm transition-transform duration-300 ease-out origin-center hover:z-10 hover:shadow-md hover:scale-105"
+              className="absolute inset-0 rounded-xl border border-border bg-primary-1 overflow-hidden shadow-sm transition-transform duration-300 ease-out origin-center hover:z-10 hover:shadow-md hover:scale-105"
             >
               <img
                 src={resolveSrc(url, apiBaseUrl)}
@@ -110,10 +110,10 @@ export function CatalogCarousel({
             {images.map((_, i) => (
               <div
                 key={i}
-                className="h-0.5 flex-1 rounded-full bg-white/40 overflow-hidden"
+                className="h-0.5 flex-1 rounded-full bg-card/40 overflow-hidden"
               >
                 <div
-                  className="h-full bg-white rounded-full transition-all duration-75 ease-linear"
+                  className="h-full bg-card rounded-full transition-all duration-75 ease-linear"
                   style={{
                     width:
                       i < index

@@ -72,9 +72,9 @@ export function HouseContactSection({
 
   if (!allowUnpublished && !isPublishedActive(publicationStatus, publishedUntil)) {
     return (
-      <p className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700">
+      <p className="rounded-xl border border-border bg-page px-4 py-3 text-sm text-foreground/90">
         Este anúncio não está disponível no momento. Explora outros imóveis na{" "}
-        <Link href="/relocation/imoveis" className="font-medium text-amber-800 underline">
+        <Link href="/relocation/imoveis" className="font-medium text-brand-primary underline">
           listagem Relocation
         </Link>
         .

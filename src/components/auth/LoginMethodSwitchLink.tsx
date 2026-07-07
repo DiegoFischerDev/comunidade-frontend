@@ -21,7 +21,7 @@ export function LoginMethodSwitchLink({
       type="button"
       disabled={disabled}
       onClick={() => onSwitch(next)}
-      className="shrink-0 cursor-pointer text-xs font-normal text-blue-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+      className="shrink-0 cursor-pointer text-xs font-normal text-brand-primary underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
     >
       {label}
     </button>

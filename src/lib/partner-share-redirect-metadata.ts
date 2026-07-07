@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { SITE_NAME_FULL } from "@/lib/site-branding";
 import { getPublicSiteUrlFromRequestHeaders } from "@/lib/site-url";
 
 const API_URL =
@@ -58,7 +59,7 @@ export async function generatePartnerShareLinkRedirectMetadata(
   const siteUrl = getPublicSiteUrlFromRequestHeaders(h);
   const base = new URL(siteUrl);
 
-  const fallbackTitle = "WhatsApp · Comunidade Rafa Portugal";
+  const fallbackTitle = `WhatsApp · ${SITE_NAME_FULL}`;
   const fallbackDescription =
     "Abre o WhatsApp com a mensagem preparada para contactar o parceiro.";
 

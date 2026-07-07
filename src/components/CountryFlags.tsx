@@ -62,7 +62,7 @@ export function ImmigrationRouteLabel({ className = '' }: { className?: string }
         className="h-[1.1em] w-auto shrink-0 object-contain [aspect-ratio:1/1] align-[-0.1em] sm:h-[1.15em]"
         title="Brasil"
       />
-      <span aria-hidden className="text-zinc-500">→</span>
+      <span aria-hidden className="text-muted">→</span>
       <FlagPt
         className="h-[1.1em] w-auto shrink-0 object-contain [aspect-ratio:1/1] align-[-0.1em] sm:h-[1.15em]"
         title="Portugal"

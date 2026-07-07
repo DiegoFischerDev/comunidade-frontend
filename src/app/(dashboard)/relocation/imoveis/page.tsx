@@ -202,11 +202,11 @@ export default function PublicRelocationHousesListPage() {
 
   const filterBar = useMemo(
     () => (
-      <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <div className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
         <div
           role="tablist"
           aria-label="Finalidade do imóvel"
-          className="flex w-full max-w-md rounded-xl border border-zinc-200 bg-zinc-100 p-1"
+          className="flex w-full max-w-md rounded-xl border border-border bg-primary-1 p-1"
         >
           {RELOCATION_BUSINESS_TYPE_OPTIONS.map((key) => {
             const selected = finalidade === key;
@@ -228,8 +228,8 @@ export default function PublicRelocationHousesListPage() {
                 }
                 className={
                   selected
-                    ? "flex-1 rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition"
-                    : "flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-zinc-600 transition hover:bg-white/80 hover:text-zinc-900"
+                    ? "flex-1 rounded-lg brand-cta-accent px-4 py-2.5 text-sm shadow-sm transition"
+                    : "flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-muted transition hover:bg-card/80 hover:text-foreground"
                 }
               >
                 {BUSINESS_TYPE_TAB_CLASS[key]}
@@ -251,7 +251,7 @@ export default function PublicRelocationHousesListPage() {
           </div>
           <div className="min-w-0 flex-1">
             <label
-              className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500"
+              className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted"
               htmlFor="filter-tipologia"
             >
               Tipologia
@@ -262,7 +262,7 @@ export default function PublicRelocationHousesListPage() {
               onChange={(e) =>
                 setRouteFilters({ cidade, tipologia: e.target.value, finalidade, page: 1 })
               }
-              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
             >
               <option value="">Todas</option>
               {RELOCATION_TYPOLOGY_OPTIONS.map((key) => (
@@ -273,7 +273,7 @@ export default function PublicRelocationHousesListPage() {
             </select>
           </div>
           <div className="min-w-0 flex-1">
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted">
               Valor (EUR)
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -294,7 +294,7 @@ export default function PublicRelocationHousesListPage() {
                 }
                 placeholder="Mín."
                 aria-label="Valor mínimo"
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
               />
               <input
                 inputMode="numeric"
@@ -313,7 +313,7 @@ export default function PublicRelocationHousesListPage() {
                 }
                 placeholder="Máx."
                 aria-label="Valor máximo"
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
               />
             </div>
           </div>
@@ -329,7 +329,7 @@ export default function PublicRelocationHousesListPage() {
                 page: 1,
               })
             }
-            className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100"
+            className="shrink-0 rounded-lg border border-border bg-page px-3 py-2 text-sm font-medium text-foreground transition hover:bg-primary-1"
           >
             Limpar filtros
           </button>
@@ -388,25 +388,25 @@ export default function PublicRelocationHousesListPage() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">Imóveis Relocation</h1>
-        <p className="mt-1 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">Imóveis Relocation</h1>
+        <p className="mt-1 text-sm text-muted">
           Encontre o imóvel perfeito e conte com nosso suporte para fechar o contrato direto com o
           senhorio, sem burocracia.
         </p>
       </div>
 
       <section
-        className="relative overflow-hidden rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-white via-emerald-50/50 to-amber-50/40 shadow-md ring-1 ring-emerald-100/70"
+        className="relative overflow-hidden rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-white via-emerald-50/50 to-brand-accent/5 shadow-md ring-1 ring-emerald-100/70"
         aria-labelledby="relocation-grupao-heading"
       >
         <div
           className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#25D366]/10 blur-3xl"
           aria-hidden
         />
-        <div className="pointer-events-none absolute -bottom-16 -left-12 h-40 w-40 rounded-full bg-[#d58901]/10 blur-2xl" aria-hidden />
+        <div className="pointer-events-none absolute -bottom-16 -left-12 h-40 w-40 rounded-full bg-brand-accent/10 blur-2xl" aria-hidden />
         <div className="relative flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:p-6">
           <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white shadow-md ring-2 ring-[#25D366]/30">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-card shadow-md ring-2 ring-[#25D366]/30">
               <WhatsappBrandIcon className="h-9 w-9 text-[#25D366]" />
             </div>
             <div className="min-w-0 flex-1">
@@ -415,11 +415,11 @@ export default function PublicRelocationHousesListPage() {
               </p>
               <h2
                 id="relocation-grupao-heading"
-                className="mt-1 text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl"
+                className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl"
               >
                 Grupão de relocation
               </h2>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600 sm:text-[0.9375rem]">
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted sm:text-[0.9375rem]">
                 Junta-te ao grupo para receber oportunidades de arrendamento em tempo real.
               </p>
             </div>
@@ -440,13 +440,13 @@ export default function PublicRelocationHousesListPage() {
 
       {!loading ? (
         <section
-          className="rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm sm:px-5"
+          className="rounded-xl border border-border bg-card px-4 py-3 shadow-sm sm:px-5"
           aria-label="Lista resumida de imóveis disponíveis"
         >
           <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-lg font-semibold text-zinc-900">
+            <h2 className="text-lg font-semibold text-foreground">
               {LIST_SECTION_TITLE}
-              <span className="ml-2 text-sm font-medium text-zinc-500">
+              <span className="ml-2 text-sm font-medium text-muted">
                 · {BUSINESS_TYPE_TAB_CLASS[finalidade]}
               </span>
             </h2>
@@ -454,29 +454,29 @@ export default function PublicRelocationHousesListPage() {
               <button
                 type="button"
                 onClick={() => void handleCopyAvailableList()}
-                className="inline-flex w-full shrink-0 items-center justify-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:border-zinc-400 hover:bg-zinc-50 sm:w-auto"
+                className="inline-flex w-full shrink-0 items-center justify-center rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:border-zinc-400 hover:bg-page sm:w-auto"
               >
                 {listCopyDone ? "Copiado!" : "Copiar"}
               </button>
             ) : null}
           </div>
           {availableListRowsSorted.length === 0 ? (
-            <p className="text-sm text-zinc-600">
+            <p className="text-sm text-muted">
               Nenhum imóvel para {BUSINESS_TYPE_TAB_CLASS[finalidade].toLowerCase()} com estes
               filtros nesta página.
             </p>
           ) : (
-            <ul className="list-none space-y-2.5 text-sm leading-relaxed text-zinc-800">
+            <ul className="list-none space-y-2.5 text-sm leading-relaxed text-foreground">
               {availableListRowsSorted.map((h) => {
                 const line = formatRelocationAvailableListLine(h);
                 return (
                   <li
                     key={`list-${h.id}`}
-                    className="border-b border-zinc-100 pb-2.5 last:border-0 last:pb-0"
+                    className="border-b border-border/60 pb-2.5 last:border-0 last:pb-0"
                   >
                     <Link
                       href={`/dashboard/casas/${encodeURIComponent(h.id)}`}
-                      className="block cursor-pointer select-text text-zinc-900 transition hover:text-amber-900 hover:underline decoration-amber-600/50 underline-offset-2"
+                      className="block cursor-pointer select-text text-foreground transition hover:text-brand-primary hover:underline decoration-brand-accent/50 underline-offset-2"
                     >
                       🏠 {line}
                     </Link>
@@ -491,10 +491,10 @@ export default function PublicRelocationHousesListPage() {
       {!loading && featuredRows.length > 0 ? (
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-900">
+            <span className="inline-flex rounded-full bg-brand-accent/15 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-brand-primary">
               Destaque
             </span>
-            <h2 className="text-lg font-semibold text-zinc-900">Imóveis em destaque</h2>
+            <h2 className="text-lg font-semibold text-foreground">Imóveis em destaque</h2>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {featuredRows.map((h) => (
@@ -507,9 +507,9 @@ export default function PublicRelocationHousesListPage() {
       {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {loading ? (
-        <p className="text-sm text-zinc-600">A carregar imóveis…</p>
+        <p className="text-sm text-muted">A carregar imóveis…</p>
       ) : regularRows.length === 0 ? (
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-muted">
           Nenhum imóvel para {BUSINESS_TYPE_TAB_CLASS[finalidade].toLowerCase()} com estes
           critérios. Tente alargar os filtros.
         </p>
@@ -530,18 +530,18 @@ export default function PublicRelocationHousesListPage() {
                 type="button"
                 onClick={() => setRouteFilters({ page: Math.max(1, clampedPage - 1) })}
                 disabled={clampedPage <= 1}
-                className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="cursor-pointer rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Anterior
               </button>
-              <span className="px-2 text-sm text-zinc-700">
+              <span className="px-2 text-sm text-foreground/90">
                 Página <strong>{clampedPage}</strong> de <strong>{totalPages}</strong>
               </span>
               <button
                 type="button"
                 onClick={() => setRouteFilters({ page: Math.min(totalPages, clampedPage + 1) })}
                 disabled={clampedPage >= totalPages}
-                className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="cursor-pointer rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Próxima
               </button>

@@ -10,10 +10,9 @@ import {
   type Ref,
 } from "react";
 
-const CAROUSEL_NAV_BTN_BASE =
-  "absolute z-[26] top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border-0 bg-gradient-to-r from-[#d58901] to-[#f0b23a] p-0 text-white shadow-md outline-none transition-all duration-200 ease-in-out md:h-12 md:w-12 " +
-  "hover:brightness-110 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 " +
-  "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40";
+import { BRAND_CAROUSEL_NAV_BASE } from "@/lib/brand-ui";
+
+const CAROUSEL_NAV_BTN_BASE = BRAND_CAROUSEL_NAV_BASE;
 
 /** Setas discretas (dashboard): opacidade reduzida até hover. */
 export const HORIZONTAL_CAROUSEL_NAV_BTN =
@@ -45,7 +44,7 @@ export const CENTERED_PEEK_CAROUSEL_TRACK =
   "gap-3 pb-3 pt-1 max-md:pl-[12vw] max-md:pr-[12vw] md:justify-center md:gap-5 md:px-0";
 
 const CENTERED_PEEK_EDGE_BTN =
-  "pointer-events-auto absolute bottom-[8%] top-[8%] z-[18] m-0 hidden w-[12vw] min-w-[44px] cursor-pointer border-0 bg-transparent p-0 outline-none max-md:block md:hidden touch-manipulation disabled:pointer-events-none disabled:opacity-0 focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2";
+  "pointer-events-auto absolute bottom-[8%] top-[8%] z-[18] m-0 hidden w-[12vw] min-w-[44px] cursor-pointer border-0 bg-transparent p-0 outline-none max-md:block md:hidden touch-manipulation disabled:pointer-events-none disabled:opacity-0 focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2";
 
 function getCarouselScrollStep(el: HTMLDivElement): number {
   const first = el.firstElementChild as HTMLElement | null;

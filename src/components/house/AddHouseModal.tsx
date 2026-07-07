@@ -423,35 +423,35 @@ export function AddHouseModal({
 
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/45 p-4">
-      <div className="my-8 w-full max-w-3xl rounded-2xl bg-white p-5 shadow-xl">
+      <div className="my-8 w-full max-w-3xl rounded-2xl bg-card p-5 shadow-xl">
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold text-zinc-900">
+            <h2 className="text-xl font-semibold text-foreground">
               {isEdit ? 'Editar casa' : 'Adicionar casa'}
             </h2>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+            className="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground/90 hover:bg-page"
           >
             Fechar
           </button>
         </div>
 
         {loadingHouse ? (
-          <p className="py-8 text-center text-sm text-zinc-600">A carregar anúncio…</p>
+          <p className="py-8 text-center text-sm text-muted">A carregar anúncio…</p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             {isAdmin ? (
               <label className="block text-sm">
-                <span className="mb-1 block text-xs font-medium text-zinc-700">
+                <span className="mb-1 block text-xs font-medium text-foreground/90">
                   Parceiro relocation (titular do anúncio)
                 </span>
                 <select
                   value={assignedPartnerId}
                   onChange={(e) => setAssignedPartnerId(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                 >
                   <option value="">Administrador — conta relocation interna</option>
                   {relocationPartners.map((p) => (
@@ -480,16 +480,16 @@ export function AddHouseModal({
             {!isPartnerAiCreate ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Título</span>
+                  <span className="mb-1 block text-xs font-medium text-foreground/90">Título</span>
                   <input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                     placeholder="Ex.: T2 mobilado no Porto"
                   />
                 </label>
                 <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">
+                  <span className="mb-1 block text-xs font-medium text-foreground/90">
                     Cidade
                     {!isAdmin || isEdit ? <span className="text-red-600"> *</span> : null}
                   </span>
@@ -499,7 +499,7 @@ export function AddHouseModal({
                     list={cityDatalistId}
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                     placeholder="Ex.: Nelas, Lisboa, Porto…"
                     autoComplete="address-level2"
                   />
@@ -510,11 +510,11 @@ export function AddHouseModal({
                   </datalist>
                 </label>
                 <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Tipologia</span>
+                  <span className="mb-1 block text-xs font-medium text-foreground/90">Tipologia</span>
                   <select
                     value={typology}
                     onChange={(e) => setTypology(e.target.value as (typeof HOUSE_TYPOLOGIES)[number]['id'])}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                   >
                     {HOUSE_TYPOLOGIES.map((t) => (
                       <option key={t.id} value={t.id}>
@@ -524,13 +524,13 @@ export function AddHouseModal({
                   </select>
                 </label>
                 <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Finalidade</span>
+                  <span className="mb-1 block text-xs font-medium text-foreground/90">Finalidade</span>
                   <select
                     value={businessType}
                     onChange={(e) =>
                       setBusinessType(e.target.value as (typeof HOUSE_BUSINESS_TYPES)[number]['id'])
                     }
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                   >
                     {HOUSE_BUSINESS_TYPES.map((t) => (
                       <option key={t.id} value={t.id}>
@@ -540,39 +540,39 @@ export function AddHouseModal({
                   </select>
                 </label>
                 <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Disponível a partir</span>
+                  <span className="mb-1 block text-xs font-medium text-foreground/90">Disponível a partir</span>
                   <input
                     type="date"
                     value={availableFrom}
                     onChange={(e) => setAvailableFrom(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                   />
                 </label>
                 <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">
+                  <span className="mb-1 block text-xs font-medium text-foreground/90">
                     {businessType === 'SALE' ? 'Preço de venda (EUR)' : 'Renda mensal (EUR)'}
                   </span>
                   <input
                     value={priceEur}
                     onChange={(e) => setPriceEur(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                   />
                 </label>
                 <label className="text-sm">
-                  <span className="mb-1 block text-xs font-medium text-zinc-700">Taxa relocation (EUR)</span>
+                  <span className="mb-1 block text-xs font-medium text-foreground/90">Taxa relocation (EUR)</span>
                   <input
                     value={relocationFeeEur}
                     onChange={(e) => setRelocationFeeEur(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                   />
                 </label>
                 <div className="grid grid-cols-2 gap-3 sm:col-span-2">
                   <label className="text-sm">
-                    <span className="mb-1 block text-xs font-medium text-zinc-700">Cauções</span>
+                    <span className="mb-1 block text-xs font-medium text-foreground/90">Cauções</span>
                     <select
                       value={caucoesCount}
                       onChange={(e) => setCaucoesCount(e.target.value)}
-                      className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                     >
                       {HOUSE_ENTRADA_COUNT_OPTIONS.map((n) => (
                         <option key={n} value={n}>
@@ -582,11 +582,11 @@ export function AddHouseModal({
                     </select>
                   </label>
                   <label className="text-sm">
-                    <span className="mb-1 block text-xs font-medium text-zinc-700">Rendas antecipadas</span>
+                    <span className="mb-1 block text-xs font-medium text-foreground/90">Rendas antecipadas</span>
                     <select
                       value={rendasEntradaCount}
                       onChange={(e) => setRendasEntradaCount(e.target.value)}
-                      className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                     >
                       {HOUSE_ENTRADA_COUNT_OPTIONS.map((n) => (
                         <option key={n} value={n}>
@@ -596,12 +596,12 @@ export function AddHouseModal({
                     </select>
                   </label>
                 </div>
-                <label className="mt-1 inline-flex items-center gap-2 text-sm text-zinc-700 sm:col-span-2">
+                <label className="mt-1 inline-flex items-center gap-2 text-sm text-foreground/90 sm:col-span-2">
                   <input
                     type="checkbox"
                     checked={furnished}
                     onChange={(e) => setFurnished(e.target.checked)}
-                    className="h-4 w-4 rounded border-zinc-300"
+                    className="h-4 w-4 rounded border-border"
                   />
                   Imóvel mobilado
                 </label>
@@ -609,11 +609,11 @@ export function AddHouseModal({
             ) : null}
 
             <label className="block text-sm">
-              <span className="mb-1 block text-xs font-medium text-zinc-700">
+              <span className="mb-1 block text-xs font-medium text-foreground/90">
                 {isPartnerAiCreate ? 'Descrição do imóvel' : 'Descrição'}
               </span>
               {isPartnerAiCreate ? (
-                <p className="mb-2 text-xs text-zinc-500">
+                <p className="mb-2 text-xs text-muted">
                   Inclui tipologia, cidade, preço, mobilado, cauções, data de entrada, etc. Ao publicar, a IA
                   preenche automaticamente o resto do anúncio.
                 </p>
@@ -622,7 +622,7 @@ export function AddHouseModal({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={isPartnerAiCreate ? 8 : 4}
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                 placeholder={
                   isPartnerAiCreate
                     ? 'Ex.: T2 mobilado no Porto, renda 950€, 2 cauções, entrada 1 de julho, taxa relocation 500€…'
@@ -641,14 +641,14 @@ export function AddHouseModal({
               <button
                 type="button"
                 onClick={handleClose}
-                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                className="rounded-lg border border-border px-4 py-2 text-sm text-foreground/90 hover:bg-page"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={saving || loadingHouse}
-                className="rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                className="rounded-lg brand-cta-accent px-4 py-2 text-sm disabled:opacity-60"
               >
                 {saving
                   ? isPartnerAiCreate

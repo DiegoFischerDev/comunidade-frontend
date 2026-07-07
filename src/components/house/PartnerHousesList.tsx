@@ -133,7 +133,7 @@ function HouseRowCheckbox({
       disabled={disabled}
       onChange={onChange}
       aria-label={ariaLabel}
-      className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+      className="h-4 w-4 rounded border-border text-brand-primary focus:ring-brand-primary/25 disabled:opacity-50"
     />
   );
 }
@@ -198,7 +198,7 @@ function HouseThumb({
       type="button"
       onClick={onClick}
       aria-label={`Editar imóvel ${house.title}`}
-      className={`relative block shrink-0 cursor-pointer overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 transition hover:ring-2 hover:ring-amber-400/60 ${className}`}
+      className={`relative block shrink-0 cursor-pointer overflow-hidden rounded-md border border-border bg-primary-1 transition hover:ring-2 hover:ring-brand-primary/25 ${className}`}
     >
       {imageSrc ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -212,7 +212,7 @@ function HouseThumb({
           preload="metadata"
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center text-[10px] text-zinc-400">
+        <div className="flex h-full w-full items-center justify-center text-[10px] text-muted/80">
           —
         </div>
       )}
@@ -244,7 +244,7 @@ function HouseEditDeleteActions({
         disabled={disabled}
         title="Editar anúncio"
         aria-label="Editar anúncio"
-        className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border bg-card text-foreground hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
       >
         <svg
           className="h-4 w-4"
@@ -267,7 +267,7 @@ function HouseEditDeleteActions({
         aria-label="Eliminar anúncio"
         disabled={deleting || disabled}
         onClick={onDelete}
-        className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-red-200 bg-card text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {deleting ? (
           <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -328,7 +328,7 @@ function HouseTrashActions({
         onClick={onRestore}
         disabled={restoring || disabled}
         title="Restaurar para ocultos"
-        className="inline-flex h-8 items-center gap-1 rounded-md border border-emerald-200 bg-white px-2.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-8 items-center gap-1 rounded-md border border-emerald-200 bg-card px-2.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {restoring ? "Restaurando…" : "Restaurar"}
       </button>
@@ -338,7 +338,7 @@ function HouseTrashActions({
         disabled={deleting || disabled}
         title="Excluir definitivamente (remove fotos e vídeo)"
         aria-label="Excluir definitivamente"
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-200 bg-card text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {deleting ? (
           <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -378,7 +378,7 @@ function TrashInfo({ trashedAt }: { trashedAt?: string | null }) {
         Na lixeira
       </span>
       {daysLeft != null ? (
-        <p className="mt-1 text-[11px] text-zinc-500">
+        <p className="mt-1 text-[11px] text-muted">
           {daysLeft === 0
             ? "Exclusão definitiva iminente"
             : `Exclusão automática em ${daysLeft} ${daysLeft === 1 ? "dia" : "dias"}`}
@@ -425,8 +425,8 @@ function PartnerHouseMobileCard({
 
   return (
     <article
-      className={`rounded-xl border bg-white p-4 shadow-sm ${
-        selected ? "border-blue-400 ring-1 ring-blue-200" : "border-zinc-200"
+      className={`rounded-xl border bg-card p-4 shadow-sm ${
+        selected ? "border-brand-primary ring-1 ring-brand-primary/20" : "border-border"
       }`}
     >
       <div className="flex gap-3">
@@ -446,16 +446,16 @@ function PartnerHouseMobileCard({
           onClick={onEdit}
         />
         <div className="min-w-0 flex-1">
-          <p className="line-clamp-3 text-base leading-snug text-zinc-900">
-            <span className="mr-1.5 inline-flex flex-wrap items-center gap-1.5 font-mono text-xs font-medium tabular-nums text-zinc-500">
+          <p className="line-clamp-3 text-base leading-snug text-foreground">
+            <span className="mr-1.5 inline-flex flex-wrap items-center gap-1.5 font-mono text-xs font-medium tabular-nums text-muted">
               {house.houseId}
               <HouseBusinessTypeBadge businessType={house.businessType} className="" />
             </span>
             <span className="font-semibold">{house.title}</span>
           </p>
-          <p className="mt-1 text-sm text-zinc-600">
+          <p className="mt-1 text-sm text-muted">
             {BUSINESS_TYPE_LABELS[house.businessType] ?? "Preço"}:{" "}
-            <span className="font-semibold tabular-nums text-zinc-900">
+            <span className="font-semibold tabular-nums text-foreground">
               {formatHouseEurFieldDisplay(house.priceEur)}
             </span>
           </p>
@@ -479,11 +479,11 @@ function PartnerHouseMobileCard({
       ) : (
         <>
           <div className="mt-2.5">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted">
               Publicado em
             </p>
             {whatsAppDates.length > 0 ? (
-              <ul className="mt-1 space-y-0.5 text-sm text-zinc-700">
+              <ul className="mt-1 space-y-0.5 text-sm text-foreground/90">
                 {whatsAppDates.map((date, index) => (
                   <li key={`${date}-${index}`} className="tabular-nums">
                     {date}
@@ -491,7 +491,7 @@ function PartnerHouseMobileCard({
                 ))}
               </ul>
             ) : (
-              <p className="mt-1 text-sm text-zinc-500">—</p>
+              <p className="mt-1 text-sm text-muted">—</p>
             )}
             {house.whatsappError?.trim() ? (
               <p className="mt-1 text-xs text-red-600">Falha no envio</p>
@@ -507,8 +507,8 @@ function PartnerHouseMobileCard({
               onDelete={onTrash}
               className="shrink-0 justify-start"
             />
-            <p className="shrink-0 text-right text-sm text-zinc-600">
-              <span className="font-semibold tabular-nums text-zinc-900">{clicks}</span>{" "}
+            <p className="shrink-0 text-right text-sm text-muted">
+              <span className="font-semibold tabular-nums text-foreground">{clicks}</span>{" "}
               {clicks === 1 ? "click" : "clicks"}
             </p>
           </div>
@@ -573,9 +573,9 @@ export function PartnerHousesList({
         ))}
       </div>
 
-      <div className="mt-4 hidden overflow-x-auto rounded-lg border border-zinc-200 bg-white md:block">
+      <div className="mt-4 hidden overflow-x-auto rounded-lg border border-border bg-card md:block">
         <table className="min-w-full text-sm">
-          <thead className="bg-zinc-50 text-zinc-600">
+          <thead className="bg-page text-muted">
             <tr>
               {selection ? (
                 <th className="w-10 px-3 py-3 text-left">
@@ -614,7 +614,7 @@ export function PartnerHousesList({
               return (
               <tr
                 key={r.id}
-                className={`align-top ${selected ? "bg-blue-50/40" : ""}`}
+                className={`align-top ${selected ? "bg-brand-accent/10" : ""}`}
               >
                 {selection ? (
                   <td className="px-3 py-3 align-top">
@@ -626,7 +626,7 @@ export function PartnerHousesList({
                     />
                   </td>
                 ) : null}
-                <td className="whitespace-nowrap px-4 py-3 align-top font-mono text-xs tabular-nums text-zinc-600">
+                <td className="whitespace-nowrap px-4 py-3 align-top font-mono text-xs tabular-nums text-muted">
                   <div>{r.houseId}</div>
                   <HouseBusinessTypeBadge businessType={r.businessType} />
                 </td>
@@ -652,7 +652,7 @@ export function PartnerHousesList({
                 {!isTrash ? (
                   <>
                     <td
-                      className="whitespace-pre-line px-4 py-3 align-top text-xs text-zinc-700"
+                      className="whitespace-pre-line px-4 py-3 align-top text-xs text-foreground/90"
                       title={r.whatsappError?.trim() ? r.whatsappError : undefined}
                     >
                       {houseWhatsAppSendDatesLabel(r)}
@@ -660,24 +660,24 @@ export function PartnerHousesList({
                         <span className="mt-1 block text-red-600">Falha no envio</span>
                       ) : null}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums text-zinc-900">
+                    <td className="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums text-foreground">
                       {r._count?.redirectClicks ?? 0}
                     </td>
                   </>
                 ) : null}
                 <td className="px-4 py-3">
-                  <p className="font-semibold text-zinc-900">{r.title}</p>
+                  <p className="font-semibold text-foreground">{r.title}</p>
                 </td>
-                <td className="px-4 py-3 text-zinc-700">{CITY_LABELS[r.city] ?? r.city}</td>
-                <td className="px-4 py-3 text-zinc-700">
+                <td className="px-4 py-3 text-foreground/90">{CITY_LABELS[r.city] ?? r.city}</td>
+                <td className="px-4 py-3 text-foreground/90">
                   {TYPOLOGY_LABELS[r.typology] ?? r.typology}
                 </td>
-                <td className="px-4 py-3 text-zinc-700">{formatDatePt(r.availableFrom)}</td>
-                <td className="px-4 py-3 text-zinc-700">
+                <td className="px-4 py-3 text-foreground/90">{formatDatePt(r.availableFrom)}</td>
+                <td className="px-4 py-3 text-foreground/90">
                   {formatHouseEurFieldDisplay(r.priceEur)}
                 </td>
-                <td className="px-4 py-3 text-zinc-700">
-                  <div className="text-xs text-zinc-500">
+                <td className="px-4 py-3 text-foreground/90">
+                  <div className="text-xs text-muted">
                     Taxa: {formatRelocationFeeEur(r.relocationFeeEur)}
                   </div>
                   <div>

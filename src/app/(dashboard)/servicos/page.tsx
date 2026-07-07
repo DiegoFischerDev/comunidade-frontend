@@ -55,13 +55,13 @@ export default function PublicRecommendedServicesPage() {
     <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-6 sm:px-6 sm:py-10">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-2xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800/90">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-primary/90">
             Comunidade Rafa Portugal
           </p>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Serviços que indico
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-zinc-600 sm:text-base">
+          <p className="mt-2 text-sm leading-relaxed text-muted sm:text-base">
             Parceiros de confiança para não cair em golpes.
           </p>
         </div>
@@ -69,7 +69,7 @@ export default function PublicRecommendedServicesPage() {
           <button
             type="button"
             onClick={() => setAdminModalOpen(true)}
-            className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:border-amber-300 hover:bg-amber-50"
+            className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground shadow-sm hover:border-brand-accent/50 hover:bg-page"
             aria-label="Configurar serviços indicados"
           >
             <GearIcon className="h-4 w-4" />
@@ -83,14 +83,14 @@ export default function PublicRecommendedServicesPage() {
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="h-72 animate-pulse rounded-2xl border border-zinc-200 bg-zinc-100"
+              className="h-72 animate-pulse rounded-2xl border border-border bg-primary-1"
             />
           ))}
         </div>
       ) : error ? (
         <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
       ) : rows.length === 0 ? (
-        <p className="rounded-xl border border-zinc-200 bg-white px-4 py-8 text-center text-sm text-zinc-600">
+        <p className="rounded-xl border border-border bg-card px-4 py-8 text-center text-sm text-muted">
           Ainda não há serviços publicados.
         </p>
       ) : (

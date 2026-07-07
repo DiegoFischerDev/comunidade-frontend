@@ -363,13 +363,13 @@ export function LeadDocumentsUploadView() {
   );
 
   return (
-    <div className="min-h-screen bg-zinc-50 px-4 py-8">
+    <div className="min-h-screen bg-page px-4 py-8">
       <div className="mx-auto w-full max-w-3xl">
         <header className="mb-6 text-center">
-          <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
+          <p className="text-xs font-semibold uppercase tracking-wider text-brand-primary">
             Comunidade Rafa Portugal
           </p>
-          <h1 className="mt-1 text-2xl font-semibold text-zinc-900 sm:text-3xl">
+          <h1 className="mt-1 text-2xl font-semibold text-foreground sm:text-3xl">
             Envio de documentos
           </h1>
         </header>
@@ -431,9 +431,9 @@ function GatePanel(props: {
     }
   }
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-zinc-900">Confirma o teu WhatsApp</h2>
-      <p className="mt-1 text-sm text-zinc-600">
+    <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-foreground">Confirma o teu WhatsApp</h2>
+      <p className="mt-1 text-sm text-muted">
         Para abrirmos a tua página de envio, confirma o número de WhatsApp que usaste no
         questionário de financiamento.
       </p>
@@ -447,7 +447,7 @@ function GatePanel(props: {
         />
       </div>
       {props.error ? null : (
-        <p className="mt-2 text-xs text-zinc-500">
+        <p className="mt-2 text-xs text-muted">
           Usamos este número apenas para te identificar — não enviamos mensagens.
         </p>
       )}
@@ -455,7 +455,7 @@ function GatePanel(props: {
         type="button"
         onClick={props.onSubmit}
         disabled={props.loading}
-        className="mt-4 w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-amber-600 disabled:cursor-wait disabled:opacity-60"
+        className="mt-4 w-full rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow hover:bg-brand-primary disabled:cursor-wait disabled:opacity-60"
       >
         {props.loading ? 'A confirmar…' : 'Confirmar e continuar'}
       </button>
@@ -467,7 +467,7 @@ function PartnerCard({ partner }: { partner: PartnerInfo }) {
   const initial = (partner.name?.trim()?.charAt(0) ?? 'P').toUpperCase();
   return (
     <section className="px-2 py-4 text-center sm:px-6 sm:py-6">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-700">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-primary">
         A tua gestora de crédito
       </p>
       <div className="mt-4">
@@ -479,16 +479,16 @@ function PartnerCard({ partner }: { partner: PartnerInfo }) {
             className="mx-auto block h-auto w-full max-w-md object-contain sm:max-w-[16rem]"
           />
         ) : (
-          <div className="mx-auto flex aspect-square w-full max-w-md items-center justify-center text-7xl font-semibold text-amber-700 sm:max-w-[16rem]">
+          <div className="mx-auto flex aspect-square w-full max-w-md items-center justify-center text-7xl font-semibold text-brand-primary sm:max-w-[16rem]">
             {initial}
           </div>
         )}
       </div>
-      <h3 className="mt-5 text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+      <h3 className="mt-5 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
         {partner.name}
       </h3>
       {partner.shortDescription ? (
-        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-zinc-600">
+        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted">
           {partner.shortDescription}
         </p>
       ) : null}
@@ -558,10 +558,10 @@ function FormPanel(props: {
 
       <PartnerCard partner={partner} />
 
-      <section className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+      <section className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
         <header>
-          <h2 className="text-lg font-semibold text-zinc-900">Os teus dados</h2>
-          <p className="mt-0.5 text-xs text-zinc-500">
+          <h2 className="text-lg font-semibold text-foreground">Os teus dados</h2>
+          <p className="mt-0.5 text-xs text-muted">
             Confirma o nome e o email para a gestora — usamos estes dados no email da
             análise.
           </p>
@@ -574,7 +574,7 @@ function FormPanel(props: {
               type="text"
               value={form.nome}
               onChange={(e) => setForm({ ...form, nome: e.target.value })}
-              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="block w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
               autoComplete="name"
             />
           </Field>
@@ -585,7 +585,7 @@ function FormPanel(props: {
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="block w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
               autoComplete="email"
               placeholder="exemplo@email.com"
             />
@@ -593,12 +593,12 @@ function FormPanel(props: {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+      <section className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
         <header>
-          <h2 className="text-lg font-semibold text-zinc-900">
+          <h2 className="text-lg font-semibold text-foreground">
             Sobre o teu perfil financeiro
           </h2>
-          <p className="mt-0.5 text-xs text-zinc-500">
+          <p className="mt-0.5 text-xs text-muted">
             {labelForMode(mode)}. Estes dados ajudam a gestora a preparar a análise.
           </p>
         </header>
@@ -611,7 +611,7 @@ function FormPanel(props: {
               onChange={(e) =>
                 setForm({ ...form, estadoCivil: e.target.value as EstadoCivil | '' })
               }
-              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="block w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
             >
               <option value="">Selecionar…</option>
               {ESTADOS_CIVIS.map((s) => (
@@ -629,7 +629,7 @@ function FormPanel(props: {
               min={0}
               value={form.numDependentes}
               onChange={(e) => setForm({ ...form, numDependentes: e.target.value })}
-              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="block w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
               placeholder="0"
             />
           </Field>
@@ -640,7 +640,7 @@ function FormPanel(props: {
               type="text"
               value={form.anosEmprego}
               onChange={(e) => setForm({ ...form, anosEmprego: e.target.value })}
-              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="block w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
               placeholder="Ex.: 2 ou menos de 1"
             />
           </Field>
@@ -660,7 +660,7 @@ function FormPanel(props: {
                       : form.disponibilidadeFiador,
                 })
               }
-              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="block w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
             >
               <option value="">Selecionar…</option>
               {VINCULOS_LABORAIS.map((v) => (
@@ -686,7 +686,7 @@ function FormPanel(props: {
                     disponibilidadeFiador: e.target.value as DisponibilidadeFiador | '',
                   })
                 }
-                className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                className="block w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
               >
                 <option value="">Selecionar…</option>
                 {DISPONIBILIDADES_FIADOR.map((d) => (
@@ -699,14 +699,14 @@ function FormPanel(props: {
           ) : null}
         </div>
 
-        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/50 p-3 text-sm text-zinc-900">
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-brand-accent/30 bg-brand-accent/10 p-3 text-sm text-foreground">
           <input
             type="checkbox"
             checked={form.financiamento100}
             onChange={(e) =>
               setForm({ ...form, financiamento100: e.target.checked })
             }
-            className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-amber-600 focus:ring-amber-500"
+            className="mt-0.5 h-4 w-4 rounded border-border text-brand-primary focus:ring-brand-primary/25"
           />
           <span>
             Solicito financiamento a <strong>100%</strong> para jovens com menos de 35 anos.
@@ -715,22 +715,22 @@ function FormPanel(props: {
       </section>
 
       {form.vinculoLaboral ? (
-        <section className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <section className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
           <header className="flex flex-wrap items-baseline justify-between gap-2">
             <div>
-              <h2 className="text-lg font-semibold text-zinc-900">Documentos obrigatórios</h2>
-              <p className="mt-0.5 text-xs text-zinc-500">
+              <h2 className="text-lg font-semibold text-foreground">Documentos obrigatórios</h2>
+              <p className="mt-0.5 text-xs text-muted">
                 Aceitamos PDF, JPG e PNG até 15 MB por ficheiro. Os documentos ficam guardados
                 no teu dispositivo até clicares em «Enviar».
               </p>
             </div>
-            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700">
+            <span className="rounded-full bg-primary-1 px-3 py-1 text-xs font-medium text-foreground/90">
               {attachedCount} de {totalRequired} anexados
             </span>
           </header>
-          <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
+          <div className="h-2 overflow-hidden rounded-full bg-primary-1">
             <div
-              className="h-full bg-gradient-to-r from-amber-400 to-amber-600 transition-all"
+              className="h-full bg-gradient-to-r from-brand-accent to-brand-accent-dark transition-all"
               style={{ width: `${progressPct}%` }}
             />
           </div>
@@ -756,12 +756,12 @@ function FormPanel(props: {
       ) : null}
 
       {form.vinculoLaboral ? (
-        <section className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <section className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
           <header>
-            <h2 className="text-lg font-semibold text-zinc-900">
+            <h2 className="text-lg font-semibold text-foreground">
               Mensagem para sua gestora
             </h2>
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="mt-0.5 text-xs text-muted">
               Aproveita para falar um pouco mais sobre você e adicionar alguma informação que achar necessária.
             </p>
           </header>
@@ -769,29 +769,29 @@ function FormPanel(props: {
             value={form.mensagem}
             onChange={(e) => setForm({ ...form, mensagem: e.target.value })}
             rows={3}
-            className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+            className="block w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
             placeholder="Alguma informação adicional…"
           />
 
           {missingForCheckboxes.length ? (
             <details
               open
-              className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3"
+              className="rounded-xl border border-border bg-page/60 p-3"
             >
-              <summary className="cursor-pointer text-sm font-medium text-zinc-800">
+              <summary className="cursor-pointer text-sm font-medium text-foreground">
                 Não tens algum destes documentos?
               </summary>
               <div className="mt-3 space-y-2">
                 {missingForCheckboxes.map((m) => (
                   <label
                     key={m.field}
-                    className="flex cursor-pointer items-start gap-2 text-sm text-zinc-800"
+                    className="flex cursor-pointer items-start gap-2 text-sm text-foreground"
                   >
                     <input
                       type="checkbox"
                       checked={form.semDocsLabels.includes(m.label)}
                       onChange={(e) => onToggleSemDocs(m.label, e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-amber-600 focus:ring-amber-500"
+                      className="mt-0.5 h-4 w-4 rounded border-border text-brand-primary focus:ring-brand-primary/25"
                     />
                     <span>{m.label}</span>
                   </label>
@@ -800,12 +800,12 @@ function FormPanel(props: {
             </details>
           ) : null}
 
-          <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-zinc-200 bg-white p-3 text-sm text-zinc-800">
+          <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-border bg-card p-3 text-sm text-foreground">
             <input
               type="checkbox"
               checked={form.consent}
               onChange={(e) => setForm({ ...form, consent: e.target.checked })}
-              className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-amber-600 focus:ring-amber-500"
+              className="mt-0.5 h-4 w-4 rounded border-border text-brand-primary focus:ring-brand-primary/25"
             />
             <span>
               Autorizo o tratamento dos meus dados pessoais e dos documentos enviados para
@@ -824,7 +824,7 @@ function FormPanel(props: {
             type="button"
             onClick={onSubmit}
             disabled={submitting}
-            className="w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-amber-600 disabled:cursor-wait disabled:opacity-60"
+            className="w-full rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow hover:bg-brand-primary disabled:cursor-wait disabled:opacity-60"
           >
             {submitting
               ? 'A enviar…'
@@ -881,7 +881,7 @@ function SentPanel(props: {
       <PartnerCard partner={partner} />
 
       {wa ? (
-        <section className="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-2xl border border-emerald-200 bg-card shadow-sm">
           <div className="flex flex-col items-center gap-4 p-6 text-center sm:flex-row sm:text-left">
             <div
               aria-hidden
@@ -900,10 +900,10 @@ function SentPanel(props: {
               <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
                 Falar com a tua gestora
               </p>
-              <p className="mt-0.5 text-base font-semibold text-zinc-900">
+              <p className="mt-0.5 text-base font-semibold text-foreground">
                 {partner.name}
               </p>
-              <p className="text-sm font-medium text-zinc-700">{waDisplay}</p>
+              <p className="text-sm font-medium text-foreground/90">{waDisplay}</p>
             </div>
             <a
               href={`https://wa.me/${wa}`}
@@ -926,11 +926,11 @@ function SentPanel(props: {
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h3 className="text-base font-semibold text-zinc-900">
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <h3 className="text-base font-semibold text-foreground">
           Precisas de enviar mais alguma coisa?
         </h3>
-        <p className="mt-1 text-sm text-zinc-600">
+        <p className="mt-1 text-sm text-muted">
           Podes enviar documentos do(a) cônjuge ou complementar este envio com documentos em
           falta.
         </p>
@@ -938,19 +938,19 @@ function SentPanel(props: {
           <button
             type="button"
             onClick={() => onStartNewMode('extra')}
-            className="rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+            className="rounded-xl border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground hover:bg-page"
           >
             Enviar mais documentos
           </button>
           <button
             type="button"
             onClick={() => onStartNewMode('spouse')}
-            className="rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+            className="rounded-xl border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground hover:bg-page"
           >
             Enviar documentos do cônjuge
           </button>
         </div>
-        <p className="mt-3 text-xs text-zinc-500">
+        <p className="mt-3 text-xs text-muted">
           (Anteriormente enviámos: {labelForMode(mode)}.)
         </p>
       </section>
@@ -968,12 +968,12 @@ function Field(props: {
     <div>
       <label
         htmlFor={props.htmlFor}
-        className="block text-xs font-medium uppercase tracking-wide text-zinc-700"
+        className="block text-xs font-medium uppercase tracking-wide text-foreground/90"
       >
         {props.label}
       </label>
       <div className="mt-1">{props.children}</div>
-      {props.hint ? <p className="mt-1 text-xs text-zinc-500">{props.hint}</p> : null}
+      {props.hint ? <p className="mt-1 text-xs text-muted">{props.hint}</p> : null}
     </div>
   );
 }

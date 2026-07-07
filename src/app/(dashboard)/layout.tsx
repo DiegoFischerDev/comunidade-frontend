@@ -12,6 +12,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getAuthToken, clearAuthToken, api } from '@/lib/api';
 import {
+  BRAND_ICON_LIGHT,
+  BRAND_LOGO_HORIZONTAL,
+  BRAND_LOGO_SQUARE,
+  SITE_NAME_FULL,
+} from '@/lib/site-branding';
+import {
   MEMBERSHIP_CHECKOUT_PATH,
   RAFA_CALL_CHECKOUT_PATH,
   OPEN_AUTH_LOGIN_EVENT,
@@ -33,6 +39,17 @@ import { CardButton } from '@/components/ui/CardButton';
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
 import { SupportTicketRoot } from '@/components/support-ticket';
 import { SiteFooter } from '@/components/site/SiteFooter';
+import {
+  DASHBOARD_HOME_PATH,
+  isDashboardHomePath,
+} from '@/lib/dashboard-home';
+import {
+  NAV_LINK_ACTIVE_CLASS,
+  NAV_LINK_INACTIVE_CLASS,
+  PAGE_SHELL_CLASS,
+  SIDEBAR_NAV_CLASS,
+  SIDEBAR_SHELL_CLASS,
+} from '@/lib/brand-ui';
 
 
 function formatWhatsappRegistrationDisplay(digits: string) {
@@ -153,7 +170,7 @@ function AuthPasswordField({
     <div>
       <label
         htmlFor={id}
-        className="block text-xs font-medium text-zinc-700"
+        className="block text-xs font-medium text-foreground/90"
       >
         {label}
       </label>
@@ -168,11 +185,11 @@ function AuthPasswordField({
           minLength={minLength}
           autoComplete={autoComplete}
           disabled={disabled}
-          className="w-full rounded-lg border border-zinc-300 py-2 pl-3 pr-10 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+          className="w-full rounded-lg border border-border py-2 pl-3 pr-10 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 disabled:opacity-50"
         />
         <button
           type="button"
-          className="absolute inset-y-0 right-0 flex items-center px-2.5 text-zinc-500 transition hover:text-zinc-800 disabled:pointer-events-none disabled:opacity-40"
+          className="absolute inset-y-0 right-0 flex items-center px-2.5 text-muted transition hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
           onClick={() => setShow((s) => !s)}
           aria-label={show ? 'Ocultar senha' : 'Mostrar senha'}
           disabled={disabled}
@@ -195,6 +212,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const isDashboardHome = isDashboardHomePath(pathname);
   const isStandaloneCheckout =
     pathname === MEMBERSHIP_CHECKOUT_PATH || pathname === RAFA_CALL_CHECKOUT_PATH;
   const {
@@ -360,8 +378,8 @@ export default function DashboardLayout({
 
   if (!mounted || authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
-        <p className="text-zinc-700">Carregando…</p>
+      <div className="flex min-h-screen items-center justify-center bg-page">
+        <p className="text-foreground/90">Carregando…</p>
       </div>
     );
   }
@@ -401,21 +419,29 @@ export default function DashboardLayout({
             type="button"
             onClick={() => {
               if (typeof window === 'undefined') return;
-              if (pathname === '/dashboard') {
+              if (isDashboardHomePath(pathname)) {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 return;
               }
-              router.push('/dashboard');
+              router.push(DASHBOARD_HOME_PATH);
             }}
             className="cursor-pointer"
             aria-label="Ir para o início"
           >
             <Image
-              src="/logo_principal2.png"
-              alt="Comunidade Rafa Portugal"
-              width={740}
-              height={174}
-              className="h-18 w-auto max-w-full object-contain sm:h-28"
+              src={BRAND_LOGO_SQUARE}
+              alt={SITE_NAME_FULL}
+              width={800}
+              height={800}
+              className="hidden h-24 w-24 object-contain md:block"
+              priority
+            />
+            <Image
+              src={BRAND_LOGO_HORIZONTAL}
+              alt={SITE_NAME_FULL}
+              width={1200}
+              height={600}
+              className="h-18 w-auto max-w-full object-contain sm:h-28 md:hidden"
               priority
             />
           </button>
@@ -427,7 +453,7 @@ export default function DashboardLayout({
             target="_blank"
             rel="noreferrer"
             aria-label="Instagram"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-brand-green/35 bg-white text-brand-green shadow-sm transition hover:border-brand-green/60 hover:bg-brand-green/12 hover:shadow"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-brand-on-primary/25 bg-brand-on-primary/10 text-brand-on-primary shadow-sm transition hover:border-brand-on-primary/40 hover:bg-brand-on-primary/20 hover:shadow"
           >
             <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="currentColor" aria-hidden>
               <path d="M7.5 2h9A5.5 5.5 0 0 1 22 7.5v9A5.5 5.5 0 0 1 16.5 22h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2Zm0 2A3.5 3.5 0 0 0 4 7.5v9A3.5 3.5 0 0 0 7.5 20h9a3.5 3.5 0 0 0 3.5-3.5v-9A3.5 3.5 0 0 0 16.5 4h-9Zm10.25 1.75a1 1 0 1 1 0 2 1 1 0 0 1 0-2ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />
@@ -438,7 +464,7 @@ export default function DashboardLayout({
             target="_blank"
             rel="noreferrer"
             aria-label="TikTok"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d58901]/35 bg-white text-[#d58901] shadow-sm transition hover:border-[#c07c01]/70 hover:bg-[#f0b23a]/15 hover:text-[#c07c01] hover:shadow"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-brand-secondary/40 bg-brand-on-primary/10 text-brand-secondary shadow-sm transition hover:border-brand-secondary hover:bg-brand-secondary/25 hover:shadow"
           >
             <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="currentColor" aria-hidden>
               <path d="M14.5 3c.3 2.5 1.8 4.7 4.3 5.5v3.1c-1.8 0-3.4-.6-4.7-1.6v6.3c0 3.4-2.8 6.2-6.2 6.2S1.7 19 1.7 15.6s2.8-6.2 6.2-6.2c.4 0 .8 0 1.2.1v3.4c-.4-.2-.8-.3-1.2-.3-1.6 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3V3h3.4Z" />
@@ -449,7 +475,7 @@ export default function DashboardLayout({
             target="_blank"
             rel="noreferrer"
             aria-label="Canal no YouTube"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#910001]/35 bg-white text-[#910001] shadow-sm transition hover:border-[#910001]/60 hover:bg-[#910001]/10 hover:shadow"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-brand-on-primary/25 bg-brand-on-primary/10 text-brand-on-primary/90 shadow-sm transition hover:border-brand-on-primary/40 hover:bg-brand-on-primary/20 hover:shadow"
           >
             <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="currentColor" aria-hidden>
               <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
@@ -458,13 +484,13 @@ export default function DashboardLayout({
         </div>
 
         {/* Menu principal */}
-        <nav className="mt-4 min-h-0 flex-1 space-y-1 overflow-y-auto rounded-lg bg-zinc-50 p-1 pr-1 pb-3">
+        <nav className={`mt-4 min-h-0 flex-1 space-y-1 overflow-y-auto p-1 pr-1 pb-3 ${SIDEBAR_NAV_CLASS}`}>
           <Link
-            href="/dashboard"
+            href={DASHBOARD_HOME_PATH}
             className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/dashboard'
-                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                : 'text-zinc-800 hover:bg-zinc-100'
+              isDashboardHomePath(pathname)
+                ? NAV_LINK_ACTIVE_CLASS
+                : NAV_LINK_INACTIVE_CLASS
             }`}
           >
             Início
@@ -473,8 +499,8 @@ export default function DashboardLayout({
             href="/relocation/imoveis"
             className={`block rounded-md px-3 py-2 text-sm ${
               pathname === '/relocation/imoveis'
-                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                : 'text-zinc-800 hover:bg-zinc-100'
+                ? NAV_LINK_ACTIVE_CLASS
+                : NAV_LINK_INACTIVE_CLASS
             }`}
           >
             Imóveis
@@ -483,18 +509,18 @@ export default function DashboardLayout({
             href="/financiamento"
             className={`block rounded-md px-3 py-2 text-sm ${
               pathname === '/financiamento'
-                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                : 'text-zinc-800 hover:bg-zinc-100'
+                ? NAV_LINK_ACTIVE_CLASS
+                : NAV_LINK_INACTIVE_CLASS
             }`}
           >
-            Financiar casa em PT
+            Financiamento
           </Link>
           <Link
             href="/servicos"
             className={`block rounded-md px-3 py-2 text-sm ${
               pathname === '/servicos'
-                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                : 'text-zinc-800 hover:bg-zinc-100'
+                ? NAV_LINK_ACTIVE_CLASS
+                : NAV_LINK_INACTIVE_CLASS
             }`}
           >
             Serviços
@@ -503,8 +529,8 @@ export default function DashboardLayout({
             href="/ofertas-trabalho"
             className={`block rounded-md px-3 py-2 text-sm ${
               pathname === '/ofertas-trabalho'
-                ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                : 'text-zinc-800 hover:bg-zinc-100'
+                ? NAV_LINK_ACTIVE_CLASS
+                : NAV_LINK_INACTIVE_CLASS
             }`}
           >
             Ofertas de trabalho
@@ -514,8 +540,8 @@ export default function DashboardLayout({
               href="/dashboard/reclame-aqui"
               className={`block rounded-md px-3 py-2 text-sm ${
                 pathname === '/dashboard/reclame-aqui'
-                  ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                  : 'text-zinc-800 hover:bg-zinc-100'
+                  ? NAV_LINK_ACTIVE_CLASS
+                  : NAV_LINK_INACTIVE_CLASS
               }`}
             >
               Reclame aqui
@@ -523,16 +549,16 @@ export default function DashboardLayout({
           ) : null}
           {isRelocationPartner ? (
             <>
-              <div className="mt-2 border-t border-zinc-200 pt-2">
-                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+              <div className="mt-2 border-t border-border pt-2">
+                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
                   Menu de parceiro
                 </p>
                 <Link
                   href="/dashboard/casas"
                   className={`block rounded-md px-3 py-2 text-sm ${
                     isCasasPath
-                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                      : 'text-zinc-800 hover:bg-zinc-100'
+                      ? NAV_LINK_ACTIVE_CLASS
+                      : NAV_LINK_INACTIVE_CLASS
                   }`}
                 >
                   Minhas casas
@@ -541,8 +567,8 @@ export default function DashboardLayout({
                   href="/dashboard/business"
                   className={`block rounded-md px-3 py-2 text-sm ${
                     isBusinessPath
-                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                      : 'text-zinc-800 hover:bg-zinc-100'
+                      ? NAV_LINK_ACTIVE_CLASS
+                      : NAV_LINK_INACTIVE_CLASS
                   }`}
                 >
                   Minha empresa
@@ -552,16 +578,16 @@ export default function DashboardLayout({
           ) : (
             <>
           {user?.role === 'ADMIN' && (
-            <div className="mt-2 border-t border-zinc-200 pt-2">
-              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+            <div className="mt-2 border-t border-border pt-2">
+              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
                 Menu de admin
               </p>
               <Link
                 href="/dashboard/users"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/users'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
+                    ? NAV_LINK_ACTIVE_CLASS
+                    : NAV_LINK_INACTIVE_CLASS
                 }`}
               >
                 Users
@@ -570,8 +596,8 @@ export default function DashboardLayout({
                 href="/dashboard/admin/rafacall-hoje"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/rafacall-hoje'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
+                    ? NAV_LINK_ACTIVE_CLASS
+                    : NAV_LINK_INACTIVE_CLASS
                 }`}
               >
                 Agendamentos
@@ -580,8 +606,8 @@ export default function DashboardLayout({
                 href="/dashboard/admin/reclame-aqui"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/reclame-aqui'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
+                    ? NAV_LINK_ACTIVE_CLASS
+                    : NAV_LINK_INACTIVE_CLASS
                 }`}
               >
                 Reclame aqui
@@ -590,8 +616,8 @@ export default function DashboardLayout({
                 href="/dashboard/admin/houses"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/houses'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
+                    ? NAV_LINK_ACTIVE_CLASS
+                    : NAV_LINK_INACTIVE_CLASS
                 }`}
               >
                 Casas (anúncios)
@@ -601,8 +627,8 @@ export default function DashboardLayout({
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/share-links' ||
                   pathname.startsWith('/dashboard/admin/share-links/')
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
+                    ? NAV_LINK_ACTIVE_CLASS
+                    : NAV_LINK_INACTIVE_CLASS
                 }`}
               >
                 Links rastreados
@@ -611,8 +637,8 @@ export default function DashboardLayout({
                 href="/dashboard/admin/leads-gestoras"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/leads-gestoras'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
+                    ? NAV_LINK_ACTIVE_CLASS
+                    : NAV_LINK_INACTIVE_CLASS
                 }`}
               >
                 Leads gestoras
@@ -621,8 +647,8 @@ export default function DashboardLayout({
                 href="/dashboard/partners"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/partners'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
+                    ? NAV_LINK_ACTIVE_CLASS
+                    : NAV_LINK_INACTIVE_CLASS
                 }`}
               >
                 Parceiros
@@ -631,8 +657,8 @@ export default function DashboardLayout({
                 href="/dashboard/admin/whatsapp-scan"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   pathname === '/dashboard/admin/whatsapp-scan'
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
+                    ? NAV_LINK_ACTIVE_CLASS
+                    : NAV_LINK_INACTIVE_CLASS
                 }`}
               >
                 Whatsapp scan
@@ -640,16 +666,16 @@ export default function DashboardLayout({
             </div>
           )}
           {user?.role === 'PARTNER' && !isRelocationPartner ? (
-            <div className="mt-2 border-t border-zinc-200 pt-2">
-              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+            <div className="mt-2 border-t border-border pt-2">
+              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
                 Menu de parceiro
               </p>
               <Link
                 href="/dashboard/business"
                 className={`block rounded-md px-3 py-2 text-sm ${
                   isBusinessPath
-                    ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                    : 'text-zinc-800 hover:bg-zinc-100'
+                    ? NAV_LINK_ACTIVE_CLASS
+                    : NAV_LINK_INACTIVE_CLASS
                 }`}
               >
                 Minha empresa
@@ -659,8 +685,8 @@ export default function DashboardLayout({
                   href="/dashboard/leads"
                   className={`block rounded-md px-3 py-2 text-sm ${
                     pathname === '/dashboard/leads'
-                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                      : 'text-zinc-800 hover:bg-zinc-100'
+                      ? NAV_LINK_ACTIVE_CLASS
+                      : NAV_LINK_INACTIVE_CLASS
                   }`}
                 >
                   Meus leads
@@ -671,8 +697,8 @@ export default function DashboardLayout({
                   href="/dashboard/proximo-contacto"
                   className={`block rounded-md px-3 py-2 text-sm ${
                     pathname === '/dashboard/proximo-contacto'
-                      ? 'bg-gradient-to-r from-[#d58901] to-[#f0b23a] font-medium text-white'
-                      : 'text-zinc-800 hover:bg-zinc-100'
+                      ? NAV_LINK_ACTIVE_CLASS
+                      : NAV_LINK_INACTIVE_CLASS
                   }`}
                 >
                   Próximo contacto
@@ -687,7 +713,7 @@ export default function DashboardLayout({
       </div>
 
       {/* Rodapé (somente usuário/ação) */}
-      <div className="mt-auto border-t border-secondary-2 pt-4 text-sm text-zinc-700">
+      <div className="mt-auto border-t brand-sidebar-divider pt-4 text-sm brand-sidebar-text-muted">
         {/* Bloco do usuário */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
@@ -700,34 +726,30 @@ export default function DashboardLayout({
                 className="h-8 w-8 object-contain"
               />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#d58901] text-[16px] font-semibold text-white">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-accent text-[16px] font-semibold text-brand-primary">
                 {sidebarDisplayName.charAt(0).toUpperCase()}
               </div>
             )}
             <div className="min-w-0">
-              <p
-                className={`truncate text-xs font-semibold ${
-                  user ? 'text-zinc-900' : 'text-zinc-900'
-                }`}
-              >
+              <p className="truncate text-xs font-semibold brand-sidebar-text">
                 {sidebarDisplayName}
               </p>
               {user ? (
                 user.role === 'ADMIN' || user.role === 'PARTNER' ? (
-                  <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                  <p className="text-[10px] uppercase tracking-wide brand-sidebar-text-muted">
                     {roleLabel}
                     {isImpersonating && ' (modo admin)'}
                   </p>
                 ) : isActiveMember(user) ? (
                   <div className="mt-0.5 min-w-0 space-y-0.5">
-                    <p className="text-[10px] font-medium leading-tight text-zinc-600">
+                    <p className="text-[10px] font-medium leading-tight brand-sidebar-text-muted">
                       Membro VIP
                       {isImpersonating && ' (modo admin)'}
                     </p>
                     {user.membershipExpiresAt ? (
-                      <p className="text-[10px] leading-tight text-zinc-500">
+                      <p className="text-[10px] leading-tight brand-sidebar-text-muted">
                         Válido até{' '}
-                        <span className="font-medium text-zinc-700">
+                        <span className="font-medium brand-sidebar-text">
                           {new Date(user.membershipExpiresAt).toLocaleDateString('pt-PT', {
                             day: '2-digit',
                             month: '2-digit',
@@ -738,7 +760,7 @@ export default function DashboardLayout({
                     ) : null}
                   </div>
                 ) : (
-                  <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                  <p className="text-[10px] uppercase tracking-wide brand-sidebar-text-muted">
                     {roleLabel}
                     {isImpersonating && ' (modo admin)'}
                   </p>
@@ -751,7 +773,7 @@ export default function DashboardLayout({
               <button
                 type="button"
                 onClick={() => logout()}
-                className="cursor-pointer text-xs font-medium text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
+                className="cursor-pointer text-xs font-medium brand-sidebar-text-muted underline-offset-2 hover:text-brand-on-primary hover:underline"
               >
                 Sair
               </button>
@@ -763,7 +785,7 @@ export default function DashboardLayout({
                   setIsAuthModalOpen(true);
                   setIsMenuOpen(false);
                 }}
-                className="cursor-pointer text-xs font-medium text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
+                className="cursor-pointer text-xs font-medium brand-sidebar-text-muted underline-offset-2 hover:text-brand-on-primary hover:underline"
               >
                 Login
               </button>
@@ -777,7 +799,7 @@ export default function DashboardLayout({
             onClick={async () => {
               await stopImpersonation();
             }}
-            className="mt-3 w-full cursor-pointer rounded-full border border-zinc-300 px-3 py-1.5 text-[11px] font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
+            className="mt-3 w-full cursor-pointer rounded-full border border-brand-on-primary/25 px-3 py-1.5 text-[11px] font-medium brand-sidebar-text hover:bg-brand-primary-light"
           >
             Voltar ao modo admin
           </button>
@@ -796,7 +818,9 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-50 md:pl-56">
+    <div
+      className={`flex min-h-screen flex-col ${isDashboardHome ? '' : 'md:pl-56'} ${PAGE_SHELL_CLASS}`}
+    >
       {/* Preload de imagens usadas em modais (evita carregar só quando abre) */}
       <div className="pointer-events-none fixed -left-[9999px] -top-[9999px] h-0 w-0 overflow-hidden opacity-0">
         <Image src="/rafa_cards/modal_novo_agendamento.png" alt="" width={256} height={256} priority />
@@ -804,35 +828,30 @@ export default function DashboardLayout({
         <img src="/comunidade_bg.svg" alt="" loading="eager" />
       </div>
 
-      {/* Mobile: atalho flutuante para início */}
-      <button
-        type="button"
-        onClick={() => {
-          if (typeof window === 'undefined') return;
-          if (pathname === '/dashboard') {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            return;
-          }
-          router.push('/dashboard');
-        }}
-        className="fixed left-4 top-4 z-50 md:hidden"
-        aria-label="Ir para o início"
-      >
-        <Image
-          src="/rp.png"
-          alt="Ir para o início"
-          width={1563}
-          height={1563}
-          className="h-8 w-8 object-contain"
-          priority
-        />
-      </button>
+      {/* Mobile: atalho flutuante para início (oculto na página principal — a hero já tem logo) */}
+      {!isDashboardHomePath(pathname) ? (
+        <button
+          type="button"
+          onClick={() => router.push(DASHBOARD_HOME_PATH)}
+          className="fixed left-4 top-4 z-50 md:hidden"
+          aria-label="Ir para o início"
+        >
+          <Image
+            src={BRAND_ICON_LIGHT}
+            alt={SITE_NAME_FULL}
+            width={800}
+            height={800}
+            className="h-10 w-10 object-contain"
+            priority
+          />
+        </button>
+      ) : null}
 
       {/* Mobile: apenas menu hambúrguer flutuante */}
       <button
         type="button"
         onClick={() => setIsMenuOpen((open) => !open)}
-        className="fixed right-4 top-4 z-50 inline-flex h-8 w-8 items-center justify-center text-red-600 md:hidden"
+        className="fixed right-4 top-4 z-50 inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-[14px] bg-brand-primary text-brand-on-primary shadow-sm md:hidden"
         aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
       >
         {isMenuOpen ? (
@@ -841,15 +860,19 @@ export default function DashboardLayout({
           </span>
         ) : (
           <span className="flex h-3.5 w-4 flex-col justify-between" aria-hidden>
-            <span className="h-[2px] w-full rounded bg-red-600" />
-            <span className="h-[2px] w-full rounded bg-red-600" />
-            <span className="h-[2px] w-full rounded bg-red-600" />
+            <span className="h-[2px] w-full rounded bg-brand-on-primary" />
+            <span className="h-[2px] w-full rounded bg-brand-on-primary" />
+            <span className="h-[2px] w-full rounded bg-brand-on-primary" />
           </span>
         )}
       </button>
 
       {/* Sidebar desktop */}
-      <aside className="hidden border-r border-secondary-2 bg-white p-4 md:fixed md:inset-y-0 md:left-0 md:flex md:w-56 md:flex-col md:overflow-hidden">
+      <aside
+        className={`hidden border-r p-4 md:fixed md:inset-y-0 md:left-0 md:w-56 md:flex-col md:overflow-hidden ${SIDEBAR_SHELL_CLASS} ${
+          isDashboardHome ? 'md:hidden' : 'md:flex'
+        }`}
+      >
         {sidebarContent}
       </aside>
 
@@ -861,7 +884,7 @@ export default function DashboardLayout({
         aria-hidden={!isMenuOpen}
       >
         <div
-          className={`flex w-64 shrink-0 flex-col border-r border-secondary-2 bg-white p-4 transition-transform duration-200 ${
+          className={`flex w-64 shrink-0 flex-col border-r p-4 transition-transform duration-200 ${SIDEBAR_SHELL_CLASS} ${
             isMenuOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
@@ -870,7 +893,7 @@ export default function DashboardLayout({
         <button
           type="button"
           onClick={() => setIsMenuOpen(false)}
-          className={`flex-1 bg-black/40 transition-opacity duration-200 ${
+          className={`flex-1 brand-modal-scrim transition-opacity duration-200 ${
             isMenuOpen ? 'opacity-100' : 'opacity-0'
           }`}
           aria-label="Fechar menu"
@@ -881,20 +904,20 @@ export default function DashboardLayout({
       {/* Modal de autenticação (login / criar conta) */}
       {isAuthModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto brand-modal-scrim p-4"
           onMouseDown={(e) => {
             // Fecha ao clicar fora do modal (no backdrop).
             if (e.target !== e.currentTarget) return;
             setIsAuthModalOpen(false);
           }}
         >
-          <div className="my-8 w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
+          <div className="my-8 w-full max-w-lg rounded-[18px] bg-card p-5 shadow-xl">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold text-zinc-900">
+                <h2 className="text-base font-semibold text-foreground">
                   Entrar na Comunidade Rafa Portugal
                 </h2>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-muted">
                   {authMode === 'forgot'
                     ? 'Informe o e-mail da sua conta para receber um código de recuperação.'
                     : authMode === 'resetPassword'
@@ -905,7 +928,7 @@ export default function DashboardLayout({
               <button
                 type="button"
                 onClick={() => setIsAuthModalOpen(false)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-xs text-muted hover:bg-page"
                 aria-label="Fechar"
               >
                 ✕
@@ -969,7 +992,7 @@ export default function DashboardLayout({
                     <div className="flex items-center justify-between gap-2">
                       <label
                         htmlFor="auth-modal-email"
-                        className="text-sm font-medium text-zinc-700"
+                        className="text-sm font-medium text-foreground/90"
                       >
                         E-mail
                       </label>
@@ -991,7 +1014,7 @@ export default function DashboardLayout({
                       onChange={(e) => setLoginEmail(e.target.value)}
                       required
                       disabled={loginLoading}
-                      className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                      className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 disabled:opacity-50"
                     />
                   </div>
                 )}
@@ -1017,7 +1040,7 @@ export default function DashboardLayout({
                       setForgotEmail(loginEmail.trim());
                       setAuthMode('forgot');
                     }}
-                    className="cursor-pointer text-sm font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
+                    className="cursor-pointer text-sm font-medium text-brand-primary underline-offset-2 hover:text-brand-primary hover:underline"
                   >
                     Esqueci a senha
                   </button>
@@ -1025,7 +1048,7 @@ export default function DashboardLayout({
                 <button
                   type="submit"
                   disabled={loginLoading}
-                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-brand-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-primary-dark disabled:opacity-50"
                 >
                   {loginLoading ? 'Entrando…' : 'Entrar'}
                 </button>
@@ -1073,7 +1096,7 @@ export default function DashboardLayout({
                 <div>
                   <label
                     htmlFor="auth-forgot-email"
-                    className="block text-sm font-medium text-zinc-700"
+                    className="block text-sm font-medium text-foreground/90"
                   >
                     E-mail da conta
                   </label>
@@ -1086,13 +1109,13 @@ export default function DashboardLayout({
                     onChange={(e) => setForgotEmail(e.target.value)}
                     required
                     disabled={forgotLoading}
-                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 disabled:opacity-50"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={forgotLoading}
-                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-brand-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-primary-dark disabled:opacity-50"
                 >
                   {forgotLoading ? 'Enviando código…' : 'Enviar código de recuperação'}
                 </button>
@@ -1150,7 +1173,7 @@ export default function DashboardLayout({
                   <div>
                     <label
                       htmlFor="auth-reset-code"
-                      className="block text-xs font-medium text-zinc-700"
+                      className="block text-xs font-medium text-foreground/90"
                     >
                       Código de recuperação
                     </label>
@@ -1161,7 +1184,7 @@ export default function DashboardLayout({
                       onChange={(e) => setResetCode(e.target.value)}
                       required
                       maxLength={10}
-                      className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                     />
                   </div>
                   <AuthPasswordField
@@ -1189,14 +1212,14 @@ export default function DashboardLayout({
                       setForgotEmail(resetEmail);
                       setAuthMode('forgot');
                     }}
-                    className="cursor-pointer text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline disabled:opacity-50"
+                    className="cursor-pointer text-[11px] font-medium text-brand-primary underline-offset-2 hover:text-brand-primary hover:underline disabled:opacity-50"
                   >
                     Reenviar código
                   </button>
                   <button
                     type="submit"
                     disabled={resetLoading}
-                    className="flex cursor-pointer items-center justify-center rounded-full bg-blue-600 px-4 py-2.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="flex cursor-pointer items-center justify-center rounded-full bg-brand-primary px-4 py-2.5 text-xs font-medium text-white hover:bg-brand-primary-dark disabled:opacity-50"
                   >
                     {resetLoading ? 'Salvando…' : 'Salvar nova senha e entrar'}
                   </button>
@@ -1207,7 +1230,7 @@ export default function DashboardLayout({
         </div>
       )}
 
-      <main className="flex-1 p-4 pt-16 text-zinc-900 md:p-6 md:pt-6">
+      <main className="flex-1 p-4 pt-16 text-foreground md:p-6 md:pt-6">
         {children}
       </main>
 
@@ -1217,13 +1240,13 @@ export default function DashboardLayout({
       <FloatingWhatsAppButton hideFloatingButton />
 
       {isWelcomeOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 w-full max-w-3xl rounded-2xl bg-white p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-zinc-900">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto brand-modal-scrim p-4">
+          <div className="my-8 w-full max-w-3xl rounded-[18px] bg-card p-6 shadow-xl">
+            <h2 className="text-lg font-semibold text-foreground">
               Bem-vindo(a)
               {welcomeName ? `, ${welcomeName}` : ''}!
             </h2>
-            <div className="mt-3 space-y-3 text-sm text-zinc-700">
+            <div className="mt-3 space-y-3 text-sm text-foreground/90">
               <p>
                 A Comunidade Rafa Portugal foi criada para te acompanhar em cada etapa do
                 teu processo de imigração para Portugal, com informação
@@ -1258,7 +1281,7 @@ export default function DashboardLayout({
                 conexões ao longo do caminho.{' '}
                 <span className="font-semibold">Conta comigo no processo!</span>
               </p>
-              <p className="text-sm font-medium text-zinc-800">
+              <p className="text-sm font-medium text-foreground">
                 Um xero,<br />
                 Rafa Pelo Mundo
               </p>

@@ -2,48 +2,69 @@ import type { Metadata } from "next";
 import type { Viewport } from "next";
 import { headers } from "next/headers";
 import { Providers } from "@/components/Providers";
+import {
+  BRAND_APPLE_TOUCH_ICON_URL,
+  BRAND_FAVICON_16_URL,
+  BRAND_FAVICON_32_URL,
+  BRAND_FAVICON_ICO_URL,
+  BRAND_MANIFEST,
+  BRAND_OG_IMAGE,
+  BRAND_OG_IMAGE_HEIGHT,
+  BRAND_OG_IMAGE_WIDTH,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_NAME_FULL,
+} from "@/lib/site-branding";
 import { getPublicSiteUrlFromRequestHeaders } from "@/lib/site-url";
 import "./globals.css";
-
-const desc =
-  "A tua comunidade para imigrar para Portugal com planejamento, parceiros e apoio em cada etapa.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const h = await headers();
   const siteUrl = getPublicSiteUrlFromRequestHeaders(h);
   const base = new URL(siteUrl);
+  const ogImageUrl = new URL(BRAND_OG_IMAGE, base).href;
+
   return {
     metadataBase: base,
-    title: "Comunidade Rafa   ",
-    description: desc,
-    manifest: "/site.webmanifest",
+    title: {
+      default: SITE_NAME_FULL,
+      template: `%s | ${SITE_NAME}`,
+    },
+    description: SITE_DESCRIPTION,
+    manifest: BRAND_MANIFEST,
     icons: {
       icon: [
-        { url: "/favicon_novo.ico", sizes: "any", type: "image/x-icon" },
+        { url: BRAND_FAVICON_ICO_URL, sizes: "any", type: "image/x-icon" },
+        { url: BRAND_FAVICON_32_URL, sizes: "32x32", type: "image/png" },
+        { url: BRAND_FAVICON_16_URL, sizes: "16x16", type: "image/png" },
       ],
-      apple: { url: "/apple-touch-icon2.png", sizes: "180x180", type: "image/png" },
+      apple: {
+        url: BRAND_APPLE_TOUCH_ICON_URL,
+        sizes: "180x180",
+        type: "image/png",
+      },
     },
     openGraph: {
       type: "website",
       locale: "pt_PT",
-      siteName: "Comunidade Rafa Portugal",
-      title: "Comunidade Rafa Portugal",
-      description: desc,
+      siteName: SITE_NAME_FULL,
+      title: SITE_NAME_FULL,
+      description: SITE_DESCRIPTION,
       url: base,
       images: [
         {
-          url: new URL("/og_comunidade2.png", base).href,
-          width: 1200,
-          height: 630,
-          alt: "Comunidade Rafa Portugal",
+          url: ogImageUrl,
+          width: BRAND_OG_IMAGE_WIDTH,
+          height: BRAND_OG_IMAGE_HEIGHT,
+          alt: SITE_NAME_FULL,
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Comunidade Rafa Portugal",
-      description: desc,
-      images: [new URL("/og_comunidade2.png", base).href],
+      title: SITE_NAME_FULL,
+      description: SITE_DESCRIPTION,
+      images: [ogImageUrl],
     },
   };
 }

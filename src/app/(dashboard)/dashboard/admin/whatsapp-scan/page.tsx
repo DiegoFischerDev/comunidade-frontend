@@ -37,9 +37,9 @@ function statusLabel(status: MessageRow['status']): {
         className: 'bg-emerald-50 text-emerald-800',
       };
     case 'ignored_not_listing':
-      return { label: 'Não é anúncio', className: 'bg-zinc-100 text-zinc-700' };
+      return { label: 'Não é anúncio', className: 'bg-primary-1 text-foreground/90' };
     case 'ignored_sender':
-      return { label: 'Número ignorado', className: 'bg-zinc-100 text-zinc-700' };
+      return { label: 'Número ignorado', className: 'bg-primary-1 text-foreground/90' };
     case 'error':
       return { label: 'Erro', className: 'bg-red-50 text-red-700' };
     case 'media_stored':
@@ -47,7 +47,7 @@ function statusLabel(status: MessageRow['status']): {
     case 'media_attached':
       return { label: 'Mídia anexada', className: 'bg-emerald-50 text-emerald-800' };
     default:
-      return { label: 'Recebida', className: 'bg-amber-50 text-amber-800' };
+      return { label: 'Recebida', className: 'bg-brand-accent/10 text-brand-primary' };
   }
 }
 
@@ -278,8 +278,8 @@ export default function AdminWhatsappScanPage() {
   if (!canSee) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Whatsapp scan</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Whatsapp scan</h1>
+        <p className="mt-2 text-sm text-muted">
           Você não tem permissão para acessar esta página.
         </p>
       </div>
@@ -290,8 +290,8 @@ export default function AdminWhatsappScanPage() {
     <div>
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Whatsapp scan</h1>
-          <p className="mt-2 max-w-2xl text-sm text-zinc-600">
+          <h1 className="text-2xl font-semibold text-foreground">Whatsapp scan</h1>
+          <p className="mt-2 max-w-2xl text-sm text-muted">
             Monitoriza grupos de WhatsApp e usa IA para identificar anúncios de imóveis. Com o{' '}
             <strong>scan ativo</strong>, cada anúncio cria um imóvel rascunho (oculto). Com o{' '}
             <strong>compartilhamento automático</strong>, o anúncio é publicado na plataforma e
@@ -301,7 +301,7 @@ export default function AdminWhatsappScanPage() {
         <button
           type="button"
           onClick={() => void load()}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground/90 hover:bg-page"
         >
           Atualizar
         </button>
@@ -317,17 +317,17 @@ export default function AdminWhatsappScanPage() {
       ) : null}
 
       {/* Formulário de criação */}
-      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-zinc-900">Adicionar grupo monitorizado</h2>
+      <div className="mt-6 rounded-2xl border border-border bg-card p-4">
+        <h2 className="text-sm font-semibold text-foreground">Adicionar grupo monitorizado</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="text-sm">
-            <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+            <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
               Parceiro (relocation)
             </span>
             <select
               value={formPartnerId}
               onChange={(e) => setFormPartnerId(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
             >
               <option value="">Seleciona…</option>
               {partners.map((p) => (
@@ -338,7 +338,7 @@ export default function AdminWhatsappScanPage() {
             </select>
           </label>
           <label className="text-sm sm:col-span-2">
-            <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+            <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
               Grupo ou canal WhatsApp
             </span>
             <EvolutionGroupSelect
@@ -352,16 +352,16 @@ export default function AdminWhatsappScanPage() {
             />
           </label>
           <div className="text-sm sm:col-span-2">
-            <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+            <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
               Números monitorizados (opcional)
             </span>
             <WhatsappScanNumbersInput value={formNumbers} onChange={setFormNumbers} />
-            <span className="mt-1 block text-xs text-zinc-500">
+            <span className="mt-1 block text-xs text-muted">
               Escreve o número e clica em Adicionar (ou Enter). Apenas dígitos, com indicativo do
               país. Lista vazia = monitoriza todas as mensagens do grupo.
             </span>
           </div>
-          <label className="flex items-center gap-2 text-sm text-zinc-800 sm:col-span-2">
+          <label className="flex items-center gap-2 text-sm text-foreground sm:col-span-2">
             <input
               type="checkbox"
               checked={formScanActive}
@@ -369,7 +369,7 @@ export default function AdminWhatsappScanPage() {
             />
             Scan ativo
           </label>
-          <label className="flex items-center gap-2 text-sm text-zinc-800 sm:col-span-2">
+          <label className="flex items-center gap-2 text-sm text-foreground sm:col-span-2">
             <input
               type="checkbox"
               checked={formAutoShare}
@@ -383,7 +383,7 @@ export default function AdminWhatsappScanPage() {
             type="button"
             onClick={() => void handleCreate()}
             disabled={creating}
-            className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 disabled:opacity-60"
+            className="rounded-xl bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-primary-dark disabled:opacity-60"
           >
             {creating ? 'Adicionando…' : 'Adicionar grupo'}
           </button>
@@ -392,13 +392,13 @@ export default function AdminWhatsappScanPage() {
 
       {/* Lista de grupos */}
       {loading ? (
-        <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
+        <p className="mt-4 text-sm text-muted">Carregando…</p>
       ) : groups.length === 0 ? (
-        <p className="mt-4 text-sm text-zinc-600">Nenhum grupo monitorizado ainda.</p>
+        <p className="mt-4 text-sm text-muted">Nenhum grupo monitorizado ainda.</p>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+        <div className="mt-4 overflow-x-auto rounded-lg border border-border bg-card">
           <table className="min-w-full text-left text-sm">
-            <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+            <thead className="bg-page text-xs font-semibold uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3">Parceiro</th>
                 <th className="px-4 py-3">Título</th>
@@ -411,14 +411,14 @@ export default function AdminWhatsappScanPage() {
             </thead>
             <tbody className="divide-y divide-zinc-100">
               {groups.map((row) => (
-                <tr key={row.id} className="hover:bg-zinc-50/60">
-                  <td className="px-4 py-3 text-zinc-800">
+                <tr key={row.id} className="hover:bg-page/60">
+                  <td className="px-4 py-3 text-foreground">
                     {row.partner?.name ?? partnersById.get(row.partnerId) ?? '—'}
                   </td>
-                  <td className="px-4 py-3 text-zinc-800">
-                    {row.title ? row.title : <span className="text-zinc-400">—</span>}
+                  <td className="px-4 py-3 text-foreground">
+                    {row.title ? row.title : <span className="text-muted/80">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-zinc-700">
+                  <td className="px-4 py-3 text-foreground/90">
                     <MonitoredUsersCell
                       numbers={row.monitoredNumbers}
                       monitorAllMembers={row.monitorAllMembers}
@@ -431,7 +431,7 @@ export default function AdminWhatsappScanPage() {
                         Ativo
                       </span>
                     ) : (
-                      <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-700">
+                      <span className="rounded-full bg-primary-1 px-2 py-1 text-xs font-semibold text-foreground/90">
                         Inativo
                       </span>
                     )}
@@ -442,24 +442,24 @@ export default function AdminWhatsappScanPage() {
                         Ativo
                       </span>
                     ) : (
-                      <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-700">
+                      <span className="rounded-full bg-primary-1 px-2 py-1 text-xs font-semibold text-foreground/90">
                         Inativo
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-zinc-700">{row.messagesCount}</td>
+                  <td className="px-4 py-3 text-foreground/90">{row.messagesCount}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right">
                     <button
                       type="button"
                       onClick={() => void openLogs(row)}
-                      className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+                      className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-page"
                     >
                       Mensagens
                     </button>
                     <button
                       type="button"
                       onClick={() => openEdit(row)}
-                      className="ml-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+                      className="ml-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-page"
                     >
                       Editar
                     </button>
@@ -467,7 +467,7 @@ export default function AdminWhatsappScanPage() {
                       type="button"
                       onClick={() => void deleteGroup(row.id)}
                       disabled={deletingId === row.id}
-                      className="ml-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+                      className="ml-2 rounded-lg border border-red-200 bg-card px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
                     >
                       {deletingId === row.id ? 'Removendo…' : 'Remover'}
                     </button>
@@ -481,27 +481,27 @@ export default function AdminWhatsappScanPage() {
 
       {/* Modal edição */}
       {editing ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-card p-5 shadow-xl">
             <div className="flex items-start justify-between gap-4">
-              <h2 className="text-lg font-semibold text-zinc-900">Editar grupo</h2>
+              <h2 className="text-lg font-semibold text-foreground">Editar grupo</h2>
               <button
                 type="button"
                 onClick={() => setEditing(null)}
-                className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground/90 hover:bg-page"
               >
                 Fechar
               </button>
             </div>
             <div className="mt-4 grid gap-3">
               <label className="text-sm">
-                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                   Parceiro (relocation)
                 </span>
                 <select
                   value={editPartnerId}
                   onChange={(e) => setEditPartnerId(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                 >
                   {partners.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -511,7 +511,7 @@ export default function AdminWhatsappScanPage() {
                 </select>
               </label>
               <label className="text-sm sm:col-span-2">
-                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                   Grupo ou canal WhatsApp
                 </span>
                 <EvolutionGroupSelect
@@ -525,13 +525,13 @@ export default function AdminWhatsappScanPage() {
                 />
               </label>
               <div className="text-sm">
-                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                   Números monitorizados
                 </span>
                 <WhatsappScanNumbersInput value={editNumbers} onChange={setEditNumbers} />
-                <span className="mt-1 block text-xs text-zinc-500">Vazio = monitoriza todos.</span>
+                <span className="mt-1 block text-xs text-muted">Vazio = monitoriza todos.</span>
               </div>
-              <label className="flex items-center gap-2 text-sm text-zinc-800">
+              <label className="flex items-center gap-2 text-sm text-foreground">
                 <input
                   type="checkbox"
                   checked={editActive}
@@ -539,7 +539,7 @@ export default function AdminWhatsappScanPage() {
                 />
                 Scan ativo
               </label>
-              <label className="flex items-center gap-2 text-sm text-zinc-800">
+              <label className="flex items-center gap-2 text-sm text-foreground">
                 <input
                   type="checkbox"
                   checked={editAutoShare}
@@ -547,7 +547,7 @@ export default function AdminWhatsappScanPage() {
                 />
                 Compartilhamento automático
               </label>
-              <p className="text-xs leading-relaxed text-zinc-500">
+              <p className="text-xs leading-relaxed text-muted">
                 Com compartilhamento ativo, cada imóvel identificado pelo scan fica oculto até ser
                 publicado (~10 s depois) e enviado aos grupos WhatsApp de relocation ou venda
                 conforme a finalidade do anúncio.
@@ -557,7 +557,7 @@ export default function AdminWhatsappScanPage() {
               <button
                 type="button"
                 onClick={() => setEditing(null)}
-                className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+                className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-page"
               >
                 Cancelar
               </button>
@@ -565,7 +565,7 @@ export default function AdminWhatsappScanPage() {
                 type="button"
                 onClick={() => void saveEdit()}
                 disabled={savingEdit}
-                className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 disabled:opacity-60"
+                className="rounded-xl bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-primary-dark disabled:opacity-60"
               >
                 {savingEdit ? 'Salvando…' : 'Salvar alterações'}
               </button>
@@ -576,33 +576,33 @@ export default function AdminWhatsappScanPage() {
 
       {/* Modal logs/mensagens */}
       {logsGroup ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl bg-white p-5 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4">
+          <div className="flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl bg-card p-5 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-zinc-900">Mensagens processadas</h2>
-                <p className="mt-1 font-mono text-xs text-zinc-500">{logsGroup.groupJid}</p>
+                <h2 className="text-lg font-semibold text-foreground">Mensagens processadas</h2>
+                <p className="mt-1 font-mono text-xs text-muted">{logsGroup.groupJid}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setLogsGroup(null)}
-                className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground/90 hover:bg-page"
               >
                 Fechar
               </button>
             </div>
             <div className="mt-4 flex-1 overflow-y-auto">
               {logsLoading ? (
-                <p className="text-sm text-zinc-600">Carregando…</p>
+                <p className="text-sm text-muted">Carregando…</p>
               ) : logs.length === 0 ? (
-                <p className="text-sm text-zinc-600">Nenhuma mensagem processada ainda.</p>
+                <p className="text-sm text-muted">Nenhuma mensagem processada ainda.</p>
               ) : (
                 <ul className="space-y-2">
                   {logs.map((m) => {
                     const s = statusLabel(m.status);
                     return (
-                      <li key={m.id} className="rounded-xl border border-zinc-200 p-3">
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                      <li key={m.id} className="rounded-xl border border-border p-3">
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
                           <span
                             className={`rounded-full px-2 py-0.5 font-semibold ${s.className}`}
                           >
@@ -612,7 +612,7 @@ export default function AdminWhatsappScanPage() {
                           <span>·</span>
                           <span>{formatDtPt(m.createdAt)}</span>
                         </div>
-                        <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-800">
+                        <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">
                           {m.rawText}
                         </p>
                         {m.error ? (

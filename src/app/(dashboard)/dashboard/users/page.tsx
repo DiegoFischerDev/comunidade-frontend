@@ -199,8 +199,8 @@ export default function UsersPage() {
   if (user.role !== 'ADMIN') {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Usuários</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Usuários</h1>
+        <p className="mt-2 text-sm text-muted">
           Você não tem permissão para acessar esta página.
         </p>
       </div>
@@ -209,8 +209,8 @@ export default function UsersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-zinc-900">Usuários</h1>
-      <p className="mt-2 text-zinc-600">
+      <h1 className="text-2xl font-semibold text-foreground">Usuários</h1>
+      <p className="mt-2 text-muted">
         Gerencie os usuários da plataforma (editar dados, roles e remoção).
       </p>
 
@@ -221,16 +221,16 @@ export default function UsersPage() {
       )}
 
       {loading ? (
-        <p className="mt-4 text-sm text-zinc-600">Carregando usuários…</p>
+        <p className="mt-4 text-sm text-muted">Carregando usuários…</p>
       ) : (
         <>
           {stats && (
             <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              <div className="rounded-xl border border-blue-200/80 bg-blue-50/90 px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-semibold tracking-wide text-blue-900/70 uppercase">
+              <div className="rounded-xl border border-brand-accent/30 bg-brand-accent/10 px-4 py-3 shadow-sm">
+                <p className="text-[11px] font-semibold tracking-wide text-brand-primary/70 uppercase">
                   Total de utilizadores
                 </p>
-                <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-blue-950">
+                <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-brand-primary">
                   {stats.totalUsers}
                 </p>
               </div>
@@ -250,11 +250,11 @@ export default function UsersPage() {
                   {stats.visitors}
                 </p>
               </div>
-              <div className="rounded-xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-semibold tracking-wide text-amber-900/70 uppercase">
+              <div className="rounded-xl border border-brand-accent/30 bg-brand-accent/10 px-4 py-3 shadow-sm">
+                <p className="text-[11px] font-semibold tracking-wide text-brand-primary/70 uppercase">
                   Membros
                 </p>
-                <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-amber-950">
+                <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-brand-primary">
                   {stats.members}
                 </p>
               </div>
@@ -288,13 +288,13 @@ export default function UsersPage() {
           )}
 
           {users.length === 0 ? (
-            <p className="mt-4 text-sm text-zinc-500">
+            <p className="mt-4 text-sm text-muted">
               Nenhum utilizador encontrado.
             </p>
           ) : (
         <>
           <div className="mt-6">
-            <label className="block text-xs font-medium text-zinc-700">
+            <label className="block text-xs font-medium text-foreground/90">
               Filtrar lista
             </label>
             <input
@@ -302,13 +302,13 @@ export default function UsersPage() {
               value={filterInput}
               onChange={(e) => setFilterInput(e.target.value)}
               placeholder="Pesquisar por nome, email, WhatsApp, role, agendamento Rafa ou data…"
-              className="mt-1 w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 w-full max-w-md rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted/80 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
             />
           </div>
 
-          <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+          <div className="mt-4 overflow-x-auto rounded-lg border border-border bg-card">
             <table className="min-w-full text-sm">
-              <thead className="bg-zinc-50 text-zinc-600">
+              <thead className="bg-page text-muted">
                 <tr>
                   <th className="px-4 py-2 text-left">Nome</th>
                   <th className="px-4 py-2 text-left">WhatsApp</th>
@@ -326,14 +326,14 @@ export default function UsersPage() {
                   <tr>
                     <td
                       colSpan={7}
-                      className="px-4 py-4 text-center text-sm text-zinc-500"
+                      className="px-4 py-4 text-center text-sm text-muted"
                     >
                       Nenhum usuário corresponde ao filtro.
                     </td>
                   </tr>
                 ) : (
                   filteredUsers.map((u) => (
-                <tr key={u.id} className="border-t border-zinc-200">
+                <tr key={u.id} className="border-t border-border">
                     <td className="px-4 py-2">{u.name}</td>
                     <td className="px-4 py-2">{u.whatsapp}</td>
                   <td className="px-4 py-2">
@@ -355,7 +355,7 @@ export default function UsersPage() {
                           );
                         }
                       }}
-                      className="rounded border border-zinc-300 px-2 py-1 text-sm"
+                      className="rounded border border-border px-2 py-1 text-sm"
                     >
                       {ROLES.map((r) => (
                         <option key={r} value={r}>
@@ -404,7 +404,7 @@ export default function UsersPage() {
                               );
                             }
                           }}
-                          className="max-w-[11rem] cursor-pointer rounded border border-zinc-300 px-2 py-1 text-xs"
+                          className="max-w-[11rem] cursor-pointer rounded border border-border px-2 py-1 text-xs"
                           aria-label="Agendamento (chamada Rafa)"
                         >
                           <option value="1">Agendamento liberado</option>
@@ -417,7 +417,7 @@ export default function UsersPage() {
                     <button
                       type="button"
                       onClick={() => openEdit(u)}
-                      className="mr-2 cursor-pointer rounded bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
+                      className="mr-2 cursor-pointer rounded bg-primary-1 px-3 py-1 text-xs font-medium text-foreground hover:bg-zinc-200"
                     >
                       Editar
                     </button>
@@ -435,7 +435,7 @@ export default function UsersPage() {
                           );
                         }
                       }}
-                      className="mr-2 cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                      className="mr-2 cursor-pointer rounded bg-brand-accent/10 px-3 py-1 text-xs font-medium text-brand-primary hover:bg-page"
                     >
                       Logar
                     </button>
@@ -477,39 +477,39 @@ export default function UsersPage() {
       )}
 
       {editingUser && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-zinc-900">
+        <div className="fixed inset-0 z-40 flex items-center justify-center brand-modal-scrim">
+          <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl">
+            <h2 className="text-lg font-semibold text-foreground">
               Editar usuário
             </h2>
-            <p className="mt-1 text-sm text-zinc-500">
+            <p className="mt-1 text-sm text-muted">
               Altere nome, e-mail, WhatsApp e estado do agendamento (chamada Rafa).
             </p>
             <div className="mt-4 space-y-3">
               <div>
-                <label className="block text-sm font-medium text-zinc-700">
+                <label className="block text-sm font-medium text-foreground/90">
                   Nome
                 </label>
                 <input
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-700">
+                <label className="block text-sm font-medium text-foreground/90">
                   E-mail
                 </label>
                 <input
                   type="email"
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-700">
+                <label className="block text-sm font-medium text-foreground/90">
                   WhatsApp
                 </label>
                 <input
@@ -517,33 +517,33 @@ export default function UsersPage() {
                   value={editWhatsapp}
                   onChange={(e) => setEditWhatsapp(e.target.value)}
                   placeholder="Ex: 351 912 345 678"
-                  className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                 />
               </div>
-              <div className="border-t border-zinc-200 pt-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              <div className="border-t border-border pt-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                   Agendamento — chamada com a Rafa
                 </p>
-                <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-zinc-800">
+                <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-foreground">
                   <input
                     type="checkbox"
                     checked={editRafaUnlocked}
                     onChange={(e) => setEditRafaUnlocked(e.target.checked)}
-                    className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-border text-brand-primary focus:ring-brand-primary/25"
                   />
                   Agendamento liberado (pode agendar)
                 </label>
                 <div className="mt-3">
-                  <label className="block text-sm font-medium text-zinc-700">
+                  <label className="block text-sm font-medium text-foreground/90">
                     Fim do slot agendado
                   </label>
                   <input
                     type="datetime-local"
                     value={editRafaSlotLocal}
                     onChange={(e) => setEditRafaSlotLocal(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                   />
-                  <p className="mt-1 text-[11px] text-zinc-500">
+                  <p className="mt-1 text-[11px] text-muted">
                     Horário local. Deixe vazio e guarde para limpar a data do slot.
                   </p>
                 </div>
@@ -553,7 +553,7 @@ export default function UsersPage() {
               <button
                 type="button"
                 onClick={() => setEditingUser(null)}
-                className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground/90 hover:bg-page"
               >
                 Cancelar
               </button>
@@ -561,7 +561,7 @@ export default function UsersPage() {
                 type="button"
                 onClick={handleSaveEdit}
                 disabled={saving}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-medium text-white hover:bg-brand-primary-dark disabled:opacity-50"
               >
                 {saving ? 'A salvar…' : 'Salvar'}
               </button>

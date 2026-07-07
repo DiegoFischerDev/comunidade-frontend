@@ -103,8 +103,8 @@ export function HouseImageCarousel({ photos }: Props) {
     <div
       className={
         photos.length > 1
-          ? "relative w-full bg-zinc-100"
-          : "relative aspect-[16/10] w-full bg-zinc-100 sm:aspect-[2/1]"
+          ? "relative w-full bg-primary-1"
+          : "relative aspect-[16/10] w-full bg-primary-1 sm:aspect-[2/1]"
       }
     >
       {photos.length === 1 ? (

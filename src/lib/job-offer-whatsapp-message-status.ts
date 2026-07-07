@@ -12,17 +12,17 @@ export function jobOfferWhatsappStatusLabel(status: string): {
     case 'ignored_not_offer':
       return {
         label: 'Não é oferta (IA)',
-        className: 'bg-zinc-100 text-zinc-700',
+        className: 'bg-primary-1 text-foreground/90',
       };
     case 'ignored_no_contact':
       return {
         label: 'Sem contacto do empregador',
-        className: 'bg-amber-100 text-amber-900',
+        className: 'bg-brand-accent/15 text-brand-primary',
       };
     case 'ignored_no_city':
       return {
         label: 'Sem cidade identificada',
-        className: 'bg-amber-100 text-amber-900',
+        className: 'bg-brand-accent/15 text-brand-primary',
       };
     case 'ignored_duplicate_offer':
       return {
@@ -42,12 +42,12 @@ export function jobOfferWhatsappStatusLabel(status: string): {
     case 'received':
       return {
         label: 'Recebida',
-        className: 'bg-zinc-100 text-zinc-600',
+        className: 'bg-primary-1 text-muted',
       };
     default:
       return {
         label: status,
-        className: 'bg-zinc-100 text-zinc-700',
+        className: 'bg-primary-1 text-foreground/90',
       };
   }
 }

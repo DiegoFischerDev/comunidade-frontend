@@ -506,8 +506,8 @@ export default function PartnerHousesPage() {
   if (authLoading) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
-        <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
+        <h1 className="text-2xl font-semibold text-foreground">Minhas casas</h1>
+        <p className="mt-4 text-sm text-muted">Carregando…</p>
       </div>
     );
   }
@@ -515,14 +515,14 @@ export default function PartnerHousesPage() {
   if (!user) {
     return (
       <div className="mx-auto max-w-lg">
-        <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
-        <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-sm sm:p-8">
+        <h1 className="text-2xl font-semibold text-foreground">Minhas casas</h1>
+        <section className="mt-6 rounded-2xl border border-border bg-card p-6 text-center shadow-sm sm:p-8">
           <div
-            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#d58901]/15 to-[#f0b23a]/30"
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-accent/15 to-brand-secondary/30"
             aria-hidden
           >
             <svg
-              className="h-7 w-7 text-[#c07c01]"
+              className="h-7 w-7 text-brand-accent-dark"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -535,8 +535,8 @@ export default function PartnerHousesPage() {
               />
             </svg>
           </div>
-          <h2 className="mt-4 text-base font-semibold text-zinc-900">Área de parceiros</h2>
-          <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+          <h2 className="mt-4 text-base font-semibold text-foreground">Área de parceiros</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
             Inicia sessão para gerires os teus anúncios e publicar imóveis no site e nos grupos WhatsApp.
           </p>
           <div className="mt-6 flex justify-center">
@@ -552,8 +552,8 @@ export default function PartnerHousesPage() {
   if (user.role !== "PARTNER") {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
-        <p className="mt-2 text-sm text-zinc-600">Esta área é exclusiva para parceiros.</p>
+        <h1 className="text-2xl font-semibold text-foreground">Minhas casas</h1>
+        <p className="mt-2 text-sm text-muted">Esta área é exclusiva para parceiros.</p>
       </div>
     );
   }
@@ -561,8 +561,8 @@ export default function PartnerHousesPage() {
   if (loading || canManageHouses === null) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
-        <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
+        <h1 className="text-2xl font-semibold text-foreground">Minhas casas</h1>
+        <p className="mt-4 text-sm text-muted">Carregando…</p>
       </div>
     );
   }
@@ -570,8 +570,8 @@ export default function PartnerHousesPage() {
   if (!canManageHouses) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
-        <p className="mt-2 max-w-lg text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Minhas casas</h1>
+        <p className="mt-2 max-w-lg text-sm text-muted">
           Esta área é apenas para parceiros na categoria <strong>Relocation</strong>. Se precisares de
           alterar a tua categoria, contacta a equipa.
         </p>
@@ -582,8 +582,8 @@ export default function PartnerHousesPage() {
   return (
     <div className="min-w-0 max-w-full overflow-x-hidden">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Minhas casas</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Minhas casas</h1>
+        <p className="mt-2 text-sm text-muted">
           Gere os teus anúncios e publica-os no site e nos grupos WhatsApp.
         </p>
       </div>
@@ -599,10 +599,10 @@ export default function PartnerHousesPage() {
       )}
 
       {loading ? (
-        <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
+        <p className="mt-4 text-sm text-muted">Carregando…</p>
       ) : rows.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6">
-          <p className="text-sm text-zinc-600">
+        <div className="mt-6 rounded-2xl border border-border bg-card p-6">
+          <p className="text-sm text-muted">
             Ainda não publicaste nenhum imóvel.
           </p>
           <div className="mt-4">
@@ -636,18 +636,18 @@ export default function PartnerHousesPage() {
               </CardButton>
             </div>
             <div className="min-w-0 flex-1 sm:order-1 sm:max-w-md">
-              <label className="block text-xs font-medium text-zinc-700">Filtrar</label>
+              <label className="block text-xs font-medium text-foreground/90">Filtrar</label>
               <input
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 placeholder="Pesquisar por Id, título, cidade, tipologia, preço…"
                 disabled={bulkBusy}
-                className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+                className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted/80 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 disabled:opacity-60"
               />
             </div>
           </div>
 
-          <div className="mt-4 min-w-0 border-b border-zinc-200">
+          <div className="mt-4 min-w-0 border-b border-border">
             <nav
               className="-mb-px flex w-full min-w-0 justify-between gap-0.5 sm:justify-start sm:gap-2"
               aria-label="Abas de imóveis"
@@ -668,15 +668,15 @@ export default function PartnerHousesPage() {
                     onClick={() => setTab(t.key)}
                     className={`-mb-px inline-flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1 whitespace-nowrap border-b-2 px-1.5 py-2 text-xs font-medium transition-colors sm:flex-none sm:justify-start sm:gap-1.5 sm:px-3 sm:py-2.5 sm:text-sm ${
                       active
-                        ? "border-blue-600 text-blue-700"
-                        : "border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700"
+                        ? "border-brand-primary text-brand-primary"
+                        : "border-transparent text-muted hover:border-border hover:text-foreground/90"
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                     {t.label}
                     <span
                       className={`rounded-full px-1 py-0.5 text-[10px] tabular-nums sm:px-1.5 sm:text-xs ${
-                        active ? "bg-blue-100 text-blue-700" : "bg-zinc-100 text-zinc-500"
+                        active ? "bg-brand-accent/15 text-brand-primary" : "bg-primary-1 text-muted"
                       }`}
                     >
                       {counts[t.key]}
@@ -688,8 +688,8 @@ export default function PartnerHousesPage() {
           </div>
 
           {selectedCount > 0 ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5">
-              <span className="text-sm font-medium text-blue-900">
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-brand-accent/30 bg-brand-accent/10 px-3 py-2.5">
+              <span className="text-sm font-medium text-brand-primary">
                 {selectedCount} selecionado{selectedCount === 1 ? "" : "s"}
               </span>
               {tab !== "TRASH" ? (
@@ -726,13 +726,13 @@ export default function PartnerHousesPage() {
                 type="button"
                 disabled={bulkBusy}
                 onClick={clearSelection}
-                className="text-sm font-medium text-blue-800 underline-offset-2 hover:underline disabled:opacity-50"
+                className="text-sm font-medium text-brand-primary underline-offset-2 hover:underline disabled:opacity-50"
               >
                 Limpar seleção
               </button>
               {bulkBusy ? (
                 <>
-                  <span className="text-xs text-blue-700">
+                  <span className="text-xs text-brand-primary">
                     {Object.values(publishingById).some(Boolean)
                       ? "A publicar em sequência (10 s entre cada)…"
                       : Object.values(restoringById).some(Boolean)
@@ -756,7 +756,7 @@ export default function PartnerHousesPage() {
           ) : null}
 
           {filtered.length === 0 ? (
-            <p className="mt-6 rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-8 text-center text-sm text-zinc-600">
+            <p className="mt-6 rounded-2xl border border-dashed border-border bg-card px-4 py-8 text-center text-sm text-muted">
               {tab === "PUBLISHED"
                 ? "Nenhum imóvel publicado."
                 : tab === "HIDDEN"

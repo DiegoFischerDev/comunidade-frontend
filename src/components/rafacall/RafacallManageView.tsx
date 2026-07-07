@@ -246,11 +246,11 @@ export function RafacallManageView({ bookingId }: Props) {
 
   if (!confirmed) {
     return (
-      <div className="min-h-screen bg-[#f3f4f6] py-8">
+      <div className="min-h-screen bg-page py-8">
         <div className="mx-auto max-w-md px-4">
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h1 className="text-xl font-bold text-zinc-900">Gerir agendamento</h1>
-            <p className="mt-2 text-sm text-zinc-700">
+          <div className="rounded-2xl bg-card p-6 shadow-sm">
+            <h1 className="text-xl font-bold text-foreground">Gerir agendamento</h1>
+            <p className="mt-2 text-sm text-foreground/90">
               Para alterar ou cancelar o teu agendamento com a Rafa, confirma o número de WhatsApp
               que usaste no agendamento.
             </p>
@@ -299,8 +299,8 @@ export function RafacallManageView({ bookingId }: Props) {
             >
               {confirmLoading ? 'A verificar…' : 'Confirmar e abrir agendamento'}
             </button>
-            <p className="mt-4 text-center text-xs text-zinc-500">
-              <Link href="/dashboard" className="underline hover:text-zinc-700">
+            <p className="mt-4 text-center text-xs text-muted">
+              <Link href="/" className="underline hover:text-foreground/90">
                 Voltar à comunidade
               </Link>
             </p>
@@ -313,7 +313,7 @@ export function RafacallManageView({ bookingId }: Props) {
   if (!booking) {
     return (
       <div className="mx-auto max-w-md px-4 py-12 text-center">
-        <p className="text-sm text-zinc-600">A carregar…</p>
+        <p className="text-sm text-muted">A carregar…</p>
       </div>
     );
   }
@@ -322,12 +322,12 @@ export function RafacallManageView({ bookingId }: Props) {
   const display = formatBookingFullPt(booking.startsAt, booking.endsAt, booking.timezone || tz);
 
   return (
-    <div className="min-h-screen bg-[#f3f4f6] py-8">
+    <div className="min-h-screen bg-page py-8">
       <div className="mx-auto max-w-3xl px-4">
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h1 className="text-xl font-bold text-zinc-900">Meu agendamento com a Rafa</h1>
+        <div className="rounded-2xl bg-card p-6 shadow-sm">
+          <h1 className="text-xl font-bold text-foreground">Meu agendamento com a Rafa</h1>
           {booking.name ? (
-            <p className="mt-1 text-sm text-zinc-700">
+            <p className="mt-1 text-sm text-foreground/90">
               Olá, <span className="font-semibold">{booking.name}</span>.
             </p>
           ) : null}
@@ -341,22 +341,22 @@ export function RafacallManageView({ bookingId }: Props) {
           <div
             className={`mt-4 rounded-xl border px-4 py-3 ${
               isCancelled
-                ? 'border-zinc-200 bg-zinc-50'
+                ? 'border-border bg-page'
                 : 'border-emerald-200 bg-emerald-50'
             }`}
           >
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               {isCancelled ? 'Cancelado' : 'Confirmado'}
             </p>
-            <p className="mt-1 text-base font-semibold capitalize text-zinc-900">{display.main}</p>
-            <p className="mt-0.5 text-xs text-zinc-600">
+            <p className="mt-1 text-base font-semibold capitalize text-foreground">{display.main}</p>
+            <p className="mt-0.5 text-xs text-muted">
               {display.sub} · Fuso: {prettyTimezoneCityLabel(booking.timezone || tz)} (
               {booking.timezone || tz})
             </p>
           </div>
 
           {isCancelled ? (
-            <p className="mt-6 text-sm text-zinc-700">
+            <p className="mt-6 text-sm text-foreground/90">
               Este agendamento foi cancelado. Para marcar uma nova chamada, volta ao dashboard.
             </p>
           ) : view === 'detail' ? (
@@ -364,14 +364,14 @@ export function RafacallManageView({ bookingId }: Props) {
               <button
                 type="button"
                 onClick={openReschedule}
-                className="rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-600"
+                className="rounded-full bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-primary"
               >
                 Reagendar
               </button>
               <button
                 type="button"
                 onClick={() => setView('cancel')}
-                className="rounded-full border border-zinc-300 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+                className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-page"
               >
                 Cancelar
               </button>
@@ -379,8 +379,8 @@ export function RafacallManageView({ bookingId }: Props) {
           ) : null}
 
           {view === 'cancel' && !isCancelled ? (
-            <div className="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-              <p className="text-sm text-zinc-800">
+            <div className="mt-6 rounded-xl border border-border bg-page p-4">
+              <p className="text-sm text-foreground">
                 Queres mesmo cancelar este agendamento? Vais poder agendar de novo a partir do
                 dashboard (com nova taxa).
               </p>
@@ -397,7 +397,7 @@ export function RafacallManageView({ bookingId }: Props) {
                   type="button"
                   onClick={() => setView('detail')}
                   disabled={actionLoading}
-                  className="rounded-full border border-zinc-300 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+                  className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-page disabled:opacity-50"
                 >
                   Voltar
                 </button>
@@ -408,26 +408,26 @@ export function RafacallManageView({ bookingId }: Props) {
           {view === 'reschedule' && !isCancelled ? (
             <div className="mt-6">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-zinc-900">Escolhe novo horário</p>
+                <p className="text-sm font-semibold text-foreground">Escolhe novo horário</p>
                 <button
                   type="button"
                   onClick={() => setView('detail')}
-                  className="rounded-full px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100"
+                  className="rounded-full px-3 py-1.5 text-sm text-muted hover:bg-primary-1"
                 >
                   Voltar
                 </button>
               </div>
               <div className="mt-4 grid gap-6 md:grid-cols-[260px_1fr]">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                     Dias
                   </p>
                   {!availability ? (
-                    <p className="mt-3 text-sm text-zinc-600">A carregar…</p>
+                    <p className="mt-3 text-sm text-muted">A carregar…</p>
                   ) : availability.days.filter(
                       (d) => d.slots.length > 0 || (d.adminBlockedSlots?.length ?? 0) > 0,
                     ).length === 0 ? (
-                    <p className="mt-3 text-sm text-zinc-600">
+                    <p className="mt-3 text-sm text-muted">
                       Sem dias com horários disponíveis.
                     </p>
                   ) : (
@@ -455,13 +455,13 @@ export function RafacallManageView({ bookingId }: Props) {
                               className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
                                 isActive
                                   ? 'border-emerald-400 bg-emerald-50'
-                                  : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                                  : 'border-border bg-card hover:bg-page'
                               }`}
                             >
-                              <span className="font-medium text-zinc-900">
+                              <span className="font-medium text-foreground">
                                 {prettyYmdPt(d.date, tz)}
                               </span>
-                              <span className="text-xs text-zinc-600">{sub}</span>
+                              <span className="text-xs text-muted">{sub}</span>
                             </button>
                           );
                         })}
@@ -469,13 +469,13 @@ export function RafacallManageView({ bookingId }: Props) {
                   )}
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                     Horários de {prettyTimezoneCityLabel(tz)}
                   </p>
                   {actionLoading && !availability ? (
-                    <p className="mt-3 text-sm text-zinc-600">A carregar…</p>
+                    <p className="mt-3 text-sm text-muted">A carregar…</p>
                   ) : daySlotGrid.length === 0 ? (
-                    <p className="mt-3 text-sm text-zinc-600">
+                    <p className="mt-3 text-sm text-muted">
                       Escolhe um dia na lista ao lado.
                     </p>
                   ) : (
@@ -487,17 +487,17 @@ export function RafacallManageView({ bookingId }: Props) {
                             type="button"
                             disabled={actionLoading}
                             onClick={() => void doReschedule(s.startsAt)}
-                            className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-emerald-50 disabled:opacity-50"
+                            className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-emerald-50 disabled:opacity-50"
                           >
                             {formatSlotTimeInTz(s.startsAt, tz)}
                           </button>
                         ) : (
                           <div
                             key={s.startsAt}
-                            className="rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-center text-sm font-semibold text-zinc-500"
+                            className="rounded-xl border border-border bg-primary-1 px-3 py-2 text-center text-sm font-semibold text-muted"
                           >
                             <span className="block">{formatSlotTimeInTz(s.startsAt, tz)}</span>
-                            <span className="mt-0.5 block text-[11px] font-medium normal-case text-zinc-500">
+                            <span className="mt-0.5 block text-[11px] font-medium normal-case text-muted">
                               Bloqueado
                             </span>
                           </div>
@@ -510,8 +510,8 @@ export function RafacallManageView({ bookingId }: Props) {
             </div>
           ) : null}
 
-          <p className="mt-8 text-center text-xs text-zinc-500">
-            <Link href="/dashboard" className="underline hover:text-zinc-700">
+          <p className="mt-8 text-center text-xs text-muted">
+            <Link href="/" className="underline hover:text-foreground/90">
               Voltar à comunidade
             </Link>
           </p>

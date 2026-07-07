@@ -58,7 +58,7 @@ export default function MembershipSuccessPage() {
   if (status === 'loading') {
     return (
       <div className="mx-auto max-w-lg px-4 py-12 text-center">
-        <p className="text-sm text-zinc-600">A confirmar o pagamento e a criar a sua conta…</p>
+        <p className="text-sm text-muted">A confirmar o pagamento e a criar a sua conta…</p>
       </div>
     );
   }
@@ -67,7 +67,7 @@ export default function MembershipSuccessPage() {
     return (
       <div className="mx-auto max-w-lg px-4 py-12 text-center">
         <p className="text-sm text-red-700">{error || 'Não foi possível confirmar o pagamento.'}</p>
-        <Link href="/dashboard" className="mt-4 inline-block text-sm font-medium text-blue-600 hover:underline">
+        <Link href="/" className="mt-4 inline-block text-sm font-medium text-brand-primary hover:underline">
           Voltar ao dashboard
         </Link>
       </div>
@@ -82,14 +82,14 @@ export default function MembershipSuccessPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h1 className="text-xl font-bold text-zinc-900">Pagamento concluído</h1>
-        <p className="mt-2 text-zinc-700">
+        <h1 className="text-xl font-bold text-foreground">Pagamento concluído</h1>
+        <p className="mt-2 text-foreground/90">
           {user
             ? 'Obrigado! Já és membro da Comunidade Rafa Portugal. Tens acesso a todos os benefícios durante um ano.'
             : 'Obrigado! O pagamento foi recebido. Entra com o WhatsApp e a senha que definiste.'}
         </p>
         <Link
-          href="/dashboard"
+          href="/"
           className="mt-6 inline-block rounded-full bg-emerald-600 px-6 py-3 font-medium text-white hover:bg-emerald-700"
         >
           Ir para o dashboard

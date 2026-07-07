@@ -360,8 +360,8 @@ export default function AdminHousesPage() {
   if (!isAdmin) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Anúncios de casas</h1>
-        <p className="mt-2 text-sm text-zinc-600">Você não tem permissão para acessar esta página.</p>
+        <h1 className="text-2xl font-semibold text-foreground">Anúncios de casas</h1>
+        <p className="mt-2 text-sm text-muted">Você não tem permissão para acessar esta página.</p>
       </div>
     );
   }
@@ -369,14 +369,14 @@ export default function AdminHousesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Anúncios de casas</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Anúncios de casas</h1>
+        <p className="mt-2 text-sm text-muted">
           Gerir imóveis publicados por parceiros. Ao eliminar, as imagens e vídeos são removidos do armazenamento.
           Anúncios indisponíveis com data de disponibilidade há mais de 2 meses são apagados automaticamente (com
           médias).
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted">
             {filtersActive
               ? `A mostrar ${filteredItems.length} de ${items.length}`
               : `Total: ${items.length}`}
@@ -387,14 +387,14 @@ export default function AdminHousesPage() {
               setEditHouseId(null);
               setShowHouseModal(true);
             }}
-            className="inline-flex rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-semibold text-white"
+            className="inline-flex rounded-full brand-cta-accent px-4 py-2 text-sm"
           >
             Adicionar casa
           </button>
           <button
             type="button"
             onClick={() => setShowAddWhatsappGroupModal(true)}
-            className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+            className="inline-flex rounded-full border border-brand-accent/40 bg-brand-accent/10 px-4 py-2 text-sm font-semibold text-brand-primary hover:bg-brand-accent/15"
           >
             Adicionar grupo
           </button>
@@ -411,11 +411,11 @@ export default function AdminHousesPage() {
         </div>
       ) : null}
 
-      <section className="mx-auto w-full max-w-4xl rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <section className="mx-auto w-full max-w-4xl rounded-xl border border-border bg-card p-4 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h2 className="text-base font-semibold text-zinc-900">Grupos WhatsApp (relocation)</h2>
-            <p className="mt-1 text-sm text-zinc-600">
+            <h2 className="text-base font-semibold text-foreground">Grupos WhatsApp (relocation)</h2>
+            <p className="mt-1 text-sm text-muted">
               Só os grupos <strong className="font-semibold">ativos</strong> e com a mesma{' '}
               <strong className="font-semibold">finalidade</strong> que o imóvel (arrendamento ou venda) recebem o
               envio em &quot;Enviar nos grupos&quot;. Ordem: imagens, vídeo (se existir), texto com resumo e descrição
@@ -426,7 +426,7 @@ export default function AdminHousesPage() {
             type="button"
             onClick={() => void loadWhatsappGroups()}
             disabled={loadingWhatsappGroups}
-            className="inline-flex w-full items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-60 sm:w-auto"
+            className="inline-flex w-full items-center justify-center rounded-lg border border-border bg-page px-3 py-2 text-sm font-medium text-foreground hover:bg-primary-1 disabled:opacity-60 sm:w-auto"
           >
             {loadingWhatsappGroups ? 'A atualizar…' : 'Atualizar lista'}
           </button>
@@ -434,13 +434,13 @@ export default function AdminHousesPage() {
 
         <div className="mt-4">
           {loadingWhatsappGroups ? (
-            <p className="text-sm text-zinc-600">A carregar…</p>
+            <p className="text-sm text-muted">A carregar…</p>
           ) : whatsappGroups.length === 0 ? (
-            <p className="text-sm text-zinc-500">Ainda não há grupos. Adiciona o primeiro abaixo.</p>
+            <p className="text-sm text-muted">Ainda não há grupos. Adiciona o primeiro abaixo.</p>
           ) : (
-            <div className="max-h-64 overflow-y-auto rounded-lg border border-zinc-200">
+            <div className="max-h-64 overflow-y-auto rounded-lg border border-border">
               <table className="min-w-full text-sm">
-                <thead className="bg-zinc-50 text-left text-xs font-medium text-zinc-600">
+                <thead className="bg-page text-left text-xs font-medium text-muted">
                   <tr>
                     <th className="px-3 py-2">Nome</th>
                     <th className="px-3 py-2">Finalidade</th>
@@ -451,8 +451,8 @@ export default function AdminHousesPage() {
                 </thead>
                 <tbody>
                   {whatsappGroups.map((g) => (
-                    <tr key={g.id} className="border-t border-zinc-100">
-                      <td className="px-3 py-2 font-medium text-zinc-900">{g.name}</td>
+                    <tr key={g.id} className="border-t border-border/60">
+                      <td className="px-3 py-2 font-medium text-foreground">{g.name}</td>
                       <td className="whitespace-nowrap px-3 py-2">
                         <select
                           value={g.businessType}
@@ -460,26 +460,26 @@ export default function AdminHousesPage() {
                           onChange={(e) =>
                             void onUpdateGroupFinalidade(g, e.target.value as 'RENT' | 'SALE')
                           }
-                          className="max-w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900"
+                          className="max-w-full rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground"
                         >
                           <option value="RENT">{GROUP_FINALIDADE_LABELS.RENT}</option>
                           <option value="SALE">{GROUP_FINALIDADE_LABELS.SALE}</option>
                         </select>
                       </td>
                       <td
-                        className="max-w-[200px] truncate px-3 py-2 font-mono text-xs text-zinc-600"
+                        className="max-w-[200px] truncate px-3 py-2 font-mono text-xs text-muted"
                         title={g.groupJid}
                       >
                         {g.groupJid}
                       </td>
                       <td className="whitespace-nowrap px-3 py-2">
-                        <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-zinc-700">
+                        <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-foreground/90">
                           <input
                             type="checkbox"
                             checked={g.active}
                             disabled={togglingGroupId === g.id}
                             onChange={(e) => void onToggleGroupActive(g, e.target.checked)}
-                            className="h-4 w-4 rounded border-zinc-300"
+                            className="h-4 w-4 rounded border-border"
                           />
                           {g.active ? 'Sim' : 'Não'}
                         </label>
@@ -506,18 +506,18 @@ export default function AdminHousesPage() {
 
       {showAddWhatsappGroupModal ? (
         <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/45 p-4">
-          <div className="my-8 w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
+          <div className="my-8 w-full max-w-lg rounded-2xl bg-card p-5 shadow-xl">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-xl font-semibold text-zinc-900">Adicionar grupo WhatsApp</h2>
-                <p className="mt-1 text-sm text-zinc-600">
+                <h2 className="text-xl font-semibold text-foreground">Adicionar grupo WhatsApp</h2>
+                <p className="mt-1 text-sm text-muted">
                   Cria um grupo para receber envios de imóveis relocation.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAddWhatsappGroupModal(false)}
-                className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+                className="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground/90 hover:bg-page"
               >
                 Fechar
               </button>
@@ -527,34 +527,34 @@ export default function AdminHousesPage() {
               onSubmit={(e) => {
                 void onAddWhatsappGroup(e);
               }}
-              className="space-y-3 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50 p-4"
+              className="space-y-3 rounded-xl border border-dashed border-border bg-page/50 p-4"
             >
               <label className="block text-sm">
-                <span className="mb-1 block text-xs text-zinc-600">Nome do grupo</span>
+                <span className="mb-1 block text-xs text-muted">Nome do grupo</span>
                 <input
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                   placeholder="Ex.: Clientes Lisboa"
                 />
               </label>
               <label className="block text-sm">
-                <span className="mb-1 block text-xs text-zinc-600">Finalidade</span>
+                <span className="mb-1 block text-xs text-muted">Finalidade</span>
                 <select
                   value={newGroupBusinessType}
                   onChange={(e) => setNewGroupBusinessType(e.target.value as 'RENT' | 'SALE')}
-                  className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+                  className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground"
                 >
                   <option value="RENT">{GROUP_FINALIDADE_LABELS.RENT}</option>
                   <option value="SALE">{GROUP_FINALIDADE_LABELS.SALE}</option>
                 </select>
               </label>
               <label className="block text-sm">
-                <span className="mb-1 block text-xs text-zinc-600">Código (JID)</span>
+                <span className="mb-1 block text-xs text-muted">Código (JID)</span>
                 <input
                   value={newGroupJid}
                   onChange={(e) => setNewGroupJid(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm"
+                  className="w-full rounded-lg border border-border px-3 py-2 font-mono text-sm"
                   placeholder="120363407245204550@g.us"
                 />
               </label>
@@ -562,7 +562,7 @@ export default function AdminHousesPage() {
                 <button
                   type="button"
                   onClick={() => setShowAddWhatsappGroupModal(false)}
-                  className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                  className="rounded-lg border border-border px-4 py-2 text-sm text-foreground/90 hover:bg-page"
                 >
                   Cancelar
                 </button>
@@ -580,39 +580,39 @@ export default function AdminHousesPage() {
       ) : null}
 
       {loading ? (
-        <p className="text-sm text-zinc-600">Carregando…</p>
+        <p className="text-sm text-muted">Carregando…</p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-zinc-500">Nenhum anúncio registado.</p>
+        <p className="text-sm text-muted">Nenhum anúncio registado.</p>
       ) : (
         <div className="space-y-4">
-          <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
               <div className="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                <label className="block text-xs font-medium text-zinc-700 xl:col-span-2">
+                <label className="block text-xs font-medium text-foreground/90 xl:col-span-2">
                   Pesquisar
                   <input
                     type="search"
                     value={filterSearch}
                     onChange={(e) => setFilterSearch(e.target.value)}
                     placeholder="Título, cidade, parceiro, preço…"
-                    className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted/80 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                   />
                 </label>
-                <label className="block text-xs font-medium text-zinc-700">
+                <label className="block text-xs font-medium text-foreground/90">
                   Finalidade
                   <select
                     value={filterBusinessType}
                     onChange={(e) =>
                       setFilterBusinessType(e.target.value as 'ALL' | 'RENT' | 'SALE')
                     }
-                    className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                   >
                     <option value="ALL">Todas</option>
                     <option value="RENT">Arrendamento</option>
                     <option value="SALE">Venda</option>
                   </select>
                 </label>
-                <label className="block text-xs font-medium text-zinc-700">
+                <label className="block text-xs font-medium text-foreground/90">
                   Publicação
                   <select
                     value={filterPublication}
@@ -621,7 +621,7 @@ export default function AdminHousesPage() {
                         e.target.value as 'ALL' | 'PUBLISHED' | 'HIDDEN',
                       )
                     }
-                    className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                   >
                     <option value="ALL">Todos</option>
                     {(Object.keys(PUBLICATION_STATUS_LABELS) as Array<
@@ -633,22 +633,22 @@ export default function AdminHousesPage() {
                     ))}
                   </select>
                 </label>
-                <label className="block text-xs font-medium text-zinc-700">
+                <label className="block text-xs font-medium text-foreground/90">
                   Cidade contém
                   <input
                     type="search"
                     value={filterCityContains}
                     onChange={(e) => setFilterCityContains(e.target.value)}
                     placeholder="Texto livre…"
-                    className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted/80 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                   />
                 </label>
-                <label className="block text-xs font-medium text-zinc-700">
+                <label className="block text-xs font-medium text-foreground/90">
                   Tipologia
                   <select
                     value={filterTypology}
                     onChange={(e) => setFilterTypology(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                   >
                     <option value="ALL">Todas</option>
                     {TYPOLOGIES.map((t) => (
@@ -663,7 +663,7 @@ export default function AdminHousesPage() {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="shrink-0 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                  className="shrink-0 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground/90 hover:bg-page"
                 >
                   Limpar filtros
                 </button>
@@ -672,9 +672,9 @@ export default function AdminHousesPage() {
           </section>
 
           {filteredItems.length === 0 ? (
-            <p className="text-sm text-zinc-600">
+            <p className="text-sm text-muted">
               Nenhum anúncio corresponde aos filtros.{' '}
-              <button type="button" onClick={clearFilters} className="font-medium text-amber-800 underline">
+              <button type="button" onClick={clearFilters} className="font-medium text-brand-primary underline">
                 Repor filtros
               </button>
             </p>
@@ -684,7 +684,7 @@ export default function AdminHousesPage() {
                 {filteredItems.map((h) => (
                   <article
                     key={h.id}
-                    className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm ring-1 ring-zinc-900/5"
+                    className="rounded-xl border border-border bg-card p-4 shadow-sm"
                   >
                     <div className="flex flex-col gap-3">
                       <div className="flex items-start gap-3">
@@ -693,7 +693,7 @@ export default function AdminHousesPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label="Abrir página do imóvel"
-                          className="relative block h-14 w-20 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100"
+                          className="relative block h-14 w-20 shrink-0 overflow-hidden rounded-lg border border-border bg-primary-1"
                         >
                           {(() => {
                             const { primaryImageSrc, videoSrc } = getHouseMedia(h);
@@ -720,40 +720,40 @@ export default function AdminHousesPage() {
                               );
                             }
                             return (
-                              <div className="flex h-full w-full items-center justify-center text-[11px] text-zinc-400">
+                              <div className="flex h-full w-full items-center justify-center text-[11px] text-muted/80">
                                 Sem média
                               </div>
                             );
                           })()}
                         </Link>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Título</p>
-                          <p className="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug text-zinc-900">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Título</p>
+                          <p className="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug text-foreground">
                             {h.title}
                           </p>
-                          <p className="mt-1 text-xs text-zinc-500">
+                          <p className="mt-1 text-xs text-muted">
                             {cityLabel(h.city)} · {typologyLabel(h.typology)}
                           </p>
                         </div>
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
                           Finalidade
                         </p>
-                        <p className="mt-0.5 text-sm text-zinc-800">
+                        <p className="mt-0.5 text-sm text-foreground">
                           {BUSINESS_TYPE_LABELS[h.businessType] ?? h.businessType}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
                           {h.businessType === 'SALE' ? 'Preço de venda' : 'Renda mensal'}
                         </p>
-                        <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-900">
+                        <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                           {formatAdminHousePriceEur(h.priceEur, h.businessType)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Publicação</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Publicação</p>
                         <div className="mt-1">
                           <HousePublicationStatusBadge
                             publicationStatus={h.publicationStatus}
@@ -762,7 +762,7 @@ export default function AdminHousesPage() {
                         </div>
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
                           Enviado em
                         </p>
                         <p
@@ -770,7 +770,7 @@ export default function AdminHousesPage() {
                             h.partner.categorySlug === 'relocation' &&
                             sendingWhatsappHouseId === h.id
                               ? 'font-medium text-emerald-800'
-                              : 'text-zinc-800'
+                              : 'text-foreground'
                           }`}
                           title={
                             h.partner.categorySlug === 'relocation' && h.whatsappError?.trim()
@@ -785,7 +785,7 @@ export default function AdminHousesPage() {
                               : adminHouseWhatsAppSendDatesLabel(h)}
                         </p>
                       </div>
-                      <div className="flex flex-nowrap items-center justify-center gap-2 border-t border-zinc-100 pt-3">
+                      <div className="flex flex-nowrap items-center justify-center gap-2 border-t border-border/60 pt-3">
                         {h.partner.categorySlug === 'relocation' ? (
                           <button
                             type="button"
@@ -842,7 +842,7 @@ export default function AdminHousesPage() {
                           }}
                           title="Editar anúncio"
                           aria-label="Editar anúncio"
-                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50"
+                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-foreground hover:bg-page"
                         >
                           <svg
                             className="h-5 w-5"
@@ -865,7 +865,7 @@ export default function AdminHousesPage() {
                           aria-label="Eliminar anúncio"
                           disabled={busyId === h.id}
                           onClick={() => onDelete(h.id)}
-                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:opacity-50"
+                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-card text-red-700 hover:bg-red-50 disabled:opacity-50"
                         >
                           {busyId === h.id ? (
                             <svg
@@ -911,9 +911,9 @@ export default function AdminHousesPage() {
                 ))}
               </div>
 
-              <div className="hidden overflow-x-auto rounded-lg border border-zinc-200 bg-white md:block">
+              <div className="hidden overflow-x-auto rounded-lg border border-border bg-card md:block">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-zinc-50 text-zinc-600">
+                  <thead className="bg-page text-muted">
                     <tr>
                       <th className="whitespace-nowrap px-4 py-2 text-left">Id</th>
                       <th className="w-[76px] px-4 py-2 text-left">Thumb</th>
@@ -931,8 +931,8 @@ export default function AdminHousesPage() {
                   </thead>
                   <tbody>
                     {filteredItems.map((h) => (
-                      <tr key={h.id} className="border-t border-zinc-200">
-                        <td className="whitespace-nowrap px-4 py-2 align-top font-mono text-xs tabular-nums text-zinc-700">
+                      <tr key={h.id} className="border-t border-border">
+                        <td className="whitespace-nowrap px-4 py-2 align-top font-mono text-xs tabular-nums text-foreground/90">
                           {h.houseId}
                         </td>
                         <td className="px-4 py-2 align-top">
@@ -941,7 +941,7 @@ export default function AdminHousesPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label="Abrir página do imóvel"
-                            className="relative block h-10 w-14 overflow-hidden rounded-md border border-zinc-200 bg-zinc-100"
+                            className="relative block h-10 w-14 overflow-hidden rounded-md border border-border bg-primary-1"
                           >
                             {(() => {
                               const { primaryImageSrc, videoSrc } = getHouseMedia(h);
@@ -972,18 +972,18 @@ export default function AdminHousesPage() {
                           </Link>
                         </td>
                         <td className="max-w-[200px] px-4 py-2 align-top">
-                          <span className="line-clamp-2 font-medium text-zinc-900">{h.title}</span>
-                          <p className="mt-0.5 text-xs text-zinc-500">
+                          <span className="line-clamp-2 font-medium text-foreground">{h.title}</span>
+                          <p className="mt-0.5 text-xs text-muted">
                             {cityLabel(h.city)} · {typologyLabel(h.typology)}
                           </p>
                         </td>
-                        <td className="whitespace-nowrap px-4 py-2 align-top text-right font-semibold tabular-nums text-zinc-900">
+                        <td className="whitespace-nowrap px-4 py-2 align-top text-right font-semibold tabular-nums text-foreground">
                           {h._count.redirectClicks}
                         </td>
-                        <td className="whitespace-nowrap px-4 py-2 align-top text-zinc-800">
+                        <td className="whitespace-nowrap px-4 py-2 align-top text-foreground">
                           {BUSINESS_TYPE_LABELS[h.businessType] ?? h.businessType}
                         </td>
-                        <td className="whitespace-nowrap px-4 py-2 align-top font-medium tabular-nums text-zinc-900">
+                        <td className="whitespace-nowrap px-4 py-2 align-top font-medium tabular-nums text-foreground">
                           {formatAdminHousePriceEur(h.priceEur, h.businessType)}
                         </td>
                         <td className="px-4 py-2 align-top">{h.partner.name}</td>
@@ -1000,7 +1000,7 @@ export default function AdminHousesPage() {
                           {new Date(h.createdAt).toLocaleDateString('pt-PT')}
                         </td>
                         <td
-                          className="whitespace-pre-line px-4 py-2 align-top text-xs text-zinc-700"
+                          className="whitespace-pre-line px-4 py-2 align-top text-xs text-foreground/90"
                           title={h.whatsappError?.trim() ? h.whatsappError : undefined}
                         >
                           {h.partner.categorySlug === 'relocation'
@@ -1065,7 +1065,7 @@ export default function AdminHousesPage() {
                               }}
                               title="Editar anúncio"
                               aria-label="Editar anúncio"
-                              className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50"
+                              className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border bg-card text-foreground hover:bg-page"
                             >
                               <svg
                                 className="h-4 w-4"
@@ -1088,7 +1088,7 @@ export default function AdminHousesPage() {
                               aria-label="Eliminar anúncio"
                               disabled={busyId === h.id}
                               onClick={() => onDelete(h.id)}
-                              className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-red-200 bg-card text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {busyId === h.id ? (
                                 <svg

@@ -81,7 +81,7 @@ function ToggleSwitch({
       }`}
     >
       <span
-        className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+        className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-card shadow transition-transform ${
           checked ? 'translate-x-5' : 'translate-x-0'
         }`}
       />
@@ -120,18 +120,18 @@ function ConfigModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center brand-modal-scrim p-0 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="wa-scan-modal-title"
     >
-      <div className="flex max-h-[min(92vh,640px)] w-full max-w-lg flex-col rounded-t-2xl bg-white shadow-xl sm:rounded-2xl">
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-zinc-100 px-5 py-4">
+      <div className="flex max-h-[min(92vh,640px)] w-full max-w-lg flex-col rounded-t-2xl bg-card shadow-xl sm:rounded-2xl">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border/60 px-5 py-4">
           <div>
-            <h2 id="wa-scan-modal-title" className="text-lg font-semibold text-zinc-900">
+            <h2 id="wa-scan-modal-title" className="text-lg font-semibold text-foreground">
               Grupos WhatsApp
             </h2>
-            <p className="mt-0.5 text-sm text-zinc-600">
+            <p className="mt-0.5 text-sm text-muted">
               Ativa os grupos e escolhe quais usuarios publicam imoveis.
             </p>
           </div>
@@ -139,7 +139,7 @@ function ConfigModal({
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+            className="rounded-lg border border-border px-3 py-1.5 text-sm text-foreground/90 hover:bg-page disabled:opacity-50"
           >
             Fechar
           </button>
@@ -154,10 +154,10 @@ function ConfigModal({
               return (
                 <section
                   key={g.id}
-                  className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50/50"
+                  className="overflow-hidden rounded-xl border border-border bg-page/50"
                 >
-                  <div className="flex items-center justify-between gap-3 bg-white px-4 py-3">
-                    <p className="min-w-0 flex-1 text-sm font-semibold text-zinc-900">
+                  <div className="flex items-center justify-between gap-3 bg-card px-4 py-3">
+                    <p className="min-w-0 flex-1 text-sm font-semibold text-foreground">
                       {groupLabel(g)}
                     </p>
                     <ToggleSwitch
@@ -171,7 +171,7 @@ function ConfigModal({
                   </div>
 
                   {d.active ? (
-                    <div className="space-y-3 border-t border-zinc-200 px-4 py-3">
+                    <div className="space-y-3 border-t border-border px-4 py-3">
                       <label className="flex cursor-pointer items-start gap-2.5">
                         <input
                           type="checkbox"
@@ -185,9 +185,9 @@ function ConfigModal({
                               checked: allMembers ? new Set() : d.checked,
                             });
                           }}
-                          className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+                          className="mt-0.5 h-4 w-4 rounded border-border text-emerald-600 focus:ring-emerald-500"
                         />
-                        <span className="text-sm text-zinc-800">
+                        <span className="text-sm text-foreground">
                           Todos os membros do grupo
                         </span>
                       </label>
@@ -195,10 +195,10 @@ function ConfigModal({
                       {!d.allMembers ? (
                         <>
                           {d.pool.length > 0 ? (
-                            <ul className="space-y-0.5 rounded-lg border border-zinc-200 bg-white">
+                            <ul className="space-y-0.5 rounded-lg border border-border bg-card">
                               {d.pool.map((n) => (
                                 <li key={n}>
-                                  <label className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-zinc-50">
+                                  <label className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-page">
                                     <input
                                       type="checkbox"
                                       checked={d.checked.has(n)}
@@ -213,14 +213,14 @@ function ConfigModal({
                                           checked,
                                         });
                                       }}
-                                      className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+                                      className="h-4 w-4 rounded border-border text-emerald-600 focus:ring-emerald-500"
                                     />
                                     <span className="min-w-0 flex-1">
-                                      <span className="font-mono text-sm tabular-nums text-zinc-800">
+                                      <span className="font-mono text-sm tabular-nums text-foreground">
                                         +{n}
                                       </span>
                                       {contactNames[n] ? (
-                                        <span className="mt-0.5 block truncate text-xs text-zinc-500">
+                                        <span className="mt-0.5 block truncate text-xs text-muted">
                                           {contactNames[n]}
                                         </span>
                                       ) : null}
@@ -230,7 +230,7 @@ function ConfigModal({
                               ))}
                             </ul>
                           ) : (
-                            <p className="text-xs text-zinc-500">
+                            <p className="text-xs text-muted">
                               Adiciona números abaixo ou marca «Todos os membros do grupo».
                             </p>
                           )}
@@ -254,7 +254,7 @@ function ConfigModal({
                               disabled={busy}
                               inputMode="numeric"
                               placeholder="Número com indicativo"
-                              className="min-w-0 flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                              className="min-w-0 flex-1 rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                             />
                             <button
                               type="button"
@@ -286,8 +286,8 @@ function ConfigModal({
           ) : null}
         </div>
 
-        <div className="shrink-0 border-t border-zinc-100 px-5 py-3">
-          <p className="text-xs leading-relaxed text-zinc-500">
+        <div className="shrink-0 border-t border-border/60 px-5 py-3">
+          <p className="text-xs leading-relaxed text-muted">
             Os anúncios de imóveis publicados no grupo pelos utilizadores que selecionares serão
             analisados por inteligência artificial e importados automaticamente para a plataforma
           </p>
@@ -457,8 +457,8 @@ export function PartnerWhatsappScanPanel() {
 
   if (loading) {
     return (
-      <div className="mt-6 rounded-xl border border-zinc-200 bg-white px-4 py-3">
-        <p className="text-sm text-zinc-500">A carregar importação WhatsApp…</p>
+      <div className="mt-6 rounded-xl border border-border bg-card px-4 py-3">
+        <p className="text-sm text-muted">A carregar importação WhatsApp…</p>
       </div>
     );
   }
@@ -472,7 +472,7 @@ export function PartnerWhatsappScanPanel() {
 
   return (
     <>
-      <div className="mt-6 rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+      <div className="mt-6 rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
             <WhatsappIcon className="h-5 w-5" />
@@ -482,13 +482,13 @@ export function PartnerWhatsappScanPanel() {
             onClick={() => setModalOpen(true)}
             className="min-w-0 flex-1 cursor-pointer text-left"
           >
-            <p className="text-sm font-semibold text-zinc-900">Importação WhatsApp</p>
-            <p className="text-xs text-zinc-600 sm:text-sm">
+            <p className="text-sm font-semibold text-foreground">Importação WhatsApp</p>
+            <p className="text-xs text-muted sm:text-sm">
               Quero importar os imóveis do meu grupo automaticamente
             </p>
             {activeGroups.length > 0 ? (
               <div className="mt-1.5">
-                <p className="text-[11px] font-medium text-zinc-500">
+                <p className="text-[11px] font-medium text-muted">
                   Grupos ativos
                 </p>
                 <ul className="mt-1 flex flex-wrap gap-1.5">

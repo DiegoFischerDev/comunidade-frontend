@@ -30,7 +30,7 @@ export function JobOfferWhatsappInviteModal({ open, onClose }: Props) {
   return (
     <ModalPortal>
       <div
-        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+        className="fixed inset-0 z-[60] flex items-center justify-center brand-modal-scrim p-4"
         role="dialog"
         aria-modal="true"
         aria-labelledby="job-offer-whatsapp-invite-title"
@@ -38,23 +38,23 @@ export function JobOfferWhatsappInviteModal({ open, onClose }: Props) {
           if (e.target === e.currentTarget) onClose();
         }}
       >
-        <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+        <div className="w-full max-w-md rounded-2xl bg-card p-5 shadow-xl">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2
                 id="job-offer-whatsapp-invite-title"
-                className="text-base font-semibold text-zinc-900"
+                className="text-base font-semibold text-foreground"
               >
                 Grupos de ofertas de trabalho
               </h2>
-              <p className="mt-1 text-sm text-zinc-600">
+              <p className="mt-1 text-sm text-muted">
                 Escolhe a região do grupo WhatsApp que queres juntar-te.
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50"
+              className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border text-xs text-muted hover:bg-page"
               aria-label="Fechar"
             >
               ✕
@@ -69,14 +69,14 @@ export function JobOfferWhatsappInviteModal({ open, onClose }: Props) {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={onClose}
-                  className="flex items-center gap-3 rounded-xl border border-emerald-200/90 bg-emerald-50/40 px-4 py-3.5 text-sm font-semibold text-zinc-900 transition hover:border-emerald-300 hover:bg-emerald-50"
+                  className="flex items-center gap-3 rounded-xl border border-emerald-200/90 bg-emerald-50/40 px-4 py-3.5 text-sm font-semibold text-foreground transition hover:border-emerald-300 hover:bg-emerald-50"
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-[#25D366]/25">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-card shadow-sm ring-1 ring-[#25D366]/25">
                     <WhatsappBrandIcon className="h-5 w-5 text-[#25D366]" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block">Região {group.label}</span>
-                    <span className="mt-0.5 block text-xs font-normal text-zinc-600">
+                    <span className="mt-0.5 block text-xs font-normal text-muted">
                       Entrar no grupo WhatsApp
                     </span>
                   </span>

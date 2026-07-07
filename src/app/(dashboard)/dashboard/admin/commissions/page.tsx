@@ -58,8 +58,8 @@ export default function AdminCommissionsPage() {
   if (!isAdmin) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Comissões</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Comissões</h1>
+        <p className="mt-2 text-sm text-muted">
           Você não tem permissão para acessar esta página.
         </p>
       </div>
@@ -97,8 +97,8 @@ export default function AdminCommissionsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Comissões</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Comissões</h1>
+        <p className="mt-2 text-sm text-muted">
           Gestão de comissão RPM por serviço.
           {totalServices ? ` (${totalServices} serviços)` : ''}
         </p>
@@ -111,25 +111,25 @@ export default function AdminCommissionsPage() {
       )}
 
       {loading ? (
-        <p className="text-sm text-zinc-600">Carregando comissões…</p>
+        <p className="text-sm text-muted">Carregando comissões…</p>
       ) : groups.length === 0 ? (
-        <p className="text-sm text-zinc-500">Nenhum serviço encontrado.</p>
+        <p className="text-sm text-muted">Nenhum serviço encontrado.</p>
       ) : (
         <div className="space-y-8">
           {groups.map((partner) => (
             <section key={partner.id} className="space-y-3">
               <div className="flex items-baseline justify-between gap-4">
-                <h2 className="text-base font-semibold text-zinc-900">
+                <h2 className="text-base font-semibold text-foreground">
                   {partner.name}
                 </h2>
-                <span className="text-xs text-zinc-500">
+                <span className="text-xs text-muted">
                   {partner.services.length} serviços
                 </span>
               </div>
 
-              <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+              <div className="overflow-x-auto rounded-lg border border-border bg-card">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-zinc-50 text-zinc-600">
+                  <thead className="bg-page text-muted">
                     <tr>
                       <th className="px-4 py-2 text-left">Título</th>
                       <th className="px-4 py-2 text-left">Valor</th>
@@ -139,11 +139,11 @@ export default function AdminCommissionsPage() {
                   </thead>
                   <tbody>
                     {partner.services.map((s) => (
-                      <tr key={s.id} className="border-t border-zinc-200">
+                      <tr key={s.id} className="border-t border-border">
                         <td className="px-4 py-2 align-top">{s.title}</td>
                         <td className="px-4 py-2 align-top">
                           {s.priceOnRequest ? (
-                            <span className="text-xs text-zinc-600">
+                            <span className="text-xs text-muted">
                               Sob consulta
                             </span>
                           ) : s.price ? (
@@ -151,7 +151,7 @@ export default function AdminCommissionsPage() {
                               {s.price} €
                             </span>
                           ) : (
-                            <span className="text-xs text-zinc-400">—</span>
+                            <span className="text-xs text-muted/80">—</span>
                           )}
                         </td>
                         <td className="px-4 py-2 align-top">
@@ -164,9 +164,9 @@ export default function AdminCommissionsPage() {
                               }))
                             }
                             placeholder="Ex: 10"
-                            className="w-40 rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-40 rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                           />
-                          <p className="mt-1 text-[11px] text-zinc-500">
+                          <p className="mt-1 text-[11px] text-muted">
                             Valor em EUR (texto livre).
                           </p>
                         </td>

@@ -52,15 +52,15 @@ export function DocumentBlock({
       className={`rounded-2xl border p-4 transition ${
         isAttached
           ? 'border-emerald-300 bg-emerald-50/60'
-          : 'border-zinc-200 bg-white'
+          : 'border-border bg-card'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-zinc-900">
+          <p className="text-sm font-semibold text-foreground">
             {index}. {label}
           </p>
-          <p className="mt-1 text-xs leading-relaxed text-zinc-600">{description}</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted">{description}</p>
         </div>
         {isAttached ? (
           <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">
@@ -71,9 +71,9 @@ export function DocumentBlock({
 
       {file ? (
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-          <span className="break-all text-zinc-700">
+          <span className="break-all text-foreground/90">
             {file.name}{' '}
-            <span className="text-zinc-500">({bytesToHumanReadable(file.size)})</span>
+            <span className="text-muted">({bytesToHumanReadable(file.size)})</span>
           </span>
         </div>
       ) : null}
@@ -96,7 +96,7 @@ export function DocumentBlock({
           type="button"
           disabled={uploading}
           onClick={() => inputRef.current?.click()}
-          className="inline-flex items-center justify-center rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-900 hover:bg-zinc-50 disabled:cursor-wait disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-page disabled:cursor-wait disabled:opacity-60"
         >
           {isAttached ? 'Trocar ficheiro' : 'Anexar ficheiro'}
         </button>
@@ -105,14 +105,14 @@ export function DocumentBlock({
             <button
               type="button"
               onClick={handleView}
-              className="inline-flex items-center justify-center rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-900 hover:bg-zinc-50"
+              className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-page"
             >
               Ver
             </button>
             <button
               type="button"
               onClick={onRemove}
-              className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
+              className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-card px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
             >
               Remover
             </button>

@@ -26,11 +26,11 @@ export function JobOfferWhatsappRegionBanners() {
     <section aria-labelledby="job-offers-whatsapp-groups-heading">
       <h2
         id="job-offers-whatsapp-groups-heading"
-        className="text-xs font-semibold uppercase tracking-wide text-zinc-600"
+        className="text-xs font-semibold uppercase tracking-wide text-muted"
       >
         Grupos WhatsApp por região
       </h2>
-      <p className="mt-1 text-sm text-zinc-600">
+      <p className="mt-1 text-sm text-muted">
         Junta-te ao grupo da tua zona para receber vagas em tempo real.
       </p>
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
@@ -42,14 +42,14 @@ export function JobOfferWhatsappRegionBanners() {
             rel="noopener noreferrer"
             className="group flex items-center gap-3 rounded-xl border border-emerald-200/80 bg-gradient-to-br from-white to-emerald-50/50 px-3.5 py-3 shadow-sm ring-1 ring-emerald-100/60 transition hover:border-emerald-300 hover:shadow-md"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm ring-1 ring-[#25D366]/25">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-card shadow-sm ring-1 ring-[#25D366]/25">
               <WhatsappBrandIcon className="h-5 w-5 text-[#25D366]" />
             </span>
             <span className="min-w-0">
-              <span className="block text-sm font-semibold text-zinc-900">
+              <span className="block text-sm font-semibold text-foreground">
                 {group.label}
               </span>
-              <span className="mt-0.5 block text-xs leading-snug text-zinc-600">
+              <span className="mt-0.5 block text-xs leading-snug text-muted">
                 Ex.:{" "}
                 {formatJobOfferRegionExampleCities(group.region as JobOfferRegion)}
               </span>

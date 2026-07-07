@@ -170,8 +170,8 @@ export default function AdminLeadsGestorasPage() {
   if (!canSee) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Leads gestoras</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Leads gestoras</h1>
+        <p className="mt-2 text-sm text-muted">
           Você não tem permissão para acessar esta página.
         </p>
       </div>
@@ -182,8 +182,8 @@ export default function AdminLeadsGestorasPage() {
     <div>
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Leads gestoras</h1>
-          <p className="mt-2 text-sm text-zinc-600">
+          <h1 className="text-2xl font-semibold text-foreground">Leads gestoras</h1>
+          <p className="mt-2 text-sm text-muted">
             Todos os leads do financiamento (atribuídos às gestoras/parceiros).
           </p>
         </div>
@@ -191,7 +191,7 @@ export default function AdminLeadsGestorasPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 sm:w-56"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground shadow-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 sm:w-56"
           >
             <option value="all">Todos os status</option>
             <option value="inviavel">Inviável</option>
@@ -204,12 +204,12 @@ export default function AdminLeadsGestorasPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Pesquisar por nome, WhatsApp, email…"
-            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 sm:w-80"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground shadow-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 sm:w-80"
           />
           <button
             type="button"
             onClick={() => void load()}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground/90 hover:bg-page"
           >
             Atualizar
           </button>
@@ -223,13 +223,13 @@ export default function AdminLeadsGestorasPage() {
       ) : null}
 
       {loading ? (
-        <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
+        <p className="mt-4 text-sm text-muted">Carregando…</p>
       ) : filtered.length === 0 ? (
-        <p className="mt-4 text-sm text-zinc-600">Nenhum lead encontrado.</p>
+        <p className="mt-4 text-sm text-muted">Nenhum lead encontrado.</p>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+        <div className="mt-4 overflow-x-auto rounded-lg border border-border bg-card">
           <table className="min-w-full text-left text-sm">
-            <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+            <thead className="bg-page text-xs font-semibold uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3">Lead</th>
@@ -242,44 +242,44 @@ export default function AdminLeadsGestorasPage() {
             </thead>
             <tbody className="divide-y divide-zinc-100">
               {filtered.map((row) => (
-                <tr key={row.id} className="hover:bg-zinc-50/60">
-                  <td className="whitespace-nowrap px-4 py-3 text-zinc-700">
+                <tr key={row.id} className="hover:bg-page/60">
+                  <td className="whitespace-nowrap px-4 py-3 text-foreground/90">
                     {formatDtPt(row.createdAt)}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-zinc-900">{row.name}</div>
-                    <div className="text-xs text-zinc-600">
+                    <div className="font-medium text-foreground">{row.name}</div>
+                    <div className="text-xs text-muted">
                       {row.email} · +{digitsOnly(row.whatsapp)}
                     </div>
-                    <div className="text-[11px] text-zinc-400">
+                    <div className="text-[11px] text-muted/80">
                       ID: {formatLeadPublicId(row.publicId)}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-zinc-800">
+                  <td className="px-4 py-3 text-foreground">
                     {row.partner?.name ?? '—'}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-zinc-700">
+                  <td className="whitespace-nowrap px-4 py-3 text-foreground/90">
                     {statusLabel(row.status)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-zinc-700">
+                  <td className="whitespace-nowrap px-4 py-3 text-foreground/90">
                     {row.docsSentAt ? (
                       <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800">
                         ✓ enviados ({row.submissionsCount})
                       </span>
                     ) : (
-                      <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-700">
+                      <span className="rounded-full bg-primary-1 px-2 py-1 text-xs font-semibold text-foreground/90">
                         a aguardar
                       </span>
                     )}
                   </td>
-                  <td className="max-w-[380px] px-4 py-3 text-zinc-700">
+                  <td className="max-w-[380px] px-4 py-3 text-foreground/90">
                     {previewOneLine(row.comment)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right">
                     <button
                       type="button"
                       onClick={() => openEdit(row)}
-                      className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+                      className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-page"
                     >
                       Editar
                     </button>
@@ -287,7 +287,7 @@ export default function AdminLeadsGestorasPage() {
                       type="button"
                       onClick={() => void deleteLead(row.id)}
                       disabled={deletingId === row.id}
-                      className="ml-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+                      className="ml-2 rounded-lg border border-red-200 bg-card px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
                     >
                       {deletingId === row.id ? 'Excluindo…' : 'Excluir'}
                     </button>
@@ -300,19 +300,19 @@ export default function AdminLeadsGestorasPage() {
       )}
 
       {editing ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-card p-5 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-zinc-900">Editar lead</h2>
-                <p className="mt-1 text-xs text-zinc-500">
+                <h2 className="text-lg font-semibold text-foreground">Editar lead</h2>
+                <p className="mt-1 text-xs text-muted">
                   ID: {formatLeadPublicId(editing.publicId)}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={closeEdit}
-                className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground/90 hover:bg-page"
               >
                 Fechar
               </button>
@@ -320,43 +320,43 @@ export default function AdminLeadsGestorasPage() {
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <label className="text-sm">
-                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                   Nome
                 </span>
                 <input
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                 />
               </label>
               <label className="text-sm">
-                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                   Email
                 </span>
                 <input
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                 />
               </label>
               <label className="text-sm sm:col-span-2">
-                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                   WhatsApp (dígitos)
                 </span>
                 <input
                   value={editWhatsapp}
                   onChange={(e) => setEditWhatsapp(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                 />
               </label>
               <label className="text-sm sm:col-span-2">
-                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                   Status
                 </span>
                 <select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                 >
                   <option value="">Sem status</option>
                   <option value="inviavel">Inviável</option>
@@ -367,14 +367,14 @@ export default function AdminLeadsGestorasPage() {
                 </select>
               </label>
               <label className="text-sm sm:col-span-2">
-                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                   Comentário (resumo do quiz)
                 </span>
                 <textarea
                   value={editComment}
                   onChange={(e) => setEditComment(e.target.value)}
                   rows={6}
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                 />
               </label>
             </div>
@@ -383,7 +383,7 @@ export default function AdminLeadsGestorasPage() {
               <button
                 type="button"
                 onClick={closeEdit}
-                className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+                className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-page"
               >
                 Cancelar
               </button>
@@ -391,7 +391,7 @@ export default function AdminLeadsGestorasPage() {
                 type="button"
                 onClick={() => void saveEdit()}
                 disabled={saving}
-                className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 disabled:opacity-60"
+                className="rounded-xl bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-primary-dark disabled:opacity-60"
               >
                 {saving ? 'Salvando…' : 'Salvar alterações'}
               </button>

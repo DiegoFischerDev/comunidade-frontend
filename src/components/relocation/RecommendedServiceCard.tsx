@@ -31,9 +31,9 @@ export function RecommendedServiceCard({ service }: { service: RecommendedServic
     <li>
       <Link
         href={service.redirectPath}
-        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm ring-1 ring-zinc-900/5 transition duration-200 hover:-translate-y-0.5 hover:border-amber-200/90 hover:shadow-lg hover:shadow-amber-900/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/90 bg-card shadow-sm transition duration-200 hover:shadow-md hover:border-brand-accent/40 hover:shadow-lg hover:shadow-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/25 focus-visible:ring-offset-2"
       >
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-[#1a4d2e]/90 via-[#2d6a4f] to-[#7cb518]/80">
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-brand-primary/90 via-brand-primary-light to-brand-accent/80">
           {imageSrc ? (
             <Image
               src={imageSrc}
@@ -61,10 +61,10 @@ export function RecommendedServiceCard({ service }: { service: RecommendedServic
           </div>
         </div>
         <div className="flex flex-1 items-center justify-between gap-3 px-4 py-4">
-          <p className="text-xs leading-snug text-zinc-600">
+          <p className="text-xs leading-snug text-muted">
             Parceiro de confiança da comunidade
           </p>
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#1a4d2e] to-[#7cb518] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition group-hover:brightness-105">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full brand-cta-primary px-4 py-2 text-xs font-semibold uppercase tracking-wide shadow-sm transition group-hover:brightness-105">
             Contactar
             <svg
               className="h-3.5 w-3.5"

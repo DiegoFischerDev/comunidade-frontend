@@ -105,7 +105,7 @@ function CasasInteresseContent() {
 
   if (houseId) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-16 text-center text-sm text-zinc-600">
+      <div className="mx-auto max-w-lg px-4 py-16 text-center text-sm text-muted">
         A abrir o anúncio…
       </div>
     );
@@ -114,8 +114,8 @@ function CasasInteresseContent() {
   if (!paramsOk) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16">
-        <h1 className="text-xl font-semibold text-zinc-900">Link inválido</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-xl font-semibold text-foreground">Link inválido</h1>
+        <p className="mt-2 text-sm text-muted">
           Faltam parâmetros neste link. Volta ao grupo e abre o link que veio na publicação do imóvel.
         </p>
       </div>
@@ -124,8 +124,8 @@ function CasasInteresseContent() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-16 text-center">
-      <h1 className="text-xl font-semibold text-zinc-900">A abrir o WhatsApp…</h1>
-      <p className="mt-2 text-sm text-zinc-600">
+      <h1 className="text-xl font-semibold text-foreground">A abrir o WhatsApp…</h1>
+      <p className="mt-2 text-sm text-muted">
         Se o WhatsApp não abrir, verifica se o bloqueador de pop-ups está desativado ou tenta outra vez.
       </p>
       {error && (
@@ -140,7 +140,7 @@ function CasasInteresseContent() {
               await openWhatsAppForPartner();
             })();
           }}
-          className="mt-6 inline-flex rounded-xl bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-3 text-sm font-semibold text-white"
+          className="mt-6 inline-flex rounded-xl brand-cta-accent px-4 py-3 text-sm"
         >
           Abrir WhatsApp
         </button>
@@ -151,10 +151,10 @@ function CasasInteresseContent() {
 
 export default function CasasInteressePage() {
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen bg-page">
       <Suspense
         fallback={
-          <div className="px-4 py-16 text-center text-sm text-zinc-600">A carregar…</div>
+          <div className="px-4 py-16 text-center text-sm text-muted">A carregar…</div>
         }
       >
         <CasasInteresseContent />

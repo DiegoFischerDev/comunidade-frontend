@@ -256,7 +256,7 @@ export default function RafaCallPaymentSuccessPage() {
   if (claim.kind === 'loading') {
     return (
       <div className="mx-auto max-w-lg px-4 py-12 text-center">
-        <p className="text-sm text-zinc-600">A confirmar o pagamento e a preparar o agendamento…</p>
+        <p className="text-sm text-muted">A confirmar o pagamento e a preparar o agendamento…</p>
       </div>
     );
   }
@@ -266,8 +266,8 @@ export default function RafaCallPaymentSuccessPage() {
       <div className="mx-auto max-w-lg px-4 py-12 text-center">
         <p className="text-sm text-red-700">{claim.message}</p>
         <Link
-          href="/dashboard"
-          className="mt-4 inline-block text-sm font-medium text-blue-600 hover:underline"
+          href="/"
+          className="mt-4 inline-block text-sm font-medium text-brand-primary hover:underline"
         >
           Voltar ao dashboard
         </Link>
@@ -287,10 +287,10 @@ export default function RafaCallPaymentSuccessPage() {
             </svg>
           </div>
           <div>
-            <h1 className="text-xl font-bold text-zinc-900">
+            <h1 className="text-xl font-bold text-foreground">
               {fromCredit ? 'Taxa já paga — agenda quando quiseres' : 'Pagamento confirmado'}
             </h1>
-            <p className="mt-1 text-sm text-zinc-700">
+            <p className="mt-1 text-sm text-foreground/90">
               Olá, <span className="font-semibold">{claim.name}</span>.{' '}
               {fromCredit
                 ? 'Como tinhas uma taxa de agendamento por usar, podes escolher data e hora sem pagar de novo.'
@@ -310,13 +310,13 @@ export default function RafaCallPaymentSuccessPage() {
 
       <div className="mt-6 grid gap-6 md:grid-cols-[260px_1fr]">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">Dias</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Dias</p>
           {!availability ? (
-            <p className="mt-3 text-sm text-zinc-600">A carregar…</p>
+            <p className="mt-3 text-sm text-muted">A carregar…</p>
           ) : availability.days.filter(
               (d) => d.slots.length > 0 || (d.adminBlockedSlots?.length ?? 0) > 0,
             ).length === 0 ? (
-            <p className="mt-3 text-sm text-zinc-600">
+            <p className="mt-3 text-sm text-muted">
               Sem dias com horários nos próximos dias. Tenta novamente mais tarde.
             </p>
           ) : (
@@ -341,11 +341,11 @@ export default function RafaCallPaymentSuccessPage() {
                       className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
                         isActive
                           ? 'border-emerald-400 bg-emerald-50'
-                          : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                          : 'border-border bg-card hover:bg-page'
                       }`}
                     >
-                      <span className="font-medium text-zinc-900">{prettyYmdPt(d.date, tz)}</span>
-                      <span className="text-xs text-zinc-600">{sub}</span>
+                      <span className="font-medium text-foreground">{prettyYmdPt(d.date, tz)}</span>
+                      <span className="text-xs text-muted">{sub}</span>
                     </button>
                   );
                 })}
@@ -354,21 +354,21 @@ export default function RafaCallPaymentSuccessPage() {
         </div>
 
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
             Horários de {prettyTimezoneCityLabel(tz)}
           </p>
           {schedLoading && !availability ? (
-            <p className="mt-3 text-sm text-zinc-600">A carregar…</p>
+            <p className="mt-3 text-sm text-muted">A carregar…</p>
           ) : !availability ? (
-            <p className="mt-3 text-sm text-zinc-600">
+            <p className="mt-3 text-sm text-muted">
               Não foi possível carregar os horários.
             </p>
           ) : daySlotGrid.length === 0 ? (
-            <p className="mt-3 text-sm text-zinc-600">Escolhe um dia na lista ao lado.</p>
+            <p className="mt-3 text-sm text-muted">Escolhe um dia na lista ao lado.</p>
           ) : (
             <>
               {daySlots.length === 0 && dayAdminBlocked.length > 0 ? (
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-muted">
                   Neste dia só há horários bloqueados pela equipa no teu fuso horário.
                 </p>
               ) : null}
@@ -380,7 +380,7 @@ export default function RafaCallPaymentSuccessPage() {
                       type="button"
                       disabled={schedLoading}
                       onClick={() => void doBook(s.startsAt)}
-                      className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-emerald-50 disabled:opacity-50"
+                      className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-emerald-50 disabled:opacity-50"
                       title={s.startsAt}
                     >
                       {formatSlotTimeInTz(s.startsAt, tz)}
@@ -388,11 +388,11 @@ export default function RafaCallPaymentSuccessPage() {
                   ) : (
                     <div
                       key={s.startsAt}
-                      className="rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-center text-sm font-semibold text-zinc-500"
+                      className="rounded-xl border border-border bg-primary-1 px-3 py-2 text-center text-sm font-semibold text-muted"
                       title="Bloqueado pela equipa"
                     >
                       <span className="block">{formatSlotTimeInTz(s.startsAt, tz)}</span>
-                      <span className="mt-0.5 block text-[11px] font-medium normal-case text-zinc-500">
+                      <span className="mt-0.5 block text-[11px] font-medium normal-case text-muted">
                         Bloqueado
                       </span>
                     </div>
@@ -406,8 +406,8 @@ export default function RafaCallPaymentSuccessPage() {
 
       <p className="mt-8 text-center">
         <Link
-          href="/dashboard"
-          className="text-sm font-medium text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
+          href="/"
+          className="text-sm font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
         >
           Voltar ao dashboard
         </Link>

@@ -433,10 +433,10 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
     carouselImageSizes ?? '(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw';
   const cardShellClass = inCarousel
     ? 'relative overflow-hidden'
-    : 'relative overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 shadow-sm';
+    : 'relative overflow-hidden rounded-lg border border-border bg-page shadow-sm';
   const scheduleButtonClass = inCarousel
-    ? 'group relative w-full cursor-pointer overflow-hidden rounded-lg border-0 bg-transparent p-0 text-left shadow-none transition hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-80'
-    : 'group relative w-full cursor-pointer overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 text-left shadow-sm transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-80';
+    ? 'group relative w-full cursor-pointer overflow-hidden rounded-lg border-0 bg-transparent p-0 text-left shadow-none transition hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/25 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-80'
+    : 'group relative w-full cursor-pointer overflow-hidden rounded-lg border border-border bg-page text-left shadow-sm transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/25 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-80';
 
   return (
     <>
@@ -460,30 +460,30 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
                 >
                   CONFIRMADO
                 </span>
-                <h2 className="mb-2 text-base font-semibold tracking-tight text-zinc-900 sm:text-lg">
+                <h2 className="mb-2 text-base font-semibold tracking-tight text-foreground sm:text-lg">
                   Meu agendamento com Rafa
                 </h2>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
                   Data e hora
                 </p>
-                <p className="mt-1 text-sm font-semibold capitalize leading-snug text-zinc-900">
+                <p className="mt-1 text-sm font-semibold capitalize leading-snug text-foreground">
                   {scheduleLines.main}
                 </p>
                 <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs leading-snug">
                   {scheduleLines.sub ? (
-                    <span className="shrink-0 font-medium text-zinc-600">{scheduleLines.sub}</span>
+                    <span className="shrink-0 font-medium text-muted">{scheduleLines.sub}</span>
                   ) : null}
                   {scheduleLines.sub ? (
                     <span className="shrink-0 text-zinc-300" aria-hidden>
                       ·
                     </span>
                   ) : null}
-                  <span className="min-w-0 text-zinc-500">
+                  <span className="min-w-0 text-muted">
                     Fuso de referência:{' '}
-                    <span className="font-medium text-zinc-700">
+                    <span className="font-medium text-foreground/90">
                       {prettyTimezoneCityLabel(scheduleTz)}
                     </span>
-                    <span className="text-zinc-400"> ({scheduleTz})</span>
+                    <span className="text-muted/80"> ({scheduleTz})</span>
                   </span>
                 </div>
               </div>
@@ -528,7 +528,7 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
               />
             </button>
             {memberStatusLoading && !inCarousel ? (
-              <p className="mt-2 text-center text-xs text-zinc-500">A carregar o teu agendamento…</p>
+              <p className="mt-2 text-center text-xs text-muted">A carregar o teu agendamento…</p>
             ) : null}
           </div>
         )}
@@ -542,28 +542,28 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
             role="presentation"
           >
             <div
-              className="relative mb-0 w-full max-w-6xl max-h-[min(92dvh,100%)] overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:my-8"
+              className="relative mb-0 w-full max-w-6xl max-h-[min(92dvh,100%)] overflow-y-auto rounded-2xl bg-card p-5 shadow-xl sm:my-8"
               onClick={(e) => e.stopPropagation()}
               role="dialog"
               aria-modal="true"
             >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-zinc-900">
+                <h2 className="text-lg font-semibold text-foreground">
                   {schedMode === 'cancel'
                     ? 'Cancelar chamada'
                     : booking
                       ? 'Reagendar chamada'
                       : 'Agendar chamada'}
                 </h2>
-                <p className="mt-1 text-sm text-zinc-600">
+                <p className="mt-1 text-sm text-muted">
                   Timezone: <span className="font-medium">{tz}</span>
                 </p>
               </div>
               <button
                 type="button"
                 onClick={closeSched}
-                className="rounded-full px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100"
+                className="rounded-full px-3 py-1.5 text-sm text-muted hover:bg-primary-1"
               >
                 Fechar
               </button>
@@ -576,11 +576,11 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
             ) : null}
 
             {booking ? (
-              <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-zinc-600">
+              <div className="mt-4 rounded-xl border border-border bg-page px-4 py-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">
                   Agendamento atual
                 </p>
-                <p className="mt-1 text-sm font-semibold text-zinc-900">
+                <p className="mt-1 text-sm font-semibold text-foreground">
                   {new Date(booking.startsAt).toLocaleString('pt-PT', {
                     timeZone: booking.timezone,
                     weekday: 'long',
@@ -592,7 +592,7 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
                 </p>
                 {schedMode === 'cancel' ? (
                   <>
-                    <p className="mt-2 text-sm text-zinc-700">
+                    <p className="mt-2 text-sm text-foreground/90">
                       Queres mesmo cancelar esta chamada? Vais poder reagendar depois.
                     </p>
                     <button
@@ -607,7 +607,7 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
                       type="button"
                       onClick={() => void openScheduler()}
                       disabled={schedLoading}
-                      className="mt-2 inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+                      className="mt-2 inline-flex items-center justify-center rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-page disabled:opacity-50"
                     >
                       Voltar para reagendar
                     </button>
@@ -619,20 +619,20 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
             {schedMode === 'schedule' ? (
               <div className="mt-6 grid gap-6 md:grid-cols-[260px_1fr]">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                     Dias
                   </p>
                   {!availability ? (
-                    <p className="mt-3 text-sm text-zinc-600">A carregar…</p>
+                    <p className="mt-3 text-sm text-muted">A carregar…</p>
                   ) : availability.days.length === 0 ? (
-                    <p className="mt-3 text-sm text-zinc-600">Sem dias disponíveis.</p>
+                    <p className="mt-3 text-sm text-muted">Sem dias disponíveis.</p>
                   ) : (
                     <div className="mt-3 max-h-[420px] space-y-2 overflow-auto pr-1">
                       {availability.days.filter(
                         (d) =>
                           d.slots.length > 0 || (d.adminBlockedSlots?.length ?? 0) > 0,
                       ).length === 0 ? (
-                        <p className="text-sm text-zinc-600">
+                        <p className="text-sm text-muted">
                           Sem dias com horários neste período.
                         </p>
                       ) : (
@@ -659,13 +659,13 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
                                 className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
                                   isActive
                                     ? 'border-emerald-400 bg-emerald-50'
-                                    : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                                    : 'border-border bg-card hover:bg-page'
                                 }`}
                               >
-                                <span className="font-medium text-zinc-900">
+                                <span className="font-medium text-foreground">
                                   {prettyYmdPt(d.date, tz)}
                                 </span>
-                                <span className="text-xs text-zinc-600">{sub}</span>
+                                <span className="text-xs text-muted">{sub}</span>
                               </button>
                             );
                           })
@@ -675,28 +675,28 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                     Horários de {prettyTimezoneCityLabel(tz)}
                   </p>
                   {schedLoading ? (
-                    <p className="mt-3 text-sm text-zinc-600">A carregar…</p>
+                    <p className="mt-3 text-sm text-muted">A carregar…</p>
                   ) : !availability ? (
-                    <p className="mt-3 text-sm text-zinc-600">Não foi possível carregar os horários.</p>
+                    <p className="mt-3 text-sm text-muted">Não foi possível carregar os horários.</p>
                   ) : availability.days.every(
                       (d) =>
                         d.slots.length === 0 && (d.adminBlockedSlots?.length ?? 0) === 0,
                     ) ? (
-                    <p className="mt-3 text-sm text-zinc-600">
+                    <p className="mt-3 text-sm text-muted">
                       Sem horários disponíveis nos próximos dias. Tenta novamente mais tarde.
                     </p>
                   ) : daySlotGrid.length === 0 ? (
-                    <p className="mt-3 text-sm text-zinc-600">
+                    <p className="mt-3 text-sm text-muted">
                       Escolhe um dia na lista ao lado.
                     </p>
                   ) : (
                     <>
                       {daySlots.length === 0 && dayAdminBlocked.length > 0 ? (
-                        <p className="mt-1 text-xs text-zinc-500">
+                        <p className="mt-1 text-xs text-muted">
                           Neste dia só há horários bloqueados pela equipa no teu fuso horário.
                         </p>
                       ) : null}
@@ -708,7 +708,7 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
                               type="button"
                               disabled={schedLoading}
                               onClick={() => void doBook(s.startsAt)}
-                              className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-emerald-50"
+                              className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-emerald-50"
                               title={s.startsAt}
                             >
                               {formatSlotTimeInTz(s.startsAt, tz)}
@@ -716,11 +716,11 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
                           ) : (
                             <div
                               key={s.startsAt}
-                              className="rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-center text-sm font-semibold text-zinc-500"
+                              className="rounded-xl border border-border bg-primary-1 px-3 py-2 text-center text-sm font-semibold text-muted"
                               title="Bloqueado pela equipa"
                             >
                               <span className="block">{formatSlotTimeInTz(s.startsAt, tz)}</span>
-                              <span className="mt-0.5 block text-[11px] font-medium normal-case text-zinc-500">
+                              <span className="mt-0.5 block text-[11px] font-medium normal-case text-muted">
                                 Bloqueado
                               </span>
                             </div>
@@ -745,7 +745,7 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
             role="presentation"
           >
             <div
-              className="relative mb-0 w-full max-w-3xl max-h-[min(92dvh,100%)] overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:my-8"
+              className="relative mb-0 w-full max-w-3xl max-h-[min(92dvh,100%)] overflow-y-auto rounded-2xl bg-card p-5 shadow-xl sm:my-8"
               onClick={(e) => e.stopPropagation()}
               role="dialog"
               aria-modal="true"
@@ -754,7 +754,7 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
             <button
               type="button"
               onClick={closePayModal}
-              className="absolute right-3 top-3 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-zinc-200 text-zinc-700 shadow-sm transition-colors hover:bg-white hover:text-zinc-900"
+              className="absolute right-3 top-3 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-zinc-200 text-foreground/90 shadow-sm transition-colors hover:bg-card hover:text-foreground"
               aria-label="Fechar"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -778,22 +778,22 @@ export function RafaCallCard({ carouselImageSizes }: RafaCallCardProps = {}) {
                   sizes="(max-width: 640px) 100vw, 560px"
                 />
               </div>
-              <div className="bg-white px-4 pb-4 pt-2 text-center">
+              <div className="bg-card px-4 pb-4 pt-2 text-center">
                 <h3
                   id="rafacall-pay-modal-title"
-                  className="text-lg font-bold tracking-tight text-zinc-900"
+                  className="text-lg font-bold tracking-tight text-foreground"
                 >
                   Converse com a Rafa sobre a sua imigração
                 </h3>
-                <p className="mt-1 text-sm font-medium text-zinc-600">
+                <p className="mt-1 text-sm font-medium text-muted">
                   Chamada de vídeo com a Rafa (30 min)
                 </p>
-                <p className="mt-2 text-sm font-semibold text-zinc-900">
+                <p className="mt-2 text-sm font-semibold text-foreground">
                   {amountsLoading || !amounts
                     ? 'Preço: a carregar…'
                     : `Preço: ${formatEur(amounts.eurCents)} ou ${formatBrl(amounts.pixCentavos)}`}
                 </p>
-                <p className="mt-4 whitespace-pre-line text-left text-sm leading-relaxed text-zinc-700">
+                <p className="mt-4 whitespace-pre-line text-left text-sm leading-relaxed text-foreground/90">
                   {`Que tal conversar diretamente com quem já passou por todo o processo de imigração?
 
 Nessa videochamada, vamos bater um papo leve e direto ao ponto. Vou te contar como foi a minha experiência saindo do Brasil e construindo uma vida em Portugal, compartilhar aprendizados reais (inclusive os erros que você pode evitar!) e esclarecer as dúvidas gerais que você tiver sobre o processo.

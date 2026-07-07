@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 
 import { absoluteMediaUrlForOg, getPublicHouse } from "@/lib/house-public-server";
 import { relocationCityDisplayName } from "@/lib/relocation-portugal-cities";
+import {
+  SITE_NAME_FULL,
+} from "@/lib/site-branding";
 
 function clipDescription(text: string, max = 180): string {
   const t = text.replace(/\s+/g, " ").trim();
@@ -24,7 +27,7 @@ export async function generateHouseListingMetadata(
     return { title: "Anúncio não encontrado" };
   }
 
-  const title = `${house.title} | Comunidade Rafa Portugal`;
+  const title = `${house.title} | ${SITE_NAME_FULL}`;
   const description = clipDescription(house.description, 180);
 
   const cityKeyword = relocationCityDisplayName(house.city) || "Portugal";
@@ -45,7 +48,7 @@ export async function generateHouseListingMetadata(
       "relocation",
       cityKeyword,
       "Portugal",
-      "Comunidade Rafa Portugal",
+      "Move Casa",
       house.partner.name,
     ],
     robots: {
@@ -61,7 +64,7 @@ export async function generateHouseListingMetadata(
       url: canonicalPath,
       type: "website",
       locale: "pt_PT",
-      siteName: "Comunidade Rafa Portugal",
+      siteName: SITE_NAME_FULL,
       images: ogImages,
     },
     twitter: {

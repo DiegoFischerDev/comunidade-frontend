@@ -11,7 +11,7 @@ export function PartnerServicePriceCallout({ price, priceOnRequest }: Props) {
       : 'Valor do serviço não informado.';
 
   return (
-    <div className="mt-2 rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-700">
+    <div className="mt-2 rounded-lg bg-page px-3 py-2 text-xs text-foreground/90">
       <p>{sentence}</p>
     </div>
   );

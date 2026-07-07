@@ -223,20 +223,20 @@ export function JobOfferWhatsappConfigPanel() {
   );
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-zinc-900">
+          <h2 className="text-sm font-semibold text-foreground">
             Configuração WhatsApp
           </h2>
-          <p className="mt-1 max-w-xl text-xs leading-relaxed text-zinc-600">
+          <p className="mt-1 max-w-xl text-xs leading-relaxed text-muted">
             Adiciona grupos de origem para scan. As vagas válidas entram no site e
             são republicadas automaticamente no grupo fixo da região da cidade
             (Norte, Centro ou Sul). Usa <strong className="font-medium">Logs</strong>{' '}
             para ver o que a OpenAI extraiu e o motivo de rejeição.
           </p>
           {!loading && scans.length > 0 ? (
-            <p className="mt-2 text-xs text-zinc-500">
+            <p className="mt-2 text-xs text-muted">
               {activeScansCount === scans.length
                 ? `${scans.length} grupo(s) de scan ativo(s)`
                 : `${activeScansCount} de ${scans.length} grupo(s) de scan ativo(s)`}
@@ -247,7 +247,7 @@ export function JobOfferWhatsappConfigPanel() {
           <button
             type="button"
             onClick={() => void openLogs(null, true)}
-            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/90 hover:bg-page"
           >
             Logs (todos)
           </button>
@@ -255,7 +255,7 @@ export function JobOfferWhatsappConfigPanel() {
             type="button"
             onClick={() => void load()}
             disabled={loading}
-            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/90 hover:bg-page disabled:opacity-60"
           >
             Atualizar
           </button>
@@ -274,15 +274,15 @@ export function JobOfferWhatsappConfigPanel() {
       ) : null}
 
       <div className="mt-6">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
           Grupos de destino (fixos)
         </h3>
-        <p className="mt-1 text-xs text-zinc-500">
+        <p className="mt-1 text-xs text-muted">
           Três grupos — um por região. A distribuição é automática conforme a
           cidade da oferta.
         </p>
         {loading ? (
-          <p className="mt-3 text-sm text-zinc-600">A carregar…</p>
+          <p className="mt-3 text-sm text-muted">A carregar…</p>
         ) : (
           <div className="mt-3 grid gap-4 lg:grid-cols-3">
             {REGIONS.map((region) => {
@@ -291,10 +291,10 @@ export function JobOfferWhatsappConfigPanel() {
               return (
                 <div
                   key={region}
-                  className="rounded-xl border border-zinc-200 bg-zinc-50/40 p-4"
+                  className="rounded-xl border border-border bg-page/40 p-4"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold text-zinc-900">
+                    <span className="text-sm font-semibold text-foreground">
                       {JOB_OFFER_REGION_LABELS[region]}
                     </span>
                     {saved?.configured ? (
@@ -302,13 +302,13 @@ export function JobOfferWhatsappConfigPanel() {
                         Configurado
                       </span>
                     ) : (
-                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-800">
+                      <span className="rounded-full bg-brand-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-brand-primary">
                         Pendente
                       </span>
                     )}
                   </div>
                   <label className="mt-3 block text-sm">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-muted">
                       Grupo WhatsApp
                     </span>
                     <div className="mt-1">
@@ -346,13 +346,13 @@ export function JobOfferWhatsappConfigPanel() {
         )}
       </div>
 
-      <div className="mt-6 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50 p-4">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+      <div className="mt-6 rounded-xl border border-dashed border-border bg-page/50 p-4">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
           Adicionar grupo de scan
         </h3>
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
           <label className="text-sm sm:col-span-2">
-            <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+            <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
               Grupo ou canal (origem)
             </span>
             <EvolutionGroupSelect
@@ -366,14 +366,14 @@ export function JobOfferWhatsappConfigPanel() {
             />
           </label>
           <div className="text-sm sm:col-span-2">
-            <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+            <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
               Números monitorizados (opcional)
             </span>
             <WhatsappScanNumbersInput
               value={formNumbers}
               onChange={setFormNumbers}
             />
-            <span className="mt-1 block text-xs text-zinc-500">
+            <span className="mt-1 block text-xs text-muted">
               Lista vazia = todas as mensagens deste grupo.
             </span>
           </div>
@@ -382,22 +382,22 @@ export function JobOfferWhatsappConfigPanel() {
           type="button"
           onClick={() => void handleCreateScan()}
           disabled={creating}
-          className="mt-3 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
+          className="mt-3 rounded-xl bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-brand-primary-dark disabled:opacity-60"
         >
           {creating ? 'A adicionar…' : 'Adicionar grupo de scan'}
         </button>
       </div>
 
       {loading ? (
-        <p className="mt-4 text-sm text-zinc-600">A carregar grupos de scan…</p>
+        <p className="mt-4 text-sm text-muted">A carregar grupos de scan…</p>
       ) : scans.length === 0 ? (
-        <p className="mt-4 text-sm text-zinc-600">
+        <p className="mt-4 text-sm text-muted">
           Ainda não há grupos de scan. Adiciona um grupo de origem acima.
         </p>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200">
+        <div className="mt-4 overflow-x-auto rounded-lg border border-border">
           <table className="min-w-full text-left text-sm">
-            <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+            <thead className="bg-page text-xs font-semibold uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3">Grupo de scan</th>
                 <th className="px-4 py-3">Números</th>
@@ -405,12 +405,12 @@ export function JobOfferWhatsappConfigPanel() {
                 <th className="px-4 py-3 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 bg-white">
+            <tbody className="divide-y divide-zinc-100 bg-card">
               {scans.map((row) => (
-                <tr key={row.id} className="hover:bg-zinc-50/60">
-                  <td className="px-4 py-3 text-zinc-800">
+                <tr key={row.id} className="hover:bg-page/60">
+                  <td className="px-4 py-3 text-foreground">
                     {row.sourceTitle ?? (
-                      <span className="font-mono text-xs text-zinc-500">
+                      <span className="font-mono text-xs text-muted">
                         {row.sourceGroupJid.replace(/@g\.us$/i, '')}
                       </span>
                     )}
@@ -430,7 +430,7 @@ export function JobOfferWhatsappConfigPanel() {
                       className={
                         row.active
                           ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60'
-                          : 'rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-200 disabled:opacity-60'
+                          : 'rounded-full bg-primary-1 px-2 py-1 text-xs font-semibold text-foreground/90 hover:bg-zinc-200 disabled:opacity-60'
                       }
                     >
                       {togglingScanId === row.id
@@ -445,7 +445,7 @@ export function JobOfferWhatsappConfigPanel() {
                       <button
                         type="button"
                         onClick={() => void openLogs(row)}
-                        className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
+                        className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground/90 hover:bg-page"
                       >
                         Logs
                       </button>
@@ -453,7 +453,7 @@ export function JobOfferWhatsappConfigPanel() {
                         type="button"
                         onClick={() => void deleteScan(row.id)}
                         disabled={deletingId === row.id}
-                        className="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+                        className="rounded-lg border border-red-200 bg-card px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
                       >
                         {deletingId === row.id ? 'A remover…' : 'Excluir'}
                       </button>
@@ -467,14 +467,14 @@ export function JobOfferWhatsappConfigPanel() {
       )}
 
       {logsScan !== null || logsAll ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-2xl bg-white p-5 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4">
+          <div className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-2xl bg-card p-5 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-lg font-semibold text-zinc-900">
+                <h3 className="text-lg font-semibold text-foreground">
                   Logs de processamento
                 </h3>
-                <p className="mt-1 text-xs text-zinc-600">
+                <p className="mt-1 text-xs text-muted">
                   {logsAll
                     ? 'Todas as mensagens dos grupos de scan'
                     : (logsScan?.sourceTitle ?? logsScan?.sourceGroupJid)}
@@ -487,16 +487,16 @@ export function JobOfferWhatsappConfigPanel() {
                   setLogsAll(false);
                   setLogs([]);
                 }}
-                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                className="rounded-lg border border-border px-3 py-2 text-sm text-foreground/90 hover:bg-page"
               >
                 Fechar
               </button>
             </div>
             <div className="mt-4 flex-1 overflow-y-auto">
               {logsLoading ? (
-                <p className="text-sm text-zinc-600">A carregar…</p>
+                <p className="text-sm text-muted">A carregar…</p>
               ) : logs.length === 0 ? (
-                <p className="text-sm text-zinc-600">
+                <p className="text-sm text-muted">
                   Nenhum registo. Se enviaste uma imagem e não aparece aqui, a
                   mensagem pode não ter chegado ao backend (grupo não está em
                   scan, remetente filtrado, ou webhook sem imagem).
@@ -513,9 +513,9 @@ export function JobOfferWhatsappConfigPanel() {
                     return (
                       <li
                         key={m.id}
-                        className="rounded-xl border border-zinc-200 p-3"
+                        className="rounded-xl border border-border p-3"
                       >
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
                           <span
                             className={`rounded-full px-2 py-0.5 font-semibold ${s.className}`}
                           >
@@ -534,7 +534,7 @@ export function JobOfferWhatsappConfigPanel() {
                           ) : null}
                         </div>
                         {logImageSrc ? (
-                          <div className="relative mt-3 aspect-[4/3] max-h-64 w-full overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100">
+                          <div className="relative mt-3 aspect-[4/3] max-h-64 w-full overflow-hidden rounded-lg border border-border bg-primary-1">
                             <Image
                               src={logImageSrc}
                               alt="Imagem analisada"
@@ -545,7 +545,7 @@ export function JobOfferWhatsappConfigPanel() {
                             />
                           </div>
                         ) : null}
-                        <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-800">
+                        <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">
                           {m.rawText || '—'}
                         </p>
                         {m.error ? (
@@ -553,10 +553,10 @@ export function JobOfferWhatsappConfigPanel() {
                         ) : null}
                         {parsed ? (
                           <details className="mt-2">
-                            <summary className="cursor-pointer text-xs font-semibold text-amber-800">
+                            <summary className="cursor-pointer text-xs font-semibold text-brand-primary">
                               Resposta OpenAI (JSON)
                             </summary>
-                            <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-zinc-50 p-2 text-[11px] leading-relaxed text-zinc-800">
+                            <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-page p-2 text-[11px] leading-relaxed text-foreground">
                               {parsed}
                             </pre>
                           </details>

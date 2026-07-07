@@ -4,6 +4,7 @@ import type { RelocationHouseRow } from '@/components/relocation/relocation-hous
 import { absoluteMediaUrlForOg } from '@/lib/house-public-server';
 import { getPublicSiteUrl } from '@/lib/site-url';
 import { partnerCategoryName } from '@/lib/partner-categories';
+import { SITE_NAME, SITE_NAME_FULL } from '@/lib/site-branding';
 
 export type PartnerService = {
   id: string;
@@ -148,7 +149,7 @@ export function buildPartnerPublicMetadata(
 
   const baseDescription =
     partner.shortDescription ??
-    `${partner.name} é parceiro da Comunidade Rafa Portugal na categoria ${categoryName}.`;
+    `${partner.name} é parceiro Move Casa na categoria ${categoryName}.`;
 
   const servicesSnippet =
     topServices.length > 0 ? ` Serviços: ${topServices}.` : '';
@@ -166,7 +167,7 @@ export function buildPartnerPublicMetadata(
   return {
     title,
     description,
-    keywords: [partner.name, categoryName, 'Portugal', 'Comunidade Rafa Portugal', 'imigração'],
+    keywords: [partner.name, categoryName, 'Portugal', SITE_NAME, 'relocation', 'imigração'],
     robots: { index: true, follow: true },
     alternates: {
       canonical: url,
@@ -177,7 +178,7 @@ export function buildPartnerPublicMetadata(
       url,
       type: 'website',
       locale: 'pt_PT',
-      siteName: 'Comunidade Rafa Portugal',
+      siteName: SITE_NAME_FULL,
       images: ogImages,
     },
     twitter: {

@@ -274,8 +274,8 @@ export function PartnerEngagementBar({
 
   const baseBtn =
     variant === 'card'
-      ? 'inline-flex cursor-pointer items-center gap-1 rounded-lg px-1.5 py-0.5 text-zinc-600 transition-all duration-300 ease-out will-change-transform hover:bg-zinc-100 hover:text-zinc-900 active:scale-95'
-      : 'inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-white/90 transition-all duration-300 ease-out will-change-transform hover:bg-white/10 active:scale-95';
+      ? 'inline-flex cursor-pointer items-center gap-1 rounded-lg px-1.5 py-0.5 text-muted transition-all duration-300 ease-out will-change-transform hover:bg-primary-1 hover:text-foreground active:scale-95'
+      : 'inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-white/90 transition-all duration-300 ease-out will-change-transform hover:bg-card/10 active:scale-95';
 
   const likeActive = data?.myReaction === 'LIKE';
   const dislikeActive = data?.myReaction === 'DISLIKE';
@@ -294,14 +294,14 @@ export function PartnerEngagementBar({
         aria-label="Reações e partilha do parceiro"
       >
         {err && (
-          <p className="w-full text-[0.7rem] text-amber-700" role="status">
+          <p className="w-full text-[0.7rem] text-brand-primary" role="status">
             {err}
           </p>
         )}
         {loading && !data ? (
           <span
             className={
-              variant === 'card' ? 'text-zinc-400' : 'text-red-100/80'
+              variant === 'card' ? 'text-muted/80' : 'text-red-100/80'
             }
           >
             …
@@ -409,20 +409,20 @@ export function PartnerEngagementBar({
           aria-labelledby="share-title"
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl"
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">
               <h2
                 id="share-title"
-                className="pr-2 text-sm font-semibold text-zinc-900"
+                className="pr-2 text-sm font-semibold text-foreground"
               >
                 Compartilhar página
               </h2>
               <button
                 type="button"
                 onClick={() => setShareOpen(false)}
-                className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50"
+                className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border text-xs text-muted hover:bg-page"
                 aria-label="Fechar"
               >
                 ✕
@@ -431,7 +431,7 @@ export function PartnerEngagementBar({
             {partnerName || partnerLogoUrl ? (
               <div className="mt-3 flex items-center gap-3">
                 {partnerLogoUrl ? (
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 p-1">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-page p-1">
                     <img
                       src={partnerLogoUrl}
                       alt=""
@@ -439,20 +439,20 @@ export function PartnerEngagementBar({
                     />
                   </div>
                 ) : (
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-zinc-50 text-zinc-300">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-page text-zinc-300">
                     <PaperRocketIcon className="h-7 w-7" />
                   </div>
                 )}
                 <div className="min-w-0">
                   {partnerName ? (
-                    <p className="text-sm font-medium text-zinc-900">
+                    <p className="text-sm font-medium text-foreground">
                       {partnerName}
                     </p>
                   ) : null}
                 </div>
               </div>
             ) : null}
-            <p className="mt-3 break-all rounded-lg bg-zinc-50 px-3 py-2 text-xs text-blue-600 select-text">
+            <p className="mt-3 break-all rounded-lg bg-page px-3 py-2 text-xs text-brand-primary select-text">
               {shareUrlToUse}
             </p>
             <div className="mt-4 flex flex-wrap justify-end">
@@ -480,17 +480,17 @@ export function PartnerEngagementBar({
           aria-labelledby="partner-comment-title"
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl"
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h2
               id="partner-comment-title"
-              className="text-sm font-semibold text-zinc-900"
+              className="text-sm font-semibold text-foreground"
             >
               Novo comentário
             </h2>
             {partnerName ? (
-              <p className="mt-1 text-sm text-zinc-600">
+              <p className="mt-1 text-sm text-muted">
                 Queremos muito saber sua opinião sobre {partnerName}.
               </p>
             ) : null}
@@ -502,7 +502,7 @@ export function PartnerEngagementBar({
               rows={7}
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
-              className="mt-3 min-h-[11rem] w-full resize-y rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-800 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="mt-3 min-h-[11rem] w-full resize-y rounded-xl border border-border bg-page px-3 py-2 text-sm text-foreground placeholder:text-muted/80 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               placeholder="Escreva o seu comentário…"
             />
             {commentErr && (
@@ -565,7 +565,7 @@ function ThumbUpIcon({
   const colorWrap = active
     ? likeActiveWrap(variant)
     : variant === 'card'
-      ? 'text-zinc-500'
+      ? 'text-muted'
       : 'text-white/80';
   return (
     <span
@@ -605,7 +605,7 @@ function ThumbDownIcon({
   const colorWrap = active
     ? dislikeActiveWrap(variant)
     : variant === 'card'
-      ? 'text-zinc-500'
+      ? 'text-muted'
       : 'text-white/80';
   return (
     <span

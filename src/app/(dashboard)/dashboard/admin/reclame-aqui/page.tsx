@@ -29,9 +29,9 @@ function statusLabel(s: Payload['items'][number]['status']): string {
 }
 
 function statusClass(s: Payload['items'][number]['status']): string {
-  if (s === 'IN_REVIEW') return 'bg-amber-50 text-amber-800';
+  if (s === 'IN_REVIEW') return 'bg-brand-accent/10 text-brand-primary';
   if (s === 'DONE') return 'bg-emerald-50 text-emerald-800';
-  return 'bg-zinc-100 text-zinc-800';
+  return 'bg-primary-1 text-foreground';
 }
 
 export default function AdminReclameAquiPage() {
@@ -73,8 +73,8 @@ export default function AdminReclameAquiPage() {
   if (!canSee) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
-        <p className="mt-2 text-sm text-zinc-600">Você não tem permissão para acessar esta página.</p>
+        <h1 className="text-2xl font-semibold text-foreground">Reclame aqui</h1>
+        <p className="mt-2 text-sm text-muted">Você não tem permissão para acessar esta página.</p>
       </div>
     );
   }
@@ -83,15 +83,15 @@ export default function AdminReclameAquiPage() {
     <div>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Reclame aqui</h1>
-          <p className="mt-2 text-sm text-zinc-600">
+          <h1 className="text-2xl font-semibold text-foreground">Reclame aqui</h1>
+          <p className="mt-2 text-sm text-muted">
             Tickets enviados por membros/visitantes (elogios, reclamações de parceiros e bugs).
           </p>
         </div>
         <button
           type="button"
           onClick={() => void load()}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground/90 hover:bg-page"
         >
           Atualizar
         </button>
@@ -102,13 +102,13 @@ export default function AdminReclameAquiPage() {
       ) : null}
 
       {loading ? (
-        <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
+        <p className="mt-4 text-sm text-muted">Carregando…</p>
       ) : items.length === 0 ? (
-        <p className="mt-4 text-sm text-zinc-600">Nenhum ticket encontrado.</p>
+        <p className="mt-4 text-sm text-muted">Nenhum ticket encontrado.</p>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+        <div className="mt-4 overflow-x-auto rounded-lg border border-border bg-card">
           <table className="min-w-full text-left text-sm">
-            <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+            <thead className="bg-page text-xs font-semibold uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3">Quem abriu</th>
@@ -119,8 +119,8 @@ export default function AdminReclameAquiPage() {
             </thead>
             <tbody className="divide-y divide-zinc-100">
               {items.map((t) => (
-                <tr key={t.id} className="align-top text-zinc-800">
-                  <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-900">
+                <tr key={t.id} className="align-top text-foreground">
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-foreground">
                     {prettyDtPt(t.createdAt)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">{t.user.name}</td>
@@ -130,10 +130,10 @@ export default function AdminReclameAquiPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-zinc-800">{preview100(t.message)}</div>
+                    <div className="text-foreground">{preview100(t.message)}</div>
                     {t.adminReply ? (
-                      <div className="mt-1 text-xs text-zinc-500">
-                        <span className="font-medium text-zinc-600">Resposta:</span>{' '}
+                      <div className="mt-1 text-xs text-muted">
+                        <span className="font-medium text-muted">Resposta:</span>{' '}
                         {preview100(t.adminReply)}
                       </div>
                     ) : null}
@@ -143,7 +143,7 @@ export default function AdminReclameAquiPage() {
                       <button
                         type="button"
                         onClick={() => setViewing(t)}
-                        className="cursor-pointer rounded bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-200"
+                        className="cursor-pointer rounded bg-primary-1 px-3 py-1 text-xs font-medium text-foreground hover:bg-zinc-200"
                       >
                         Ver mensagem
                       </button>
@@ -155,7 +155,7 @@ export default function AdminReclameAquiPage() {
                           setEditReply(t.adminReply ?? '');
                           setError('');
                         }}
-                        className="cursor-pointer rounded bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                        className="cursor-pointer rounded bg-brand-accent/10 px-3 py-1 text-xs font-medium text-brand-primary hover:bg-page"
                       >
                         Responder
                       </button>
@@ -201,40 +201,40 @@ export default function AdminReclameAquiPage() {
 
       {viewing && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4"
           role="presentation"
           onClick={() => setViewing(null)}
         >
           <div
-            className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl"
+            className="w-full max-w-2xl rounded-2xl bg-card p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-base font-semibold text-zinc-900">Mensagem do ticket</h3>
-                <p className="mt-1 text-sm text-zinc-600">
+                <h3 className="text-base font-semibold text-foreground">Mensagem do ticket</h3>
+                <p className="mt-1 text-sm text-muted">
                   {viewing.user.name} · {prettyDtPt(viewing.createdAt)}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setViewing(null)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-xs text-muted hover:bg-page"
                 aria-label="Fechar"
               >
                 ✕
               </button>
             </div>
 
-            <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-              <div className="whitespace-pre-wrap text-sm text-zinc-800">{viewing.message}</div>
+            <div className="mt-4 rounded-lg border border-border bg-page p-4">
+              <div className="whitespace-pre-wrap text-sm text-foreground">{viewing.message}</div>
             </div>
 
             <div className="mt-5 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setViewing(null)}
-                className="cursor-pointer rounded bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-200"
+                className="cursor-pointer rounded bg-primary-1 px-3 py-2 text-sm font-medium text-foreground hover:bg-zinc-200"
               >
                 Fechar
               </button>
@@ -255,18 +255,18 @@ export default function AdminReclameAquiPage() {
 
       {editing && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4"
           role="presentation"
           onClick={() => !saving && setEditing(null)}
         >
           <div
-            className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl"
+            className="w-full max-w-2xl rounded-2xl bg-card p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-base font-semibold text-zinc-900">Responder ticket</h3>
-                <p className="mt-1 text-sm text-zinc-600">
+                <h3 className="text-base font-semibold text-foreground">Responder ticket</h3>
+                <p className="mt-1 text-sm text-muted">
                   {editing.user.name} · {prettyDtPt(editing.createdAt)}
                 </p>
               </div>
@@ -274,24 +274,24 @@ export default function AdminReclameAquiPage() {
                 type="button"
                 onClick={() => setEditing(null)}
                 disabled={saving}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50 disabled:opacity-50"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-xs text-muted hover:bg-page disabled:opacity-50"
                 aria-label="Fechar"
               >
                 ✕
               </button>
             </div>
 
-            <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-              <div className="whitespace-pre-wrap text-sm text-zinc-800">{editing.message}</div>
+            <div className="mt-4 rounded-lg border border-border bg-page p-4">
+              <div className="whitespace-pre-wrap text-sm text-foreground">{editing.message}</div>
             </div>
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-zinc-700">Status</label>
+                <label className="block text-sm font-medium text-foreground/90">Status</label>
                 <select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value as typeof editStatus)}
-                  className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+                  className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground"
                   disabled={saving}
                 >
                   <option value="REGISTERED">Registrado</option>
@@ -300,13 +300,13 @@ export default function AdminReclameAquiPage() {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-zinc-700">Resposta do admin</label>
+                <label className="block text-sm font-medium text-foreground/90">Resposta do admin</label>
                 <textarea
                   value={editReply}
                   onChange={(e) => setEditReply(e.target.value)}
                   rows={6}
                   disabled={saving}
-                  className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
+                  className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground"
                   placeholder="Escreve aqui…"
                 />
               </div>
@@ -317,7 +317,7 @@ export default function AdminReclameAquiPage() {
                 type="button"
                 onClick={() => setEditing(null)}
                 disabled={saving}
-                className="cursor-pointer rounded bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-200 disabled:opacity-50"
+                className="cursor-pointer rounded bg-primary-1 px-3 py-2 text-sm font-medium text-foreground hover:bg-zinc-200 disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -340,7 +340,7 @@ export default function AdminReclameAquiPage() {
                     setSaving(false);
                   }
                 }}
-                className="cursor-pointer rounded bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                className="cursor-pointer rounded bg-brand-accent/10 px-3 py-2 text-sm font-medium text-brand-primary hover:bg-page disabled:opacity-50"
               >
                 {saving ? 'Salvando…' : 'Salvar'}
               </button>

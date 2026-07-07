@@ -1,5 +1,9 @@
 'use client';
 
+import { BRAND_COLORS } from '@/lib/brand-colors';
+import { DASHBOARD_HOME_PATH } from '@/lib/dashboard-home';
+import { BRAND_ICON, SITE_NAME_FULL } from '@/lib/site-branding';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -161,7 +165,7 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
       alert(
         'Você já é membro ativo da Comunidade Rafa Portugal. Não é necessário pagar novamente a anuidade.',
       );
-      router.push('/dashboard');
+      router.push(DASHBOARD_HOME_PATH);
       return;
     }
 
@@ -217,13 +221,13 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
   if (memberActive) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <h1 className="text-xl font-bold text-zinc-900">Já és membro ativo</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-xl font-bold text-foreground">Já és membro ativo</h1>
+        <p className="mt-2 text-sm text-muted">
           A tua anuidade está em dia. Não é necessário pagar novamente.
         </p>
         <Link
-          href="/dashboard"
-          className="mt-6 inline-block rounded-md bg-[#28b463] px-6 py-3 text-sm font-semibold text-white hover:opacity-90"
+          href={DASHBOARD_HOME_PATH}
+          className="mt-6 inline-block rounded-md brand-cta-primary px-6 py-3 text-sm hover:opacity-90"
         >
           Ir para o dashboard
         </Link>
@@ -232,21 +236,21 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f4f6] py-4 sm:py-8">
+    <div className="min-h-screen bg-page py-4 sm:py-8">
       <div className="mx-auto max-w-[1000px] px-2 sm:px-4">
         {/* Cabeçalho do produto */}
         <div className="p-2">
           <div className="flex w-full flex-col items-center justify-center rounded-md bg-transparent p-4 text-center">
             <Image
-              src="/logo_principal2.png"
-              alt=""
+              src={BRAND_ICON}
+              alt={SITE_NAME_FULL}
               width={128}
               height={128}
               className="relative max-h-32 w-auto max-w-[128px] rounded-md object-contain"
             />
             <div className="mt-4 max-w-lg">
               <h1 className="text-2xl font-bold text-black">{MEMBERSHIP_PRODUCT_TITLE}</h1>
-              <p className="mt-0.5 text-sm text-zinc-600">{MEMBERSHIP_PRODUCT_SUBTITLE}</p>
+              <p className="mt-0.5 text-sm text-muted">{MEMBERSHIP_PRODUCT_SUBTITLE}</p>
             </div>
           </div>
         </div>
@@ -255,7 +259,7 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
         <div className="mx-auto max-w-2xl sm:p-2">
           <div
             id="checkoutblock"
-            className="mb-4 w-full rounded-md bg-white px-3 py-4 text-black shadow-sm sm:border sm:border-zinc-200 md:px-6"
+            className="mb-4 w-full rounded-md bg-card px-3 py-4 text-black shadow-sm sm:border sm:border-border md:px-6"
           >
             {error ? (
               <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
@@ -357,8 +361,8 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
                 </div>
               </div>
             ) : (
-              <p className="pb-4 text-sm text-zinc-600">
-                Olá, <span className="font-semibold text-zinc-900">{user?.name}</span>. Escolhe a
+              <p className="pb-4 text-sm text-muted">
+                Olá, <span className="font-semibold text-foreground">{user?.name}</span>. Escolhe a
                 forma de pagamento para renovar ou ativar a tua anuidade.
               </p>
             )}
@@ -382,7 +386,7 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
                         className={`cursor-pointer rounded-md border p-3 text-sm font-semibold shadow-sm transition duration-200 ease-out ${
                           selected
                             ? 'border-[rgb(5,112,222)] text-[rgb(5,112,222)]'
-                            : 'border-zinc-200 text-zinc-600 hover:text-zinc-700'
+                            : 'border-border text-muted hover:text-foreground/90'
                         }`}
                         style={
                           selected
@@ -414,7 +418,7 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
               </div>
             </div>
 
-            <div className="flex w-full items-center gap-2 text-sm text-zinc-600">
+            <div className="flex w-full items-center gap-2 text-sm text-muted">
               <LockIcon />
               <p className="text-xs">
                 Os pagamentos são processados de forma segura pela Stripe, com encriptação ao nível
@@ -424,14 +428,14 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
 
             {/* Resumo do pedido */}
             <div className="mt-6 w-full pb-2">
-              <h2 className="pb-2 pt-2 text-base font-extrabold text-zinc-900">Resumo do pedido</h2>
+              <h2 className="pb-2 pt-2 text-base font-extrabold text-foreground">Resumo do pedido</h2>
               <div className="mt-2 w-full">
-                <div className="flex bg-zinc-200 p-2 text-sm font-bold text-zinc-700">
+                <div className="flex bg-zinc-200 p-2 text-sm font-bold text-foreground/90">
                   <div className="flex-1 p-2">Produto</div>
                   <div className="p-2">Preço</div>
                 </div>
               </div>
-              <div className="flex text-sm text-zinc-800">
+              <div className="flex text-sm text-foreground">
                 <div className="flex-1 p-2">
                   <span>
                     {MEMBERSHIP_PRODUCT_TITLE} — {MEMBERSHIP_PRODUCT_SUBTITLE}
@@ -439,11 +443,11 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
                 </div>
                 <div className="p-2 font-bold">{orderPrice}</div>
               </div>
-              <div className="flex text-sm text-zinc-800">
+              <div className="flex text-sm text-foreground">
                 <div className="flex-1 p-2 font-bold">Total</div>
-                <div className="p-2 font-bold text-[#28b463]">{orderPrice}</div>
+                <div className="p-2 font-bold text-brand-primary">{orderPrice}</div>
               </div>
-              <div className="mt-2 h-2 w-full border-b border-zinc-200" />
+              <div className="mt-2 h-2 w-full border-b border-border" />
             </div>
 
             <div className="mt-4 w-full">
@@ -453,7 +457,7 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
                 onClick={() => void handlePay()}
                 className="w-full cursor-pointer rounded-md p-4 text-center text-lg font-semibold text-white transition duration-75 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
                 style={{
-                  backgroundColor: '#28b463',
+                  backgroundColor: BRAND_COLORS.primary,
                   fontFamily:
                     'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
                 }}
@@ -461,7 +465,7 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
                 {checkoutLoading ? 'A redirecionar…' : payLabel}
               </button>
 
-              <p className="bottom-0 pt-3 text-center text-[11px] leading-relaxed text-zinc-500">
+              <p className="bottom-0 pt-3 text-center text-[11px] leading-relaxed text-muted">
                 Ao clicar em &quot;{payLabel}&quot;, confirmas que leste e aceitas os{' '}
                 <button
                   type="button"
@@ -484,8 +488,8 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
 
           <p className="pb-8 text-center">
             <Link
-              href="/dashboard"
-              className="text-sm font-medium text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
+              href={DASHBOARD_HOME_PATH}
+              className="text-sm font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
             >
               Voltar ao dashboard
             </Link>

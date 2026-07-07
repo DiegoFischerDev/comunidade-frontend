@@ -75,8 +75,8 @@ export function FloatingWhatsAppButton({
         aria-hidden={hideFloatingButton}
       >
         {open && !showMembershipModal && (
-          <div className="absolute bottom-full right-0 mb-2 w-72 rounded-xl border border-zinc-200 bg-white p-4 shadow-xl">
-            <p className="text-sm font-medium text-zinc-800">
+          <div className="absolute bottom-full right-0 mb-2 w-72 rounded-xl border border-border bg-card p-4 shadow-xl">
+            <p className="text-sm font-medium text-foreground">
               Precisa de ajuda? Fale com a nossa equipe no whatsapp
             </p>
             <div className="mt-3 flex flex-col gap-2">
@@ -85,7 +85,7 @@ export function FloatingWhatsAppButton({
                   href={WHATSAPP_URL}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-medium text-white hover:from-[#c07c01] hover:to-[#e7a01f]"
+                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full brand-cta-accent px-4 py-2.5 text-sm font-medium"
                 >
                   Abrir WhatsApp
                 </a>
@@ -96,7 +96,7 @@ export function FloatingWhatsAppButton({
                     setOpen(false);
                     setShowMembershipModal(true);
                   }}
-                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-medium text-white hover:from-[#c07c01] hover:to-[#e7a01f]"
+                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full brand-cta-accent px-4 py-2.5 text-sm font-medium"
                 >
                   Abrir WhatsApp
                 </button>
@@ -108,7 +108,7 @@ export function FloatingWhatsAppButton({
         <button
           type="button"
           onClick={() => setOpen((prev) => !prev)}
-          className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] text-white shadow-lg transition-transform hover:scale-105 hover:shadow-xl"
+          className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-full brand-cta-primary shadow-lg transition-transform hover:scale-105 hover:shadow-xl"
           aria-label="Ajuda no WhatsApp"
         >
           <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -119,12 +119,12 @@ export function FloatingWhatsAppButton({
 
       {showMembershipModal && (
         <div
-          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-40 flex items-center justify-center brand-modal-scrim p-4"
           onClick={closeAll}
           role="presentation"
         >
           <div
-            className="relative w-full max-w-md rounded-2xl bg-white p-0 shadow-xl"
+            className="relative w-full max-w-md rounded-2xl bg-card p-0 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button

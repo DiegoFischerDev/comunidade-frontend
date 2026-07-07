@@ -110,22 +110,22 @@ function ServiceFormFields({
   return (
     <>
       <div className="sm:col-span-2">
-        <label className="block text-xs font-medium text-zinc-700">Título</label>
+        <label className="block text-xs font-medium text-foreground/90">Título</label>
         <input
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
           required
           placeholder="Ex.: Crédito habitação"
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
         />
       </div>
       <div className="sm:col-span-2">
-        <label className="block text-xs font-medium text-zinc-700">Link</label>
+        <label className="block text-xs font-medium text-foreground/90">Link</label>
         <select
           value={linkId}
           onChange={(e) => onLinkIdChange(e.target.value)}
           required
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
         >
           <option value="">Selecionar link…</option>
           {linkOptions.map((l) => (
@@ -136,20 +136,20 @@ function ServiceFormFields({
           ))}
         </select>
         {linkSelectHint ? (
-          <p className="mt-1 text-xs text-zinc-500">{linkSelectHint}</p>
+          <p className="mt-1 text-xs text-muted">{linkSelectHint}</p>
         ) : null}
       </div>
       <div>
-        <label className="block text-xs font-medium text-zinc-700">Ordem</label>
+        <label className="block text-xs font-medium text-foreground/90">Ordem</label>
         <input
           type="number"
           value={sortOrder}
           onChange={(e) => onSortOrderChange(Number(e.target.value))}
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
         />
       </div>
       <div className="flex items-end">
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-700">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground/90">
           <input
             type="checkbox"
             checked={active}
@@ -159,14 +159,14 @@ function ServiceFormFields({
         </label>
       </div>
       <div className="sm:col-span-2">
-        <label className="block text-xs font-medium text-zinc-700">
+        <label className="block text-xs font-medium text-foreground/90">
           Imagem do card (página pública)
         </label>
-        <p className="mt-0.5 text-xs text-zinc-500">
+        <p className="mt-0.5 text-xs text-muted">
           Proporção 4:3 recomendada. Aparece no topo de cada card em Serviços que indico.
         </p>
         {previewSrc ? (
-          <div className="relative mt-2 aspect-[4/3] max-w-xs overflow-hidden rounded-lg border border-zinc-200">
+          <div className="relative mt-2 aspect-[4/3] max-w-xs overflow-hidden rounded-lg border border-border">
             <Image
               src={previewSrc}
               alt=""
@@ -178,7 +178,7 @@ function ServiceFormFields({
           </div>
         ) : null}
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <label className="cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-50">
+          <label className="cursor-pointer rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-page">
             {cardImageBusy
               ? "A enviar…"
               : previewSrc
@@ -235,16 +235,16 @@ function InnerFormModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
-          className="max-h-[min(90vh,720px)] w-full max-w-lg overflow-y-auto rounded-xl border border-zinc-200 bg-white p-6 shadow-xl"
+          className="max-h-[min(90vh,720px)] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-xl"
         >
           <div className="flex items-start justify-between gap-3">
-            <h2 id={titleId} className="text-lg font-medium text-zinc-900">
+            <h2 id={titleId} className="text-lg font-medium text-foreground">
               {title}
             </h2>
             <button
               type="button"
               onClick={onClose}
-              className="cursor-pointer rounded-md p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+              className="cursor-pointer rounded-md p-1 text-muted hover:bg-primary-1 hover:text-foreground"
               aria-label="Fechar"
             >
               <svg
@@ -530,21 +530,21 @@ export function RecommendedServicesAdminModal({ open, onClose, onChanged }: Prop
             role="dialog"
             aria-modal="true"
             aria-labelledby="recommended-services-admin-title"
-            className="relative mb-0 w-full max-w-4xl max-h-[min(92dvh,100%)] overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:my-8 sm:p-6"
+            className="relative mb-0 w-full max-w-4xl max-h-[min(92dvh,100%)] overflow-y-auto rounded-2xl bg-card p-5 shadow-xl sm:my-8 sm:p-6"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2
                   id="recommended-services-admin-title"
-                  className="text-xl font-semibold text-zinc-900"
+                  className="text-xl font-semibold text-foreground"
                 >
                   Configurar serviços indicados
                 </h2>
-                <p className="mt-1 text-sm text-zinc-600">
+                <p className="mt-1 text-sm text-muted">
                   Escolha links já criados em{" "}
                   <Link
                     href="/dashboard/admin/share-links"
-                    className="font-medium text-blue-600 hover:underline"
+                    className="font-medium text-brand-primary hover:underline"
                   >
                     Links WhatsApp
                   </Link>
@@ -555,7 +555,7 @@ export function RecommendedServicesAdminModal({ open, onClose, onChanged }: Prop
               <button
                 type="button"
                 onClick={onClose}
-                className="cursor-pointer rounded-md p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                className="cursor-pointer rounded-md p-1 text-muted hover:bg-primary-1 hover:text-foreground"
                 aria-label="Fechar"
               >
                 <svg
@@ -584,12 +584,12 @@ export function RecommendedServicesAdminModal({ open, onClose, onChanged }: Prop
             ) : null}
 
             {loading ? (
-              <p className="mt-4 text-sm text-zinc-500">A carregar…</p>
+              <p className="mt-4 text-sm text-muted">A carregar…</p>
             ) : (
-              <section className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+              <section className="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-left text-sm">
-                    <thead className="border-b border-zinc-200 bg-zinc-50 text-xs uppercase text-zinc-500">
+                    <thead className="border-b border-border bg-page text-xs uppercase text-muted">
                       <tr>
                         <th className="px-3 py-2">Imagem</th>
                         <th className="px-3 py-2">Ordem</th>
@@ -602,7 +602,7 @@ export function RecommendedServicesAdminModal({ open, onClose, onChanged }: Prop
                     <tbody>
                       {rows.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-3 py-6 text-center text-zinc-500">
+                          <td colSpan={6} className="px-3 py-6 text-center text-muted">
                             Nenhum serviço na lista.
                           </td>
                         </tr>
@@ -612,9 +612,9 @@ export function RecommendedServicesAdminModal({ open, onClose, onChanged }: Prop
                             ? resolveUploadsUrl(r.cardImageUrl)
                             : null;
                           return (
-                            <tr key={r.id} className="border-b border-zinc-100 last:border-0">
+                            <tr key={r.id} className="border-b border-border/60 last:border-0">
                               <td className="px-3 py-2">
-                                <div className="relative h-12 w-16 overflow-hidden rounded-md border border-zinc-200 bg-gradient-to-br from-[#1a4d2e] to-[#7cb518]">
+                                <div className="relative h-12 w-16 overflow-hidden rounded-md border border-border bg-gradient-to-br from-brand-primary to-brand-accent">
                                   {thumb ? (
                                     <Image
                                       src={thumb}
@@ -632,15 +632,15 @@ export function RecommendedServicesAdminModal({ open, onClose, onChanged }: Prop
                                 </div>
                               </td>
                               <td className="px-3 py-2 tabular-nums">{r.sortOrder}</td>
-                              <td className="px-3 py-2 font-medium text-zinc-900">{r.title}</td>
+                              <td className="px-3 py-2 font-medium text-foreground">{r.title}</td>
                               <td className="px-3 py-2">
-                                <span className="text-zinc-700">{r.partnerShareLink.title}</span>
+                                <span className="text-foreground/90">{r.partnerShareLink.title}</span>
                                 <br />
                                 <Link
                                   href={r.redirectPath}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-xs text-blue-600 hover:underline"
+                                  className="text-xs text-brand-primary hover:underline"
                                 >
                                   {r.partnerShareLink.slug}
                                 </Link>
@@ -654,7 +654,7 @@ export function RecommendedServicesAdminModal({ open, onClose, onChanged }: Prop
                                     aria-label="Editar serviço"
                                     disabled={deletingId === r.id || saving}
                                     onClick={() => startEdit(r)}
-                                    className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-700 shadow-sm transition-colors hover:border-amber-300 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border bg-card text-foreground/90 shadow-sm transition-colors hover:border-brand-accent/50 hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
                                   >
                                     <PencilIcon className="h-4 w-4" />
                                   </button>
@@ -664,7 +664,7 @@ export function RecommendedServicesAdminModal({ open, onClose, onChanged }: Prop
                                     aria-label="Excluir serviço"
                                     disabled={deletingId === r.id || saving}
                                     onClick={() => void handleDelete(r.id)}
-                                    className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-red-200 bg-white text-red-700 shadow-sm transition-colors hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-red-200 bg-card text-red-700 shadow-sm transition-colors hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                                   >
                                     {deletingId === r.id ? (
                                       <svg

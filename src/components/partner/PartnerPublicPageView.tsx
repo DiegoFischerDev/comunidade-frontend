@@ -96,10 +96,10 @@ export function PartnerPublicPageView({ partner, relocationHouses, sharePageUrl 
 
       {partner.fullDescription && (
         <section>
-          <h2 className="mb-3 text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+          <h2 className="mb-3 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             Sobre {partner.name}
           </h2>
-          <p className="whitespace-pre-line text-base leading-relaxed text-zinc-700">
+          <p className="whitespace-pre-line text-base leading-relaxed text-foreground/90">
             {partner.fullDescription}
           </p>
         </section>
@@ -120,23 +120,23 @@ export function PartnerPublicPageView({ partner, relocationHouses, sharePageUrl 
       )}
 
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+        <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
           Serviços oferecidos
         </h2>
         {visibleServices.length === 0 ? (
-          <p className="text-sm text-zinc-500">Este parceiro ainda não cadastrou serviços.</p>
+          <p className="text-sm text-muted">Este parceiro ainda não cadastrou serviços.</p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {visibleServices.map((service) => (
               <article
                 key={service.id}
-                className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+                className="flex flex-col rounded-2xl border border-border bg-card p-4 shadow-sm"
               >
-                <h3 className="text-base font-semibold tracking-tight text-zinc-900 sm:text-lg">
+                <h3 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
                   {service.title}
                 </h3>
                 {service.description && (
-                  <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-zinc-700">
+                  <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-foreground/90">
                     {service.description}
                   </p>
                 )}
@@ -168,11 +168,11 @@ export function PartnerPublicPageView({ partner, relocationHouses, sharePageUrl 
 
       {partner.categorySlug === 'relocation' && (
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             Imóveis
           </h2>
           {relocationHouses.length === 0 ? (
-            <p className="text-sm text-zinc-600">Ainda não há imóveis publicados por este parceiro.</p>
+            <p className="text-sm text-muted">Ainda não há imóveis publicados por este parceiro.</p>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {relocationHouses.map((h) => (

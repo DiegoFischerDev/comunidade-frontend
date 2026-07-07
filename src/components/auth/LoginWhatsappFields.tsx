@@ -108,7 +108,7 @@ export function LoginWhatsappFields({
     <div ref={fieldRef} className="space-y-1.5">
       {!hasError ? (
         <div className="flex items-center justify-between gap-2">
-          <label htmlFor={selectId} className="text-sm font-medium text-zinc-700">
+          <label htmlFor={selectId} className="text-sm font-medium text-foreground/90">
             {label}
           </label>
           {labelAction}
@@ -127,10 +127,10 @@ export function LoginWhatsappFields({
           aria-label={`País do telefone: ${selectedMeta.label}`}
           title={selectedMeta.label}
           aria-invalid={hasError || undefined}
-          className={`box-border h-full min-h-[2.5rem] w-full min-w-0 max-w-full cursor-pointer appearance-none rounded-lg border bg-white py-1.5 pl-1 pr-5 text-center text-lg leading-none sm:min-h-0 sm:py-2 sm:pl-1.5 sm:pr-7 sm:text-2xl ${
+          className={`box-border h-full min-h-[2.5rem] w-full min-w-0 max-w-full cursor-pointer appearance-none rounded-lg border bg-card py-1.5 pl-1 pr-5 text-center text-lg leading-none sm:min-h-0 sm:py-2 sm:pl-1.5 sm:pr-7 sm:text-2xl ${
             hasError
               ? 'border-red-700 focus:border-red-700 focus:outline-none focus:ring-1 focus:ring-red-700'
-              : 'border-zinc-300 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500'
+              : 'border-border focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25'
           }`}
           style={{
             backgroundImage: chevronBg,
@@ -156,13 +156,13 @@ export function LoginWhatsappFields({
           className={`relative flex min-w-0 flex-1 overflow-hidden rounded-lg border ${
             hasError
               ? 'border-red-700 focus-within:border-red-700 focus-within:ring-1 focus-within:ring-red-700'
-              : 'border-zinc-300 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500'
+              : 'border-border focus-within:border-brand-primary focus-within:ring-2 focus-within:ring-brand-primary/25'
           }`}
         >
           {isCustom ? (
             <>
               <span
-                className="flex shrink-0 items-center border-r border-zinc-200 bg-zinc-50 px-2 text-sm font-medium text-zinc-600"
+                className="flex shrink-0 items-center border-r border-border bg-page px-2 text-sm font-medium text-muted"
                 aria-hidden
               >
                 +
@@ -184,12 +184,12 @@ export function LoginWhatsappFields({
                 autoComplete="tel-country-code"
                 aria-label="Código de país (DDI), só dígitos"
                 required
-                className="w-[4.75rem] shrink-0 border-r border-zinc-200 bg-zinc-50 px-2 py-2 text-center text-sm font-medium text-zinc-900 outline-none placeholder:text-zinc-400"
+                className="w-[4.75rem] shrink-0 border-r border-border bg-page px-2 py-2 text-center text-sm font-medium text-foreground outline-none placeholder:text-muted/80"
               />
             </>
           ) : (
             <span
-              className="flex shrink-0 items-center border-r border-zinc-200 bg-zinc-50 px-2.5 text-sm font-medium text-zinc-600"
+              className="flex shrink-0 items-center border-r border-border bg-page px-2.5 text-sm font-medium text-muted"
               aria-hidden
             >
               +{dial}
@@ -219,8 +219,8 @@ export function LoginWhatsappFields({
             aria-label="Número de telemóvel sem código do país"
             aria-invalid={hasError || undefined}
             aria-describedby={hasError ? `${idPrefix}-phone-error` : undefined}
-            className={`min-w-0 flex-1 border-0 bg-white px-3 py-2 text-sm outline-none placeholder:text-zinc-400 ${
-              hasError ? 'text-red-900' : 'text-zinc-900'
+            className={`min-w-0 flex-1 border-0 bg-card px-3 py-2 text-sm outline-none placeholder:text-muted/80 ${
+              hasError ? 'text-red-900' : 'text-foreground'
             }`}
           />
           {hasError ? (

@@ -49,12 +49,12 @@ export function NewSupportTicketModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto brand-modal-scrim p-4"
       role="presentation"
       onClick={() => !sending && onClose()}
     >
       <div
-        className="my-8 w-full max-w-3xl rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg"
+        className="my-8 w-full max-w-3xl rounded-2xl border border-border bg-card p-5 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
@@ -69,10 +69,10 @@ export function NewSupportTicketModal({
               />
             </div>
             <div className="min-w-0">
-              <h2 className="text-base font-semibold text-zinc-900" id="new-ticket-title">
+              <h2 className="text-base font-semibold text-foreground" id="new-ticket-title">
                 Reclame aqui
               </h2>
-              <p className="mt-1 text-sm text-zinc-600" id="new-ticket-desc">
+              <p className="mt-1 text-sm text-muted" id="new-ticket-desc">
                 {SUBTITLE}
               </p>
             </div>
@@ -81,7 +81,7 @@ export function NewSupportTicketModal({
             type="button"
             onClick={onClose}
             disabled={sending}
-            className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50 disabled:opacity-50"
+            className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border text-xs text-muted hover:bg-page disabled:opacity-50"
             aria-label="Fechar"
           >
             ✕
@@ -103,7 +103,7 @@ export function NewSupportTicketModal({
         {collectGuestContact && !sent ? (
           <div className="mt-4 space-y-3">
             <div>
-              <label className="block text-sm font-medium text-zinc-700" htmlFor="new-ticket-guest-name">
+              <label className="block text-sm font-medium text-foreground/90" htmlFor="new-ticket-guest-name">
                 Nome
               </label>
               <input
@@ -113,7 +113,7 @@ export function NewSupportTicketModal({
                 onChange={(e) => onGuestNameChange?.(e.target.value)}
                 disabled={sending}
                 autoComplete="name"
-                className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+                className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted/80 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 disabled:opacity-60"
                 placeholder="O teu nome"
               />
               {guestNameError ? (
@@ -133,7 +133,7 @@ export function NewSupportTicketModal({
 
         <div className="mt-4">
           <label
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-foreground/90"
             htmlFor="new-ticket-message"
           >
             Mensagem
@@ -144,7 +144,7 @@ export function NewSupportTicketModal({
             onChange={(e) => onMessageChange(e.target.value)}
             rows={7}
             disabled={sending || sent}
-            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+            className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted/80 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 disabled:opacity-60"
             placeholder="Escreve aqui…"
             aria-labelledby="new-ticket-title"
             aria-describedby="new-ticket-desc"

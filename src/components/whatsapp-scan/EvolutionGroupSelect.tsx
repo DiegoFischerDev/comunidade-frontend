@@ -102,7 +102,7 @@ export function EvolutionGroupSelect({
           const g = groups.find((x) => x.groupJid === e.target.value);
           if (g) onChange(g);
         }}
-        className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm disabled:opacity-60"
+        className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-60"
       >
         <option value="">{emptyLabel}</option>
         {showPendingValue ? (
@@ -117,12 +117,12 @@ export function EvolutionGroupSelect({
         ))}
       </select>
       {instance && hasLoaded && !loading ? (
-        <span className="mt-1 block text-xs text-zinc-500">
+        <span className="mt-1 block text-xs text-muted">
           Grupos da instância Evolution «{instance}».
         </span>
       ) : null}
       {!hasLoaded && !loading && !loadError ? (
-        <span className="mt-1 block text-xs text-zinc-500">
+        <span className="mt-1 block text-xs text-muted">
           A lista só é pedida à Evolution quando abres o seletor.
         </span>
       ) : null}
@@ -130,7 +130,7 @@ export function EvolutionGroupSelect({
         <span className="mt-1 block text-xs text-red-600">{loadError}</span>
       ) : null}
       {hasLoaded && !loading && !loadError && !hasOptions ? (
-        <span className="mt-1 block text-xs text-amber-700">
+        <span className="mt-1 block text-xs text-brand-primary">
           Nenhum grupo disponível na instância Evolution.
         </span>
       ) : null}

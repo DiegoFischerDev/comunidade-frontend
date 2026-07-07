@@ -12,14 +12,14 @@ export function MonitoredUsersCell({
 }) {
   if (monitorAllMembers) {
     return (
-      <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
+      <span className="rounded-full bg-primary-1 px-2 py-1 text-xs font-medium text-foreground/90">
         Todos os membros
       </span>
     );
   }
 
   if (numbers.length === 0) {
-    return <span className="text-xs text-zinc-400">Nenhum</span>;
+    return <span className="text-xs text-muted/80">Nenhum</span>;
   }
 
   return (
@@ -30,13 +30,13 @@ export function MonitoredUsersCell({
           <li key={n} className="text-xs leading-snug">
             {name ? (
               <>
-                <span className="font-medium text-zinc-900">{name}</span>
-                <span className="mt-0.5 block font-mono tabular-nums text-zinc-500">
+                <span className="font-medium text-foreground">{name}</span>
+                <span className="mt-0.5 block font-mono tabular-nums text-muted">
                   +{n}
                 </span>
               </>
             ) : (
-              <span className="font-mono tabular-nums text-zinc-700">+{n}</span>
+              <span className="font-mono tabular-nums text-foreground/90">+{n}</span>
             )}
           </li>
         );

@@ -8,7 +8,9 @@ import {
 } from "@/components/auth/LoginMethodSwitchLink";
 import { LoginWhatsappFields } from "@/components/auth/LoginWhatsappFields";
 import { useAuth } from "@/contexts/AuthContext";
+import { SITE_NAME_FULL } from "@/lib/site-branding";
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/lib/auth-ui-events";
+import { DASHBOARD_HOME_PATH } from "@/lib/dashboard-home";
 import {
   LOGIN_PASSWORD_STORAGE_KEY,
   persistLoginPasswordToStorage,
@@ -89,9 +91,9 @@ function LoginForm() {
   }
 
   return (
-    <div className="rounded-xl bg-white p-8 shadow-sm ring-1 ring-zinc-200">
-      <h1 className="text-2xl font-semibold text-zinc-900">Entrar</h1>
-      <p className="mt-1 text-sm text-zinc-500">Comunidade Rafa Portugal</p>
+    <div className="rounded-xl bg-card p-8 shadow-sm ring-1 ring-zinc-200">
+      <h1 className="text-2xl font-semibold text-foreground">Entrar</h1>
+      <p className="mt-1 text-sm text-muted">{SITE_NAME_FULL}</p>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         {error && (
           <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -118,7 +120,7 @@ function LoginForm() {
         ) : (
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
-              <label htmlFor="page-login-email" className="text-sm font-medium text-zinc-700">
+              <label htmlFor="page-login-email" className="text-sm font-medium text-foreground/90">
                 E-mail
               </label>
               <LoginMethodSwitchLink
@@ -139,12 +141,12 @@ function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 disabled:opacity-50"
             />
           </div>
         )}
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-zinc-700">
+          <label htmlFor="password" className="block text-sm font-medium text-foreground/90">
             Senha
           </label>
           <input
@@ -159,24 +161,24 @@ function LoginForm() {
             }}
             required
             autoComplete="current-password"
-            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
           />
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-blue-600 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="w-full rounded-lg bg-brand-primary py-2.5 font-medium text-white hover:bg-brand-primary-dark disabled:opacity-50"
         >
           {loading ? "Entrando…" : "Entrar"}
         </button>
       </form>
-      <p className="mt-4 text-center text-sm text-zinc-600">
+      <p className="mt-4 text-center text-sm text-muted">
         Ainda não tem conta?{" "}
         <button
           type="button"
           onClick={() => {
             window.dispatchEvent(new Event(OPEN_MEMBERSHIP_MODAL_EVENT));
-            router.push("/dashboard");
+            router.push(DASHBOARD_HOME_PATH);
           }}
           className="cursor-pointer font-medium text-emerald-700 underline-offset-2 hover:underline"
         >
@@ -191,7 +193,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="rounded-xl bg-white p-8 text-center text-sm text-zinc-500 ring-1 ring-zinc-200">
+        <div className="rounded-xl bg-card p-8 text-center text-sm text-muted ring-1 ring-zinc-200">
           A carregar…
         </div>
       }

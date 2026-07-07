@@ -144,8 +144,8 @@ export function PartnerServicesManager() {
   return (
     <div className="space-y-3">
       <div>
-        <h2 className="text-sm font-semibold text-zinc-900">Meus serviços</h2>
-        <p className="mt-1 text-xs text-zinc-600">
+        <h2 className="text-sm font-semibold text-foreground">Meus serviços</h2>
+        <p className="mt-1 text-xs text-muted">
           Cadastre os serviços que serão exibidos no seu site pessoal no Google.
         </p>
       </div>
@@ -176,22 +176,22 @@ export function PartnerServicesManager() {
 
       {isModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4"
           onClick={() => !submitting && setIsModalOpen(false)}
           role="presentation"
         >
           <div
-            className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl"
+            className="w-full max-w-lg rounded-2xl bg-card p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-zinc-900">
+              <h2 className="text-base font-semibold text-foreground">
                 {editingId ? "Editar serviço" : "Cadastrar novo serviço"}
               </h2>
               <button
                 type="button"
                 onClick={() => !submitting && setIsModalOpen(false)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-xs text-muted hover:bg-page"
                 aria-label="Fechar"
               >
                 ✕
@@ -200,7 +200,7 @@ export function PartnerServicesManager() {
 
             <form onSubmit={handleSubmit} className="mt-4 space-y-4">
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-zinc-700">
+                <label className="block text-sm font-medium text-foreground/90">
                   Título do serviço
                 </label>
                 <input
@@ -208,11 +208,11 @@ export function PartnerServicesManager() {
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                 />
               </div>
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-zinc-700">
+                <label className="block text-sm font-medium text-foreground/90">
                   Descrição
                 </label>
                 <textarea
@@ -220,11 +220,11 @@ export function PartnerServicesManager() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-zinc-700">
+                <label className="block text-sm font-medium text-foreground/90">
                   Valor
                 </label>
                 <input
@@ -235,9 +235,9 @@ export function PartnerServicesManager() {
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="Ex.: 50.00"
                   disabled={priceOnRequest}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-zinc-100 disabled:text-zinc-500"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 disabled:bg-primary-1 disabled:text-muted"
                 />
-                <label className="flex items-center gap-2 text-sm text-zinc-700">
+                <label className="flex items-center gap-2 text-sm text-foreground/90">
                   <input
                     type="checkbox"
                     checked={priceOnRequest}
@@ -245,7 +245,7 @@ export function PartnerServicesManager() {
                       setPriceOnRequest(e.target.checked);
                       if (e.target.checked) setPrice("");
                     }}
-                    className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-border text-brand-primary focus:ring-brand-primary/25"
                   />
                   Sob consulta
                 </label>
@@ -255,14 +255,14 @@ export function PartnerServicesManager() {
                   type="button"
                   disabled={submitting}
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground/90 hover:bg-page disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="inline-flex items-center rounded-lg bg-brand-primary px-4 py-2 text-sm font-medium text-white hover:bg-brand-primary-dark disabled:opacity-50"
                 >
                   {submitting
                     ? "Salvando…"
@@ -277,13 +277,13 @@ export function PartnerServicesManager() {
       )}
 
       {loading ? (
-        <p className="text-sm text-zinc-600">Carregando serviços cadastrados…</p>
+        <p className="text-sm text-muted">Carregando serviços cadastrados…</p>
       ) : services.length === 0 ? (
-        <p className="text-sm text-zinc-500">Nenhum serviço cadastrado ainda.</p>
+        <p className="text-sm text-muted">Nenhum serviço cadastrado ainda.</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-lg border border-border bg-card">
           <table className="min-w-full text-sm">
-            <thead className="bg-zinc-50 text-zinc-600">
+            <thead className="bg-page text-muted">
               <tr>
                 <th className="px-4 py-2 text-left">Título</th>
                 <th className="px-4 py-2 text-left">Descrição</th>
@@ -294,42 +294,42 @@ export function PartnerServicesManager() {
             </thead>
             <tbody>
               {services.map((s) => (
-                <tr key={s.id} className="border-t border-zinc-200">
+                <tr key={s.id} className="border-t border-border">
                   <td className="px-4 py-2 align-top">{s.title}</td>
                   <td className="px-4 py-2 align-top">
                     {s.description ? (
-                      <span className="line-clamp-3 max-w-xs whitespace-pre-line text-zinc-700">
+                      <span className="line-clamp-3 max-w-xs whitespace-pre-line text-foreground/90">
                         {s.description}
                       </span>
                     ) : (
-                      <span className="text-zinc-400">—</span>
+                      <span className="text-muted/80">—</span>
                     )}
                   </td>
                   <td className="px-4 py-2 align-top">
                     {s.priceOnRequest ? (
-                      <span className="text-xs text-zinc-600">Sob consulta</span>
+                      <span className="text-xs text-muted">Sob consulta</span>
                     ) : s.price ? (
                       <span className="text-xs font-medium text-emerald-700">
                         {s.price} €
                       </span>
                     ) : (
-                      <span className="text-zinc-400 text-xs">—</span>
+                      <span className="text-muted/80 text-xs">—</span>
                     )}
                   </td>
                   <td className="px-4 py-2 align-top">
                     {s.rpmCommissionEur ? (
-                      <span className="text-xs font-medium text-zinc-800">
+                      <span className="text-xs font-medium text-foreground">
                         {s.rpmCommissionEur}
                       </span>
                     ) : (
-                      <span className="text-xs text-zinc-400">—</span>
+                      <span className="text-xs text-muted/80">—</span>
                     )}
                   </td>
                   <td className="space-x-2 px-4 py-2 text-right align-top">
                     <button
                       type="button"
                       onClick={() => startEdit(s)}
-                      className="cursor-pointer rounded bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                      className="cursor-pointer rounded bg-page px-3 py-1 text-xs font-medium text-foreground/90 hover:bg-primary-1"
                     >
                       Editar
                     </button>

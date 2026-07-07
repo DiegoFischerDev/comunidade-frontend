@@ -180,8 +180,8 @@ export default function LeadsPage() {
   if (user.role !== 'PARTNER') {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
-        <h1 className="text-2xl font-semibold text-zinc-900">Meus leads</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Meus leads</h1>
+        <p className="mt-2 text-sm text-muted">
           Esta página é exclusiva para parceiros de financiamento.
         </p>
       </div>
@@ -192,23 +192,23 @@ export default function LeadsPage() {
     <div className="mx-auto w-full px-4 py-6 sm:px-6 sm:py-8">
       <header className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             Meus leads
           </h1>
-          <p className="mt-1 text-sm text-zinc-600">
+          <p className="mt-1 text-sm text-muted">
             Leads encaminhados a partir do questionário público de financiamento.
           </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           {!loading && totalCount > 0 ? (
-            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700">
+            <span className="rounded-full bg-primary-1 px-3 py-1 text-xs font-medium text-foreground/90">
               {filteredCount} {filteredCount === 1 ? 'lead' : 'leads'}
             </span>
           ) : null}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 sm:w-56"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground shadow-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 sm:w-56"
           >
             <option value="all">Todos os status</option>
             <option value="inviavel">Inviável</option>
@@ -221,20 +221,20 @@ export default function LeadsPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Pesquisar por nome, WhatsApp, email…"
-            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 sm:w-80"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground shadow-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 sm:w-80"
           />
         </div>
       </header>
 
       {loading ? (
-        <p className="text-sm text-zinc-500">A carregar…</p>
+        <p className="text-sm text-muted">A carregar…</p>
       ) : error ? (
         <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </p>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-sm">
-          <p className="text-sm text-zinc-700">
+        <div className="rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
+          <p className="text-sm text-foreground/90">
             {leads.length === 0
               ? 'Ainda não recebeste nenhum lead. Assim que um utilizador concluir o questionário público de financiamento, o sistema atribuirá automaticamente o próximo lead ao parceiro com menos leads no total — pode ser para ti.'
               : 'Nenhum lead encontrado com esse filtro.'}
@@ -250,15 +250,15 @@ export default function LeadsPage() {
               return (
                 <li
                   key={lead.id}
-                  className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
+                  className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
                 >
                   <div className="flex flex-col gap-3 p-4">
                     <div className="min-w-0 flex-1 space-y-1.5">
                       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                        <h2 className="text-base font-semibold text-zinc-900">
+                        <h2 className="text-base font-semibold text-foreground">
                           {lead.name}
                         </h2>
-                        <span className="text-xs text-zinc-500">
+                        <span className="text-xs text-muted">
                           {formatDate(lead.createdAt)}
                         </span>
                         {lead.docsSentAt ? (
@@ -269,7 +269,7 @@ export default function LeadsPage() {
                               : ''}
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-700">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-primary-1 px-2 py-0.5 text-[11px] font-medium text-foreground/90">
                             A aguardar docs
                           </span>
                         )}
@@ -286,13 +286,13 @@ export default function LeadsPage() {
                           </a>
                         ) : null}
                         {lead.email ? (
-                          <span className="break-all font-medium text-zinc-700">
+                          <span className="break-all font-medium text-foreground/90">
                             {lead.email}
                           </span>
                         ) : null}
                       </div>
                       {lead.docsSentAt ? (
-                        <p className="text-xs text-zinc-500">
+                        <p className="text-xs text-muted">
                           Primeiro envio em {formatDate(lead.docsSentAt)}. Verifica o teu
                           email para os documentos.
                         </p>
@@ -307,14 +307,14 @@ export default function LeadsPage() {
                               prev === lead.id ? null : lead.id,
                             )
                           }
-                          className="self-start rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
+                          className="self-start rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-page"
                         >
                           {isOpen ? 'Ocultar detalhes' : 'Ver resumo'}
                         </button>
                         <button
                           type="button"
                           onClick={() => openEdit(lead)}
-                          className="self-start rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+                          className="self-start rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-page"
                         >
                           Editar
                         </button>
@@ -322,7 +322,7 @@ export default function LeadsPage() {
                     ) : null}
                   </div>
                   {isOpen && lead.comment ? (
-                    <pre className="m-4 mt-0 whitespace-pre-wrap rounded-xl bg-zinc-50 p-4 text-xs leading-relaxed text-zinc-800">
+                    <pre className="m-4 mt-0 whitespace-pre-wrap rounded-xl bg-page p-4 text-xs leading-relaxed text-foreground">
                       {lead.comment}
                     </pre>
                   ) : null}
@@ -332,9 +332,9 @@ export default function LeadsPage() {
           </ul>
 
           {/* Desktop: tabela (igual estilo do admin) */}
-          <div className="hidden overflow-x-auto rounded-lg border border-zinc-200 bg-white sm:block">
+          <div className="hidden overflow-x-auto rounded-lg border border-border bg-card sm:block">
             <table className="min-w-full text-left text-sm">
-              <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+              <thead className="bg-page text-xs font-semibold uppercase tracking-wide text-muted">
                 <tr>
                   <th className="px-4 py-3">Data</th>
                   <th className="px-4 py-3">Lead</th>
@@ -349,35 +349,35 @@ export default function LeadsPage() {
                   const wa = digitsOnly(lead.whatsapp);
                   const isOpen = expandedId === lead.id;
                   return (
-                    <tr key={lead.id} className="hover:bg-zinc-50/60">
-                      <td className="whitespace-nowrap px-4 py-3 text-zinc-700">
+                    <tr key={lead.id} className="hover:bg-page/60">
+                      <td className="whitespace-nowrap px-4 py-3 text-foreground/90">
                         {formatDate(lead.createdAt)}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="font-medium text-zinc-900">{lead.name}</div>
-                        <div className="text-xs text-zinc-600">
+                        <div className="font-medium text-foreground">{lead.name}</div>
+                        <div className="text-xs text-muted">
                           {lead.email} · +{wa}
                         </div>
-                        <div className="text-[11px] text-zinc-400">ID: {lead.id}</div>
+                        <div className="text-[11px] text-muted/80">ID: {lead.id}</div>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-zinc-700">
+                      <td className="whitespace-nowrap px-4 py-3 text-foreground/90">
                         {statusLabel(lead.status)}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-zinc-700">
+                      <td className="whitespace-nowrap px-4 py-3 text-foreground/90">
                         {lead.docsSentAt ? (
                           <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800">
                             ✓ enviados ({lead.submissionsCount})
                           </span>
                         ) : (
-                          <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-700">
+                          <span className="rounded-full bg-primary-1 px-2 py-1 text-xs font-semibold text-foreground/90">
                             a aguardar
                           </span>
                         )}
                       </td>
-                      <td className="max-w-[420px] px-4 py-3 text-zinc-700">
+                      <td className="max-w-[420px] px-4 py-3 text-foreground/90">
                         {previewOneLine(lead.comment)}
                         {isOpen && lead.comment ? (
-                          <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-zinc-50 p-3 text-xs leading-relaxed text-zinc-800">
+                          <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-page p-3 text-xs leading-relaxed text-foreground">
                             {lead.comment}
                           </pre>
                         ) : null}
@@ -388,7 +388,7 @@ export default function LeadsPage() {
                             href={`https://wa.me/${wa}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+                            className="rounded-lg border border-emerald-200 bg-card px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
                           >
                             WhatsApp
                           </a>
@@ -396,7 +396,7 @@ export default function LeadsPage() {
                         <button
                           type="button"
                           onClick={() => openEdit(lead)}
-                          className="ml-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+                          className="ml-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-page"
                         >
                           Editar
                         </button>
@@ -406,7 +406,7 @@ export default function LeadsPage() {
                             onClick={() =>
                               setExpandedId((prev) => (prev === lead.id ? null : lead.id))
                             }
-                            className="ml-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+                            className="ml-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-page"
                           >
                             {isOpen ? 'Ocultar' : 'Ver'}
                           </button>
@@ -422,19 +422,19 @@ export default function LeadsPage() {
       )}
 
       {editing ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-card p-5 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-zinc-900">Editar lead</h2>
-                <p className="mt-1 text-xs text-zinc-500">
+                <h2 className="text-lg font-semibold text-foreground">Editar lead</h2>
+                <p className="mt-1 text-xs text-muted">
                   ID: {formatLeadPublicId(editing.publicId)}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={closeEdit}
-                className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground/90 hover:bg-page"
               >
                 Fechar
               </button>
@@ -442,47 +442,47 @@ export default function LeadsPage() {
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <label className="text-sm">
-                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                   Nome
                 </span>
                 <input
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                 />
               </label>
               <label className="text-sm">
-                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                   Email
                 </span>
                 <input
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                 />
               </label>
               <label className="text-sm sm:col-span-2">
-                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                   Próximo contacto
                 </span>
                 <input
                   type="date"
                   value={editNextContact}
                   onChange={(e) => setEditNextContact(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                 />
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-muted">
                   Para remover da agenda, apaga o campo e salva.
                 </p>
               </label>
               <label className="text-sm sm:col-span-2">
-                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                   Status
                 </span>
                 <select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                 >
                   <option value="">Sem status</option>
                   <option value="inviavel">Inviável</option>
@@ -493,24 +493,24 @@ export default function LeadsPage() {
                 </select>
               </label>
               <label className="text-sm sm:col-span-2">
-                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                   WhatsApp (dígitos)
                 </span>
                 <input
                   value={editWhatsapp}
                   onChange={(e) => setEditWhatsapp(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                 />
               </label>
               <label className="text-sm sm:col-span-2">
-                <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
                   Comentário (resumo)
                 </span>
                 <textarea
                   value={editComment}
                   onChange={(e) => setEditComment(e.target.value)}
                   rows={5}
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                 />
               </label>
             </div>
@@ -519,7 +519,7 @@ export default function LeadsPage() {
               <button
                 type="button"
                 onClick={closeEdit}
-                className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+                className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-page"
               >
                 Cancelar
               </button>
@@ -527,7 +527,7 @@ export default function LeadsPage() {
                 type="button"
                 onClick={() => void saveEdit()}
                 disabled={saving}
-                className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 disabled:opacity-60"
+                className="rounded-xl bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-primary-dark disabled:opacity-60"
               >
                 {saving ? 'Salvando…' : 'Salvar alterações'}
               </button>

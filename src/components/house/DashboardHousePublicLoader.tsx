@@ -46,7 +46,7 @@ export function DashboardHousePublicLoader({ houseId }: Props) {
   if (authLoading || house === undefined) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center px-4">
-        <p className="text-sm text-zinc-500">A carregar anúncio…</p>
+        <p className="text-sm text-muted">A carregar anúncio…</p>
       </div>
     );
   }

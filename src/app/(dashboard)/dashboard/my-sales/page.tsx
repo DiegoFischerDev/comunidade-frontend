@@ -139,8 +139,8 @@ export default function MySalesPage() {
   if (!isPartner) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Minhas vendas</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Minhas vendas</h1>
+        <p className="mt-2 text-sm text-muted">
           Esta área é exclusiva para parceiros.
         </p>
       </div>
@@ -223,8 +223,8 @@ export default function MySalesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Minhas vendas</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Minhas vendas</h1>
+        <p className="mt-2 text-sm text-muted">
           Registe vendas para clientes com conta na comunidade e pague a comissão RPM quando desejar.
         </p>
       </div>
@@ -257,20 +257,20 @@ export default function MySalesPage() {
 
       {createModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4"
           role="presentation"
           onClick={() => !creating && setCreateModalOpen(false)}
         >
           <div
-            className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl"
+            className="w-full max-w-lg rounded-2xl bg-card p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-base font-semibold text-zinc-900">
+                <h2 className="text-base font-semibold text-foreground">
                   Registrar nova venda
                 </h2>
-                <p className="mt-1 text-sm text-zinc-600">
+                <p className="mt-1 text-sm text-muted">
                   Escolha o cliente (membro com conta), o serviço e o valor vendido.
                 </p>
               </div>
@@ -278,7 +278,7 @@ export default function MySalesPage() {
                 type="button"
                 disabled={creating}
                 onClick={() => setCreateModalOpen(false)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50 disabled:opacity-50"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-xs text-muted hover:bg-page disabled:opacity-50"
                 aria-label="Fechar"
               >
                 ✕
@@ -292,7 +292,7 @@ export default function MySalesPage() {
                 </div>
               )}
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-zinc-700">
+                <label className="block text-sm font-medium text-foreground/90">
                   Cliente (membro)
                 </label>
                 <div className="relative">
@@ -309,13 +309,13 @@ export default function MySalesPage() {
                       window.setTimeout(() => setLeadDropdownOpen(false), 120);
                     }}
                     placeholder="Nome, e-mail ou WhatsApp…"
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted/80 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                   />
 
                   {leadDropdownOpen && (
-                    <div className="absolute z-50 mt-2 max-h-64 w-full overflow-auto rounded-lg border border-zinc-200 bg-white shadow-lg">
+                    <div className="absolute z-50 mt-2 max-h-64 w-full overflow-auto rounded-lg border border-border bg-card shadow-lg">
                       {filteredCustomers.length === 0 ? (
-                        <div className="px-3 py-2 text-sm text-zinc-500">
+                        <div className="px-3 py-2 text-sm text-muted">
                           Nenhum cliente nas vendas anteriores — usa o ID abaixo.
                         </div>
                       ) : (
@@ -330,12 +330,12 @@ export default function MySalesPage() {
                               setLeadQuery(c.name ?? c.email ?? c.whatsapp ?? '');
                               setLeadDropdownOpen(false);
                             }}
-                            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm text-zinc-800 hover:bg-zinc-50"
+                            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-page"
                           >
-                            <span className="min-w-0 truncate font-medium text-zinc-900">
+                            <span className="min-w-0 truncate font-medium text-foreground">
                               {c.name ?? '—'}
                             </span>
-                            <span className="shrink-0 text-xs text-zinc-600">
+                            <span className="shrink-0 text-xs text-muted">
                               {c.email || c.whatsapp || '—'}
                             </span>
                           </button>
@@ -344,7 +344,7 @@ export default function MySalesPage() {
                     </div>
                   )}
                 </div>
-                <label className="mt-2 block text-xs font-medium text-zinc-600">
+                <label className="mt-2 block text-xs font-medium text-muted">
                   Ou ID do utilizador (UUID)
                 </label>
                 <input
@@ -354,18 +354,18 @@ export default function MySalesPage() {
                     setLeadUserId('');
                   }}
                   placeholder="cole o UUID se o cliente ainda não tiver venda registada"
-                  className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-zinc-700">
+                <label className="block text-sm font-medium text-foreground/90">
                   Serviço
                 </label>
                 <select
                   value={serviceId}
                   onChange={(e) => setServiceId(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                 >
                   <option value="">Selecionar…</option>
                   {services.map((s) => (
@@ -377,14 +377,14 @@ export default function MySalesPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-zinc-700">
+                <label className="block text-sm font-medium text-foreground/90">
                   Valor da venda (EUR)
                 </label>
                 <input
                   value={amountEur}
                   onChange={(e) => setAmountEur(e.target.value)}
                   placeholder="Ex: 200"
-                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                 />
               </div>
 
@@ -407,13 +407,13 @@ export default function MySalesPage() {
       )}
 
       {loading ? (
-        <p className="text-sm text-zinc-600">Carregando vendas…</p>
+        <p className="text-sm text-muted">Carregando vendas…</p>
       ) : sales.length === 0 ? (
-        <p className="text-sm text-zinc-500">Ainda não há vendas registradas.</p>
+        <p className="text-sm text-muted">Ainda não há vendas registradas.</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-lg border border-border bg-card">
           <table className="min-w-full text-sm">
-            <thead className="bg-zinc-50 text-zinc-600">
+            <thead className="bg-page text-muted">
               <tr>
                 <th className="px-4 py-2 text-left">Cliente</th>
                 <th className="px-4 py-2 text-left">Serviço</th>
@@ -424,7 +424,7 @@ export default function MySalesPage() {
             </thead>
             <tbody>
               {sales.map((s) => (
-                <tr key={s.id} className="border-t border-zinc-200">
+                <tr key={s.id} className="border-t border-border">
                   <td className="px-4 py-2 align-top">{s.user.name ?? '—'}</td>
                   <td className="px-4 py-2 align-top">{s.service.title}</td>
                   <td className="px-4 py-2 align-top">{s.amountEur} €</td>
@@ -432,7 +432,7 @@ export default function MySalesPage() {
                     {s.commissionPaymentStatus === 'PAID' ? (
                       <div className="flex flex-wrap items-center gap-2">
                         {s.commissionPaidEur ? (
-                          <span className="text-xs font-medium text-zinc-800">
+                          <span className="text-xs font-medium text-foreground">
                             {s.commissionPaidEur} €
                           </span>
                         ) : null}
@@ -440,13 +440,13 @@ export default function MySalesPage() {
                           Pago
                         </span>
                         {s.paidAt ? (
-                          <span className="text-xs text-zinc-500">
+                          <span className="text-xs text-muted">
                             {new Date(s.paidAt).toLocaleString('pt-PT')}
                           </span>
                         ) : null}
                       </div>
                     ) : (
-                      <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                      <span className="inline-flex items-center rounded-full bg-brand-accent/15 px-2 py-0.5 text-[11px] font-semibold text-brand-primary">
                         Pendente
                       </span>
                     )}
@@ -471,7 +471,7 @@ export default function MySalesPage() {
                       </>
                     )}
                     {s.commissionPaymentStatus === 'PAID' && (
-                      <span className="text-xs text-zinc-500">—</span>
+                      <span className="text-xs text-muted">—</span>
                     )}
                   </td>
                 </tr>
@@ -483,17 +483,17 @@ export default function MySalesPage() {
 
       {payingSale && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4"
           role="presentation"
           onClick={() => !paying && setPayingSale(null)}
         >
           <div
-            className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl"
+            className="w-full max-w-lg rounded-2xl bg-card p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-base font-semibold text-zinc-900">
+                <h2 className="text-base font-semibold text-foreground">
                   Pagar comissão
                 </h2>
               </div>
@@ -501,7 +501,7 @@ export default function MySalesPage() {
                 type="button"
                 disabled={paying}
                 onClick={() => setPayingSale(null)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50 disabled:opacity-50"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-xs text-muted hover:bg-page disabled:opacity-50"
                 aria-label="Fechar"
               >
                 ✕
@@ -509,32 +509,32 @@ export default function MySalesPage() {
             </div>
 
             <div className="mt-4 space-y-3">
-              <div className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700">
+              <div className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground/90">
                 <p>
-                  <span className="font-medium text-zinc-900">Cliente:</span>{' '}
+                  <span className="font-medium text-foreground">Cliente:</span>{' '}
                   {payingSale.user.name ?? '—'}
                 </p>
                 <p className="mt-1">
-                  <span className="font-medium text-zinc-900">Serviço:</span>{' '}
+                  <span className="font-medium text-foreground">Serviço:</span>{' '}
                   {payingSale.service.title}
                 </p>
                 <p className="mt-1">
-                  <span className="font-medium text-zinc-900">Valor vendido:</span>{' '}
+                  <span className="font-medium text-foreground">Valor vendido:</span>{' '}
                   {payingSale.amountEur} €
                 </p>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-muted">
                   Registrado em {new Date(payingSale.createdAt).toLocaleString('pt-PT')}
                 </p>
               </div>
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <label className="block text-sm font-medium text-zinc-700">
+                  <label className="block text-sm font-medium text-foreground/90">
                     Valor da comissão (EUR)
                   </label>
                   {suggestedCommissionLabel && (
-                    <span className="text-xs text-zinc-500">
+                    <span className="text-xs text-muted">
                       Comissão sugerida:{' '}
-                      <span className="font-medium text-zinc-700">
+                      <span className="font-medium text-foreground/90">
                         {suggestedCommissionLabel}
                       </span>
                     </span>
@@ -544,45 +544,45 @@ export default function MySalesPage() {
                   value={commissionEur}
                   onChange={(e) => setCommissionEur(e.target.value)}
                   placeholder="Ex: 10"
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
                 />
               </div>
 
-              <label className="flex items-center gap-2 text-sm text-zinc-700">
+              <label className="flex items-center gap-2 text-sm text-foreground/90">
                 <input
                   type="checkbox"
                   checked={wantsInvoice}
                   onChange={(e) => setWantsInvoice(e.target.checked)}
-                  className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+                  className="h-4 w-4 rounded border-border text-brand-primary focus:ring-brand-primary/25"
                 />
                 Quero fatura
               </label>
 
               {wantsInvoice && (
                 hasBillingDetails ? (
-                  <div className="rounded-lg border border-zinc-200 px-3 py-2 text-xs text-zinc-600">
-                    <p className="font-medium text-zinc-800">Dados de faturação</p>
+                  <div className="rounded-lg border border-border px-3 py-2 text-xs text-muted">
+                    <p className="font-medium text-foreground">Dados de faturação</p>
                     <div className="mt-1 space-y-1">
                       <p>
-                        <span className="font-medium text-zinc-800">Nome:</span>{' '}
+                        <span className="font-medium text-foreground">Nome:</span>{' '}
                         {partnerMe?.billingName ?? '—'}
                       </p>
                       <p>
-                        <span className="font-medium text-zinc-800">NIF:</span>{' '}
+                        <span className="font-medium text-foreground">NIF:</span>{' '}
                         {partnerMe?.billingNif ?? '—'}
                       </p>
                       <p>
-                        <span className="font-medium text-zinc-800">Morada:</span>{' '}
+                        <span className="font-medium text-foreground">Morada:</span>{' '}
                         {partnerMe?.billingAddress ?? '—'}
                       </p>
                       <p>
-                        <span className="font-medium text-zinc-800">Código postal:</span>{' '}
+                        <span className="font-medium text-foreground">Código postal:</span>{' '}
                         {partnerMe?.billingPostalCode ?? '—'}
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-amber-200 bg-amber-50/40 px-3 py-2 text-xs text-amber-900">
+                  <div className="rounded-lg border border-brand-accent/30 bg-brand-accent/10 px-3 py-2 text-xs text-brand-primary">
                     Para pedir fatura, preencha primeiro os dados de faturação em{' '}
                     <a
                       href="/dashboard/business"
@@ -608,7 +608,7 @@ export default function MySalesPage() {
                       (wantsInvoice && !hasBillingDetails)
                     }
                     onClick={() => startPayment('card')}
-                    className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border-2 border-zinc-200 bg-white px-4 py-3 text-left transition-colors hover:border-emerald-400 hover:bg-emerald-50/50 disabled:cursor-not-allowed disabled:opacity-70"
+                    className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border-2 border-border bg-card px-4 py-3 text-left transition-colors hover:border-emerald-400 hover:bg-emerald-50/50 disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg">
                       <svg
@@ -634,7 +634,7 @@ export default function MySalesPage() {
                         />
                       </svg>
                     </span>
-                    <span className="flex-1 font-medium text-zinc-800">Cartão</span>
+                    <span className="flex-1 font-medium text-foreground">Cartão</span>
                     <span className="text-sm font-semibold text-emerald-700">
                       {commissionEur.trim() ? formatEurString(commissionEur.trim()) : '—'}
                     </span>
@@ -648,7 +648,7 @@ export default function MySalesPage() {
                       (wantsInvoice && !hasBillingDetails)
                     }
                     onClick={() => startPayment('mbway')}
-                    className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border-2 border-zinc-200 bg-white px-4 py-3 text-left transition-colors hover:border-emerald-400 hover:bg-emerald-50/50 disabled:cursor-not-allowed disabled:opacity-70"
+                    className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border-2 border-border bg-card px-4 py-3 text-left transition-colors hover:border-emerald-400 hover:bg-emerald-50/50 disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg">
                       <svg
@@ -672,7 +672,7 @@ export default function MySalesPage() {
                         />
                       </svg>
                     </span>
-                    <span className="flex-1 font-medium text-zinc-800">MB WAY</span>
+                    <span className="flex-1 font-medium text-foreground">MB WAY</span>
                     <span className="text-sm font-semibold text-emerald-700">
                       {commissionEur.trim() ? formatEurString(commissionEur.trim()) : '—'}
                     </span>

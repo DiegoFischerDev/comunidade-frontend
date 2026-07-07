@@ -19,8 +19,8 @@ export default function EditHouseRedirectPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-zinc-900">Editar imóvel</h1>
-      <p className="mt-4 text-sm text-zinc-600">A abrir formulário…</p>
+      <h1 className="text-2xl font-semibold text-foreground">Editar imóvel</h1>
+      <p className="mt-4 text-sm text-muted">A abrir formulário…</p>
     </div>
   );
 }

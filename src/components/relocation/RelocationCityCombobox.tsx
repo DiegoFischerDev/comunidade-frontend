@@ -63,8 +63,8 @@ export function RelocationCityCombobox({
 
   const ring =
     variant === "blue"
-      ? "focus:border-blue-500 focus:ring-blue-500"
-      : "focus:border-amber-500 focus:ring-amber-500";
+      ? "focus:border-brand-primary focus:ring-brand-primary/25"
+      : "focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/25";
 
   const selectedLabel = value ? relocationCityDisplayName(value) : "";
 
@@ -162,7 +162,7 @@ export function RelocationCityCombobox({
         htmlFor={inputId}
         className={
           labelClassName ??
-          "mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500"
+          "mb-1 block text-xs font-medium uppercase tracking-wide text-muted"
         }
       >
         {label}
@@ -197,19 +197,19 @@ export function RelocationCityCombobox({
             }
           }
         }}
-        className={`w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 ${ring}`}
+        className={`w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted/80 focus:outline-none focus:ring-1 ${ring}`}
       />
       {open ? (
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-zinc-200 bg-white py-1 text-sm shadow-lg"
+          className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-border bg-card py-1 text-sm shadow-lg"
         >
           {showEmptyRow ? (
             <li role="option">
               <button
                 type="button"
-                className="flex w-full px-3 py-2 text-left text-zinc-600 hover:bg-zinc-50"
+                className="flex w-full px-3 py-2 text-left text-muted hover:bg-page"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => pickCity("")}
               >
@@ -222,7 +222,7 @@ export function RelocationCityCombobox({
               <li role="option">
                 <button
                   type="button"
-                  className="flex w-full px-3 py-2 text-left text-zinc-900 hover:bg-amber-50"
+                  className="flex w-full px-3 py-2 text-left text-foreground hover:bg-page"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => pickCity(search.trim())}
                 >
@@ -230,14 +230,14 @@ export function RelocationCityCombobox({
                 </button>
               </li>
             ) : (
-              <li className="px-3 py-2 text-zinc-500">Sem resultados.</li>
+              <li className="px-3 py-2 text-muted">Sem resultados.</li>
             )
           ) : (
             filtered.map((c) => (
               <li key={c} role="option">
                 <button
                   type="button"
-                  className="flex w-full px-3 py-2 text-left text-zinc-900 hover:bg-amber-50"
+                  className="flex w-full px-3 py-2 text-left text-foreground hover:bg-page"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => pickCity(c)}
                 >

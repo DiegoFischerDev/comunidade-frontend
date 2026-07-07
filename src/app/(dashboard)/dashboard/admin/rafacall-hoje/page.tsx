@@ -74,7 +74,7 @@ function bookingOriginLabel(): {
 } {
   return {
     label: 'Usuário (pago)',
-    className: 'bg-blue-50 text-blue-800',
+    className: 'bg-brand-accent/10 text-brand-primary',
   };
 }
 
@@ -160,8 +160,8 @@ export default function AdminRafaCallHojePage() {
   if (user.role !== 'ADMIN') {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Agendamentos (Rafa Call)</h1>
-        <p className="mt-2 text-sm text-zinc-600">Sem permissão para esta página.</p>
+        <h1 className="text-2xl font-semibold text-foreground">Agendamentos (Rafa Call)</h1>
+        <p className="mt-2 text-sm text-muted">Sem permissão para esta página.</p>
       </div>
     );
   }
@@ -170,8 +170,8 @@ export default function AdminRafaCallHojePage() {
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Agendamentos (Rafa Call)</h1>
-          <p className="mt-1 text-sm text-zinc-600">
+          <h1 className="text-2xl font-semibold text-foreground">Agendamentos (Rafa Call)</h1>
+          <p className="mt-1 text-sm text-muted">
             Agrupado por dia em <span className="font-medium">{tz}</span>.
           </p>
         </div>
@@ -182,7 +182,7 @@ export default function AdminRafaCallHojePage() {
             void loadBlocksAndAvailability();
           }}
           disabled={loading}
-          className="inline-flex shrink-0 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+          className="inline-flex shrink-0 items-center justify-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-page disabled:opacity-50"
         >
           {loading ? 'A carregar…' : 'Atualizar'}
         </button>
@@ -194,11 +194,11 @@ export default function AdminRafaCallHojePage() {
         </p>
       ) : null}
 
-      <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <div className="mt-6 rounded-xl border border-border bg-card p-4 shadow-sm">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-base font-semibold text-zinc-900">Bloquear horários</h2>
-            <p className="mt-1 text-sm text-zinc-600">
+            <h2 className="text-base font-semibold text-foreground">Bloquear horários</h2>
+            <p className="mt-1 text-sm text-muted">
               Marca slots como ocupados para eles não aparecerem para o lead.
             </p>
           </div>
@@ -206,7 +206,7 @@ export default function AdminRafaCallHojePage() {
             type="button"
             onClick={() => void loadBlocksAndAvailability()}
             disabled={blocksLoading || schedLoading}
-            className="inline-flex items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+            className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-page disabled:opacity-50"
           >
             {blocksLoading || schedLoading ? 'A carregar…' : 'Atualizar bloqueios'}
           </button>
@@ -220,11 +220,11 @@ export default function AdminRafaCallHojePage() {
 
         <div className="mt-4 grid gap-6 md:grid-cols-[260px_1fr]">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">Dias</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Dias</p>
             {!availability ? (
-              <p className="mt-3 text-sm text-zinc-600">A carregar…</p>
+              <p className="mt-3 text-sm text-muted">A carregar…</p>
             ) : availability.days.length === 0 ? (
-              <p className="mt-3 text-sm text-zinc-600">Sem dias disponíveis.</p>
+              <p className="mt-3 text-sm text-muted">Sem dias disponíveis.</p>
             ) : (
               <div className="mt-3 max-h-[360px] space-y-2 overflow-auto pr-1">
                 {availability.days
@@ -245,11 +245,11 @@ export default function AdminRafaCallHojePage() {
                       className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
                         isActive
                           ? 'border-[#efc2c1] bg-[#efc2c1]/40'
-                          : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                          : 'border-border bg-card hover:bg-page'
                       } ${!hasSlots ? 'opacity-70' : ''}`}
                     >
-                      <span className="font-medium text-zinc-900">{prettyYmdPt(d.date, tz)}</span>
-                      <span className="text-xs text-zinc-600">{d.slots.length} horários</span>
+                      <span className="font-medium text-foreground">{prettyYmdPt(d.date, tz)}</span>
+                      <span className="text-xs text-muted">{d.slots.length} horários</span>
                     </button>
                   );
                 })}
@@ -258,20 +258,20 @@ export default function AdminRafaCallHojePage() {
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">Horários</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Horários</p>
             {!availability ? (
-              <p className="mt-3 text-sm text-zinc-600">Não foi possível carregar horários.</p>
+              <p className="mt-3 text-sm text-muted">Não foi possível carregar horários.</p>
             ) : (
               (() => {
                 const day = availability.days.find((d) => d.date === selectedDate);
                 const slots = day?.slots ?? [];
                 const blockedToday = selectedDate ? blocksForYmd(blocks, selectedDate, tz) : [];
                 if (!day) {
-                  return <p className="mt-3 text-sm text-zinc-600">Escolhe um dia.</p>;
+                  return <p className="mt-3 text-sm text-muted">Escolhe um dia.</p>;
                 }
                 if (slots.length === 0 && blockedToday.length === 0) {
                   return (
-                    <p className="mt-3 text-sm text-zinc-600">
+                    <p className="mt-3 text-sm text-muted">
                       Este dia não tem horários disponíveis (talvez já estejam todos ocupados).
                     </p>
                   );
@@ -339,7 +339,7 @@ export default function AdminRafaCallHojePage() {
                           className={`rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${
                             isBlocked
                               ? 'border-red-200 bg-red-50 text-red-800 hover:bg-red-100'
-                              : 'border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50'
+                              : 'border-border bg-card text-foreground hover:bg-page'
                           }`}
                           title={s.startsAt}
                         >
@@ -359,7 +359,7 @@ export default function AdminRafaCallHojePage() {
       </div>
 
       {data && data.days.length === 0 && !loading ? (
-        <p className="mt-6 text-sm text-zinc-600">Nenhum agendamento.</p>
+        <p className="mt-6 text-sm text-muted">Nenhum agendamento.</p>
       ) : null}
 
       {data && data.days.length > 0 ? (
@@ -378,10 +378,10 @@ export default function AdminRafaCallHojePage() {
             return (
               <div
                 key={day.date}
-                className="w-full max-w-[1100px] rounded-xl border border-zinc-200 bg-white shadow-sm"
+                className="w-full max-w-[1100px] rounded-xl border border-border bg-card shadow-sm"
               >
-                <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 px-4 py-3">
-                  <p className="text-sm font-semibold text-zinc-900">
+                <div className="flex items-center justify-between border-b border-border bg-page px-4 py-3">
+                  <p className="text-sm font-semibold text-foreground">
                     {new Date(`${day.date}T12:00:00.000Z`).toLocaleDateString('pt-PT', {
                       timeZone: tz,
                       weekday: 'long',
@@ -390,7 +390,7 @@ export default function AdminRafaCallHojePage() {
                       year: 'numeric',
                     })}
                   </p>
-                  <p className="text-xs text-zinc-600">
+                  <p className="text-xs text-muted">
                     {combined.length} itens
                     {blocked.length ? (
                       <span className="ml-2">
@@ -403,7 +403,7 @@ export default function AdminRafaCallHojePage() {
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-left text-sm">
-                    <thead className="border-b border-zinc-200 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                    <thead className="border-b border-border text-xs font-semibold uppercase tracking-wide text-muted">
                       <tr>
                         <th className="px-4 py-3">Horário (Europe/Lisbon)</th>
                         <th className="px-4 py-3 w-28">Estado</th>
@@ -426,16 +426,16 @@ export default function AdminRafaCallHojePage() {
                                 : 'Agendado';
                           const statusClass =
                             row.item.status === 'COMPLETED'
-                              ? 'bg-zinc-100 text-zinc-800'
+                              ? 'bg-primary-1 text-foreground'
                               : row.item.status === 'CANCELLED'
-                                ? 'bg-amber-50 text-amber-800'
+                                ? 'bg-brand-accent/10 text-brand-primary'
                                 : 'bg-emerald-50 text-emerald-800';
                           const origin = bookingOriginLabel();
                           return (
-                            <tr key={`b:${row.item.id}`} className="text-zinc-800">
-                              <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-900">
+                            <tr key={`b:${row.item.id}`} className="text-foreground">
+                              <td className="whitespace-nowrap px-4 py-3 font-medium text-foreground">
                                 {slot}
-                                <span className="mt-0.5 block text-xs font-normal text-zinc-500">
+                                <span className="mt-0.5 block text-xs font-normal text-muted">
                                   tz do lead: {row.item.bookingTimezone}
                                 </span>
                               </td>
@@ -463,7 +463,7 @@ export default function AdminRafaCallHojePage() {
                                     )}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-3 py-1.5 text-xs font-semibold text-white hover:from-[#c07c01] hover:to-[#e7a01f]"
+                                    className="inline-flex items-center justify-center rounded-full brand-cta-accent px-3 py-1.5 text-xs"
                                   >
                                     WhatsApp
                                   </a>
@@ -489,7 +489,7 @@ export default function AdminRafaCallHojePage() {
                                             setCompletingBookingId(null);
                                           }
                                         }}
-                                        className="inline-flex items-center justify-center rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                                        className="inline-flex items-center justify-center rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground/90 hover:bg-page disabled:opacity-50"
                                       >
                                         {completingBookingId === row.item.id ? 'Alterando…' : 'Realizado'}
                                       </button>
@@ -529,8 +529,8 @@ export default function AdminRafaCallHojePage() {
                         const end = new Date(row.item.endsAt);
                         const slot = `${start.toLocaleTimeString('pt-PT', { timeZone: tz, hour: '2-digit', minute: '2-digit' })}–${end.toLocaleTimeString('pt-PT', { timeZone: tz, hour: '2-digit', minute: '2-digit' })}`;
                         return (
-                          <tr key={`x:${row.item.id}`} className="text-zinc-800">
-                            <td className="whitespace-nowrap px-4 py-3 font-medium text-zinc-900">
+                          <tr key={`x:${row.item.id}`} className="text-foreground">
+                            <td className="whitespace-nowrap px-4 py-3 font-medium text-foreground">
                               {slot}
                             </td>
                             <td className="px-4 py-3">
@@ -538,11 +538,11 @@ export default function AdminRafaCallHojePage() {
                                 Ocupado
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-zinc-400">—</td>
+                            <td className="px-4 py-3 text-muted/80">—</td>
                             <td className="px-4 py-3">
-                              <span className="text-zinc-800">{row.item.reason || 'Bloqueado pelo admin'}</span>
+                              <span className="text-foreground">{row.item.reason || 'Bloqueado pelo admin'}</span>
                             </td>
-                            <td className="px-4 py-3 text-zinc-400">—</td>
+                            <td className="px-4 py-3 text-muted/80">—</td>
                           </tr>
                         );
                       })}

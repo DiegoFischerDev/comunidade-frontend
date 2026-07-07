@@ -13,8 +13,8 @@ export default function NewHousePostRedirectPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-zinc-900">Adicionar casa</h1>
-      <p className="mt-4 text-sm text-zinc-600">A abrir formulário…</p>
+      <h1 className="text-2xl font-semibold text-foreground">Adicionar casa</h1>
+      <p className="mt-4 text-sm text-muted">A abrir formulário…</p>
     </div>
   );
 }

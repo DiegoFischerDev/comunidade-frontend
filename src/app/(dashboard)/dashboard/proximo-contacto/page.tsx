@@ -183,8 +183,8 @@ export default function ProximoContactoPage() {
   if (!canSee) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Próximo contacto</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Próximo contacto</h1>
+        <p className="mt-2 text-sm text-muted">
           Esta página é exclusiva para parceiros de financiamento.
         </p>
       </div>
@@ -195,8 +195,8 @@ export default function ProximoContactoPage() {
     <div>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Próximo contacto</h1>
-          <p className="mt-2 text-sm text-zinc-600">
+          <h1 className="text-2xl font-semibold text-foreground">Próximo contacto</h1>
+          <p className="mt-2 text-sm text-muted">
             Agenda simples de follow-up. Aqui só aparecem leads com agendamento definido.
           </p>
         </div>
@@ -204,7 +204,7 @@ export default function ProximoContactoPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 sm:w-56"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground shadow-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 sm:w-56"
           >
             <option value="all">Todos os status</option>
             <option value="inviavel">Inviável</option>
@@ -216,7 +216,7 @@ export default function ProximoContactoPage() {
           <button
             type="button"
             onClick={() => void load()}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground/90 hover:bg-page"
           >
             Atualizar
           </button>
@@ -230,10 +230,10 @@ export default function ProximoContactoPage() {
       ) : null}
 
       {loading ? (
-        <p className="mt-4 text-sm text-zinc-600">Carregando…</p>
+        <p className="mt-4 text-sm text-muted">Carregando…</p>
       ) : items.length === 0 ? (
-        <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-sm">
-          <p className="text-sm text-zinc-700">
+        <div className="mt-4 rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
+          <p className="text-sm text-foreground/90">
             Nenhum lead agendado. Define um “próximo contacto” em algum lead para ele aparecer
             aqui.
           </p>
@@ -242,12 +242,12 @@ export default function ProximoContactoPage() {
         <div className="mt-4 space-y-6">
           {groups.map((g) => (
             <section key={g.key}>
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
                 {g.label}
               </h2>
-              <div className="mt-2 overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+              <div className="mt-2 overflow-x-auto rounded-lg border border-border bg-card">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  <thead className="bg-page text-xs font-semibold uppercase tracking-wide text-muted">
                     <tr>
                       <th className="px-4 py-3">Próximo contacto</th>
                       <th className="px-4 py-3">Lead</th>
@@ -259,20 +259,20 @@ export default function ProximoContactoPage() {
                     {g.items.map((row) => {
                       const wa = digitsOnly(row.whatsapp);
                       return (
-                        <tr key={row.id} className="hover:bg-zinc-50/60">
-                          <td className="whitespace-nowrap px-4 py-3 text-zinc-700">
+                        <tr key={row.id} className="hover:bg-page/60">
+                          <td className="whitespace-nowrap px-4 py-3 text-foreground/90">
                             {formatDtPt(row.nextContactAt)}
                           </td>
                           <td className="px-4 py-3">
-                            <div className="font-medium text-zinc-900">{row.name}</div>
-                            <div className="text-xs text-zinc-600">
+                            <div className="font-medium text-foreground">{row.name}</div>
+                            <div className="text-xs text-muted">
                               {row.email} · +{wa}
                             </div>
-                            <div className="text-[11px] text-zinc-400">
+                            <div className="text-[11px] text-muted/80">
                               ID: {formatLeadPublicId(row.publicId)}
                             </div>
                           </td>
-                          <td className="max-w-[520px] px-4 py-3 text-zinc-700">
+                          <td className="max-w-[520px] px-4 py-3 text-foreground/90">
                             {previewOneLine(row.comment)}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-right">
@@ -281,7 +281,7 @@ export default function ProximoContactoPage() {
                                 href={`https://wa.me/${wa}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+                                className="rounded-lg border border-emerald-200 bg-card px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
                               >
                                 WhatsApp
                               </a>
@@ -289,7 +289,7 @@ export default function ProximoContactoPage() {
                             <button
                               type="button"
                               onClick={() => openEdit(row)}
-                              className="ml-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+                              className="ml-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-page"
                             >
                               Editar
                             </button>
@@ -306,35 +306,35 @@ export default function ProximoContactoPage() {
       )}
 
       {editing ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-card p-5 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-zinc-900">Editar próximo contacto</h2>
-                <p className="mt-1 text-xs text-zinc-500">
+                <h2 className="text-lg font-semibold text-foreground">Editar próximo contacto</h2>
+                <p className="mt-1 text-xs text-muted">
                   {editing.name} · ID: {formatLeadPublicId(editing.publicId)}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={closeEdit}
-                className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground/90 hover:bg-page"
               >
                 Fechar
               </button>
             </div>
 
             <div className="mt-4 space-y-2">
-              <label className="block text-xs font-semibold uppercase tracking-wide text-zinc-600">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-muted">
                 Data e hora (hora local)
               </label>
               <input
                 type="datetime-local"
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm"
               />
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-muted">
                 Para remover da agenda, apaga o campo e salva.
               </p>
             </div>
@@ -343,7 +343,7 @@ export default function ProximoContactoPage() {
               <button
                 type="button"
                 onClick={closeEdit}
-                className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+                className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-page"
               >
                 Cancelar
               </button>
@@ -351,7 +351,7 @@ export default function ProximoContactoPage() {
                 type="button"
                 onClick={() => void saveEdit()}
                 disabled={saving}
-                className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 disabled:opacity-60"
+                className="rounded-xl bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-primary-dark disabled:opacity-60"
               >
                 {saving ? 'Salvando…' : 'Salvar'}
               </button>

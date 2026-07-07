@@ -118,7 +118,7 @@ export default function PartnerPage() {
   }, [partner?.id, partner?.categorySlug]);
 
   if (loading) {
-    return <p className="text-sm text-zinc-600">Carregando parceiro…</p>;
+    return <p className="text-sm text-muted">Carregando parceiro…</p>;
   }
 
   if (error) {
@@ -132,10 +132,10 @@ export default function PartnerPage() {
   if (!partner) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">
+        <h1 className="text-2xl font-semibold text-foreground">
           Parceiro não encontrado
         </h1>
-        <p className="mt-2 text-sm text-zinc-600">
+        <p className="mt-2 text-sm text-muted">
           Este parceiro pode não existir ou ter sido removido.
         </p>
       </div>
@@ -162,7 +162,7 @@ export default function PartnerPage() {
     <div className="space-y-8">
       <div className="flex items-center">
         <CardLinkButton
-          href="/dashboard"
+          href="/"
           variant="primary"
           className="shadow-sm"
         >
@@ -247,10 +247,10 @@ export default function PartnerPage() {
       {/* Descrição completa */}
       {partner.fullDescription && (
         <section>
-          <h2 className="mb-3 text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+          <h2 className="mb-3 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             Sobre {partner.name}
           </h2>
-          <p className="whitespace-pre-line text-base leading-relaxed text-zinc-700">
+          <p className="whitespace-pre-line text-base leading-relaxed text-foreground/90">
             {partner.fullDescription}
           </p>
         </section>
@@ -273,11 +273,11 @@ export default function PartnerPage() {
 
       {/* Lista de serviços */}
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+        <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
           Serviços oferecidos
         </h2>
         {partner.services.length === 0 ? (
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-muted">
             Este parceiro ainda não cadastrou serviços.
           </p>
         ) : (
@@ -285,13 +285,13 @@ export default function PartnerPage() {
             {partner.services.map((service) => (
               <div
                 key={service.id}
-                className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+                className="flex flex-col rounded-2xl border border-border bg-card p-4 shadow-sm"
               >
-                <h3 className="text-base font-semibold tracking-tight text-zinc-900 sm:text-lg">
+                <h3 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
                   {service.title}
                 </h3>
                 {service.description && (
-                  <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-zinc-700">
+                  <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-foreground/90">
                     {service.description}
                   </p>
                 )}
@@ -321,13 +321,13 @@ export default function PartnerPage() {
 
       {partner.categorySlug === 'relocation' && (
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             Imóveis
           </h2>
           {relocationHousesLoading ? (
-            <p className="text-sm text-zinc-600">A carregar imóveis…</p>
+            <p className="text-sm text-muted">A carregar imóveis…</p>
           ) : relocationPreview.length === 0 ? (
-            <p className="text-sm text-zinc-600">
+            <p className="text-sm text-muted">
               Ainda não há imóveis publicados por este parceiro.
             </p>
           ) : (
@@ -357,8 +357,8 @@ export default function PartnerPage() {
 
       {/* Modal de contacto */}
       {showContact && (
-        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto brand-modal-scrim p-4">
+          <div className="my-8 w-full max-w-lg rounded-2xl bg-card p-5 shadow-xl">
             <div className="flex items-center gap-3">
               {logoSrc && (
                 <div className="h-14 w-14 shrink-0">
@@ -370,26 +370,26 @@ export default function PartnerPage() {
                 </div>
               )}
               <div>
-                <h2 className="text-base font-semibold text-zinc-900">
+                <h2 className="text-base font-semibold text-foreground">
                   Informações de contatos
                 </h2>
-                <p className="mt-0.5 text-xs text-zinc-500">
+                <p className="mt-0.5 text-xs text-muted">
                   Use estes dados para falar diretamente com {partner.name}.
                 </p>
               </div>
             </div>
             <div className="mt-4 space-y-3 text-sm">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center text-zinc-600" aria-hidden>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center text-muted" aria-hidden>
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                     <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L12 9.128l8.073-5.635C21.69 2.28 24 3.434 24 5.457z" />
                   </svg>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium uppercase text-zinc-500">Email</p>
+                  <p className="text-xs font-medium uppercase text-muted">Email</p>
                   <a
                     href={`mailto:${partner.user.email}`}
-                    className="mt-0.5 block text-zinc-800 underline-offset-2 hover:underline truncate"
+                    className="mt-0.5 block text-foreground underline-offset-2 hover:underline truncate"
                   >
                     {partner.user.email}
                   </a>
@@ -402,12 +402,12 @@ export default function PartnerPage() {
                   </svg>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium uppercase text-zinc-500">WhatsApp</p>
+                  <p className="text-xs font-medium uppercase text-muted">WhatsApp</p>
                   <a
                     href={whatsappUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-0.5 block text-zinc-800 underline-offset-2 hover:underline"
+                    className="mt-0.5 block text-foreground underline-offset-2 hover:underline"
                   >
                     {partner.whatsapp}
                   </a>
@@ -421,7 +421,7 @@ export default function PartnerPage() {
                     </svg>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium uppercase text-zinc-500">Instagram</p>
+                    <p className="text-xs font-medium uppercase text-muted">Instagram</p>
                     <a
                       href={
                         partner.instagram.startsWith('http')
@@ -432,7 +432,7 @@ export default function PartnerPage() {
                       }
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-0.5 block text-zinc-800 underline-offset-2 hover:underline truncate"
+                      className="mt-0.5 block text-foreground underline-offset-2 hover:underline truncate"
                     >
                       {partner.instagram}
                     </a>
@@ -444,7 +444,7 @@ export default function PartnerPage() {
               <button
                 type="button"
                 onClick={() => setShowContact(false)}
-                className="rounded-full border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+                className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground/90 hover:bg-page"
               >
                 Fechar
               </button>

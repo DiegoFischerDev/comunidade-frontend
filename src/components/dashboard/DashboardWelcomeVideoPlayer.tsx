@@ -1,6 +1,7 @@
 'use client';
 
 import { dashboardWelcomeYoutubeEmbedSrc } from '@/lib/dashboard-welcome-video';
+import { SITE_NAME_FULL } from '@/lib/site-branding';
 
 type Props = {
   className?: string;
@@ -11,7 +12,7 @@ type Props = {
 
 export function DashboardWelcomeVideoPlayer({
   className = '',
-  title = 'Vídeo de boas-vindas — Comunidade Rafa Portugal',
+  title = `Vídeo de boas-vindas — ${SITE_NAME_FULL}`,
   autoplay = false,
 }: Props) {
   return (

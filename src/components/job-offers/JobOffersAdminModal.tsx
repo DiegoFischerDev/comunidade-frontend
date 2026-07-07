@@ -252,7 +252,7 @@ export function JobOffersAdminModal({
   return (
     <ModalPortal>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center brand-modal-scrim p-4"
         role="presentation"
         onClick={onClose}
       >
@@ -260,17 +260,17 @@ export function JobOffersAdminModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby="job-offers-admin-title"
-          className="flex max-h-[min(92vh,800px)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl"
+          className="flex max-h-[min(92vh,800px)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
-            <h2 id="job-offers-admin-title" className="text-lg font-bold text-zinc-900">
+          <div className="flex items-center justify-between border-b border-border/60 px-5 py-4">
+            <h2 id="job-offers-admin-title" className="text-lg font-bold text-foreground">
               Gerir ofertas de trabalho
             </h2>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100"
+              className="rounded-lg p-2 text-muted hover:bg-primary-1"
               aria-label="Fechar"
             >
               ✕
@@ -286,14 +286,14 @@ export function JobOffersAdminModal({
 
             {showForm ? (
               <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
-                <p className="text-sm font-medium text-zinc-800">
+                <p className="text-sm font-medium text-foreground">
                   {editingId ? "Editar oferta" : "Nova oferta"}
                 </p>
-                <div className="rounded-xl border border-amber-200/80 bg-amber-50/50 p-4">
-                  <label className="block text-xs font-medium text-zinc-800">
+                <div className="rounded-xl border border-brand-accent/30 bg-brand-accent/10 p-4">
+                  <label className="block text-xs font-medium text-foreground">
                     Texto completo da oferta (IA)
                   </label>
-                  <p className="mt-1 text-xs text-zinc-600">
+                  <p className="mt-1 text-xs text-muted">
                     Cola o anúncio original; a OpenAI verifica se é uma vaga de emprego
                     e, só nesse caso, preenche os campos abaixo.
                   </p>
@@ -302,19 +302,19 @@ export function JobOffersAdminModal({
                     onChange={(e) => setPasteText(e.target.value)}
                     rows={8}
                     placeholder="Cola aqui o texto da vaga (WhatsApp, email, site…)"
-                    className="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                    className="mt-2 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm"
                   />
                   <button
                     type="button"
                     disabled={parsing || pasteText.trim().length < 20}
                     onClick={() => void handleParseFromText()}
-                    className="mt-2 rounded-lg border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                    className="mt-2 rounded-lg border border-brand-accent/40 bg-card px-4 py-2 text-sm font-medium text-brand-primary hover:bg-brand-accent/15 disabled:opacity-50"
                   >
                     {parsing ? "A analisar…" : "Preencher com IA"}
                   </button>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700">
+                  <label className="block text-xs font-medium text-foreground/90">
                     Título
                   </label>
                   <input
@@ -323,11 +323,11 @@ export function JobOffersAdminModal({
                       setForm((f) => ({ ...f, title: e.target.value }))
                     }
                     required
-                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700">
+                  <label className="block text-xs font-medium text-foreground/90">
                     Função
                   </label>
                   <input
@@ -337,11 +337,11 @@ export function JobOffersAdminModal({
                     }
                     required
                     placeholder="Ex.: Empregado de mesa"
-                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700">
+                  <label className="block text-xs font-medium text-foreground/90">
                     Cidade
                   </label>
                   <input
@@ -351,11 +351,11 @@ export function JobOffersAdminModal({
                     }
                     required
                     placeholder="Ex.: Lisboa"
-                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700">
+                  <label className="block text-xs font-medium text-foreground/90">
                     Empresa
                   </label>
                   <input
@@ -364,11 +364,11 @@ export function JobOffersAdminModal({
                       setForm((f) => ({ ...f, company: e.target.value }))
                     }
                     placeholder="Ex.: BECRI GROUP"
-                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700">
+                  <label className="block text-xs font-medium text-foreground/90">
                     Resumo breve (máx. 500 caracteres)
                   </label>
                   <textarea
@@ -379,25 +379,25 @@ export function JobOffersAdminModal({
                     maxLength={500}
                     rows={4}
                     placeholder="Resumo para WhatsApp e listagem"
-                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                   />
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <p className="mt-1 text-xs text-muted">
                     {form.summary.length}/500
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700">
+                  <label className="block text-xs font-medium text-foreground/90">
                     Contactos para candidatura
                   </label>
-                  <p className="mt-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
+                  <p className="mt-1 rounded-lg border border-border bg-page px-3 py-2 text-sm text-foreground/90">
                     {formatContactsPreview(form.advertiserContacts)}
                   </p>
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <p className="mt-1 text-xs text-muted">
                     Preenchidos automaticamente pela IA ao colar o anúncio.
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700">
+                  <label className="block text-xs font-medium text-foreground/90">
                     Data de publicação
                   </label>
                   <input
@@ -407,11 +407,11 @@ export function JobOffersAdminModal({
                       setForm((f) => ({ ...f, publishedAt: e.target.value }))
                     }
                     required
-                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700">
+                  <label className="block text-xs font-medium text-foreground/90">
                     Descrição
                   </label>
                   <textarea
@@ -421,10 +421,10 @@ export function JobOffersAdminModal({
                     }
                     required
                     rows={6}
-                    className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                   />
                 </div>
-                <label className="flex items-center gap-2 text-sm text-zinc-700">
+                <label className="flex items-center gap-2 text-sm text-foreground/90">
                   <input
                     type="checkbox"
                     checked={form.active}
@@ -438,7 +438,7 @@ export function JobOffersAdminModal({
                   <button
                     type="submit"
                     disabled={saving}
-                    className="rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                    className="rounded-lg brand-cta-accent px-4 py-2 text-sm disabled:opacity-60"
                   >
                     {saving ? "A guardar…" : editingId ? "Guardar" : "Criar oferta"}
                   </button>
@@ -450,7 +450,7 @@ export function JobOffersAdminModal({
                       setForm(emptyForm());
                       setPasteText("");
                     }}
-                    className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-800"
+                    className="rounded-lg border border-border px-4 py-2 text-sm text-foreground"
                   >
                     Cancelar
                   </button>
@@ -461,14 +461,14 @@ export function JobOffersAdminModal({
                 <button
                   type="button"
                   onClick={startCreate}
-                  className="mb-4 w-full rounded-lg bg-gradient-to-r from-[#d58901] to-[#f0b23a] px-4 py-2.5 text-sm font-semibold text-white sm:w-auto"
+                  className="mb-4 w-full rounded-lg brand-cta-accent px-4 py-2.5 text-sm sm:w-auto"
                 >
                   Adicionar oferta de trabalho
                 </button>
                 {loading ? (
-                  <p className="text-sm text-zinc-500">A carregar…</p>
+                  <p className="text-sm text-muted">A carregar…</p>
                 ) : rows.length === 0 ? (
-                  <p className="text-sm text-zinc-600">Nenhuma oferta criada.</p>
+                  <p className="text-sm text-muted">Nenhuma oferta criada.</p>
                 ) : (
                   <ul className="divide-y divide-zinc-100">
                     {rows.map((row) => (
@@ -477,12 +477,12 @@ export function JobOffersAdminModal({
                         className="flex flex-wrap items-center justify-between gap-3 py-3"
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium text-zinc-900">{row.title}</p>
-                          <p className="text-sm text-zinc-600">
+                          <p className="font-medium text-foreground">{row.title}</p>
+                          <p className="text-sm text-muted">
                             {row.jobFunction} · {row.city} ·{" "}
                             {formatPublishedAt(row.publishedAt)}
                             {!row.active ? (
-                              <span className="ml-2 text-amber-700">(oculta)</span>
+                              <span className="ml-2 text-brand-primary">(oculta)</span>
                             ) : null}
                           </p>
                         </div>
@@ -490,7 +490,7 @@ export function JobOffersAdminModal({
                           <button
                             type="button"
                             onClick={() => startEdit(row)}
-                            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm hover:bg-zinc-50"
+                            className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-page"
                           >
                             Editar
                           </button>

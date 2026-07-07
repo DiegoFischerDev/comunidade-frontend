@@ -91,7 +91,7 @@ function flattenRepliesInThread(root: TreeNode): TreeNode[] {
 function CommentBubbleIcon() {
   return (
     <div
-      className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#d58901]/15 to-amber-100/80 text-amber-800/90 ring-1 ring-amber-200/50"
+      className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-accent/15 to-brand-secondary/80 text-brand-primary ring-1 ring-brand-secondary/50"
       aria-hidden
     >
       <svg
@@ -114,14 +114,14 @@ function CommentBubbleIcon() {
 function CommentSkeleton() {
   return (
     <li className="animate-pulse">
-      <div className="flex gap-3 rounded-2xl border border-zinc-100 bg-zinc-50/80 p-4 sm:p-5">
+      <div className="flex gap-3 rounded-2xl border border-border/60 bg-page/80 p-4 sm:p-5">
         <div className="h-10 w-10 shrink-0 rounded-xl bg-zinc-200" />
         <div className="min-w-0 flex-1 space-y-2 pt-0.5">
           <div className="h-4 w-32 rounded bg-zinc-200" />
-          <div className="h-3 w-24 rounded bg-zinc-100" />
+          <div className="h-3 w-24 rounded bg-primary-1" />
           <div className="space-y-1.5 pt-1">
-            <div className="h-3 w-full rounded bg-zinc-100" />
-            <div className="h-3 w-4/5 rounded bg-zinc-100" />
+            <div className="h-3 w-full rounded bg-primary-1" />
+            <div className="h-3 w-4/5 rounded bg-primary-1" />
           </div>
         </div>
       </div>
@@ -176,7 +176,7 @@ function CommentInlineForm({
 }) {
   return (
     <div className="mt-2 max-w-lg animate-in fade-in slide-in-from-top-1 duration-200">
-      <div className="overflow-hidden rounded-xl border border-zinc-200/90 bg-zinc-50/90">
+      <div className="overflow-hidden rounded-xl border border-border/90 bg-page/90">
         <label className="sr-only" htmlFor={`reply-${node.id}`}>
           Responder a {commentAuthorName(node)}
         </label>
@@ -193,7 +193,7 @@ function CommentInlineForm({
           }}
           rows={2}
           placeholder="Adicionar resposta…"
-          className="max-h-40 min-h-[2.75rem] w-full resize-y border-0 bg-transparent px-3 py-2.5 text-sm text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-0"
+          className="max-h-40 min-h-[2.75rem] w-full resize-y border-0 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted/80 focus:outline-none focus:ring-0"
           disabled={sending}
         />
         {err && (
@@ -201,7 +201,7 @@ function CommentInlineForm({
             {err}
           </p>
         )}
-        <div className="flex items-center justify-end gap-2 border-t border-zinc-200/60 bg-white/60 px-2.5 py-2">
+        <div className="flex items-center justify-end gap-2 border-t border-border/60 bg-card/60 px-2.5 py-2">
           <CardButton
             type="button"
             variant="outline"
@@ -237,11 +237,11 @@ function ReplyRow({ node, isAdmin, userId, deletingId, onDelete, readOnly }: Rep
     <li className="pt-1.5 first:pt-0.5">
       <div className="min-w-0">
         <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] leading-tight sm:text-sm">
-          <span className="font-semibold text-zinc-900">
+          <span className="font-semibold text-foreground">
             {commentAuthorName(node)}
           </span>
           <time
-            className="text-[11px] text-zinc-400 sm:text-xs"
+            className="text-[11px] text-muted/80 sm:text-xs"
             dateTime={node.createdAt}
           >
             {formatDate(node.createdAt)}
@@ -276,7 +276,7 @@ function ReplyRow({ node, isAdmin, userId, deletingId, onDelete, readOnly }: Rep
           ) : null}
         </div>
         <p
-          className="mt-0.5 break-words text-sm leading-relaxed text-zinc-600 antialiased whitespace-pre-wrap"
+          className="mt-0.5 break-words text-sm leading-relaxed text-muted antialiased whitespace-pre-wrap"
           lang="pt"
         >
           {node.body}
@@ -321,20 +321,20 @@ function RootCommentThread({
   }, [inlineOpen]);
   return (
     <li>
-      <div className="rounded-2xl border border-zinc-100 bg-gradient-to-b from-white to-zinc-50/60 p-4 sm:p-5">
+      <div className="rounded-2xl border border-border/60 bg-gradient-to-b from-white to-zinc-50/60 p-4 sm:p-5">
         <article className="flex gap-3.5 sm:gap-4">
           <CommentBubbleIcon />
           <div className="min-w-0 flex-1 pt-0.5">
             <header className="min-w-0">
               <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="font-semibold text-zinc-900">
+                <span className="font-semibold text-foreground">
                   {commentAuthorName(node)}
                 </span>
                 <span className="hidden sm:inline" aria-hidden>
                   ·
                 </span>
                 <time
-                  className="text-xs font-medium text-zinc-400"
+                  className="text-xs font-medium text-muted/80"
                   dateTime={node.createdAt}
                 >
                   {formatDate(node.createdAt)}
@@ -370,7 +370,7 @@ function RootCommentThread({
               </div>
             </header>
             <p
-              className="mt-2.5 text-sm leading-relaxed text-zinc-700 antialiased whitespace-pre-wrap"
+              className="mt-2.5 text-sm leading-relaxed text-foreground/90 antialiased whitespace-pre-wrap"
               lang="pt"
             >
               {node.body}
@@ -380,7 +380,7 @@ function RootCommentThread({
 
         {flatReplies.length > 0 && (
           <ul
-            className="ml-0 mt-3 list-none space-y-0.5 border-t border-zinc-200/50 pt-3 pl-0 sm:ml-12 sm:pl-1"
+            className="ml-0 mt-3 list-none space-y-0.5 border-t border-border/50 pt-3 pl-0 sm:ml-12 sm:pl-1"
             role="list"
             aria-label="Respostas"
           >
@@ -412,14 +412,14 @@ function RootCommentThread({
             <div
               className={
                 flatReplies.length > 0
-                  ? 'border-l-2 border-amber-200/50 pl-3 sm:pl-3.5'
-                  : 'min-w-0 flex-1 border-l-2 border-amber-200/50 pl-3 sm:pl-3.5'
+                  ? 'border-l-2 border-brand-accent/30/50 pl-3 sm:pl-3.5'
+                  : 'min-w-0 flex-1 border-l-2 border-brand-accent/30/50 pl-3 sm:pl-3.5'
               }
             >
               <button
                 type="button"
                 onClick={() => onStartInlineReply(lastInThread)}
-                className="cursor-pointer text-left text-xs font-medium text-amber-800/90"
+                className="cursor-pointer text-left text-xs font-medium text-brand-primary/90"
               >
                 {inlineOpen ? 'Fechar' : 'Responder'}
               </button>
@@ -708,10 +708,10 @@ export function PartnerCommentsSection({
           className="mt-0.5 h-10 w-10 shrink-0 rounded-xl object-cover"
         />
         <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             O que dizem de {partnerName}
           </h2>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-muted">
             Comentários de membros da Comunidade e de visitantes (sem conta).
           </p>
           {!readOnly &&
@@ -731,7 +731,7 @@ export function PartnerCommentsSection({
                 Quero avaliar
               </CardButton>
             ) : guestLocked ? (
-              <p className="mt-3 text-sm text-zinc-600">
+              <p className="mt-3 text-sm text-muted">
                 Neste dispositivo já deixaste um comentário neste perfil.
               </p>
             ) : (
@@ -765,15 +765,15 @@ export function PartnerCommentsSection({
             role="dialog"
             aria-modal="true"
             aria-labelledby="guest-partner-comment-title"
-            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-amber-100 bg-gradient-to-b from-amber-50/90 to-white p-5 shadow-xl sm:p-6"
+            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-brand-accent/20 bg-gradient-to-b from-brand-accent/10 to-white p-5 shadow-xl sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 pr-2">
-                <h3 id="guest-partner-comment-title" className="text-sm font-semibold text-zinc-900">
+                <h3 id="guest-partner-comment-title" className="text-sm font-semibold text-foreground">
                   Comentar como visitante
                 </h3>
-                <p className="mt-1 text-xs text-zinc-600">
+                <p className="mt-1 text-xs text-muted">
                   Não precisas de conta. É permitido um comentário por dispositivo neste perfil.
                 </p>
               </div>
@@ -783,13 +783,13 @@ export function PartnerCommentsSection({
                   setGuestModalOpen(false);
                   setGuestErr(null);
                 }}
-                className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-50"
+                className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border text-xs text-muted hover:bg-page"
                 aria-label="Fechar"
               >
                 ✕
               </button>
             </div>
-            <label htmlFor="guest-partner-name-modal" className="mt-4 block text-xs font-medium text-zinc-700">
+            <label htmlFor="guest-partner-name-modal" className="mt-4 block text-xs font-medium text-foreground/90">
               Nome (opcional)
             </label>
             <input
@@ -800,9 +800,9 @@ export function PartnerCommentsSection({
               maxLength={120}
               autoComplete="nickname"
               placeholder="Ex.: Maria"
-              className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              className="mt-1.5 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted/80 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
             />
-            <label htmlFor="guest-partner-body-modal" className="mt-3 block text-xs font-medium text-zinc-700">
+            <label htmlFor="guest-partner-body-modal" className="mt-3 block text-xs font-medium text-foreground/90">
               Comentário
             </label>
             <textarea
@@ -813,7 +813,7 @@ export function PartnerCommentsSection({
               onChange={(e) => setGuestBody(e.target.value)}
               maxLength={2000}
               placeholder="Escreve a tua opinião…"
-              className="mt-1.5 min-h-[7rem] w-full resize-y rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              className="mt-1.5 min-h-[7rem] w-full resize-y rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted/80 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
             />
             {guestErr && (
               <p className="mt-2 text-xs text-red-600" role="status">
@@ -848,7 +848,7 @@ export function PartnerCommentsSection({
       )}
 
       {!loading && items.length === 0 && !error && (
-        <p className="mb-4 text-sm text-zinc-600">
+        <p className="mb-4 text-sm text-muted">
           {readOnly
             ? 'Ainda não há comentários publicados.'
             : 'Ainda não há comentários. Podes ser o primeiro a deixar a tua opinião.'}
@@ -890,7 +890,7 @@ export function PartnerCommentsSection({
                 onClick={() => {
                   setTake(2000);
                 }}
-                className="inline-flex cursor-pointer items-center justify-center rounded-full border border-amber-200/90 bg-amber-50/80 px-4 py-2 text-xs font-semibold text-amber-900/90"
+                className="inline-flex cursor-pointer items-center justify-center rounded-full border border-brand-accent/30 bg-brand-accent/10 px-4 py-2 text-xs font-semibold text-brand-primary/90"
               >
                 Carregar mais comentários
               </button>
