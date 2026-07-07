@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { CardButton } from "@/components/ui/CardButton";
 import { useAuth } from "@/contexts/AuthContext";
 
 type Overview = Awaited<ReturnType<typeof api.admin.shareLinks.overview>>;
@@ -576,13 +577,16 @@ export default function AdminShareLinksPage() {
                 >
                   Cancelar
                 </button>
-                <button
+                <CardButton
                   type="submit"
+                  variant="secondary"
+                  size="sm"
+                  loading={creating}
                   disabled={creating}
-                  className="cursor-pointer rounded-md brand-cta-accent px-4 py-2 text-sm font-medium disabled:opacity-50"
+                  className="!rounded-md px-4 py-2"
                 >
                   {creating ? "A criar…" : "Gerar link"}
-                </button>
+                </CardButton>
               </div>
             </form>
           </div>
@@ -755,13 +759,16 @@ export default function AdminShareLinksPage() {
                 >
                   Cancelar
                 </button>
-                <button
+                <CardButton
                   type="submit"
+                  variant="secondary"
+                  size="sm"
+                  loading={savingEdit || ogBusy}
                   disabled={savingEdit || ogBusy}
-                  className="cursor-pointer rounded-md brand-cta-accent px-4 py-2 text-sm font-medium disabled:opacity-50"
+                  className="!rounded-md px-4 py-2"
                 >
                   {savingEdit ? "A guardar…" : "Guardar"}
-                </button>
+                </CardButton>
               </div>
             </form>
           </div>
@@ -794,16 +801,18 @@ export default function AdminShareLinksPage() {
           </button>
         </div>
         {tab === "custom" ? (
-          <button
+          <CardButton
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={() => {
               setError("");
               setAddModalOpen(true);
             }}
-            className="mb-1 cursor-pointer rounded-md brand-cta-accent px-4 py-2 text-sm font-medium shadow-sm hover:opacity-95"
+            className="mb-1 !rounded-md px-4 py-2 shadow-sm"
           >
             Adicionar link
-          </button>
+          </CardButton>
         ) : null}
       </div>
 

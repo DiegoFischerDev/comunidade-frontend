@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { RelocationCityCombobox } from "@/components/relocation/RelocationCityCombobox";
+import { CardButton } from "@/components/ui/CardButton";
 import { RelocationHouseCard } from "@/components/relocation/RelocationHouseCard";
 import {
   RELOCATION_BUSINESS_TYPE_OPTIONS,
@@ -210,7 +211,29 @@ export default function PublicRelocationHousesListPage() {
         >
           {RELOCATION_BUSINESS_TYPE_OPTIONS.map((key) => {
             const selected = finalidade === key;
-            return (
+            return selected ? (
+              <CardButton
+                key={key}
+                type="button"
+                role="tab"
+                variant="secondary"
+                size="sm"
+                aria-selected={selected}
+                onClick={() =>
+                  setRouteFilters({
+                    cidade,
+                    tipologia,
+                    finalidade: key,
+                    valorMin,
+                    valorMax,
+                    page: 1,
+                  })
+                }
+                className="flex-1 !rounded-lg px-4 py-2.5 shadow-sm"
+              >
+                {BUSINESS_TYPE_TAB_CLASS[key]}
+              </CardButton>
+            ) : (
               <button
                 key={key}
                 type="button"
@@ -226,11 +249,7 @@ export default function PublicRelocationHousesListPage() {
                     page: 1,
                   })
                 }
-                className={
-                  selected
-                    ? "flex-1 rounded-lg brand-cta-accent px-4 py-2.5 text-sm shadow-sm transition"
-                    : "flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-muted transition hover:bg-card/80 hover:text-foreground"
-                }
+                className="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-muted transition hover:bg-card/80 hover:text-foreground"
               >
                 {BUSINESS_TYPE_TAB_CLASS[key]}
               </button>

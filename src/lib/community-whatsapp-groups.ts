@@ -66,15 +66,13 @@ export const RELOCATION_HOUSES_WHATSAPP_GROUP_URL = WHATSAPP_GROUP_RELOCACAO_URL
 export type CommunityWhatsAppNavGroup = {
   id: string;
   label: string;
-  href?: string;
-  /** Abre modal com os 3 grupos regionais de ofertas de trabalho. */
-  opensJobOfferModal?: boolean;
+  href: string;
 };
 
 export const COMMUNITY_WHATSAPP_NAV_GROUPS: CommunityWhatsAppNavGroup[] = [
   {
     id: "duvidas-geral",
-    label: "Dúvidas em geral",
+    label: "Grupão de ajuda",
     href: WHATSAPP_GROUP_DUVIDAS_GERAL_URL,
   },
   {
@@ -87,9 +85,28 @@ export const COMMUNITY_WHATSAPP_NAV_GROUPS: CommunityWhatsAppNavGroup[] = [
     label: "Imóveis a venda",
     href: WHATSAPP_GROUP_IMOVEIS_VENDA_URL,
   },
+];
+
+export type CommunityWhatsappInviteGroup = {
+  id: string;
+  label: string;
+  href: string;
+};
+
+export const COMMUNITY_WHATSAPP_INVITE_GROUPS: CommunityWhatsappInviteGroup[] = [
   {
-    id: "ofertas-trabalho",
-    label: "Ofertas de trabalho",
-    opensJobOfferModal: true,
+    id: "duvidas-geral",
+    label: "Grupão de ajuda e dúvidas",
+    href: WHATSAPP_GROUP_DUVIDAS_GERAL_URL,
+  },
+  {
+    id: "grupao-relocation",
+    label: "Grupão relocation",
+    href: WHATSAPP_GROUP_RELOCACAO_URL,
+  },
+  {
+    id: "imoveis-venda",
+    label: "Imóveis a venda",
+    href: WHATSAPP_GROUP_IMOVEIS_VENDA_URL,
   },
 ];

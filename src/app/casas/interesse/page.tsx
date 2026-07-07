@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { api } from "@/lib/api";
+import { CardButton } from "@/components/ui/CardButton";
 import { buildAdminWhatsAppUrl } from "@/lib/admin-contact-whatsapp";
 
 const CITY_LABELS: Record<string, string> = {
@@ -132,18 +133,20 @@ function CasasInteresseContent() {
         <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
       )}
       {!redirecting && !error && (
-        <button
+        <CardButton
           type="button"
+          variant="secondary"
+          size="sm"
           onClick={() => {
             void (async () => {
               didAttemptWaRedirect.current = false;
               await openWhatsAppForPartner();
             })();
           }}
-          className="mt-6 inline-flex rounded-xl brand-cta-accent px-4 py-3 text-sm"
+          className="mt-6 !rounded-xl px-4 py-3"
         >
           Abrir WhatsApp
-        </button>
+        </CardButton>
       )}
     </div>
   );

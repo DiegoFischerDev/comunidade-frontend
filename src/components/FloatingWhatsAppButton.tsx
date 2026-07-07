@@ -81,25 +81,30 @@ export function FloatingWhatsAppButton({
             </p>
             <div className="mt-3 flex flex-col gap-2">
               {memberActive ? (
-                <a
+                <CardButton
+                  as="a"
+                  variant="secondary"
+                  size="sm"
                   href={WHATSAPP_URL}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full brand-cta-accent px-4 py-2.5 text-sm font-medium"
+                  className="!rounded-full px-4 py-2.5"
                 >
                   Abrir WhatsApp
-                </a>
+                </CardButton>
               ) : (
-                <button
+                <CardButton
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => {
                     setOpen(false);
                     setShowMembershipModal(true);
                   }}
-                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full brand-cta-accent px-4 py-2.5 text-sm font-medium"
+                  className="!rounded-full px-4 py-2.5"
                 >
                   Abrir WhatsApp
-                </button>
+                </CardButton>
               )}
             </div>
           </div>

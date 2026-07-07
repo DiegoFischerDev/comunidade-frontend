@@ -4,6 +4,7 @@
 
 export const SITE_NAME = "Move Casa";
 export const SITE_NAME_FULL = "Move Casa Relocation";
+export const SITE_CONTACT_EMAIL = "atendimento@movecasa.pt";
 export const SITE_FOUNDERS = "Rafa e Carol";
 
 export const SITE_TAGLINE =
@@ -22,13 +23,22 @@ export const BRAND_OG_IMAGE_HEIGHT = 909;
 export const BRAND_LOGO_HORIZONTAL = `${BRAND_ASSET_BASE}/logo-horizontal.png`;
 export const BRAND_LOGO_HORIZONTAL_GREEN = `${BRAND_ASSET_BASE}/logo-horizontal-green.png`;
 export const BRAND_LOGO_SQUARE = `${BRAND_ASSET_BASE}/logo-square.png`;
+/** Logo quadrada sem fundo — fonte: `move-casa-brand/logo/logo-quadrada-sem-fundo.png`. */
+export const BRAND_LOGO_SQUARE_TRANSPARENT = `${BRAND_ASSET_BASE}/logo-quadrada-sem-fundo.png`;
 export const BRAND_ICON = `${BRAND_ASSET_BASE}/icon.png`;
 /** Ícone para fundos claros (ex.: atalho flutuante mobile no topo). */
 export const BRAND_ICON_LIGHT = `${BRAND_ASSET_BASE}/logo-bg-claro-sem-fundo.png`;
 
 export const BRAND_HERO_BG_DESKTOP = `${BRAND_ASSET_BASE}/hero-background/bg-desktop.png`;
 export const BRAND_HERO_BG_MOBILE = `${BRAND_ASSET_BASE}/hero-background/bg-mobile.png`;
-export const BRAND_HERO_FOUNDERS_IMAGE = `${BRAND_ASSET_BASE}/hero-background/rafa-e-carol-sem-fundo.png`;
+export const BRAND_HERO_FOUNDERS_IMAGE = `${BRAND_ASSET_BASE}/hero-background/especialista.png`;
+/** Cursor personalizado (avião) — secção carrossel do dashboard. */
+export const BRAND_HERO_AIRPLANE_CURSOR = `${BRAND_ASSET_BASE}/hero-background/aviao-cursor.png`;
+export const BRAND_HERO_AIRPLANE_CURSOR_SIZE = 84;
+export const BRAND_HERO_AIRPLANE_CURSOR_HOTSPOT_X = 16;
+/** 0° = nariz para cima. Asset atual (cima-esquerda) ≈ -45°. Usar 0 com PNG apontado para cima. */
+export const BRAND_HERO_AIRPLANE_CURSOR_BASE_ANGLE = -45;
+export const BRAND_HERO_AIRPLANE_CURSOR_MAX_TILT = 45;
 export const BRAND_HERO_BG_DESKTOP_WIDTH = 1672;
 export const BRAND_HERO_BG_DESKTOP_HEIGHT = 941;
 export const BRAND_HERO_BG_MOBILE_WIDTH = 941;

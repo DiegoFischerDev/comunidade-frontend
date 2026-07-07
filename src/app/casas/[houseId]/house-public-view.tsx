@@ -7,6 +7,7 @@ import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { isOurImageHostname } from "@/lib/site-url";
 
 import { HousePublicationStatusBadge } from "@/components/house/HousePublicationStatusBadge";
+import { CardLinkButton, cardButtonSecondaryClass } from "@/components/ui/CardButton";
 
 import { HouseContactSection } from "./house-contact-section";
 import { HouseImageCarousel } from "./house-image-carousel";
@@ -134,12 +135,14 @@ export function HousePublicView({
               />
             </Link>
             <nav className="shrink-0">
-              <Link
+              <CardLinkButton
                 href="/relocation/imoveis"
-                className="inline-flex rounded-full brand-cta-accent px-3 py-1.5 text-xs font-semibold shadow-sm transition hover:brightness-105 sm:px-4 sm:text-sm"
+                variant="secondary"
+                size="sm"
+                className="!rounded-full px-3 py-1.5 text-xs shadow-sm sm:px-4 sm:text-sm"
               >
                 Catálogo de imóveis
-              </Link>
+              </CardLinkButton>
             </nav>
           </div>
         </header>
@@ -277,7 +280,7 @@ export function HousePublicView({
                   />
                 ) : (
                   <div
-                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full brand-cta-accent text-lg font-semibold"
+                    className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-semibold ${cardButtonSecondaryClass}`}
                     aria-hidden
                   >
                     {partner.name.charAt(0).toUpperCase()}

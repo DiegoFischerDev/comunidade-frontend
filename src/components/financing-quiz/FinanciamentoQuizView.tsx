@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
+import { CardButton } from '@/components/ui/CardButton';
 import { KiwiFloatInput } from '@/components/membership/KiwiFloatInput';
 import { api, type ApiHttpError, getUserFacingApiError } from '@/lib/api';
 import {
@@ -434,13 +435,15 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         <Bullet>Resultado imediato, com um exemplo prático.</Bullet>
       </ul>
 
-      <button
+      <CardButton
         type="button"
+        variant="secondary"
+        fullWidth
         onClick={onStart}
-        className="mt-8 inline-flex w-full items-center justify-center rounded-xl bg-brand-primary px-6 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-brand-primary-dark focus:outline-none focus:ring-2 focus:ring-brand-primary/25 focus:ring-offset-2"
+        className="mt-8 px-6 py-3.5"
       >
         Começar questionário
-      </button>
+      </CardButton>
     </div>
   );
 }
@@ -499,13 +502,16 @@ function AtendimentoPanel({
         </div>
       ) : null}
 
-      <button
+      <CardButton
         type="submit"
+        variant="secondary"
+        fullWidth
+        loading={loading}
         disabled={loading}
-        className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-5 px-6 py-3.5"
       >
-        {loading ? 'A verificar…' : 'Solicitrar atendimento'}
-      </button>
+        {loading ? 'A verificar…' : 'Solicitar atendimento'}
+      </CardButton>
     </form>
   );
 }
@@ -708,15 +714,18 @@ function ResultPanel({
               </div>
             ) : null}
 
-            <button
+            <CardButton
               type="submit"
+              variant="secondary"
+              fullWidth
+              loading={submitting}
               disabled={submitting}
-              className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-6 px-6 py-3.5"
             >
               {submitting
                 ? 'A preparar a tua página…'
                 : 'Iniciar atendimento gratuito'}
-            </button>
+            </CardButton>
           </div>
         </form>
       ) : (

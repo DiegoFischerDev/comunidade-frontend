@@ -1,5 +1,7 @@
 "use client";
 
+import { CardButton } from "@/components/ui/CardButton";
+
 type JobOfferListItem = {
   id: string;
   title: string;
@@ -137,15 +139,18 @@ export function JobOfferCard({
         </p>
       </div>
 
-      <button
+      <CardButton
         type="button"
+        variant="secondary"
+        size="sm"
+        fullWidth
         onClick={onOpenDetail}
-        className={`mt-3 w-full cursor-pointer rounded-lg brand-cta-accent px-3 py-2.5 text-xs shadow-sm transition hover:brightness-105 sm:text-sm ${
+        className={`mt-3 !rounded-lg px-3 py-2.5 text-xs shadow-sm sm:text-sm ${
           isCarousel ? "mt-auto" : ""
         }`}
       >
         Saber mais
-      </button>
+      </CardButton>
     </article>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { CardButton } from '@/components/ui/CardButton';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -454,7 +455,10 @@ export default function AdminRafaCallHojePage() {
                               </td>
                               <td className="px-4 py-3">
                                 <div className="flex items-center justify-end gap-2">
-                                  <a
+                                  <CardButton
+                                    as="a"
+                                    variant="secondary"
+                                    size="sm"
                                     href={waUrl(
                                       row.item.whatsappDigits,
                                       row.item.userName,
@@ -463,10 +467,10 @@ export default function AdminRafaCallHojePage() {
                                     )}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center justify-center rounded-full brand-cta-accent px-3 py-1.5 text-xs"
+                                    className="!rounded-full px-3 py-1.5 text-xs"
                                   >
                                     WhatsApp
-                                  </a>
+                                  </CardButton>
                                   {row.item.status === 'SCHEDULED' ? (
                                     <>
                                       <button

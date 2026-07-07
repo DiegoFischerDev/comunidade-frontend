@@ -1,10 +1,9 @@
 import Image from "next/image";
 import { Dancing_Script } from "next/font/google";
 
-import { CardLinkButton } from "@/components/ui/CardButton";
-import { WhatsappIcon } from "@/components/icons/WhatsappIcon";
+import { FlagPt } from "@/components/CountryFlags";
+import { DashboardHomeHeroCta } from "@/components/dashboard/DashboardHomeHeroCta";
 import { DashboardHomeHeroLoginButton } from "@/components/dashboard/DashboardHomeHeroLoginButton";
-import { RAFA_CALL_CHECKOUT_PATH } from "@/lib/auth-ui-events";
 import {
   BRAND_HERO_BG_DESKTOP,
   BRAND_HERO_BG_MOBILE,
@@ -102,13 +101,13 @@ export function DashboardHomeHero({ className = "" }: Props) {
         />
 
         <div className="absolute inset-0 z-10 flex flex-col">
-          <div className="animate-dashboard-hero-fade-up flex items-start justify-between gap-4 px-[5%] pt-[4.5%] md:px-[4.5%] md:pt-[5.5%] lg:pt-[4cqh]">
+          <div className="animate-dashboard-hero-fade-up flex items-start justify-between gap-4 px-[5%] pt-[4.5%] md:px-[4.5%] md:pt-[4%] lg:pt-[4cqh]">
             <Image
               src={BRAND_LOGO_HORIZONTAL}
               alt={SITE_NAME_FULL}
               width={360}
               height={96}
-              className="h-auto max-w-full w-[clamp(8.5rem,46vw,11.5rem)] md:w-[clamp(14rem,30vw,24rem)] lg:w-[clamp(18rem,36cqh,32rem)]"
+              className="h-auto max-w-full w-[clamp(8.5rem,46vw,11.5rem)] md:w-[clamp(14rem,28vw,22rem)] lg:w-[clamp(24rem,44cqh,40rem)]"
               priority
             />
             <DashboardHomeHeroLoginButton />
@@ -116,15 +115,22 @@ export function DashboardHomeHero({ className = "" }: Props) {
 
           <div className="relative z-20 flex min-h-0 flex-1 flex-col justify-end md:h-full md:px-[4.5%]">
             <div className="flex w-full flex-col px-[5%] pb-[5%] md:h-full md:max-w-[60%] md:px-0 md:pb-0">
-              <div className="flex flex-col gap-6 md:flex-1 md:justify-center md:gap-5 lg:gap-[clamp(0.75rem,2cqh,2.5rem)]">
+              <div className="flex flex-col gap-6 md:flex-1 md:justify-start md:gap-3 md:-translate-y-[3%] md:pt-0 lg:justify-center lg:gap-[clamp(0.75rem,2cqh,2.5rem)] lg:-translate-y-[6%] lg:pt-0">
                 <div className="animate-dashboard-hero-fade-up w-full [animation-delay:120ms]">
-                  <h1 className="max-w-[20ch] text-[clamp(1.85rem,6.8vw,3.35rem)] font-semibold leading-[1.08] tracking-tight md:max-w-none md:text-[clamp(1.5rem,1.85vw,2.35rem)] lg:text-[clamp(1.75rem,5.5cqh,2.75rem)]">
-                    <span className="block text-brand-accent">Mude para Portugal</span>
+                  <h1 className="max-w-[20ch] text-[clamp(1.85rem,6.8vw,3.35rem)] font-semibold leading-[1.08] tracking-tight md:max-w-none md:text-[clamp(1.35rem,1.65vw,1.85rem)] lg:text-[clamp(1.75rem,5.5cqh,2.75rem)]">
+                    <span className="block text-brand-accent">
+                      Mude para Portugal{" "}
+                      <FlagPt
+                        className="inline-block h-[0.85em] w-[0.85em] shrink-0 object-contain align-[-0.06em]"
+                        alt=""
+                        aria-hidden
+                      />
+                    </span>
                     <span className="block text-white">com ajuda de quem</span>
                     <span className="block text-white">já viveu esse processo.</span>
                   </h1>
 
-                  <p className="mt-4 max-w-[34ch] text-[clamp(0.8rem,2.6vw,1.02rem)] leading-relaxed text-white/95 md:mt-4 md:max-w-none md:text-[clamp(0.75rem,0.85vw,0.92rem)] lg:mt-[clamp(0.75rem,1.5cqh,1.75rem)] lg:text-[clamp(0.85rem,2cqh,1.15rem)]">
+                  <p className="mt-4 max-w-[34ch] text-[clamp(0.8rem,2.6vw,1.02rem)] leading-relaxed text-white/95 md:mt-2.5 md:max-w-none md:text-[clamp(0.75rem,0.85vw,0.92rem)] lg:mt-[clamp(0.75rem,1.5cqh,1.75rem)] lg:text-[clamp(0.85rem,2cqh,1.15rem)]">
                     <span className="mr-2 inline-block align-[-0.15em] text-brand-accent" aria-hidden>
                       <svg viewBox="0 0 24 24" className="h-[1.1em] w-[1.1em]" fill="none">
                         <path
@@ -142,18 +148,11 @@ export function DashboardHomeHero({ className = "" }: Props) {
                 </div>
 
                 <div className="animate-dashboard-hero-fade-up w-full [animation-delay:180ms]">
-                  <CardLinkButton
-                    href={RAFA_CALL_CHECKOUT_PATH}
-                    variant="secondary"
-                    className="w-full sm:w-auto md:min-h-[42px] md:px-4 md:text-sm lg:min-h-[clamp(42px,6cqh,52px)] lg:px-6 lg:text-[clamp(0.875rem,2cqh,1.125rem)]"
-                  >
-                    <WhatsappIcon className="h-5 w-5 shrink-0 text-current md:h-4 md:w-4 lg:h-[clamp(1rem,2.5cqh,1.5rem)] lg:w-[clamp(1rem,2.5cqh,1.5rem)]" />
-                    Quero falar com as meninas
-                  </CardLinkButton>
+                  <DashboardHomeHeroCta />
                 </div>
               </div>
 
-              <div className="mt-6 w-full md:mt-0 md:pb-[5%] lg:pb-[4cqh]">
+              <div className="mt-6 w-full md:mt-3 md:pb-[4%] lg:mt-0 lg:pb-[4cqh]">
                 <ul
                   className="animate-dashboard-hero-fade-up flex w-full max-w-full gap-2 overflow-x-auto pb-1 [animation-delay:220ms] [-ms-overflow-style:none] [scrollbar-width:none] md:gap-0 md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden"
                   aria-label="Serviços de relocation"
@@ -204,17 +203,17 @@ export function DashboardHomeHero({ className = "" }: Props) {
         </div>
 
         <div
-          className="pointer-events-none absolute bottom-0 right-[4.5%] z-[5] hidden h-[118%] w-[min(36%,680px)] md:block lg:h-[115%] lg:w-[min(34%,min(36cqw,680px))]"
+          className="pointer-events-none absolute bottom-0 right-[10%] z-[5] hidden h-[108%] w-[min(31%,600px)] md:block lg:h-[106%] lg:w-[min(29%,min(32cqw,600px))]"
           aria-hidden
         >
-          <div className="animate-dashboard-hero-fade-up absolute inset-x-0 -bottom-[3%] h-full w-full [animation-delay:180ms]">
-            <div className="animate-dashboard-hero-float relative mx-auto h-full w-full max-w-[1200px] [animation-delay:1.1s]">
+          <div className="animate-dashboard-hero-founders-enter absolute inset-x-0 -bottom-[7%] h-full w-full [animation-delay:420ms]">
+            <div className="relative mx-auto h-full w-full max-w-[1080px]">
               <Image
                 src={BRAND_HERO_FOUNDERS_IMAGE}
                 alt=""
                 fill
                 priority
-                sizes="(max-width: 1200px) 36vw, 680px"
+                sizes="(max-width: 1080px) 31vw, 600px"
                 className="object-contain object-bottom"
               />
             </div>

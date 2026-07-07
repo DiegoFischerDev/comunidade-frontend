@@ -8,6 +8,7 @@ import { JobOfferRegionFilter } from "@/components/job-offers/JobOfferRegionFilt
 import { JobOffersDateCarousels } from "@/components/job-offers/JobOffersDateCarousels";
 import { JobOfferWhatsappConfigPanel } from "@/components/job-offers/JobOfferWhatsappConfigPanel";
 import { JobOffersAdminModal } from "@/components/job-offers/JobOffersAdminModal";
+import { CardButton } from "@/components/ui/CardButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import {
@@ -223,13 +224,15 @@ export default function JobOffersPage() {
       ) : null}
 
       {isAdmin ? (
-        <button
+        <CardButton
           type="button"
+          variant="secondary"
+          size="sm"
           onClick={openCreateOfferModal}
-          className="w-full cursor-pointer rounded-xl brand-cta-accent px-4 py-2.5 text-sm shadow-sm transition hover:brightness-105 sm:w-auto"
+          className="w-full !rounded-xl px-4 py-2.5 shadow-sm sm:w-auto"
         >
           Adicionar oferta de trabalho
-        </button>
+        </CardButton>
       ) : null}
 
       {loading ? (

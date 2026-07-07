@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AddHouseModal } from '@/components/house/AddHouseModal';
+import { CardButton } from '@/components/ui/CardButton';
 import { HousePublicationStatusBadge } from '@/components/house/HousePublicationStatusBadge';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -381,16 +382,18 @@ export default function AdminHousesPage() {
               ? `A mostrar ${filteredItems.length} de ${items.length}`
               : `Total: ${items.length}`}
           </p>
-          <button
+          <CardButton
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={() => {
               setEditHouseId(null);
               setShowHouseModal(true);
             }}
-            className="inline-flex rounded-full brand-cta-accent px-4 py-2 text-sm"
+            className="!rounded-full px-4 py-2"
           >
             Adicionar casa
-          </button>
+          </CardButton>
           <button
             type="button"
             onClick={() => setShowAddWhatsappGroupModal(true)}

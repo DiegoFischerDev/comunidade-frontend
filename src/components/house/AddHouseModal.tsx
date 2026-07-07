@@ -11,6 +11,7 @@ import {
   HOUSE_TYPOLOGIES,
   todayLocalDateInputValue,
 } from '@/lib/house-form-constants';
+import { CardButton } from '@/components/ui/CardButton';
 import { api } from '@/lib/api';
 import {
   RELOCATION_PORTUGAL_CITIES,
@@ -645,10 +646,13 @@ export function AddHouseModal({
               >
                 Cancelar
               </button>
-              <button
+              <CardButton
                 type="submit"
+                variant="secondary"
+                size="sm"
+                loading={saving || loadingHouse}
                 disabled={saving || loadingHouse}
-                className="rounded-lg brand-cta-accent px-4 py-2 text-sm disabled:opacity-60"
+                className="!rounded-lg px-4 py-2"
               >
                 {saving
                   ? isPartnerAiCreate
@@ -659,7 +663,7 @@ export function AddHouseModal({
                     : isAdmin
                       ? 'Guardar anúncio'
                       : 'Publicar imóvel'}
-              </button>
+              </CardButton>
             </div>
           </form>
         )}

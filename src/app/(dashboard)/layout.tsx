@@ -13,8 +13,8 @@ import Image from 'next/image';
 import { getAuthToken, clearAuthToken, api } from '@/lib/api';
 import {
   BRAND_ICON_LIGHT,
-  BRAND_LOGO_HORIZONTAL,
   BRAND_LOGO_SQUARE,
+  BRAND_LOGO_SQUARE_TRANSPARENT,
   SITE_NAME_FULL,
 } from '@/lib/site-branding';
 import {
@@ -37,7 +37,6 @@ import {
 } from '@/lib/login-phone-storage';
 import { CardButton } from '@/components/ui/CardButton';
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
-import { SupportTicketRoot } from '@/components/support-ticket';
 import { SiteFooter } from '@/components/site/SiteFooter';
 import {
   DASHBOARD_HOME_PATH,
@@ -226,6 +225,7 @@ export default function DashboardLayout({
   } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isHomeScrolled, setIsHomeScrolled] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'forgot' | 'resetPassword'>(
     'login',
@@ -363,6 +363,24 @@ export default function DashboardLayout({
     setIsMenuOpen(false);
   }, [pathname]);
 
+  // Na home do dashboard, o menu hambúrguer só aparece após scroll vertical
+  useEffect(() => {
+    if (!isDashboardHome) {
+      setIsHomeScrolled(true);
+      return;
+    }
+
+    setIsHomeScrolled(false);
+
+    const onScroll = () => {
+      setIsHomeScrolled(window.scrollY > 0);
+    };
+
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [isDashboardHome]);
+
   // Abre modal de boas-vindas após verificação de e-mail e login concluídos
   useEffect(() => {
     if (pendingWelcomeAfterVerify && user) {
@@ -429,25 +447,25 @@ export default function DashboardLayout({
             aria-label="Ir para o início"
           >
             <Image
+              src={BRAND_LOGO_SQUARE_TRANSPARENT}
+              alt={SITE_NAME_FULL}
+              width={800}
+              height={800}
+              className="h-28 w-28 object-contain sm:h-32 sm:w-32 md:hidden"
+              priority
+            />
+            <Image
               src={BRAND_LOGO_SQUARE}
               alt={SITE_NAME_FULL}
               width={800}
               height={800}
-              className="hidden h-24 w-24 object-contain md:block"
-              priority
-            />
-            <Image
-              src={BRAND_LOGO_HORIZONTAL}
-              alt={SITE_NAME_FULL}
-              width={1200}
-              height={600}
-              className="h-18 w-auto max-w-full object-contain sm:h-28 md:hidden"
+              className="hidden h-28 w-28 object-contain sm:h-32 sm:w-32 md:block"
               priority
             />
           </button>
         </div>
 
-        <div className="mt-3 flex items-center justify-center gap-3">
+        <div className="flex items-center justify-center gap-3">
           <a
             href="https://www.instagram.com/rafaapelomundo/"
             target="_blank"
@@ -525,16 +543,6 @@ export default function DashboardLayout({
           >
             Serviços
           </Link>
-          <Link
-            href="/ofertas-trabalho"
-            className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/ofertas-trabalho'
-                ? NAV_LINK_ACTIVE_CLASS
-                : NAV_LINK_INACTIVE_CLASS
-            }`}
-          >
-            Ofertas de trabalho
-          </Link>
           {user?.role !== 'ADMIN' ? (
             <Link
               href="/dashboard/reclame-aqui"
@@ -549,8 +557,8 @@ export default function DashboardLayout({
           ) : null}
           {isRelocationPartner ? (
             <>
-              <div className="mt-2 border-t border-border pt-2">
-                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
+              <div className="brand-sidebar-divider mt-2 border-t pt-2">
+                <p className="brand-sidebar-label px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide">
                   Menu de parceiro
                 </p>
                 <Link
@@ -578,8 +586,8 @@ export default function DashboardLayout({
           ) : (
             <>
           {user?.role === 'ADMIN' && (
-            <div className="mt-2 border-t border-border pt-2">
-              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
+            <div className="brand-sidebar-divider mt-2 border-t pt-2">
+              <p className="brand-sidebar-label px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide">
                 Menu de admin
               </p>
               <Link
@@ -666,8 +674,8 @@ export default function DashboardLayout({
             </div>
           )}
           {user?.role === 'PARTNER' && !isRelocationPartner ? (
-            <div className="mt-2 border-t border-border pt-2">
-              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
+            <div className="brand-sidebar-divider mt-2 border-t pt-2">
+              <p className="brand-sidebar-label px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide">
                 Menu de parceiro
               </p>
               <Link
@@ -847,12 +855,18 @@ export default function DashboardLayout({
         </button>
       ) : null}
 
-      {/* Mobile: apenas menu hambúrguer flutuante */}
+      {/* Mobile: menu hambúrguer flutuante (na home, só após scroll) */}
       <button
         type="button"
         onClick={() => setIsMenuOpen((open) => !open)}
-        className="fixed right-4 top-4 z-50 inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-[14px] bg-brand-primary text-brand-on-primary shadow-sm md:hidden"
+        className={`fixed right-4 top-4 z-50 inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-[14px] border border-white/20 bg-brand-primary/65 text-brand-on-primary shadow-lg backdrop-blur-md transition-all duration-300 ease-out hover:bg-brand-primary/80 active:scale-[0.97] md:hidden ${
+          isHomeScrolled || isMenuOpen
+            ? 'pointer-events-auto translate-y-0 opacity-100'
+            : 'pointer-events-none -translate-y-1 opacity-0'
+        }`}
         aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+        aria-hidden={!isHomeScrolled && !isMenuOpen}
+        tabIndex={isHomeScrolled || isMenuOpen ? 0 : -1}
       >
         {isMenuOpen ? (
           <span className="text-xl leading-none" aria-hidden>
@@ -915,7 +929,7 @@ export default function DashboardLayout({
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-base font-semibold text-foreground">
-                  Entrar na Comunidade Rafa Portugal
+                  Acessar dashboard de parceiros
                 </h2>
                 <p className="mt-1 text-xs text-muted">
                   {authMode === 'forgot'
@@ -1045,13 +1059,14 @@ export default function DashboardLayout({
                     Esqueci a senha
                   </button>
                 </div>
-                <button
+                <CardButton
                   type="submit"
-                  disabled={loginLoading}
-                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-brand-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-primary-dark disabled:opacity-50"
+                  variant="secondary"
+                  fullWidth
+                  loading={loginLoading}
                 >
                   {loginLoading ? 'Entrando…' : 'Entrar'}
-                </button>
+                </CardButton>
               </form>
             ) : authMode === 'forgot' ? (
               <form
@@ -1112,13 +1127,14 @@ export default function DashboardLayout({
                     className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 disabled:opacity-50"
                   />
                 </div>
-                <button
+                <CardButton
                   type="submit"
-                  disabled={forgotLoading}
-                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-brand-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-primary-dark disabled:opacity-50"
+                  variant="secondary"
+                  fullWidth
+                  loading={forgotLoading}
                 >
                   {forgotLoading ? 'Enviando código…' : 'Enviar código de recuperação'}
-                </button>
+                </CardButton>
               </form>
             ) : (
               <form
@@ -1216,13 +1232,14 @@ export default function DashboardLayout({
                   >
                     Reenviar código
                   </button>
-                  <button
+                  <CardButton
                     type="submit"
-                    disabled={resetLoading}
-                    className="flex cursor-pointer items-center justify-center rounded-full bg-brand-primary px-4 py-2.5 text-xs font-medium text-white hover:bg-brand-primary-dark disabled:opacity-50"
+                    variant="secondary"
+                    size="sm"
+                    loading={resetLoading}
                   >
                     {resetLoading ? 'Salvando…' : 'Salvar nova senha e entrar'}
-                  </button>
+                  </CardButton>
                 </div>
               </form>
             )}
@@ -1230,11 +1247,10 @@ export default function DashboardLayout({
         </div>
       )}
 
-      <main className="flex-1 p-4 pt-16 text-foreground md:p-6 md:pt-6">
+      <main className="flex-1 p-4 pt-16 pb-0 text-foreground md:p-6 md:pt-6 md:pb-0">
         {children}
       </main>
 
-      <SupportTicketRoot />
       <SiteFooter />
 
       <FloatingWhatsAppButton hideFloatingButton />

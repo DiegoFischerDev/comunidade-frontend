@@ -1,6 +1,6 @@
 /** Classes Tailwind / componentes reutilizáveis da identidade visual. */
 
-/** Item activo na navegação lateral (fundo accent sobre sidebar verde). */
+/** Item activo na navegação lateral — mesmo padrão do CTA dourado. */
 export const NAV_LINK_ACTIVE_CLASS = 'brand-nav-active';
 
 /** Item inactivo na navegação lateral. */

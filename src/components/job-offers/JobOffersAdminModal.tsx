@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
+import { CardButton } from "@/components/ui/CardButton";
 import { ModalPortal } from "@/components/ui/ModalPortal";
 
 type Listed = Awaited<ReturnType<typeof api.admin.jobOffers.list>>[number];
@@ -435,13 +436,16 @@ export function JobOffersAdminModal({
                   Publicada (visível na lista pública)
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  <button
+                  <CardButton
                     type="submit"
+                    variant="secondary"
+                    size="sm"
+                    loading={saving}
                     disabled={saving}
-                    className="rounded-lg brand-cta-accent px-4 py-2 text-sm disabled:opacity-60"
+                    className="!rounded-lg px-4 py-2"
                   >
                     {saving ? "A guardar…" : editingId ? "Guardar" : "Criar oferta"}
-                  </button>
+                  </CardButton>
                   <button
                     type="button"
                     onClick={() => {
@@ -458,13 +462,15 @@ export function JobOffersAdminModal({
               </form>
             ) : (
               <>
-                <button
+                <CardButton
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={startCreate}
-                  className="mb-4 w-full rounded-lg brand-cta-accent px-4 py-2.5 text-sm sm:w-auto"
+                  className="mb-4 w-full !rounded-lg px-4 py-2.5 sm:w-auto"
                 >
                   Adicionar oferta de trabalho
-                </button>
+                </CardButton>
                 {loading ? (
                   <p className="text-sm text-muted">A carregar…</p>
                 ) : rows.length === 0 ? (
