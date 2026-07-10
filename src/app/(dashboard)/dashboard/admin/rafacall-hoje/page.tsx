@@ -7,6 +7,7 @@ import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import {
   CENTERED_PEEK_CAROUSEL_ITEM,
   CENTERED_PEEK_CAROUSEL_TRACK,
+  HORIZONTAL_CAROUSEL_TRACK,
   HorizontalSnapCarousel,
 } from '@/components/ui/horizontal-snap-carousel';
 
@@ -330,6 +331,17 @@ function BlockKanbanCard({
 }
 
 const KANBAN_MOBILE_COLUMN = `${CENTERED_PEEK_CAROUSEL_ITEM} w-[84vw] max-w-[320px]`;
+const KANBAN_TABLET_SLIDE =
+  'flex-none w-[calc(100vw-2rem)] max-w-3xl snap-center sm:w-[calc(100vw-3rem)]';
+
+function chunkKanbanDays(days: KanbanDay[], chunkSize: number): KanbanDay[][] {
+  if (chunkSize < 1) return [days];
+  const chunks: KanbanDay[][] = [];
+  for (let i = 0; i < days.length; i += chunkSize) {
+    chunks.push(days.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
 
 function formatDayKanbanTitle(ymd: string, timeZone: string): string {
   return new Date(`${ymd}T12:00:00.000Z`).toLocaleDateString('pt-PT', {
@@ -535,6 +547,11 @@ export default function AdminRafaCallHojePage() {
     [data, blocks, tz],
   );
 
+  const tabletKanbanSlides = useMemo(
+    () => chunkKanbanDays(kanbanDays, 2),
+    [kanbanDays],
+  );
+
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -725,7 +742,7 @@ export default function AdminRafaCallHojePage() {
 
   if (user.role !== 'ADMIN') {
     return (
-      <div>
+      <div className="pt-6 md:pt-8">
         <h1 className="text-2xl font-semibold text-foreground">Agendamentos de chamadas com clientes</h1>
         <p className="mt-2 text-sm text-muted">Sem permissão para esta página.</p>
       </div>
@@ -733,7 +750,7 @@ export default function AdminRafaCallHojePage() {
   }
 
   return (
-    <div>
+    <div className="pt-6 md:pt-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Agendamentos de chamadas com clientes</h1>
@@ -771,7 +788,7 @@ export default function AdminRafaCallHojePage() {
 
       {kanbanDays.length > 0 ? (
         <div className="mt-6">
-          <div className="hidden items-start gap-4 overflow-x-auto pb-2 md:flex">
+          <div className="hidden items-start gap-4 overflow-x-auto pb-2 lg:flex">
             {kanbanDays.map((kanbanDay) => (
               <DayKanbanColumn
                 key={kanbanDay.date}
@@ -788,6 +805,43 @@ export default function AdminRafaCallHojePage() {
                 onUnblock={(blockId) => void handleUnblock(blockId)}
               />
             ))}
+          </div>
+
+          <div className="hidden md:block lg:hidden">
+            <HorizontalSnapCarousel
+              slideCount={tabletKanbanSlides.length}
+              ariaLabel="Dias com agendamentos — deslize ou use as setas"
+              navStyle="visible"
+              hideNavWhenSingle={false}
+              prevAriaLabel="Dias anteriores"
+              nextAriaLabel="Dias seguintes"
+              trackClassName={`items-stretch ${HORIZONTAL_CAROUSEL_TRACK} gap-4 px-2 pb-2`}
+            >
+              {tabletKanbanSlides.map((pair, index) => (
+                <div key={`tablet-slide:${index}`} className={KANBAN_TABLET_SLIDE}>
+                  <div
+                    className={`grid h-full gap-3 ${pair.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}
+                  >
+                    {pair.map((kanbanDay) => (
+                      <DayKanbanColumn
+                        key={kanbanDay.date}
+                        kanbanDay={kanbanDay}
+                        tz={tz}
+                        className="min-w-0 h-full"
+                        reschedulingBookingId={reschedulingBookingId}
+                        completingBookingId={completingBookingId}
+                        cancelingBookingId={cancelingBookingId}
+                        unblockingId={unblockingId}
+                        onReschedule={(item) => void openReschedule(item)}
+                        onComplete={(item, slotLabel) => void handleCompleteBooking(item, slotLabel)}
+                        onCancel={(item, slotLabel) => void handleCancelBooking(item, slotLabel)}
+                        onUnblock={(blockId) => void handleUnblock(blockId)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </HorizontalSnapCarousel>
           </div>
 
           <div className="md:hidden">

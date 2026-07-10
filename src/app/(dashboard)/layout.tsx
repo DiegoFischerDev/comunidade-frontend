@@ -715,7 +715,7 @@ export default function DashboardLayout({
 
       {/* Sidebar mobile (overlay) */}
       <div
-        className={`fixed inset-0 z-[60] flex md:hidden ${
+        className={`fixed inset-0 z-[60] flex lg:hidden ${
           isMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'
         }`}
         aria-hidden={!isMenuOpen}
@@ -1072,7 +1072,7 @@ export default function DashboardLayout({
 
       <main
         className={`flex-1 p-4 pb-0 text-foreground md:p-6 md:pb-0 ${
-          isDashboardHome ? 'pt-16 md:pt-6' : 'pt-16 md:pt-24'
+          isDashboardHome ? 'pt-16 lg:pt-6' : 'pt-16 lg:pt-24'
         }`}
       >
         {children}

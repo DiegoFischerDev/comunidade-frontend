@@ -170,14 +170,14 @@ export function DashboardTopbar({
                 alt={SITE_NAME_FULL}
                 width={720}
                 height={192}
-                className="h-11 w-auto max-w-[min(58vw,15rem)] object-contain object-left sm:h-12 sm:max-w-[18rem] md:h-14 md:max-w-none"
+                className="h-11 w-auto max-w-[min(58vw,15rem)] object-contain object-left sm:h-12 sm:max-w-[18rem] lg:h-14 lg:max-w-none"
                 priority
               />
             </button>
 
             <nav
               aria-label="Navegação principal"
-              className="hidden min-w-0 flex-1 items-center justify-center gap-1 md:flex"
+              className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex"
             >
               {DASHBOARD_PUBLIC_NAV.map((item) => {
                 const active = item.isActive(pathname);
@@ -225,7 +225,7 @@ export function DashboardTopbar({
 
             <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
               {user ? (
-                <div className="hidden items-center gap-2 md:flex">
+                <div className="hidden items-center gap-2 lg:flex">
                   {isActiveMember(user) ? (
                     <Image
                       src="/icon_vip.png"
@@ -257,7 +257,7 @@ export function DashboardTopbar({
                 <button
                   type="button"
                   onClick={onOpenAuth}
-                  className="hidden cursor-pointer text-sm font-medium text-brand-on-primary/75 underline-offset-2 transition hover:text-brand-on-primary hover:underline md:inline-flex"
+                  className="hidden cursor-pointer text-sm font-medium text-brand-on-primary/75 underline-offset-2 transition hover:text-brand-on-primary hover:underline lg:inline-flex"
                 >
                   Login
                 </button>
@@ -266,7 +266,7 @@ export function DashboardTopbar({
               <button
                 type="button"
                 onClick={onMenuToggle}
-                className="dashboard-home-topbar-menu inline-flex h-10 w-10 min-h-[40px] min-w-[40px] cursor-pointer items-center justify-center rounded-[12px] transition active:scale-[0.97] md:hidden"
+                className="dashboard-home-topbar-menu inline-flex h-10 w-10 min-h-[40px] min-w-[40px] cursor-pointer items-center justify-center rounded-[12px] transition active:scale-[0.97] lg:hidden"
                 aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
                 aria-expanded={isMenuOpen}
               >

@@ -339,10 +339,7 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
         setAvailability(avail);
         if (autoSelectDay) {
           const firstFree = avail.days.find((d) => d.slots.length > 0)?.date;
-          const firstBlockedOnly = avail.days.find(
-            (d) => d.slots.length === 0 && (d.adminBlockedSlots?.length ?? 0) > 0,
-          )?.date;
-          setSelectedDate(firstFree ?? firstBlockedOnly ?? avail.days[0]?.date ?? '');
+          setSelectedDate(firstFree ?? '');
         } else {
           setSelectedDate('');
           setPickerDayStep('days');
@@ -470,22 +467,9 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
     return availability.days.find((d) => d.date === selectedDate)?.slots ?? [];
   }, [availability, selectedDate]);
 
-  const dayAdminBlocked = useMemo(() => {
-    if (!availability || !selectedDate) return [];
-    return availability.days.find((d) => d.date === selectedDate)?.adminBlockedSlots ?? [];
-  }, [availability, selectedDate]);
-
-  const daySlotGrid = useMemo(() => {
-    const free = daySlots.map((s) => ({ ...s, kind: 'free' as const }));
-    const blocked = dayAdminBlocked.map((s) => ({ ...s, kind: 'admin_blocked' as const }));
-    return [...free, ...blocked].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
-  }, [daySlots, dayAdminBlocked]);
-
   const availableDays = useMemo(() => {
     if (!availability) return [];
-    return availability.days.filter(
-      (d) => d.slots.length > 0 || (d.adminBlockedSlots?.length ?? 0) > 0,
-    );
+    return availability.days.filter((d) => d.slots.length > 0);
   }, [availability]);
 
   const slotPicker = (() => {
@@ -552,45 +536,28 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
         )}
         {actionLoading && !availability ? (
           <p className="mt-3 text-sm text-muted">A carregar…</p>
-        ) : daySlotGrid.length === 0 ? (
+        ) : daySlots.length === 0 ? (
           <p className="mt-3 text-sm text-muted">
             {showTimesOnly
               ? 'Sem horários disponíveis neste dia.'
               : 'Escolhe um dia na lista ao lado.'}
           </p>
         ) : (
-          <>
-            {daySlots.length === 0 && dayAdminBlocked.length > 0 ? (
-              <p className="mt-1 text-xs text-muted">
-                Neste dia só há horários bloqueados pela equipa no teu fuso horário.
-              </p>
-            ) : null}
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {daySlotGrid.map((s) =>
-                s.kind === 'free' ? (
-                  <button
-                    key={s.startsAt}
-                    type="button"
-                    disabled={actionLoading}
-                    onClick={() =>
-                      void (screen === 'manage_reschedule' ? doReschedule(s.startsAt) : doBook(s.startsAt))
-                    }
-                    className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-emerald-50 disabled:opacity-50"
-                  >
-                    {formatSlotTimeInTz(s.startsAt, tz)}
-                  </button>
-                ) : (
-                  <div
-                    key={s.startsAt}
-                    className="rounded-xl border border-border bg-primary-1 px-3 py-2 text-center text-sm font-semibold text-muted"
-                  >
-                    <span className="block">{formatSlotTimeInTz(s.startsAt, tz)}</span>
-                    <span className="text-xs font-normal">Bloqueado</span>
-                  </div>
-                ),
-              )}
-            </div>
-          </>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {daySlots.map((s) => (
+              <button
+                key={s.startsAt}
+                type="button"
+                disabled={actionLoading}
+                onClick={() =>
+                  void (screen === 'manage_reschedule' ? doReschedule(s.startsAt) : doBook(s.startsAt))
+                }
+                className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-emerald-50 disabled:opacity-50"
+              >
+                {formatSlotTimeInTz(s.startsAt, tz)}
+              </button>
+            ))}
+          </div>
         )}
       </div>
     );
