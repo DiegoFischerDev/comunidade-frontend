@@ -69,10 +69,16 @@ function waUrl(
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }
 
-function bookingOriginLabel(): {
+function bookingOriginLabel(origin: 'USER_PAID' | 'PUBLIC_FREE'): {
   label: string;
   className: string;
 } {
+  if (origin === 'PUBLIC_FREE') {
+    return {
+      label: 'Público (gratuito)',
+      className: 'bg-emerald-50 text-emerald-800',
+    };
+  }
   return {
     label: 'Usuário (pago)',
     className: 'bg-brand-accent/10 text-brand-primary',
@@ -431,7 +437,7 @@ export default function AdminRafaCallHojePage() {
                               : row.item.status === 'CANCELLED'
                                 ? 'bg-brand-accent/10 text-brand-primary'
                                 : 'bg-emerald-50 text-emerald-800';
-                          const origin = bookingOriginLabel();
+                          const origin = bookingOriginLabel(row.item.bookingOrigin);
                           return (
                             <tr key={`b:${row.item.id}`} className="text-foreground">
                               <td className="whitespace-nowrap px-4 py-3 font-medium text-foreground">

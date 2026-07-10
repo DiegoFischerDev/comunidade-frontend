@@ -494,6 +494,7 @@ export const api = {
         timezone: string;
         name: string | null;
         whatsapp: string | null;
+        origin: 'USER_PAID' | 'PUBLIC_FREE';
       }>(`/rafacall/guest/booking/${encodeURIComponent(id)}?${q.toString()}`, {
         method: 'GET',
         token: null,
@@ -501,7 +502,8 @@ export const api = {
     },
     guestReschedule: (body: {
       bookingId: string;
-      whatsapp: string;
+      whatsapp?: string;
+      deviceId?: string;
       newStartsAtUtcIso: string;
       tz: string;
     }) =>
@@ -513,16 +515,67 @@ export const api = {
         timezone: string;
         name: string | null;
         whatsapp: string | null;
+        origin: 'USER_PAID' | 'PUBLIC_FREE';
       }>('/rafacall/guest/reschedule', {
         method: 'POST',
         body: JSON.stringify(body),
         token: null,
       }),
-    guestCancel: (body: { bookingId: string; whatsapp: string; reason?: string | null }) =>
+    guestCancel: (body: { bookingId: string; whatsapp?: string; deviceId?: string; reason?: string | null }) =>
       request<{
         id: string;
         status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
       }>('/rafacall/guest/cancel', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        token: null,
+      }),
+    publicState: (params: { whatsapp: string; deviceId?: string }) => {
+      const q = new URLSearchParams({ whatsapp: params.whatsapp });
+      if (params.deviceId) q.set('deviceId', params.deviceId);
+      return request<
+        | {
+            mode: 'manage';
+            trustedDevice: true;
+            booking: {
+              id: string;
+              status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+              startsAt: string;
+              endsAt: string;
+              timezone: string;
+              name: string | null;
+              whatsapp: string | null;
+              origin: 'USER_PAID' | 'PUBLIC_FREE';
+            };
+          }
+        | {
+            mode: 'manage';
+            trustedDevice: false;
+            bookingId: string;
+          }
+        | {
+            mode: 'book';
+            whatsapp: string;
+          }
+      >(`/rafacall/public/state?${q.toString()}`, { method: 'GET', token: null });
+    },
+    publicBook: (body: {
+      name: string;
+      whatsapp: string;
+      deviceId: string;
+      startsAtUtcIso: string;
+      tz: string;
+    }) =>
+      request<{
+        id: string;
+        status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+        startsAt: string;
+        endsAt: string;
+        timezone: string;
+        name: string | null;
+        whatsapp: string | null;
+        origin: 'USER_PAID' | 'PUBLIC_FREE';
+      }>('/rafacall/public/book', {
         method: 'POST',
         body: JSON.stringify(body),
         token: null,
@@ -841,7 +894,7 @@ export const api = {
               userName: string;
               whatsappDigits: string;
               bookingTimezone: string;
-              bookingOrigin: 'USER_PAID';
+              bookingOrigin: 'USER_PAID' | 'PUBLIC_FREE';
             }[];
           }[];
         }>(`/admin/rafacall/schedule${q}`, { method: 'GET' });

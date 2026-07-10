@@ -146,7 +146,7 @@ function ServicesFoundersWhatsappCta({ className = "" }: { className?: string })
       aria-label="Quero falar com as meninas — WhatsApp"
     >
       <WhatsappIcon className="h-5 w-5 shrink-0 text-current" />
-      Quero falar com as meninas
+      Falar com as meninas
     </CardLinkButton>
   );
 }

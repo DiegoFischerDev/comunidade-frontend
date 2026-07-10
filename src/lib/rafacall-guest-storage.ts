@@ -8,6 +8,28 @@
  */
 
 const STORAGE_KEY = 'rafacall_guest_booking_v1';
+const DEVICE_ID_KEY = 'rafacall_device_id_v1';
+
+const UUID_V4 =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidUuidV4(s: string): boolean {
+  return s.length <= 64 && UUID_V4.test(s.trim());
+}
+
+/** UUID v4 persistente por browser — usado no bloqueio de 1 agendamento ativo por dispositivo. */
+export function getOrCreateRafacallDeviceId(): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    const existing = localStorage.getItem(DEVICE_ID_KEY)?.trim().toLowerCase();
+    if (existing && isValidUuidV4(existing)) return existing;
+    const id = crypto.randomUUID().toLowerCase();
+    localStorage.setItem(DEVICE_ID_KEY, id);
+    return id;
+  } catch {
+    return '';
+  }
+}
 
 export type RafacallGuestBookingStored = {
   bookingId: string;
