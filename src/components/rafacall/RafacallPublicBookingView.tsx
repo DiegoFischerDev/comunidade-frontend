@@ -1,13 +1,21 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlagBr, FlagPt } from '@/components/CountryFlags';
+import { ServicesSpecialistsImage } from '@/components/brand/ServicesSpecialistsImage';
 import { api } from '@/lib/api';
+import {
+  LOGIN_COUNTRY_DIALS,
+  parseFullDigitsToDialLocal,
+} from '@/lib/login-phone-storage';
 import {
   clearRafacallGuestBooking,
   getOrCreateRafacallDeviceId,
   saveRafacallGuestBooking,
 } from '@/lib/rafacall-guest-storage';
+import { BRAND_LOGO_HORIZONTAL_COLORIDA, SITE_NAME_FULL } from '@/lib/site-branding';
 
 type AvailabilityPayload = Awaited<ReturnType<typeof api.rafacall.guestAvailability>>;
 type PublicBooking = {
@@ -129,6 +137,40 @@ function applyPublicState(
   setScreen('manage_detail');
 }
 
+function WhatsappDialFlag({ dial, className = 'h-6 w-6' }: { dial: string; className?: string }) {
+  const imgClass = `shrink-0 object-contain [aspect-ratio:1/1] ${className}`;
+  if (dial === '351') return <FlagPt className={imgClass} alt="" aria-hidden />;
+  if (dial === '55') return <FlagBr className={imgClass} alt="" aria-hidden />;
+  const preset = LOGIN_COUNTRY_DIALS.find((c) => c.dial === dial);
+  if (preset) {
+    return (
+      <span className="text-2xl leading-none" aria-hidden>
+        {preset.flag}
+      </span>
+    );
+  }
+  return (
+    <span className="text-lg leading-none text-muted" aria-hidden>
+      🌐
+    </span>
+  );
+}
+
+function AgendarBrandLogo() {
+  return (
+    <div className="mb-6 flex justify-center">
+      <Image
+        src={BRAND_LOGO_HORIZONTAL_COLORIDA}
+        alt={SITE_NAME_FULL}
+        width={480}
+        height={120}
+        className="h-auto w-[min(100%,14rem)] sm:w-52"
+        priority
+      />
+    </div>
+  );
+}
+
 export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }: Props) {
   const tz = useMemo(() => resolvedUserTz(), []);
   const deviceId = useMemo(() => getOrCreateRafacallDeviceId(), []);
@@ -136,11 +178,25 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
   const [screen, setScreen] = useState<Screen>('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const [whatsappDigits, setWhatsappDigits] = useState(whatsappFromUrl.replace(/\D/g, ''));
+
+  const whatsappDisplay = useMemo(() => {
+    const digits = whatsappDigits.replace(/\D/g, '');
+    if (digits.length < 8) return null;
+    const { dial, local } = parseFullDigitsToDialLocal(digits, LOGIN_COUNTRY_DIALS[0]!.dial);
+    const preset = LOGIN_COUNTRY_DIALS.find((c) => c.dial === dial);
+    return {
+      dial,
+      local,
+      countryLabel: preset?.label ?? `DDI +${dial}`,
+    };
+  }, [whatsappDigits]);
+
   const [name, setName] = useState(namePrefill.trim());
   const [booking, setBooking] = useState<PublicBooking | null>(null);
   const [authMode, setAuthMode] = useState<'device' | 'whatsapp'>('device');
   const [availability, setAvailability] = useState<AvailabilityPayload | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
+  const [pickerDayStep, setPickerDayStep] = useState<'days' | 'times'>('days');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
 
@@ -172,7 +228,8 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
   }, [loadPublicState]);
 
   const loadAvailability = useCallback(
-    async (excludeBookingId?: string) => {
+    async (excludeBookingId?: string, options?: { autoSelectDay?: boolean }) => {
+      const autoSelectDay = options?.autoSelectDay ?? true;
       setActionLoading(true);
       setActionError('');
       try {
@@ -185,11 +242,16 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
           excludeBookingId,
         });
         setAvailability(avail);
-        const firstFree = avail.days.find((d) => d.slots.length > 0)?.date;
-        const firstBlockedOnly = avail.days.find(
-          (d) => d.slots.length === 0 && (d.adminBlockedSlots?.length ?? 0) > 0,
-        )?.date;
-        setSelectedDate(firstFree ?? firstBlockedOnly ?? avail.days[0]?.date ?? '');
+        if (autoSelectDay) {
+          const firstFree = avail.days.find((d) => d.slots.length > 0)?.date;
+          const firstBlockedOnly = avail.days.find(
+            (d) => d.slots.length === 0 && (d.adminBlockedSlots?.length ?? 0) > 0,
+          )?.date;
+          setSelectedDate(firstFree ?? firstBlockedOnly ?? avail.days[0]?.date ?? '');
+        } else {
+          setSelectedDate('');
+          setPickerDayStep('days');
+        }
       } catch (e) {
         setActionError(e instanceof Error ? e.message : 'Erro ao carregar horários.');
       } finally {
@@ -206,8 +268,10 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
       return;
     }
     setActionError('');
+    setPickerDayStep('days');
+    setSelectedDate('');
     setScreen('picker');
-    void loadAvailability();
+    void loadAvailability(undefined, { autoSelectDay: false });
   }, [name, loadAvailability]);
 
   const doBook = useCallback(
@@ -320,89 +384,152 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
     return [...free, ...blocked].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
   }, [daySlots, dayAdminBlocked]);
 
-  const slotPicker = (
-    <div className="mt-6 grid gap-6 md:grid-cols-[260px_1fr]">
+  const availableDays = useMemo(() => {
+    if (!availability) return [];
+    return availability.days.filter(
+      (d) => d.slots.length > 0 || (d.adminBlockedSlots?.length ?? 0) > 0,
+    );
+  }, [availability]);
+
+  const slotPicker = (() => {
+    const isPickerWizard = screen === 'picker';
+    const showDaysOnly = isPickerWizard && pickerDayStep === 'days';
+    const showTimesOnly = isPickerWizard && pickerDayStep === 'times';
+
+    const daysList = (
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">Dias</p>
         {!availability ? (
           <p className="mt-3 text-sm text-muted">A carregar…</p>
-        ) : availability.days.filter(
-            (d) => d.slots.length > 0 || (d.adminBlockedSlots?.length ?? 0) > 0,
-          ).length === 0 ? (
+        ) : availableDays.length === 0 ? (
           <p className="mt-3 text-sm text-muted">
             Sem dias com horários nos próximos dias. Tenta novamente mais tarde.
           </p>
         ) : (
-          <div className="mt-3 max-h-[420px] space-y-2 overflow-auto pr-1">
-            {availability.days
-              .filter((d) => d.slots.length > 0 || (d.adminBlockedSlots?.length ?? 0) > 0)
-              .map((d) => {
-                const isActive = d.date === selectedDate;
-                const nBlocked = d.adminBlockedSlots?.length ?? 0;
-                const sub =
-                  d.slots.length > 0 && nBlocked > 0
-                    ? `${d.slots.length} livres · ${nBlocked} bloq.`
-                    : d.slots.length > 0
-                      ? `${d.slots.length} livres`
-                      : `${nBlocked} indisponível(is)`;
-                return (
-                  <button
-                    key={d.date}
-                    type="button"
-                    disabled={actionLoading}
-                    onClick={() => setSelectedDate(d.date)}
-                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
-                      isActive
-                        ? 'border-emerald-400 bg-emerald-50'
-                        : 'border-border bg-card hover:bg-page'
-                    }`}
-                  >
-                    <span className="font-medium text-foreground">{prettyYmdPt(d.date, tz)}</span>
-                    <span className="text-xs text-muted">{sub}</span>
-                  </button>
-                );
-              })}
+          <div className={`mt-3 space-y-2 pr-1 ${showDaysOnly ? '' : 'max-h-[420px] overflow-auto'}`}>
+            {availableDays.map((d) => {
+              const isActive = d.date === selectedDate;
+              const nBlocked = d.adminBlockedSlots?.length ?? 0;
+              const sub =
+                d.slots.length > 0 && nBlocked > 0
+                  ? `${d.slots.length} livres · ${nBlocked} bloq.`
+                  : d.slots.length > 0
+                    ? `${d.slots.length} livres`
+                    : `${nBlocked} indisponível(is)`;
+              return (
+                <button
+                  key={d.date}
+                  type="button"
+                  disabled={actionLoading}
+                  onClick={() => {
+                    setSelectedDate(d.date);
+                    if (isPickerWizard) setPickerDayStep('times');
+                  }}
+                  className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
+                    isActive
+                      ? 'border-emerald-400 bg-emerald-50'
+                      : 'border-border bg-card hover:bg-page'
+                  }`}
+                >
+                  <span className="font-medium text-foreground">{prettyYmdPt(d.date, tz)}</span>
+                  <span className="text-xs text-muted">{sub}</span>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
+    );
+
+    const timesGrid = (
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Horários de {prettyTimezoneCityLabel(tz)}
-        </p>
+        {showTimesOnly ? (
+          <h2 className="text-lg font-bold leading-snug text-foreground sm:text-xl">
+            Horários de {prettyTimezoneCityLabel(tz)}
+            {selectedDate ? ` · ${prettyYmdPt(selectedDate, tz)}` : ''}
+          </h2>
+        ) : (
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Horários de {prettyTimezoneCityLabel(tz)}
+            {selectedDate ? (
+              <span className="normal-case tracking-normal text-foreground/80">
+                {' '}
+                · {prettyYmdPt(selectedDate, tz)}
+              </span>
+            ) : null}
+          </p>
+        )}
         {actionLoading && !availability ? (
           <p className="mt-3 text-sm text-muted">A carregar…</p>
         ) : daySlotGrid.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">Escolhe um dia na lista ao lado.</p>
+          <p className="mt-3 text-sm text-muted">
+            {showTimesOnly
+              ? 'Sem horários disponíveis neste dia.'
+              : 'Escolhe um dia na lista ao lado.'}
+          </p>
         ) : (
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {daySlotGrid.map((s) =>
-              s.kind === 'free' ? (
-                <button
-                  key={s.startsAt}
-                  type="button"
-                  disabled={actionLoading}
-                  onClick={() =>
-                    void (screen === 'manage_reschedule' ? doReschedule(s.startsAt) : doBook(s.startsAt))
-                  }
-                  className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-emerald-50 disabled:opacity-50"
-                >
-                  {formatSlotTimeInTz(s.startsAt, tz)}
-                </button>
-              ) : (
-                <div
-                  key={s.startsAt}
-                  className="rounded-xl border border-border bg-primary-1 px-3 py-2 text-center text-sm font-semibold text-muted"
-                >
-                  <span className="block">{formatSlotTimeInTz(s.startsAt, tz)}</span>
-                  <span className="text-xs font-normal">Bloqueado</span>
-                </div>
-              ),
-            )}
-          </div>
+          <>
+            {daySlots.length === 0 && dayAdminBlocked.length > 0 ? (
+              <p className="mt-1 text-xs text-muted">
+                Neste dia só há horários bloqueados pela equipa no teu fuso horário.
+              </p>
+            ) : null}
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {daySlotGrid.map((s) =>
+                s.kind === 'free' ? (
+                  <button
+                    key={s.startsAt}
+                    type="button"
+                    disabled={actionLoading}
+                    onClick={() =>
+                      void (screen === 'manage_reschedule' ? doReschedule(s.startsAt) : doBook(s.startsAt))
+                    }
+                    className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-emerald-50 disabled:opacity-50"
+                  >
+                    {formatSlotTimeInTz(s.startsAt, tz)}
+                  </button>
+                ) : (
+                  <div
+                    key={s.startsAt}
+                    className="rounded-xl border border-border bg-primary-1 px-3 py-2 text-center text-sm font-semibold text-muted"
+                  >
+                    <span className="block">{formatSlotTimeInTz(s.startsAt, tz)}</span>
+                    <span className="text-xs font-normal">Bloqueado</span>
+                  </div>
+                ),
+              )}
+            </div>
+          </>
         )}
       </div>
-    </div>
-  );
+    );
+
+    if (showDaysOnly) {
+      return <div className="mt-6">{daysList}</div>;
+    }
+
+    if (showTimesOnly) {
+      return (
+        <div className="mt-6 space-y-4">
+          <button
+            type="button"
+            onClick={() => setPickerDayStep('days')}
+            className="text-sm text-muted underline hover:text-foreground"
+          >
+            Voltar aos dias
+          </button>
+          {timesGrid}
+        </div>
+      );
+    }
+
+    return (
+      <div className="mt-6 grid gap-6 md:grid-cols-[260px_1fr]">
+        {daysList}
+        {timesGrid}
+      </div>
+    );
+  })();
 
   if (screen === 'loading') {
     return (
@@ -423,35 +550,60 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
   if (screen === 'name') {
     return (
       <div className="mx-auto max-w-lg px-4 py-8">
-        <div className="rounded-2xl bg-card p-6 shadow-sm">
-          <h1 className="text-xl font-bold text-foreground">Agendar com a Rafa &amp; Carol</h1>
-          <p className="mt-2 text-sm text-foreground/90">
-            Videochamada gratuita. Indica o teu nome e escolhe o melhor horário para ti.
-          </p>
-          {actionError ? (
-            <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-              {actionError}
+        <AgendarBrandLogo />
+        <div className="overflow-hidden rounded-2xl bg-card shadow-sm">
+          <ServicesSpecialistsImage layout="modal" />
+          <div className="p-6">
+            <h1 className="text-xl font-bold text-foreground">Video chamada com Rafa &amp; Carol</h1>
+            {whatsappDisplay ? (
+              <div className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-page px-3 py-2.5">
+                <WhatsappDialFlag dial={whatsappDisplay.dial} />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted">O teu WhatsApp</p>
+                  <p className="text-sm font-semibold tabular-nums text-foreground">
+                    +{whatsappDisplay.dial} {whatsappDisplay.local}
+                  </p>
+                  <p className="text-xs text-muted">{whatsappDisplay.countryLabel}</p>
+                </div>
+              </div>
+            ) : null}
+            <div className="mt-3 space-y-3 text-sm leading-relaxed text-foreground/90">
+              <p>
+                Queremos muito te conhecer! Este agendamento é gratuito: vamos te explicar os
+                detalhes do nosso serviço e entender o que você realmente precisa.
+              </p>
+              <p>
+                Anote suas dúvidas e venha preparado(a) para esclarecer tudo que for possível.
+              </p>
+            </div>
+            <p className="mt-4 inline-flex rounded-full bg-brand-primary/8 px-3 py-1 text-xs font-semibold text-brand-primary">
+              Duração: 40 minutos
             </p>
-          ) : null}
-          <label className="mt-6 block text-sm font-medium text-foreground" htmlFor="rafacall-public-name">
-            O teu nome
-          </label>
-          <input
-            id="rafacall-public-name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Como te devemos chamar?"
-            className="mt-2 w-full rounded-xl border border-border bg-page px-4 py-3 text-sm text-foreground outline-none focus:border-brand-primary"
-            autoComplete="name"
-          />
-          <button
-            type="button"
-            onClick={goToPicker}
-            className="mt-6 w-full rounded-full bg-brand-primary px-5 py-3 text-sm font-semibold text-white hover:opacity-90"
-          >
-            Ver horários disponíveis
-          </button>
+            {actionError ? (
+              <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                {actionError}
+              </p>
+            ) : null}
+            <label className="mt-6 block text-sm font-medium text-foreground" htmlFor="rafacall-public-name">
+              Indique seu nome
+            </label>
+            <input
+              id="rafacall-public-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Seu nome"
+              className="mt-2 w-full rounded-xl border border-border bg-page px-4 py-3 text-sm text-foreground outline-none focus:border-brand-primary"
+              autoComplete="name"
+            />
+            <button
+              type="button"
+              onClick={goToPicker}
+              className="mt-6 w-full rounded-full bg-brand-primary px-5 py-3 text-sm font-semibold text-white hover:opacity-90"
+            >
+              Ver horários disponíveis
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -460,24 +612,20 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
   if (screen === 'picker') {
     return (
       <div className="mx-auto max-w-3xl px-4 py-8">
+        <AgendarBrandLogo />
         <div className="rounded-2xl bg-card p-6 shadow-sm">
           <h1 className="text-xl font-bold text-foreground">Escolhe data e hora</h1>
           <p className="mt-1 text-sm text-foreground/90">
-            Olá, <span className="font-semibold">{name.trim()}</span>. Os horários abaixo estão no teu
-            fuso horário ({prettyTimezoneCityLabel(tz)}).
+            Olá, <span className="font-semibold">{name.trim()}</span>.
+            {pickerDayStep === 'days'
+              ? ' Escolhe um dia para ver os horários disponíveis.'
+              : ` Horários no teu fuso horário (${prettyTimezoneCityLabel(tz)}).`}
           </p>
           {actionError ? (
             <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
               {actionError}
             </p>
           ) : null}
-          <button
-            type="button"
-            onClick={() => setScreen('name')}
-            className="mt-4 text-sm text-muted underline hover:text-foreground"
-          >
-            Voltar ao nome
-          </button>
           {slotPicker}
         </div>
       </div>
@@ -610,7 +758,7 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
 
           <p className="mt-8 text-center text-xs text-muted">
             <Link href="/" className="underline hover:text-foreground/90">
-              Voltar à comunidade
+              Ir para o site
             </Link>
           </p>
         </div>

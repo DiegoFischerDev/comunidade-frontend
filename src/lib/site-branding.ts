@@ -23,7 +23,7 @@ export const SITE_DESCRIPTION =
 export const BRAND_ASSET_BASE = "/brand";
 
 /** Incrementar quando favicons/assets em `/brand/` forem substituídos (cache bust). */
-export const BRAND_ASSET_VERSION = "6";
+export const BRAND_ASSET_VERSION = "7";
 
 function withBrandVersion(path: string): string {
   return `${path}?v=${BRAND_ASSET_VERSION}`;
@@ -71,6 +71,18 @@ export const BRAND_HERO_FOUNDERS_HEIGHT = 1800;
 export const BRAND_SERVICES_SPECIALISTS_IMAGE = `${BRAND_ASSET_BASE}/especialistas/rafa-carol.webp`;
 export const BRAND_SERVICES_SPECIALISTS_IMAGE_WIDTH = 800;
 export const BRAND_SERVICES_SPECIALISTS_IMAGE_HEIGHT = 1000;
+
+/** OG da página pública `/agendar`. Fonte: `move-casa-brand/especialistas/og-image-agendamento.jpg` (1200×630). */
+export const BRAND_AGENDAMENTO_OG_IMAGE = `${BRAND_ASSET_BASE}/especialistas/og-image-agendamento.jpg`;
+export const BRAND_AGENDAMENTO_OG_IMAGE_WIDTH = 1200;
+export const BRAND_AGENDAMENTO_OG_IMAGE_HEIGHT = 630;
+export const BRAND_AGENDAMENTO_OG_IMAGE_TYPE = "image/jpeg";
+export const BRAND_AGENDAMENTO_OG_IMAGE_URL = withBrandVersion(BRAND_AGENDAMENTO_OG_IMAGE);
+
+export const AGENDAMENTO_PAGE_TITLE =
+  "Agende uma chamada de 40 minutos com Rafa & Carol";
+export const AGENDAMENTO_PAGE_DESCRIPTION =
+  "Marque sua videochamada gratuita com a Rafa e a Carol. Relocation para Portugal com acolhimento, confiança e economia — Viseu e São Pedro do Sul.";
 
 export const BRAND_FAVICON_ICO = `${BRAND_ASSET_BASE}/favicon.ico`;
 export const BRAND_APPLE_TOUCH_ICON = `${BRAND_ASSET_BASE}/apple-touch-icon.png`;

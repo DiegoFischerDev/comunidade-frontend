@@ -1,6 +1,6 @@
-import Image from "next/image";
 import type { ReactNode } from "react";
 
+import { ServicesSpecialistsImage } from "@/components/brand/ServicesSpecialistsImage";
 import { WhatsappIcon } from "@/components/icons/WhatsappIcon";
 import { CardLinkButton } from "@/components/ui/CardButton";
 import { TapedCard } from "@/components/ui/taped-card";
@@ -12,10 +12,7 @@ import {
   formatBrlAmount,
   formatEurAmount,
 } from "@/lib/dashboard-services";
-import {
-  BRAND_SERVICES_SPECIALISTS_IMAGE,
-  SITE_FOUNDERS_WHATSAPP_URL,
-} from "@/lib/site-branding";
+import { SITE_FOUNDERS_WHATSAPP_URL } from "@/lib/site-branding";
 
 function CheckIcon() {
   return (
@@ -123,18 +120,6 @@ function ExtraServiceRow({
   );
 }
 
-function ServicesLearnMoreButton({ className = "" }: { className?: string }) {
-  return (
-    <CardLinkButton
-      href="/servicos"
-      variant="secondary"
-      className={`min-w-[12rem] px-8 sm:min-w-[14rem] ${className}`.trim()}
-    >
-      Saber mais
-    </CardLinkButton>
-  );
-}
-
 function ServicesFoundersWhatsappCta({ className = "" }: { className?: string }) {
   return (
     <CardLinkButton
@@ -148,65 +133,6 @@ function ServicesFoundersWhatsappCta({ className = "" }: { className?: string })
       <WhatsappIcon className="h-5 w-5 shrink-0 text-current" />
       Falar com as meninas
     </CardLinkButton>
-  );
-}
-
-type ServicesSpecialistsImageProps = {
-  className?: string;
-  layout?: "sidebar" | "footer";
-  showFloatingCta?: boolean;
-  floatingCta?: ReactNode;
-};
-
-function ServicesSpecialistsImage({
-  className = "",
-  layout = "sidebar",
-  showFloatingCta = false,
-  floatingCta,
-}: ServicesSpecialistsImageProps) {
-  const isSidebar = layout === "sidebar";
-
-  return (
-    <div
-      className={`relative min-w-0 ${
-        isSidebar
-          ? "h-full self-stretch p-2 sm:p-3 md:p-4"
-          : "-mx-4 px-0"
-      } ${className}`.trim()}
-    >
-      <div
-        className={`relative w-full overflow-hidden ${
-          isSidebar
-            ? "h-full min-h-[18rem] sm:min-h-[20rem]"
-            : "min-h-[19rem]"
-        }`}
-      >
-        <div className="absolute inset-0 origin-top scale-[0.92] sm:scale-[0.94]">
-          <Image
-            src={BRAND_SERVICES_SPECIALISTS_IMAGE}
-            alt="Especialistas Move Casa"
-            fill
-            sizes={isSidebar ? "(max-width: 768px) 50vw, 50vw" : "100vw"}
-            className="object-cover object-top"
-            priority={false}
-          />
-        </div>
-        <div
-          className="dashboard-services-specialists-fade"
-          aria-hidden
-        />
-
-        {floatingCta || showFloatingCta ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-4 md:bottom-5">
-            {floatingCta ? (
-              <div className="pointer-events-auto">{floatingCta}</div>
-            ) : (
-              <ServicesLearnMoreButton className="pointer-events-auto w-[min(100%,18rem)] shadow-sm md:w-[min(100%,16rem)]" />
-            )}
-          </div>
-        ) : null}
-      </div>
-    </div>
   );
 }
 
