@@ -1,3 +1,5 @@
+import { SITE_FOUNDERS_WHATSAPP_URL } from "@/lib/site-branding";
+
 /** Convite «dúvidas em geral» / comunidade. */
 export const WHATSAPP_GROUP_DUVIDAS_GERAL_URL =
   process.env.NEXT_PUBLIC_WHATSAPP_GROUP_DUVIDAS_GERAL_URL?.trim() ||
@@ -91,9 +93,16 @@ export type CommunityWhatsappInviteGroup = {
   id: string;
   label: string;
   href: string;
+  sublabel?: string;
 };
 
 export const COMMUNITY_WHATSAPP_INVITE_GROUPS: CommunityWhatsappInviteGroup[] = [
+  {
+    id: "atendimento-fundadoras",
+    label: "Falar diretamente com Rafa & Carol",
+    href: SITE_FOUNDERS_WHATSAPP_URL,
+    sublabel: "WhatsApp de atendimento",
+  },
   {
     id: "duvidas-geral",
     label: "Grupão de ajuda e dúvidas",

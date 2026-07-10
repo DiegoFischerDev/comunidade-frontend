@@ -163,7 +163,7 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
 
     if (memberActive) {
       alert(
-        'Você já é membro ativo da Comunidade Rafa Portugal. Não é necessário pagar novamente a anuidade.',
+        `Você já é membro ativo da ${SITE_NAME_FULL}. Não é necessário pagar novamente a anuidade.`,
       );
       router.push(DASHBOARD_HOME_PATH);
       return;
@@ -472,7 +472,7 @@ export function MembershipCheckoutView({ initialAmounts }: Props) {
                   onClick={() => setTermsModalOpen(true)}
                   className="cursor-pointer font-semibold"
                 >
-                  termos da Comunidade Rafa Portugal
+                  termos da {SITE_NAME_FULL}
                 </button>
                 . O pagamento é processado pela{' '}
                 <span className="font-semibold">Stripe</span>. Após a confirmação, a tua conta de

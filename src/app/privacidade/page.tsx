@@ -30,7 +30,7 @@ export default function PrivacidadePage() {
         </h1>
         <p className="mt-2 text-sm text-muted">
           Última atualização: julho de 2026. Este texto descreve, de forma simples, como tratamos dados na
-          plataforma <strong className="font-semibold text-foreground/90">Comunidade Rafa Portugal</strong>. Não
+          plataforma <strong className="font-semibold text-foreground/90">{SITE_NAME_FULL}</strong>. Não
           substitui aconselhamento jurídico; para questões específicas contacte-nos pelos canais indicados em
           baixo.
         </p>
@@ -39,7 +39,7 @@ export default function PrivacidadePage() {
           <h2 className="text-lg font-semibold text-foreground">Quem é responsável pelo tratamento?</h2>
           <p className="text-sm leading-relaxed text-foreground/90">
             O responsável pelo tratamento dos dados pessoais tratados através desta aplicação é a entidade que
-            opera a Comunidade Rafa Portugal (doravante &quot;nós&quot; ou &quot;a plataforma&quot;). Para
+            opera a {SITE_NAME_FULL} (doravante &quot;nós&quot; ou &quot;a plataforma&quot;). Para
             exercer os seus direitos ou pedir esclarecimentos, pode utilizar o mesmo contacto que usa para
             suporte (por exemplo, a área de tickets / reclamações disponível após entrar na conta, quando
             aplicável).

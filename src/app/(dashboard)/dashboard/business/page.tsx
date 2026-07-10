@@ -6,6 +6,7 @@ import { api, getAuthToken } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CardButton } from '@/components/ui/CardButton';
 import { PartnerServicesManager } from '@/components/partner/PartnerServicesManager';
+import { SITE_NAME_FULL } from '@/lib/site-branding';
 
 export default function BusinessPage() {
   const { user } = useAuth();
@@ -145,7 +146,7 @@ export default function BusinessPage() {
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Minha empresa</h1>
         <p className="mt-2 text-sm text-muted">
-          Esta área é exclusiva para parceiros da Comunidade Rafa Portugal.
+          Esta área é exclusiva para parceiros da {SITE_NAME_FULL}.
         </p>
       </div>
     );

@@ -10,9 +10,10 @@ import {
   OPEN_MEMBERSHIP_MODAL_EVENT,
 } from '@/lib/auth-ui-events';
 import { CardButton } from '@/components/ui/CardButton';
+import { SITE_NAME_FULL } from '@/lib/site-branding';
 
 const WHATSAPP_NUMBER = '351927398547';
-const WHATSAPP_MESSAGE = 'Ola, preciso de ajuda na Comunidade Rafa Portugal';
+const WHATSAPP_MESSAGE = `Ola, preciso de ajuda na ${SITE_NAME_FULL}`;
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
 
 export { OPEN_MEMBERSHIP_MODAL_EVENT };
@@ -143,7 +144,7 @@ export function FloatingWhatsAppButton({
             <div className="relative overflow-hidden rounded-2xl">
               <Image
                 src="/rafa_cards/membro_vip_modal5.png"
-                alt="Membro VIP — oferta Comunidade Rafa Portugal"
+                alt={`Membro VIP — oferta ${SITE_NAME_FULL}`}
                 width={800}
                 height={1200}
                 className="h-auto w-full max-h-[min(85vh,52rem)] object-contain object-top"

@@ -20,7 +20,7 @@ const FOOTER_LINKS = [
   },
   {
     href: RECLAME_AQUI_HREF,
-    label: 'Suporte e reclamações',
+    label: 'Dúvidas e reclamações',
     Icon: SupportTicketIcon,
   },
 ] as const;

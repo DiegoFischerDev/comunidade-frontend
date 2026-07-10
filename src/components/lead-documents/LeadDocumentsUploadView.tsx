@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { api, getUserFacingApiError, type ApiHttpError } from '@/lib/api';
+import { SITE_NAME_FULL } from '@/lib/site-branding';
 import {
   DISPONIBILIDADES_FIADOR,
   DOC_DESCRIPTIONS,
@@ -367,7 +368,7 @@ export function LeadDocumentsUploadView() {
       <div className="mx-auto w-full max-w-3xl">
         <header className="mb-6 text-center">
           <p className="text-xs font-semibold uppercase tracking-wider text-brand-primary">
-            Comunidade Rafa Portugal
+            {SITE_NAME_FULL}
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-foreground sm:text-3xl">
             Envio de documentos
@@ -463,6 +464,48 @@ function GatePanel(props: {
   );
 }
 
+function formatInlineBold(text: string): ReactNode {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) => {
+    const match = /^\*\*([^*]+)\*\*$/.exec(part);
+    if (match) {
+      return (
+        <strong key={index} className="font-semibold text-foreground">
+          {match[1]}
+        </strong>
+      );
+    }
+    return part;
+  });
+}
+
+function MultilineDescription({ text }: { text: string }) {
+  const paragraphs = text
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+
+  if (paragraphs.length <= 1) {
+    return (
+      <p className="mx-auto mt-3 max-w-md whitespace-pre-line text-sm leading-relaxed text-muted">
+        {formatInlineBold(text.trim())}
+      </p>
+    );
+  }
+
+  return (
+    <div className="mx-auto mt-3 max-w-md space-y-3">
+      {paragraphs.map((paragraph, index) => (
+        <p
+          key={index}
+          className="whitespace-pre-line text-sm leading-relaxed text-muted"
+        >
+          {formatInlineBold(paragraph)}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 function PartnerCard({ partner }: { partner: PartnerInfo }) {
   const initial = (partner.name?.trim()?.charAt(0) ?? 'P').toUpperCase();
   return (
@@ -488,9 +531,7 @@ function PartnerCard({ partner }: { partner: PartnerInfo }) {
         {partner.name}
       </h3>
       {partner.shortDescription ? (
-        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted">
-          {partner.shortDescription}
-        </p>
+        <MultilineDescription text={partner.shortDescription} />
       ) : null}
     </section>
   );
@@ -828,7 +869,7 @@ function FormPanel(props: {
           >
             {submitting
               ? 'A enviar…'
-              : `Enviar ${attachedCount} ${attachedCount === 1 ? 'documento' : 'documentos'} ao parceiro`}
+              : `Enviar ${attachedCount} ${attachedCount === 1 ? 'documento' : 'documentos'} para gestora`}
           </button>
         </section>
       ) : null}

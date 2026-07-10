@@ -11,6 +11,7 @@ import { JobOffersAdminModal } from "@/components/job-offers/JobOffersAdminModal
 import { CardButton } from "@/components/ui/CardButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
+import { SITE_NAME_FULL } from "@/lib/site-branding";
 import {
   JOB_OFFER_REGION_LABELS,
   type JobOfferRegion,
@@ -144,7 +145,7 @@ export default function JobOffersPage() {
       <header>
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-primary/90">
-            Comunidade Rafa Portugal
+            {SITE_NAME_FULL}
           </p>
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Ofertas de trabalho em tempo real

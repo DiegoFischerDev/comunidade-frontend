@@ -6,6 +6,8 @@ import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { CardButton } from '@/components/ui/CardButton';
 import { KiwiFloatInput } from '@/components/membership/KiwiFloatInput';
 import { api, type ApiHttpError, getUserFacingApiError } from '@/lib/api';
+import { CasosReaisSection } from '@/components/financing-quiz/CasosReaisSection';
+import { SITE_NAME_FULL } from '@/lib/site-branding';
 import {
   answeredSteps,
   applyAnswer,
@@ -218,6 +220,18 @@ export function FinanciamentoQuizView() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
+      <header>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-primary/90">
+          {SITE_NAME_FULL}
+        </p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          Comprar casa em Portugal
+        </h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted sm:text-base">
+          Te ajudamos a financiar e encontrar a sua casa de forma totalmente gratuita
+        </p>
+      </header>
+
       {phase === 'quiz' || phase === 'result' ? (
         <div
           ref={cardRef}
@@ -297,6 +311,7 @@ export function FinanciamentoQuizView() {
 
       {phase === 'intro' ? <StepsSection /> : null}
 
+      {phase !== 'quiz' ? <CasosReaisSection /> : null}
     </div>
   );
 }

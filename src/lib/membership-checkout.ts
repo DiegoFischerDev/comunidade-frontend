@@ -1,4 +1,6 @@
-export const MEMBERSHIP_PRODUCT_TITLE = 'Comunidade Rafa Portugal';
+import { SITE_NAME_FULL } from './site-branding';
+
+export const MEMBERSHIP_PRODUCT_TITLE = SITE_NAME_FULL;
 export const MEMBERSHIP_PRODUCT_SUBTITLE = 'Anuidade — acesso membro VIP (1 ano)';
 
 export type MembershipAmounts = {

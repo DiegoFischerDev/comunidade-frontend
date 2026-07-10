@@ -9,7 +9,6 @@ import {
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 import { formatHouseEurFieldDisplay } from "@/lib/format-eur-pt";
-import { HOUSE_PUBLICATION_DURATION_DAYS } from "@/lib/house-publication";
 
 const CITY_LABELS: Record<string, string> = {
   INTERIOR: "Interior",
@@ -96,7 +95,7 @@ export function PublishHousesBulkConfirmModal({
             Publicar {count} imóvel{count === 1 ? "" : "s"}
           </h2>
           <p className="mt-2 text-sm font-medium text-foreground/90">
-            {HOUSE_PUBLICATION_DURATION_DAYS} dias no site e WhatsApp por publicação
+            Visível no site e nos grupos do WhatsApp até removeres a publicação.
           </p>
           <p className="mt-1 text-sm text-muted">
             {count > 1 ? (

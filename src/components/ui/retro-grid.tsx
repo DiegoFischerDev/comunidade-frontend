@@ -31,7 +31,7 @@ export function RetroGrid({
           className={cn(
             "retro-grid-scroll absolute [inset:0_0_auto_0] [margin-left:-50%] [transform-origin:100%_0_0]",
             "[background-repeat:repeat] [background-size:60px_60px] [height:300vh] [width:600vw]",
-            "[background-image:linear-gradient(to_right,color-mix(in_srgb,var(--color-brand-accent)_38%,transparent)_1px,transparent_0),linear-gradient(to_bottom,color-mix(in_srgb,var(--color-brand-accent)_38%,transparent)_1px,transparent_0)]",
+            "[background-image:linear-gradient(to_right,color-mix(in_srgb,var(--color-brand-primary)_38%,transparent)_1px,transparent_0),linear-gradient(to_bottom,color-mix(in_srgb,var(--color-brand-primary)_38%,transparent)_1px,transparent_0)]",
           )}
         />
       </div>

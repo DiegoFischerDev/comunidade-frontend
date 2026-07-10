@@ -1,121 +1,108 @@
-"use client";
+import { DashboardTestimonialsSection } from "@/components/dashboard/DashboardTestimonialsSection";
+import { ServicesPricingCard } from "@/components/dashboard/DashboardServicesSection";
+import { WhatsappIcon } from "@/components/icons/WhatsappIcon";
+import { CardLinkButton } from "@/components/ui/CardButton";
+import { SITE_FOUNDERS_WHATSAPP_URL } from "@/lib/site-branding";
 
-import { useCallback, useEffect, useState } from "react";
-import { api } from "@/lib/api";
-import { useAuth } from "@/contexts/AuthContext";
-import { RecommendedServiceCard } from "@/components/relocation/RecommendedServiceCard";
-import { RecommendedServicesAdminModal } from "@/components/recommended-services/RecommendedServicesAdminModal";
-
-type ServiceRow = Awaited<ReturnType<typeof api.recommendedServices.list>>[number];
-
-function GearIcon({ className }: { className?: string }) {
+function ServicosWhatsappCta() {
   return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
+    <CardLinkButton
+      href={SITE_FOUNDERS_WHATSAPP_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      variant="secondary"
+      className="w-[min(100%,18rem)] gap-2 px-8 shadow-sm sm:min-w-[20rem]"
+      aria-label="Falar com Rafa e Carol no WhatsApp"
     >
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1A2 2 0 1 1 7 4.3l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
-    </svg>
+      <WhatsappIcon className="h-5 w-5 shrink-0 text-current" />
+      Falar com Rafa &amp; Carol
+    </CardLinkButton>
   );
 }
 
-export default function PublicRecommendedServicesPage() {
-  const { user } = useAuth();
-  const [rows, setRows] = useState<ServiceRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [adminModalOpen, setAdminModalOpen] = useState(false);
-  const isAdmin = user?.role === "ADMIN";
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const data = await api.recommendedServices.list();
-      setRows(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao carregar serviços.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
+export default function ServicosPage() {
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-6 sm:px-6 sm:py-10">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-2xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-primary/90">
-            Comunidade Rafa Portugal
+    <div className="space-y-0">
+      <section
+        className="relative mx-auto w-full max-w-3xl px-4 py-10 md:px-6 md:py-14"
+        aria-label="Serviço de relocation"
+      >
+        <header className="mb-8 text-center md:mb-10">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-accent">
+            Relocation
           </p>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Serviços que indico
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
+            Chegue em Portugal com tudo organizado
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-muted sm:text-base">
-            Parceiros de confiança para não cair em golpes.
+        </header>
+
+        <div className="space-y-6 text-sm leading-relaxed text-muted sm:text-base">
+          <p>
+            Mudar de país já é um grande desafio. Encontrar uma casa, entender a
+            documentação e resolver tudo sozinho pode tornar esse processo ainda
+            mais difícil.
+          </p>
+
+          <p>
+            Com o nosso serviço de Relocation, você chega com muito mais
+            tranquilidade. Cuidamos das etapas essenciais da sua mudança para que
+            você possa começar sua nova vida com segurança e sem preocupações.
+          </p>
+
+          <p className="font-medium text-foreground">
+            Atendemos presencialmente em Viseu e São Pedro do Sul, com planos a
+            partir de 500€.
+          </p>
+
+          <div className="space-y-3 pt-2">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+              Por que escolher Viseu ou São Pedro do Sul?
+            </h2>
+            <p>
+              Essas são duas das regiões com melhor custo-benefício para quem
+              está chegando em Portugal. O custo de vida é mais baixo do que em
+              Lisboa e Porto, há boas oportunidades de trabalho, excelente
+              qualidade de vida e muito mais tranquilidade para viver e criar uma
+              família.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+              Atendimento próximo e personalizado
+            </h2>
+            <p>
+              Cada mudança é única. Por isso, acompanhamos você em cada etapa,
+              desde a busca pelo imóvel até a sua chegada em Portugal, oferecendo
+              um atendimento próximo, transparente e focado nas suas necessidades.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section
+        className="relative mx-auto w-full max-w-6xl px-4 pb-10 md:px-6 md:pb-14"
+        aria-label="Preços e pacotes"
+      >
+        <div className="mb-6 text-center md:mb-8">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-accent">
+            Tudo o que precisas
+          </p>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            Serviços e valores
+          </h2>
+          <p className="mx-auto mt-3 max-w-[52ch] text-sm leading-relaxed text-muted sm:text-base">
+            Qualidade e segurança, com os menores preços de Portugal.
           </p>
         </div>
-        {isAdmin ? (
-          <button
-            type="button"
-            onClick={() => setAdminModalOpen(true)}
-            className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground shadow-sm hover:border-brand-accent/50 hover:bg-page"
-            aria-label="Configurar serviços indicados"
-          >
-            <GearIcon className="h-4 w-4" />
-            Configurações
-          </button>
-        ) : null}
-      </header>
 
-      {loading ? (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="h-72 animate-pulse rounded-2xl border border-border bg-primary-1"
-            />
-          ))}
-        </div>
-      ) : error ? (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
-      ) : rows.length === 0 ? (
-        <p className="rounded-xl border border-border bg-card px-4 py-8 text-center text-sm text-muted">
-          Ainda não há serviços publicados.
-        </p>
-      ) : (
-        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {rows.map((s) => (
-            <RecommendedServiceCard
-              key={s.id}
-              service={{
-                id: s.id,
-                title: s.title,
-                cardImageUrl: s.cardImageUrl,
-                redirectPath: s.redirectPath,
-              }}
-            />
-          ))}
-        </ul>
-      )}
-
-      {isAdmin ? (
-        <RecommendedServicesAdminModal
-          open={adminModalOpen}
-          onClose={() => setAdminModalOpen(false)}
-          onChanged={() => void load()}
+        <ServicesPricingCard
+          showLearnMoreCta={false}
+          imageFloatingCta={<ServicosWhatsappCta />}
         />
-      ) : null}
+      </section>
+
+      <DashboardTestimonialsSection />
     </div>
   );
 }

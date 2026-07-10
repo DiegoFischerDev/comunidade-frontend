@@ -85,7 +85,7 @@ export function DashboardAirplaneMobile({ sectionRef }: Props) {
       alt=""
       aria-hidden
       draggable={false}
-      className="pointer-events-none absolute bottom-0 z-[20] select-none will-change-transform md:hidden"
+      className="pointer-events-none absolute bottom-10 z-[20] select-none will-change-transform md:hidden"
       style={{
         left: airplane.x - BRAND_HERO_AIRPLANE_CURSOR_HOTSPOT_X,
         width: BRAND_HERO_AIRPLANE_CURSOR_SIZE,

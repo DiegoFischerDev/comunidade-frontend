@@ -18,6 +18,24 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { RELOCATION_HOUSES_WHATSAPP_GROUP_URL } from "@/lib/community-whatsapp-groups";
 
+/** Ícone de filtro (funil), alinhado com ofertas-trabalho. */
+function FilterIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" />
+    </svg>
+  );
+}
+
 /** Ícone WhatsApp oficial (mesmo SVG do menu do dashboard). */
 function WhatsappBrandIcon({ className }: { className?: string }) {
   return (
@@ -37,6 +55,8 @@ function WhatsappBrandIcon({ className }: { className?: string }) {
 
 const RELOCATION_IMOVEIS_PATH = "/relocation/imoveis";
 const LIST_SECTION_TITLE = "Imóveis disponíveis";
+const RELOCATION_GRUPAO_BANNER_DISMISSED_STORAGE_KEY =
+  "relocation-imoveis-grupao-banner-dismissed";
 
 type BusinessTypeTab = (typeof RELOCATION_BUSINESS_TYPE_OPTIONS)[number];
 
@@ -104,6 +124,8 @@ export default function PublicRelocationHousesListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [listCopyDone, setListCopyDone] = useState(false);
+  const [showGrupaoBanner, setShowGrupaoBanner] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const cidade = searchParams.get("cidade")?.trim() ?? "";
   const tipologia = searchParams.get("tipologia")?.trim() ?? "";
@@ -114,6 +136,8 @@ export default function PublicRelocationHousesListPage() {
   const valorMax = searchParams.get("valorMax")?.trim() ?? "";
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
   const pageSize = 12;
+  const hasActiveFilters = Boolean(cidade || tipologia || valorMin || valorMax);
+  const activeFilterCount = [cidade, tipologia, valorMin, valorMax].filter(Boolean).length;
 
   const setRouteFilters = useCallback(
     (next: {
@@ -160,6 +184,29 @@ export default function PublicRelocationHousesListPage() {
   }, [searchParams, router]);
 
   useEffect(() => {
+    try {
+      const dismissed =
+        localStorage.getItem(RELOCATION_GRUPAO_BANNER_DISMISSED_STORAGE_KEY) === "1";
+      if (!dismissed) setShowGrupaoBanner(true);
+    } catch {
+      setShowGrupaoBanner(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (hasActiveFilters) setShowFilters(true);
+  }, [hasActiveFilters]);
+
+  const dismissGrupaoBanner = useCallback(() => {
+    try {
+      localStorage.setItem(RELOCATION_GRUPAO_BANNER_DISMISSED_STORAGE_KEY, "1");
+    } catch {
+      // localStorage indisponível — ocultar na sessão atual
+    }
+    setShowGrupaoBanner(false);
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     const id = window.setTimeout(() => {
       if (cancelled) return;
@@ -204,158 +251,194 @@ export default function PublicRelocationHousesListPage() {
   const filterBar = useMemo(
     () => (
       <div className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <div
-          role="tablist"
-          aria-label="Finalidade do imóvel"
-          className="flex w-full max-w-md rounded-xl border border-border bg-primary-1 p-1"
-        >
-          {RELOCATION_BUSINESS_TYPE_OPTIONS.map((key) => {
-            const selected = finalidade === key;
-            return selected ? (
-              <CardButton
-                key={key}
-                type="button"
-                role="tab"
-                variant="secondary"
-                size="sm"
-                aria-selected={selected}
-                onClick={() =>
-                  setRouteFilters({
-                    cidade,
-                    tipologia,
-                    finalidade: key,
-                    valorMin,
-                    valorMax,
-                    page: 1,
-                  })
-                }
-                className="flex-1 !rounded-lg px-4 py-2.5 shadow-sm"
-              >
-                {BUSINESS_TYPE_TAB_CLASS[key]}
-              </CardButton>
-            ) : (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                onClick={() =>
-                  setRouteFilters({
-                    cidade,
-                    tipologia,
-                    finalidade: key,
-                    valorMin,
-                    valorMax,
-                    page: 1,
-                  })
-                }
-                className="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-muted transition hover:bg-card/80 hover:text-foreground"
-              >
-                {BUSINESS_TYPE_TAB_CLASS[key]}
-              </button>
-            );
-          })}
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
-          <div className="min-w-0 flex-1">
-            <RelocationCityCombobox
-              id="filter-cidade"
-              label="Cidade"
-              value={cidade}
-              onChange={(next) => setRouteFilters({ cidade: next, tipologia, finalidade, page: 1 })}
-              allowEmpty
-              emptyLabel="Todas"
-              variant="amber"
-            />
-          </div>
-          <div className="min-w-0 flex-1">
-            <label
-              className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted"
-              htmlFor="filter-tipologia"
-            >
-              Tipologia
-            </label>
-            <select
-              id="filter-tipologia"
-              value={tipologia}
-              onChange={(e) =>
-                setRouteFilters({ cidade, tipologia: e.target.value, finalidade, page: 1 })
-              }
-              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
-            >
-              <option value="">Todas</option>
-              {RELOCATION_TYPOLOGY_OPTIONS.map((key) => (
-                <option key={key} value={key}>
-                  {RELOCATION_TYPOLOGY_LABELS[key] ?? key}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="min-w-0 flex-1">
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted">
-              Valor (EUR)
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                inputMode="numeric"
-                type="number"
-                min={0}
-                step={1}
-                value={valorMin}
-                onChange={(e) =>
-                  setRouteFilters({
-                    cidade,
-                    tipologia,
-                    finalidade,
-                    valorMin: e.target.value,
-                    page: 1,
-                  })
-                }
-                placeholder="Mín."
-                aria-label="Valor mínimo"
-                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
-              />
-              <input
-                inputMode="numeric"
-                type="number"
-                min={0}
-                step={1}
-                value={valorMax}
-                onChange={(e) =>
-                  setRouteFilters({
-                    cidade,
-                    tipologia,
-                    finalidade,
-                    valorMax: e.target.value,
-                    page: 1,
-                  })
-                }
-                placeholder="Máx."
-                aria-label="Valor máximo"
-                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
-              />
-            </div>
+        <div className="flex items-center justify-between gap-3">
+          <div
+            role="tablist"
+            aria-label="Finalidade do imóvel"
+            className="flex w-full max-w-md rounded-xl border border-border bg-primary-1 p-1"
+          >
+            {RELOCATION_BUSINESS_TYPE_OPTIONS.map((key) => {
+              const selected = finalidade === key;
+              return selected ? (
+                <CardButton
+                  key={key}
+                  type="button"
+                  role="tab"
+                  variant="secondary"
+                  size="sm"
+                  aria-selected={selected}
+                  onClick={() =>
+                    setRouteFilters({
+                      cidade,
+                      tipologia,
+                      finalidade: key,
+                      valorMin,
+                      valorMax,
+                      page: 1,
+                    })
+                  }
+                  className="flex-1 !rounded-lg px-4 py-2.5 shadow-sm"
+                >
+                  {BUSINESS_TYPE_TAB_CLASS[key]}
+                </CardButton>
+              ) : (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() =>
+                    setRouteFilters({
+                      cidade,
+                      tipologia,
+                      finalidade: key,
+                      valorMin,
+                      valorMax,
+                      page: 1,
+                    })
+                  }
+                  className="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-muted transition hover:bg-card/80 hover:text-foreground"
+                >
+                  {BUSINESS_TYPE_TAB_CLASS[key]}
+                </button>
+              );
+            })}
           </div>
           <button
             type="button"
-            onClick={() =>
-              setRouteFilters({
-                cidade: "",
-                tipologia: "",
-                valorMin: "",
-                valorMax: "",
-                finalidade,
-                page: 1,
-              })
-            }
-            className="shrink-0 rounded-lg border border-border bg-page px-3 py-2 text-sm font-medium text-foreground transition hover:bg-primary-1"
+            onClick={() => setShowFilters((open) => !open)}
+            aria-expanded={showFilters}
+            aria-controls="relocation-imoveis-filters"
+            aria-label={showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+            className={`relative inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border transition ${
+              showFilters || hasActiveFilters
+                ? "border-brand-primary/40 bg-brand-accent/10 text-brand-primary"
+                : "border-border bg-page text-muted hover:bg-primary-1 hover:text-foreground"
+            }`}
           >
-            Limpar filtros
+            <FilterIcon className="h-4 w-4" />
+            {activeFilterCount > 0 ? (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-primary px-1 text-[10px] font-semibold text-white">
+                {activeFilterCount}
+              </span>
+            ) : null}
           </button>
         </div>
+        {showFilters ? (
+          <div
+            id="relocation-imoveis-filters"
+            className="flex flex-col gap-3 border-t border-border/70 pt-4 sm:flex-row sm:items-end sm:gap-4"
+          >
+            <div className="min-w-0 flex-1">
+              <RelocationCityCombobox
+                id="filter-cidade"
+                label="Cidade"
+                value={cidade}
+                onChange={(next) => setRouteFilters({ cidade: next, tipologia, finalidade, page: 1 })}
+                allowEmpty
+                emptyLabel="Todas"
+                variant="amber"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <label
+                className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted"
+                htmlFor="filter-tipologia"
+              >
+                Tipologia
+              </label>
+              <select
+                id="filter-tipologia"
+                value={tipologia}
+                onChange={(e) =>
+                  setRouteFilters({ cidade, tipologia: e.target.value, finalidade, page: 1 })
+                }
+                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
+              >
+                <option value="">Todas</option>
+                {RELOCATION_TYPOLOGY_OPTIONS.map((key) => (
+                  <option key={key} value={key}>
+                    {RELOCATION_TYPOLOGY_LABELS[key] ?? key}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="min-w-0 flex-1">
+              <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted">
+                Valor (EUR)
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  inputMode="numeric"
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={valorMin}
+                  onChange={(e) =>
+                    setRouteFilters({
+                      cidade,
+                      tipologia,
+                      finalidade,
+                      valorMin: e.target.value,
+                      page: 1,
+                    })
+                  }
+                  placeholder="Mín."
+                  aria-label="Valor mínimo"
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
+                />
+                <input
+                  inputMode="numeric"
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={valorMax}
+                  onChange={(e) =>
+                    setRouteFilters({
+                      cidade,
+                      tipologia,
+                      finalidade,
+                      valorMax: e.target.value,
+                      page: 1,
+                    })
+                  }
+                  placeholder="Máx."
+                  aria-label="Valor máximo"
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
+                />
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                setRouteFilters({
+                  cidade: "",
+                  tipologia: "",
+                  valorMin: "",
+                  valorMax: "",
+                  finalidade,
+                  page: 1,
+                })
+              }
+              className="shrink-0 rounded-lg border border-border bg-page px-3 py-2 text-sm font-medium text-foreground transition hover:bg-primary-1"
+            >
+              Limpar filtros
+            </button>
+          </div>
+        ) : null}
       </div>
     ),
-    [cidade, tipologia, finalidade, valorMin, valorMax, setRouteFilters, router],
+    [
+      cidade,
+      tipologia,
+      finalidade,
+      valorMin,
+      valorMax,
+      showFilters,
+      hasActiveFilters,
+      activeFilterCount,
+      setRouteFilters,
+    ],
   );
 
   const safeRows = useMemo(
@@ -407,53 +490,64 @@ export default function PublicRelocationHousesListPage() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">Imóveis Relocation</h1>
+        <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">Imóveis em catálogo hoje</h1>
         <p className="mt-1 text-sm text-muted">
-          Encontre o imóvel perfeito e conte com nosso suporte para fechar o contrato direto com o
-          senhorio, sem burocracia.
+          Os melhores imóveis não são publicados aqui, são reservados para os clientes que já têm
+          contrato de relocation assinado.
         </p>
       </div>
 
-      <section
-        className="relative overflow-hidden rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-white via-emerald-50/50 to-brand-accent/5 shadow-md ring-1 ring-emerald-100/70"
-        aria-labelledby="relocation-grupao-heading"
-      >
-        <div
-          className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#25D366]/10 blur-3xl"
-          aria-hidden
-        />
-        <div className="pointer-events-none absolute -bottom-16 -left-12 h-40 w-40 rounded-full bg-brand-accent/10 blur-2xl" aria-hidden />
-        <div className="relative flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:p-6">
-          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-card shadow-md ring-2 ring-[#25D366]/30">
-              <WhatsappBrandIcon className="h-9 w-9 text-[#25D366]" />
+      {showGrupaoBanner ? (
+        <section
+          className="relative overflow-hidden rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-white via-emerald-50/50 to-brand-accent/5 shadow-md ring-1 ring-emerald-100/70"
+          aria-labelledby="relocation-grupao-heading"
+        >
+          <div
+            className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#25D366]/10 blur-3xl"
+            aria-hidden
+          />
+          <div className="pointer-events-none absolute -bottom-16 -left-12 h-40 w-40 rounded-full bg-brand-accent/10 blur-2xl" aria-hidden />
+          <div className="relative flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:p-6">
+            <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-card shadow-md ring-2 ring-[#25D366]/30">
+                <WhatsappBrandIcon className="h-9 w-9 text-[#25D366]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800/85">
+                  WhatsApp · comunidade
+                </p>
+                <h2
+                  id="relocation-grupao-heading"
+                  className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl"
+                >
+                  Grupão de relocation
+                </h2>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted sm:text-[0.9375rem]">
+                  Junta-te ao grupo para receber oportunidades de arrendamento em tempo real.
+                </p>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800/85">
-                WhatsApp · comunidade
-              </p>
-              <h2
-                id="relocation-grupao-heading"
-                className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl"
+            <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:min-w-[15rem]">
+              <a
+                href={RELOCATION_HOUSES_WHATSAPP_GROUP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#25D366] px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#20bd5a] hover:shadow active:scale-[0.99] sm:px-6 sm:text-base"
               >
-                Grupão de relocation
-              </h2>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted sm:text-[0.9375rem]">
-                Junta-te ao grupo para receber oportunidades de arrendamento em tempo real.
-              </p>
+                <WhatsappBrandIcon className="h-5 w-5 shrink-0 text-white" />
+                Entrar no Grupão
+              </a>
+              <button
+                type="button"
+                onClick={dismissGrupaoBanner}
+                className="inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-emerald-200/90 bg-white/90 px-4 py-2.5 text-sm font-medium text-foreground/80 shadow-sm transition hover:border-emerald-300 hover:bg-white hover:text-foreground sm:px-6 sm:py-3.5 sm:text-base sm:font-semibold"
+              >
+                Não quero, obrigado(a)
+              </button>
             </div>
           </div>
-          <a
-            href={RELOCATION_HOUSES_WHATSAPP_GROUP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex w-full shrink-0 items-center justify-center gap-2.5 rounded-xl bg-[#25D366] px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#20bd5a] hover:shadow active:scale-[0.99] sm:w-auto sm:self-center sm:px-6"
-          >
-            <WhatsappBrandIcon className="h-5 w-5 shrink-0 text-white" />
-            Entrar no Grupão
-          </a>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       {filterBar}
 

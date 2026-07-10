@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import { SITE_NAME_FULL } from '@/lib/site-branding';
 
 export default function MembershipSuccessPage() {
   const { refreshUser, loginWithToken, user } = useAuth();
@@ -85,7 +86,7 @@ export default function MembershipSuccessPage() {
         <h1 className="text-xl font-bold text-foreground">Pagamento concluído</h1>
         <p className="mt-2 text-foreground/90">
           {user
-            ? 'Obrigado! Já és membro da Comunidade Rafa Portugal. Tens acesso a todos os benefícios durante um ano.'
+            ? `Obrigado! Já és membro da ${SITE_NAME_FULL}. Tens acesso a todos os benefícios durante um ano.`
             : 'Obrigado! O pagamento foi recebido. Entra com o WhatsApp e a senha que definiste.'}
         </p>
         <Link

@@ -1,4 +1,4 @@
-/** Vídeo de boas-vindas da Comunidade Rafa Portugal (YouTube). */
+/** Vídeo de boas-vindas da Move Casa Relocation (YouTube). */
 export const DASHBOARD_WELCOME_YOUTUBE_VIDEO_ID = 'hZi7N6BOLJ4';
 
 export function dashboardWelcomeYoutubeEmbedSrc(options?: {
@@ -12,4 +12,11 @@ export function dashboardWelcomeYoutubeEmbedSrc(options?: {
     params.set('autoplay', '1');
   }
   return `https://www.youtube-nocookie.com/embed/${DASHBOARD_WELCOME_YOUTUBE_VIDEO_ID}?${params.toString()}`;
+}
+
+export function dashboardWelcomeYoutubeThumbnailSrc(
+  quality: 'maxres' | 'hq' = 'maxres',
+): string {
+  const suffix = quality === 'maxres' ? 'maxresdefault' : 'hqdefault';
+  return `https://img.youtube.com/vi/${DASHBOARD_WELCOME_YOUTUBE_VIDEO_ID}/${suffix}.jpg`;
 }

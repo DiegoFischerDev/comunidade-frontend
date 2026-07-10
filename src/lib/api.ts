@@ -528,20 +528,6 @@ export const api = {
         token: null,
       }),
   },
-  recommendedServices: {
-    list: () =>
-      request<
-        {
-          id: string;
-          title: string;
-          cardImageUrl: string | null;
-          slug: string;
-          linkTitle: string;
-          whatsappPhrase: string;
-          redirectPath: string;
-        }[]
-      >('/recommended-services', { method: 'GET' }),
-  },
   jobOffers: {
     list: () =>
       request<
@@ -1444,84 +1430,6 @@ export const api = {
         },
       },
     },
-    recommendedServices: {
-      list: () =>
-        request<
-          {
-            id: string;
-            title: string;
-            cardImageUrl: string | null;
-            sortOrder: number;
-            active: boolean;
-            createdAt: string;
-            redirectPath: string;
-            partnerShareLink: {
-              id: string;
-              slug: string;
-              title: string;
-              whatsappDigits: string;
-            };
-          }[]
-        >('/recommended-services/admin', { method: 'GET' }),
-      availableLinks: () =>
-        request<
-          {
-            id: string;
-            slug: string;
-            title: string;
-            whatsappDigits: string;
-            createdAt: string;
-            alreadyUsed: boolean;
-          }[]
-        >('/recommended-services/admin/available-links', { method: 'GET' }),
-      create: (body: {
-        title: string;
-        partnerShareLinkId: string;
-        sortOrder?: number;
-        active?: boolean;
-      }) =>
-        request<{
-          id: string;
-          title: string;
-          sortOrder: number;
-          active: boolean;
-        }>('/recommended-services/admin', {
-          method: 'POST',
-          body: JSON.stringify(body),
-        }),
-      update: (
-        id: string,
-        body: {
-          title?: string;
-          partnerShareLinkId?: string;
-          sortOrder?: number;
-          active?: boolean;
-        },
-      ) =>
-        request(`/recommended-services/admin/${encodeURIComponent(id)}`, {
-          method: 'PATCH',
-          body: JSON.stringify(body),
-        }),
-      delete: (id: string) =>
-        request<{ ok: true }>(
-          `/recommended-services/admin/${encodeURIComponent(id)}`,
-          { method: 'DELETE' },
-        ),
-      uploadCardImage: (id: string, file: File) => {
-        const fd = new FormData();
-        fd.set('file', file);
-        return requestFormData<{ cardImageUrl: string }>(
-          `/recommended-services/admin/${encodeURIComponent(id)}/card-image`,
-          fd,
-          { method: 'POST' },
-        );
-      },
-      deleteCardImage: (id: string) =>
-        request<{ ok: true; cardImageUrl: null }>(
-          `/recommended-services/admin/${encodeURIComponent(id)}/card-image`,
-          { method: 'DELETE' },
-        ),
-    },
     houses: {
       list: () =>
         request<
@@ -2250,7 +2158,7 @@ export const api = {
       publish: (id: string) =>
         request<{
           ok: true;
-          publishedUntil: string;
+          publishedUntil: string | null;
           sentToGroups?: number;
           failed?: string[];
         }>(`/partners/me/houses/${encodeURIComponent(id)}/publish`, { method: 'POST' }),
@@ -2593,6 +2501,8 @@ export const api = {
       maxPriceEur?: string;
       page?: number;
       pageSize?: number;
+      /** `recent`: mais recentemente adicionados à plataforma. */
+      sort?: 'recent';
     }) => {
       const q = new URLSearchParams();
       if (query?.partnerId?.trim()) q.set('partnerId', query.partnerId.trim());
@@ -2606,6 +2516,9 @@ export const api = {
       }
       if (typeof query?.pageSize === 'number' && Number.isFinite(query.pageSize)) {
         q.set('pageSize', String(query.pageSize));
+      }
+      if (query?.sort === 'recent') {
+        q.set('sort', 'recent');
       }
       const qs = q.toString();
       return request<{

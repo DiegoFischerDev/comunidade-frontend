@@ -4,12 +4,10 @@ import { useEffect, useState } from "react";
 import { CardButton } from "@/components/ui/CardButton";
 import {
   HousePublicationStatusBadge,
-  isActivePublished,
 } from "@/components/house/HousePublicationStatusBadge";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import { orderHouseImagesWithCoverFirst } from "@/lib/house-entrance";
 import { formatHouseEurFieldDisplay } from "@/lib/format-eur-pt";
-import { HOUSE_PUBLICATION_DURATION_DAYS } from "@/lib/house-publication";
 import { formatRelocationFeeEur } from "@/components/relocation/relocation-house-shared";
 import {
   type HousePublishPreview,
@@ -340,10 +338,7 @@ export function PublishHouseConfirmModal({
 
   const effective = mergeHouseWithDraft(house, draft);
   const missingFields = getMissingPublishFields(effective);
-  const activelyPublished = isActivePublished(
-    house.publicationStatus,
-    house.publishedUntil,
-  );
+  const activelyPublished = house.publicationStatus === "PUBLISHED";
   const canUnpublish = house.publicationStatus === "PUBLISHED" && Boolean(onUnpublish);
 
   const whatsAppDates = whatsAppGroupPublishDates(house);
@@ -437,8 +432,6 @@ export function PublishHouseConfirmModal({
     }
   }
 
-  const publicationDurationLabel = `${HOUSE_PUBLICATION_DURATION_DAYS} dias no site e WhatsApp`;
-
   const missingForPhase =
     phase === "missing"
       ? getMissingPublishFields(mergeHouseWithDraft(currentHouse, draft))
@@ -461,12 +454,12 @@ export function PublishHouseConfirmModal({
           {phase === "missing" ? "Informações em falta" : "Publicar imóvel"}
         </h2>
         <p className="mt-2 text-sm font-medium text-foreground/90">
-          {publicationDurationLabel}
+          Visível no site e nos grupos do WhatsApp até removeres a publicação.
         </p>
         {phase === "main" ? (
           <p className="mt-1 text-sm text-muted">
             {activelyPublished
-              ? "Podes republicar para prolongar a visibilidade ou remover a publicação para ocultar o anúncio no site."
+              ? "Podes republicar para enviar novamente ao WhatsApp ou remover a publicação para ocultar o anúncio no site."
               : "Este imóvel será publicado no nosso site e nos grupos do WhatsApp."}
           </p>
         ) : (
@@ -499,10 +492,7 @@ export function PublishHouseConfirmModal({
               {house.title}
             </p>
             <div className="mt-2">
-              <HousePublicationStatusBadge
-                publicationStatus={house.publicationStatus}
-                publishedUntil={house.publishedUntil}
-              />
+              <HousePublicationStatusBadge publicationStatus={house.publicationStatus} />
             </div>
             <div className="mt-4">
               <p className="text-[11px] font-medium uppercase tracking-wide text-muted">
@@ -544,12 +534,6 @@ export function PublishHouseConfirmModal({
               label="Disponível em"
               value={formatDatePt(effective.availableFrom)}
             />
-            {activelyPublished && house.publishedUntil ? (
-              <DetailItem
-                label="Publicado até"
-                value={formatDatePt(house.publishedUntil)}
-              />
-            ) : null}
           </dl>
 
           <div className="border-t border-border px-4 py-3">

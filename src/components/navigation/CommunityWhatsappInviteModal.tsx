@@ -45,7 +45,7 @@ export function CommunityWhatsappInviteModal({ open, onClose }: Props) {
                 id="community-whatsapp-invite-title"
                 className="text-base font-semibold text-foreground"
               >
-                Grupos de ajuda WhatsApp
+                Grupos whatsapp
               </h2>
               <p className="mt-1 text-sm text-muted">
                 Escolhe o grupo WhatsApp que queres juntar-te.
@@ -77,7 +77,7 @@ export function CommunityWhatsappInviteModal({ open, onClose }: Props) {
                   <span className="min-w-0 flex-1">
                     <span className="block">{group.label}</span>
                     <span className="mt-0.5 block text-xs font-normal text-muted">
-                      Entrar no grupo WhatsApp
+                      {group.sublabel ?? "Entrar no grupo WhatsApp"}
                     </span>
                   </span>
                   <span className="shrink-0 text-emerald-700" aria-hidden>

@@ -67,15 +67,8 @@ function CheckIcon({ className }: { className?: string }) {
   );
 }
 
-function publishedUntilLabel(publishedUntil: string): string {
-  const d = new Date(publishedUntil);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("pt-PT");
-}
-
 export function PublishHouseRowButton({
   publicationStatus,
-  publishedUntil,
   loading,
   loadingLabel,
   disabled,
@@ -83,7 +76,7 @@ export function PublishHouseRowButton({
   className,
   onClick,
 }: Props) {
-  const active = isActivePublished(publicationStatus, publishedUntil);
+  const active = isActivePublished(publicationStatus);
   const showPublishing = loading && loadingLabel;
 
   if (showPublishing) {
@@ -104,13 +97,7 @@ export function PublishHouseRowButton({
   }
 
   if (active) {
-    const until =
-      publishedUntil && !Number.isNaN(new Date(publishedUntil).getTime())
-        ? publishedUntilLabel(publishedUntil)
-        : null;
-    const title = until
-      ? `Publicado até ${until}. Clica para republicar.`
-      : "Imóvel publicado. Clica para republicar.";
+    const title = "Imóvel publicado. Clica para gerir a publicação.";
 
     return (
       <CardButton

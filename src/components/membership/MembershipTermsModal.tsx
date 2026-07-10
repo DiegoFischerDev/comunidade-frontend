@@ -1,5 +1,7 @@
 'use client';
 
+import { SITE_NAME_FULL } from '@/lib/site-branding';
+
 type MembershipTermsModalProps = {
   open: boolean;
   onClose: () => void;
@@ -24,7 +26,7 @@ export function MembershipTermsModal({ open, onClose }: MembershipTermsModalProp
             id="membership-terms-title"
             className="text-base font-semibold text-foreground"
           >
-            Termos da Comunidade Rafa Portugal
+            Termos da {SITE_NAME_FULL}
           </h2>
           <button
             type="button"
@@ -38,8 +40,8 @@ export function MembershipTermsModal({ open, onClose }: MembershipTermsModalProp
 
         <div className="mt-4 max-h-[min(70vh,32rem)] space-y-4 overflow-y-auto pr-1 text-sm leading-relaxed text-foreground/90">
           <p>
-            Ao aderir como <strong className="font-medium text-foreground">membro VIP</strong> da
-            Comunidade Rafa Portugal, aceitas as condições abaixo. Este resumo não substitui
+            Ao aderir como <strong className="font-medium text-foreground">membro VIP</strong> da{' '}
+            {SITE_NAME_FULL}, aceitas as condições abaixo. Este resumo não substitui
             aconselhamento jurídico; em caso de dúvida, contacta-nos pelos canais de suporte da
             plataforma.
           </p>

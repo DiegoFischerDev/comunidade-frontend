@@ -6,15 +6,8 @@ import { useCallback, useState } from "react";
 import { api } from "@/lib/api";
 import { CardButton } from "@/components/ui/CardButton";
 
-function isPublishedActive(
-  publicationStatus: "PUBLISHED" | "HIDDEN",
-  publishedUntil: string | null,
-): boolean {
-  return (
-    publicationStatus === "PUBLISHED" &&
-    !!publishedUntil &&
-    new Date(publishedUntil) > new Date()
-  );
+function isPublishedActive(publicationStatus: "PUBLISHED" | "HIDDEN"): boolean {
+  return publicationStatus === "PUBLISHED";
 }
 
 type Props = {
@@ -54,9 +47,7 @@ export function HouseContactSection({
         setBusy(false);
         return;
       }
-      if (
-        !isPublishedActive(data.publicationStatus, data.publishedUntil)
-      ) {
+      if (!isPublishedActive(data.publicationStatus)) {
         setError("Este imóvel já não está disponível.");
         setBusy(false);
         return;
@@ -70,7 +61,7 @@ export function HouseContactSection({
     }
   }, [allowUnpublished, houseId, numericHouseId, partnerId]);
 
-  if (!allowUnpublished && !isPublishedActive(publicationStatus, publishedUntil)) {
+  if (!allowUnpublished && !isPublishedActive(publicationStatus)) {
     return (
       <p className="rounded-xl border border-border bg-page px-4 py-3 text-sm text-foreground/90">
         Este anúncio não está disponível no momento. Explora outros imóveis na{" "}

@@ -15,10 +15,7 @@ export function HouseJsonLd({ house, pageUrl }: Props) {
 
   const primaryImage = absoluteMediaUrlForOg(house.coverImageUrl ?? house.imageUrls?.[0]);
 
-  const isActive =
-    house.publicationStatus === "PUBLISHED" &&
-    house.publishedUntil &&
-    new Date(house.publishedUntil) > new Date();
+  const isActive = house.publicationStatus === "PUBLISHED";
 
   const payload = {
     "@context": "https://schema.org",

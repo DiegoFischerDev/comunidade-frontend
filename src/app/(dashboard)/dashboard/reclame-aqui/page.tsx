@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { NewSupportTicketModal } from '@/components/support-ticket';
+import { DashboardFaqSection } from '@/components/dashboard/DashboardFaqSection';
 import { CardButton } from '@/components/ui/CardButton';
 
 type Payload = Awaited<ReturnType<typeof api.support.myTickets>>;
@@ -153,7 +154,13 @@ export default function ReclameAquiUserPage() {
   if (!user) {
     return (
       <div className="mx-auto w-full max-w-[820px]">
-        <div className="text-center">
+        {error ? (
+          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+        ) : null}
+
+        <DashboardFaqSection className="pt-2 pb-6 md:pt-4 md:pb-8" />
+
+        <div className="mt-4 text-center md:mt-6">
           <h1 className="text-2xl font-semibold text-foreground">Reclame aqui</h1>
           <p className="mt-2 text-sm text-muted">
             Queremos ouvir-te e resolver o teu problema. Podes abrir um pedido sem criar conta — indica
@@ -161,11 +168,7 @@ export default function ReclameAquiUserPage() {
           </p>
         </div>
 
-        {error ? (
-          <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
-        ) : null}
-
-        <div className="mt-6 flex justify-center">
+        <div className="mt-6 flex justify-center pb-12 md:mt-8 md:pb-16">
           <CardButton
             type="button"
             onClick={() => {
@@ -212,8 +215,14 @@ export default function ReclameAquiUserPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1000px]">
-      <div className="text-center">
+    <div className="mx-auto w-full max-w-[1000px] pb-12 md:pb-16">
+      {error ? (
+        <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+      ) : null}
+
+      <DashboardFaqSection className="pt-2 pb-6 md:pt-4 md:pb-8" />
+
+      <div className="mt-4 text-center md:mt-6">
         <h1 className="text-2xl font-semibold text-foreground">Reclame aqui</h1>
         <p className="mt-2 text-sm text-muted">
           Queremos te ouvir e resolver o seu problema. Encontrou algum bug, teve uma experiência ruim ou
@@ -221,28 +230,24 @@ export default function ReclameAquiUserPage() {
         </p>
       </div>
 
-      {error ? (
-        <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
-      ) : null}
+      <div className="mt-6 flex justify-center md:mt-8">
+        <CardButton
+          type="button"
+          onClick={() => {
+            setError('');
+            setCreateMsg('');
+            setCreating(true);
+          }}
+          variant="primary"
+        >
+          Reclame aqui
+        </CardButton>
+      </div>
 
       {loading ? (
         <p className="mt-4 text-sm text-muted">Carregando…</p>
       ) : (
         <>
-          <div className="mt-4 flex justify-center">
-            <CardButton
-              type="button"
-              onClick={() => {
-                setError('');
-                setCreateMsg('');
-                setCreating(true);
-              }}
-              variant="primary"
-            >
-              Reclame aqui
-            </CardButton>
-          </div>
-
           {items.length === 0 ? (
             <p className="mt-4 text-center text-sm text-muted">
               Ainda não enviaste nenhum pedido. Usa o botão acima para o primeiro.

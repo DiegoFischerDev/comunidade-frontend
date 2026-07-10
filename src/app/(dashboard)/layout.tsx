@@ -37,10 +37,17 @@ import {
 import { CardButton } from '@/components/ui/CardButton';
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton';
 import { SiteFooter } from '@/components/site/SiteFooter';
+import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
+import {
+  ADMIN_NAV_ITEMS,
+  FINANCIAMENTO_PARTNER_NAV_ITEMS,
+  RELOCATION_PARTNER_NAV_ITEMS,
+} from '@/lib/dashboard-extra-nav';
 import {
   DASHBOARD_HOME_PATH,
   isDashboardHomePath,
 } from '@/lib/dashboard-home';
+import { DASHBOARD_PUBLIC_NAV } from '@/lib/dashboard-public-nav';
 import {
   NAV_LINK_ACTIVE_CLASS,
   NAV_LINK_INACTIVE_CLASS,
@@ -224,7 +231,7 @@ export default function DashboardLayout({
   } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isHomeScrolled, setIsHomeScrolled] = useState(false);
+  const [isHomeTopbarRevealed, setIsHomeTopbarRevealed] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'forgot' | 'resetPassword'>(
     'login',
@@ -362,17 +369,19 @@ export default function DashboardLayout({
     setIsMenuOpen(false);
   }, [pathname]);
 
-  // Na home do dashboard, o menu hambúrguer só aparece após scroll vertical
+  // Na home, o topbar só aparece após o primeiro scroll e permanece visível
   useEffect(() => {
     if (!isDashboardHome) {
-      setIsHomeScrolled(true);
+      setIsHomeTopbarRevealed(true);
       return;
     }
 
-    setIsHomeScrolled(false);
+    setIsHomeTopbarRevealed(false);
 
     const onScroll = () => {
-      setIsHomeScrolled(window.scrollY > 0);
+      if (window.scrollY > 0) {
+        setIsHomeTopbarRevealed(true);
+      }
     };
 
     onScroll();
@@ -424,9 +433,6 @@ export default function DashboardLayout({
     user?.role === 'PARTNER' && partnerCategorySlug === 'relocation';
   const isFinanciamentoPartner =
     user?.role === 'PARTNER' && partnerCategorySlug === 'financiamento';
-  const isCasasPath =
-    pathname === '/dashboard/casas' || pathname.startsWith('/dashboard/casas/');
-  const isBusinessPath = pathname === '/dashboard/business';
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -502,86 +508,38 @@ export default function DashboardLayout({
 
         {/* Menu principal */}
         <nav className={`mt-4 min-h-0 flex-1 space-y-1 overflow-y-auto p-1 pr-1 pb-3 ${SIDEBAR_NAV_CLASS}`}>
-          <Link
-            href={DASHBOARD_HOME_PATH}
-            className={`block rounded-md px-3 py-2 text-sm ${
-              isDashboardHomePath(pathname)
-                ? NAV_LINK_ACTIVE_CLASS
-                : NAV_LINK_INACTIVE_CLASS
-            }`}
-          >
-            Início
-          </Link>
-          <Link
-            href="/relocation/imoveis"
-            className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/relocation/imoveis'
-                ? NAV_LINK_ACTIVE_CLASS
-                : NAV_LINK_INACTIVE_CLASS
-            }`}
-          >
-            Imóveis
-          </Link>
-          <Link
-            href="/financiamento"
-            className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/financiamento'
-                ? NAV_LINK_ACTIVE_CLASS
-                : NAV_LINK_INACTIVE_CLASS
-            }`}
-          >
-            Financiamento
-          </Link>
-          <Link
-            href="/servicos"
-            className={`block rounded-md px-3 py-2 text-sm ${
-              pathname === '/servicos'
-                ? NAV_LINK_ACTIVE_CLASS
-                : NAV_LINK_INACTIVE_CLASS
-            }`}
-          >
-            Serviços
-          </Link>
-          {user?.role !== 'ADMIN' ? (
+          {DASHBOARD_PUBLIC_NAV.map((item) => (
             <Link
-              href="/dashboard/reclame-aqui"
+              key={item.href}
+              href={item.href}
               className={`block rounded-md px-3 py-2 text-sm ${
-                pathname === '/dashboard/reclame-aqui'
+                item.isActive(pathname)
                   ? NAV_LINK_ACTIVE_CLASS
                   : NAV_LINK_INACTIVE_CLASS
               }`}
             >
-              Reclame aqui
+              {item.label}
             </Link>
-          ) : null}
+          ))}
           {isRelocationPartner ? (
-            <>
-              <div className="brand-sidebar-divider mt-2 border-t pt-2">
-                <p className="brand-sidebar-label px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide">
-                  Menu de parceiro
-                </p>
+            <div className="brand-sidebar-divider mt-2 border-t pt-2">
+              <p className="brand-sidebar-label px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide">
+                Menu de parceiro
+              </p>
+              {RELOCATION_PARTNER_NAV_ITEMS.map((item) => (
                 <Link
-                  href="/dashboard/casas"
+                  key={item.href}
+                  href={item.href}
                   className={`block rounded-md px-3 py-2 text-sm ${
-                    isCasasPath
+                    item.isActive(pathname)
                       ? NAV_LINK_ACTIVE_CLASS
                       : NAV_LINK_INACTIVE_CLASS
                   }`}
                 >
-                  Minhas casas
+                  {item.label}
                 </Link>
-                <Link
-                  href="/dashboard/business"
-                  className={`block rounded-md px-3 py-2 text-sm ${
-                    isBusinessPath
-                      ? NAV_LINK_ACTIVE_CLASS
-                      : NAV_LINK_INACTIVE_CLASS
-                  }`}
-                >
-                  Minha empresa
-                </Link>
-              </div>
-            </>
+              ))}
+            </div>
           ) : (
             <>
           {user?.role === 'ADMIN' && (
@@ -589,87 +547,19 @@ export default function DashboardLayout({
               <p className="brand-sidebar-label px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide">
                 Menu de admin
               </p>
-              <Link
-                href="/dashboard/users"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/users'
-                    ? NAV_LINK_ACTIVE_CLASS
-                    : NAV_LINK_INACTIVE_CLASS
-                }`}
-              >
-                Users
-              </Link>
-              <Link
-                href="/dashboard/admin/rafacall-hoje"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/admin/rafacall-hoje'
-                    ? NAV_LINK_ACTIVE_CLASS
-                    : NAV_LINK_INACTIVE_CLASS
-                }`}
-              >
-                Agendamentos
-              </Link>
-              <Link
-                href="/dashboard/admin/reclame-aqui"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/admin/reclame-aqui'
-                    ? NAV_LINK_ACTIVE_CLASS
-                    : NAV_LINK_INACTIVE_CLASS
-                }`}
-              >
-                Reclame aqui
-              </Link>
-              <Link
-                href="/dashboard/admin/houses"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/admin/houses'
-                    ? NAV_LINK_ACTIVE_CLASS
-                    : NAV_LINK_INACTIVE_CLASS
-                }`}
-              >
-                Casas (anúncios)
-              </Link>
-              <Link
-                href="/dashboard/admin/share-links"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/admin/share-links' ||
-                  pathname.startsWith('/dashboard/admin/share-links/')
-                    ? NAV_LINK_ACTIVE_CLASS
-                    : NAV_LINK_INACTIVE_CLASS
-                }`}
-              >
-                Links rastreados
-              </Link>
-              <Link
-                href="/dashboard/admin/leads-gestoras"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/admin/leads-gestoras'
-                    ? NAV_LINK_ACTIVE_CLASS
-                    : NAV_LINK_INACTIVE_CLASS
-                }`}
-              >
-                Leads gestoras
-              </Link>
-              <Link
-                href="/dashboard/partners"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/partners'
-                    ? NAV_LINK_ACTIVE_CLASS
-                    : NAV_LINK_INACTIVE_CLASS
-                }`}
-              >
-                Parceiros
-              </Link>
-              <Link
-                href="/dashboard/admin/whatsapp-scan"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  pathname === '/dashboard/admin/whatsapp-scan'
-                    ? NAV_LINK_ACTIVE_CLASS
-                    : NAV_LINK_INACTIVE_CLASS
-                }`}
-              >
-                Whatsapp scan
-              </Link>
+              {ADMIN_NAV_ITEMS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`block rounded-md px-3 py-2 text-sm ${
+                    item.isActive(pathname)
+                      ? NAV_LINK_ACTIVE_CLASS
+                      : NAV_LINK_INACTIVE_CLASS
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
             </div>
           )}
           {user?.role === 'PARTNER' && !isRelocationPartner ? (
@@ -677,40 +567,19 @@ export default function DashboardLayout({
               <p className="brand-sidebar-label px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide">
                 Menu de parceiro
               </p>
-              <Link
-                href="/dashboard/business"
-                className={`block rounded-md px-3 py-2 text-sm ${
-                  isBusinessPath
-                    ? NAV_LINK_ACTIVE_CLASS
-                    : NAV_LINK_INACTIVE_CLASS
-                }`}
-              >
-                Minha empresa
-              </Link>
-              {isFinanciamentoPartner ? (
+              {FINANCIAMENTO_PARTNER_NAV_ITEMS.map((item) => (
                 <Link
-                  href="/dashboard/leads"
+                  key={item.href}
+                  href={item.href}
                   className={`block rounded-md px-3 py-2 text-sm ${
-                    pathname === '/dashboard/leads'
+                    item.isActive(pathname)
                       ? NAV_LINK_ACTIVE_CLASS
                       : NAV_LINK_INACTIVE_CLASS
                   }`}
                 >
-                  Meus leads
+                  {item.label}
                 </Link>
-              ) : null}
-              {isFinanciamentoPartner ? (
-                <Link
-                  href="/dashboard/proximo-contacto"
-                  className={`block rounded-md px-3 py-2 text-sm ${
-                    pathname === '/dashboard/proximo-contacto'
-                      ? NAV_LINK_ACTIVE_CLASS
-                      : NAV_LINK_INACTIVE_CLASS
-                  }`}
-                >
-                  Próximo contacto
-                </Link>
-              ) : null}
+              ))}
             </div>
           ) : null}
             </>
@@ -825,9 +694,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div
-      className={`flex min-h-screen flex-col ${isDashboardHome ? '' : 'md:pl-56'} ${PAGE_SHELL_CLASS}`}
-    >
+    <div className={`flex min-h-screen flex-col ${PAGE_SHELL_CLASS}`}>
       {/* Preload de imagens usadas em modais (evita carregar só quando abre) */}
       <div className="pointer-events-none fixed -left-[9999px] -top-[9999px] h-0 w-0 overflow-hidden opacity-0">
         <Image src="/rafa_cards/modal_novo_agendamento.png" alt="" width={256} height={256} priority />
@@ -835,50 +702,18 @@ export default function DashboardLayout({
         <img src="/comunidade_bg.svg" alt="" loading="eager" />
       </div>
 
-      {/* Mobile: menu hambúrguer flutuante (na home, só após scroll) */}
-      <button
-        type="button"
-        onClick={() => setIsMenuOpen((open) => !open)}
-        className={`fixed right-4 top-4 z-50 inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center transition-all duration-300 ease-out active:scale-[0.97] md:hidden ${
-          isDashboardHome
-            ? 'rounded-[14px] border border-white/20 bg-brand-primary/65 text-brand-on-primary shadow-lg backdrop-blur-md hover:bg-brand-primary/80'
-            : 'text-brand-primary'
-        } ${
-          isHomeScrolled || isMenuOpen
-            ? 'pointer-events-auto translate-y-0 opacity-100'
-            : 'pointer-events-none -translate-y-1 opacity-0'
-        }`}
-        aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
-        aria-hidden={!isHomeScrolled && !isMenuOpen}
-        tabIndex={isHomeScrolled || isMenuOpen ? 0 : -1}
-      >
-        {isMenuOpen ? (
-          <span className="text-xl leading-none" aria-hidden>
-            ✕
-          </span>
-        ) : (
-          <span className="flex h-3.5 w-4 flex-col justify-between" aria-hidden>
-            <span
-              className={`h-[2px] w-full rounded ${isDashboardHome ? 'bg-brand-on-primary' : 'bg-brand-primary'}`}
-            />
-            <span
-              className={`h-[2px] w-full rounded ${isDashboardHome ? 'bg-brand-on-primary' : 'bg-brand-primary'}`}
-            />
-            <span
-              className={`h-[2px] w-full rounded ${isDashboardHome ? 'bg-brand-on-primary' : 'bg-brand-primary'}`}
-            />
-          </span>
-        )}
-      </button>
-
-      {/* Sidebar desktop */}
-      <aside
-        className={`hidden border-r p-4 md:fixed md:inset-y-0 md:left-0 md:w-56 md:flex-col md:overflow-hidden ${SIDEBAR_SHELL_CLASS} ${
-          isDashboardHome ? 'md:hidden' : 'md:flex'
-        }`}
-      >
-        {sidebarContent}
-      </aside>
+      <DashboardTopbar
+        visible={isDashboardHome ? isHomeTopbarRevealed || isMenuOpen : true}
+        isMenuOpen={isMenuOpen}
+        onMenuToggle={() => setIsMenuOpen((open) => !open)}
+        onOpenAuth={() => {
+          setAuthMode('login');
+          setIsAuthModalOpen(true);
+        }}
+        onLogout={() => logout()}
+        isRelocationPartner={isRelocationPartner}
+        isFinanciamentoPartner={isFinanciamentoPartner}
+      />
 
       {/* Sidebar mobile (overlay) */}
       <div
@@ -1237,7 +1072,11 @@ export default function DashboardLayout({
         </div>
       )}
 
-      <main className="flex-1 p-4 pt-16 pb-0 text-foreground md:p-6 md:pt-6 md:pb-0">
+      <main
+        className={`flex-1 p-4 pb-0 text-foreground md:p-6 md:pb-0 ${
+          isDashboardHome ? 'pt-16 md:pt-6' : 'pt-16 md:pt-24'
+        }`}
+      >
         {children}
       </main>
 
@@ -1254,7 +1093,7 @@ export default function DashboardLayout({
             </h2>
             <div className="mt-3 space-y-3 text-sm text-foreground/90">
               <p>
-                A Comunidade Rafa Portugal foi criada para te acompanhar em cada etapa do
+                A {SITE_NAME_FULL} foi criada para te acompanhar em cada etapa do
                 teu processo de imigração para Portugal, com informação
                 atualizada e apoio de quem já passou por aí.
               </p>
@@ -1277,7 +1116,7 @@ export default function DashboardLayout({
               <p>
                 Todos os profissionais indicados aqui são{' '}
                 <span className="font-semibold">parceiros de confiança</span> da
-                Comunidade Rafa Portugal e, para além do suporte especializado, conseguimos
+                {SITE_NAME_FULL} e, para além do suporte especializado, conseguimos
                 negociar <span className="font-semibold">benefícios exclusivos</span>{' '}
                 para membros, que podem ser aproveitados diretamente pela
                 plataforma.

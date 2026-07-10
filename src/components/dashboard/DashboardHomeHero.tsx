@@ -3,7 +3,6 @@ import { Dancing_Script } from "next/font/google";
 
 import { FlagPt } from "@/components/CountryFlags";
 import { DashboardHomeHeroCta } from "@/components/dashboard/DashboardHomeHeroCta";
-import { DashboardHomeHeroLoginButton } from "@/components/dashboard/DashboardHomeHeroLoginButton";
 import {
   BRAND_HERO_BG_DESKTOP,
   BRAND_HERO_BG_MOBILE,
@@ -70,6 +69,27 @@ const HERO_SERVICES = [
   },
 ] as const;
 
+function HeroFoundersImage({
+  className = "",
+  sizes,
+}: {
+  className?: string;
+  sizes: string;
+}) {
+  return (
+    <div className={`relative ${className}`.trim()}>
+      <Image
+        src={BRAND_HERO_FOUNDERS_IMAGE}
+        alt=""
+        fill
+        priority
+        sizes={sizes}
+        className="object-contain object-bottom"
+      />
+    </div>
+  );
+}
+
 type Props = {
   className?: string;
 };
@@ -100,8 +120,21 @@ export function DashboardHomeHero({ className = "" }: Props) {
           aria-hidden
         />
 
-        <div className="absolute inset-0 z-10 flex flex-col">
-          <div className="animate-dashboard-hero-fade-up flex items-start justify-between gap-4 px-[5%] pt-[4.5%] md:px-[4.5%] md:pt-[4%] lg:pt-[4cqh]">
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-[40%] z-[20] h-[52%] md:hidden"
+          aria-hidden
+        >
+          <div className="animate-dashboard-hero-founders-enter absolute bottom-0 left-[20%] z-[10] [animation-delay:300ms]">
+            <HeroFoundersImage
+              className="h-[clamp(18rem,72vw,25rem)] w-[clamp(13.5rem,54vw,18.5rem)]"
+              sizes="72vw"
+            />
+          </div>
+
+          <div className="dashboard-hero-founders-fade absolute bottom-0 left-1/2 z-[20] h-[min(18rem,85%)] w-screen max-w-none -translate-x-1/2" />
+        </div>
+
+        <div className="animate-dashboard-hero-fade-up absolute inset-x-0 top-0 z-[40] px-[5%] pt-[4.5%] md:px-[4.5%] md:pt-[4%] lg:pt-[4cqh]">
             <Image
               src={BRAND_LOGO_HORIZONTAL}
               alt={SITE_NAME_FULL}
@@ -110,14 +143,18 @@ export function DashboardHomeHero({ className = "" }: Props) {
               className="h-auto max-w-full w-[clamp(8.5rem,46vw,11.5rem)] md:w-[clamp(14rem,28vw,22rem)] lg:w-[clamp(24rem,44cqh,40rem)]"
               priority
             />
-            <DashboardHomeHeroLoginButton />
-          </div>
+        </div>
 
-          <div className="relative z-20 flex min-h-0 flex-1 flex-col justify-end md:h-full md:px-[4.5%]">
-            <div className="flex w-full flex-col px-[5%] pb-[5%] md:h-full md:max-w-[60%] md:px-0 md:pb-0">
-              <div className="flex flex-col gap-6 md:flex-1 md:justify-start md:gap-3 md:-translate-y-[3%] md:pt-0 lg:justify-center lg:gap-[clamp(0.75rem,2cqh,2.5rem)] lg:-translate-y-[6%] lg:pt-0">
-                <div className="animate-dashboard-hero-fade-up w-full [animation-delay:120ms]">
-                  <h1 className="max-w-[20ch] text-[clamp(1.85rem,6.8vw,3.35rem)] font-semibold leading-[1.08] tracking-tight md:max-w-none md:text-[clamp(1.35rem,1.65vw,1.85rem)] lg:text-[clamp(1.75rem,5.5cqh,2.75rem)]">
+        <div className="absolute inset-x-0 bottom-0 z-[40] md:inset-0 md:flex md:flex-col md:justify-end md:px-[4.5%] lg:justify-center">
+          <div
+            className="hidden shrink-0 md:block md:h-[clamp(8rem,22%,12rem)] lg:h-[clamp(6rem,18cqh,11rem)]"
+            aria-hidden
+          />
+          <div className="flex min-h-0 w-full flex-1 flex-col justify-end md:max-w-[60%]">
+            <div className="flex w-full flex-col px-[5%] pb-[5%] md:h-full md:px-0 md:pb-0">
+              <div className="flex flex-col gap-6 md:flex-1 md:justify-start md:gap-3 md:max-lg:pt-[4%] lg:justify-center lg:gap-[clamp(0.75rem,2cqh,2.5rem)] lg:pt-0 lg:-translate-y-[6%]">
+                <div className="animate-dashboard-hero-fade-up relative w-full [animation-delay:120ms]">
+                  <h1 className="relative z-10 max-w-[20ch] text-[clamp(1.85rem,6.8vw,3.35rem)] font-semibold leading-[1.08] tracking-tight md:max-w-none md:text-[clamp(1.35rem,1.65vw,1.85rem)] lg:text-[clamp(1.75rem,5.5cqh,2.75rem)]">
                     <span className="block text-brand-accent">
                       Mude para Portugal{" "}
                       <FlagPt
@@ -142,7 +179,7 @@ export function DashboardHomeHero({ className = "" }: Props) {
                     </span>
                     Acompanhamento completo para brasileiros
                     <br className="hidden md:block" />
-                    que querem imigrar para Portugal{" "}
+                    {" "}que querem imigrar para Portugal{" "}
                     <span className="text-brand-accent">com tranquilidade.</span>
                   </p>
                 </div>
@@ -178,14 +215,19 @@ export function DashboardHomeHero({ className = "" }: Props) {
                       </span>
                     </li>
                   ))}
-                </ul>
+              </ul>
               </div>
             </div>
           </div>
         </div>
 
         <div
-          className="animate-dashboard-hero-fade-up pointer-events-none absolute bottom-[5%] right-[4.5%] z-[15] hidden text-white [animation-delay:320ms] md:block lg:bottom-[4cqh]"
+          className="dashboard-hero-founders-fade pointer-events-none absolute bottom-0 left-1/2 z-[25] hidden h-[clamp(10rem,24vh,14rem)] w-screen max-w-none -translate-x-1/2 md:block"
+          aria-hidden
+        />
+
+        <div
+          className="animate-dashboard-hero-fade-up pointer-events-none absolute bottom-[5%] right-[4.5%] z-[35] hidden text-white [animation-delay:320ms] md:block lg:bottom-[4cqh]"
         >
           <p className="text-[clamp(0.78rem,2.2vw,0.95rem)] leading-none text-white md:text-[clamp(0.8rem,1vw,1rem)] lg:text-[clamp(0.8rem,1.8cqh,1.1rem)]">
             <span
@@ -203,20 +245,14 @@ export function DashboardHomeHero({ className = "" }: Props) {
         </div>
 
         <div
-          className="pointer-events-none absolute bottom-0 right-[10%] z-[5] hidden h-[108%] w-[min(31%,600px)] md:block lg:h-[106%] lg:w-[min(29%,min(32cqw,600px))]"
+          className="pointer-events-none absolute bottom-0 right-[10%] z-[15] hidden h-[108%] w-[min(31%,600px)] md:block lg:h-[106%] lg:w-[min(29%,min(32cqw,600px))]"
           aria-hidden
         >
           <div className="animate-dashboard-hero-founders-enter absolute inset-x-0 -bottom-[7%] h-full w-full [animation-delay:420ms]">
-            <div className="relative mx-auto h-full w-full max-w-[1080px]">
-              <Image
-                src={BRAND_HERO_FOUNDERS_IMAGE}
-                alt=""
-                fill
-                priority
-                sizes="(max-width: 1080px) 31vw, 600px"
-                className="object-contain object-bottom"
-              />
-            </div>
+            <HeroFoundersImage
+              className="mx-auto h-full w-full max-w-[1080px]"
+              sizes="(max-width: 1080px) 31vw, 600px"
+            />
           </div>
         </div>
       </div>
