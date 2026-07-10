@@ -696,8 +696,6 @@ export default function DashboardLayout({
       {/* Preload de imagens usadas em modais (evita carregar só quando abre) */}
       <div className="pointer-events-none fixed -left-[9999px] -top-[9999px] h-0 w-0 overflow-hidden opacity-0">
         <Image src="/rafa_cards/modal_novo_agendamento.png" alt="" width={256} height={256} priority />
-        {/* Membership modal usa <img> com este SVG; pré-carrega via img escondida */}
-        <img src="/comunidade_bg.svg" alt="" loading="eager" />
       </div>
 
       <DashboardTopbar

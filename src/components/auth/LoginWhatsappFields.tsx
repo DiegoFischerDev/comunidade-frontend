@@ -25,6 +25,8 @@ type Props = {
   fieldRef?: Ref<HTMLDivElement>;
   /** Ação à direita da label (ex.: «Utilizar e-mail»). */
   labelAction?: ReactNode;
+  /** Por defeito grava país/número no localStorage (login). Desativar em formulários admin avulsos. */
+  rememberInStorage?: boolean;
 };
 
 /**
@@ -39,6 +41,7 @@ export function LoginWhatsappFields({
   error,
   fieldRef,
   labelAction,
+  rememberInStorage = true,
 }: Props) {
   const hasError = Boolean(error);
   const [dial, setDial] = useState(LOGIN_COUNTRY_DIALS[0]!.dial);
@@ -47,8 +50,20 @@ export function LoginWhatsappFields({
   const dialRef = useRef(dial);
   dialRef.current = dial;
 
+  const persistPhoneParts = (nextDial: string, nextLocal: string) => {
+    if (!rememberInStorage) return;
+    persistLoginPhonePartsToStorage(nextDial, nextLocal);
+  };
+
   useEffect(() => {
-    const { dial: d, local: l } = readDialAndLocalFromStorageAndValue(value);
+    const { dial: d, local: l } = rememberInStorage
+      ? readDialAndLocalFromStorageAndValue(value)
+      : (() => {
+          const sv = loginPhoneDigitsOnly(value);
+          const defaultDial = LOGIN_COUNTRY_DIALS[0]!.dial;
+          if (sv) return parseFullDigitsToDialLocal(sv, defaultDial, defaultDial);
+          return { dial: defaultDial, local: '' };
+        })();
     setDial(d);
     setLocal(l);
     setReady(true);
@@ -73,10 +88,15 @@ export function LoginWhatsappFields({
 
   useEffect(() => {
     if (!ready) return;
-    const full = dial + loginPhoneDigitsOnly(local);
+    const localDigits = loginPhoneDigitsOnly(local);
+    const full = dial + localDigits;
+    if (!rememberInStorage && !localDigits) {
+      onChange('');
+      return;
+    }
     onChange(full);
-    persistLoginPhonePartsToStorage(dial, local);
-  }, [ready, dial, local, onChange]);
+    persistPhoneParts(dial, local);
+  }, [ready, dial, local, onChange, rememberInStorage]);
 
   const selectId = `${idPrefix}-country`;
   const localId = `${idPrefix}-whatsapp-local`;
@@ -95,11 +115,11 @@ export function LoginWhatsappFields({
   function handleCountrySelect(next: string) {
     if (next === LOGIN_COUNTRY_CUSTOM_SELECT) {
       setDial("");
-      persistLoginPhonePartsToStorage("", local);
+      persistPhoneParts("", local);
       return;
     }
     setDial(next);
-    persistLoginPhonePartsToStorage(next, local);
+    persistPhoneParts(next, local);
   }
 
   const chevronBg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`;
@@ -177,7 +197,7 @@ export function LoginWhatsappFields({
                 onChange={(e) => {
                   const next = loginPhoneDigitsOnly(e.target.value).slice(0, 5);
                   setDial(next);
-                  persistLoginPhonePartsToStorage(next, local);
+                  persistPhoneParts(next, local);
                 }}
                 placeholder="DDI"
                 maxLength={5}
@@ -206,7 +226,7 @@ export function LoginWhatsappFields({
             onChange={(e) => {
               const next = e.target.value;
               setLocal(next);
-              persistLoginPhonePartsToStorage(dial, next);
+              persistPhoneParts(dial, next);
             }}
             placeholder={
               dial === "351"

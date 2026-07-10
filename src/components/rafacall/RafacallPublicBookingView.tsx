@@ -394,7 +394,11 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
         });
         setScreen('manage_detail');
       } catch (e) {
-        setActionError(e instanceof Error ? e.message : 'Não foi possível agendar.');
+        const message = e instanceof Error ? e.message : 'Não foi possível agendar.';
+        setActionError(message);
+        if (/horário|disponível|bloqueado|ocupado/i.test(message)) {
+          void loadAvailability(undefined, { autoSelectDay: false });
+        }
       } finally {
         setActionLoading(false);
       }

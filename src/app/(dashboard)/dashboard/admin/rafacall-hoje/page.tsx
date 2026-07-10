@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
@@ -13,6 +13,7 @@ import {
 
 type SchedulePayload = Awaited<ReturnType<typeof api.admin.rafacall.schedule>>;
 type BlocksPayload = Awaited<ReturnType<typeof api.admin.rafacall.blocks>>;
+type AvailabilityPayload = Awaited<ReturnType<typeof api.rafacall.availability>>;
 
 function ymdInTz(date: Date, timeZone: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone }).format(date);
@@ -92,25 +93,46 @@ function waUrl(
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }
 
-function WhatsAppIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-    </svg>
-  );
+function mapQuickBookError(message: string): {
+  generalError: string;
+  whatsappError: string;
+  shouldRefresh: boolean;
+} {
+  const m = message.trim();
+  if (/whatsapp.*agendamento|já tem um agendamento ativo/i.test(m)) {
+    return { generalError: '', whatsappError: m, shouldRefresh: false };
+  }
+  if (/horário|disponível|bloqueado|ocupado/i.test(m)) {
+    return {
+      generalError: m,
+      whatsappError: '',
+      shouldRefresh: true,
+    };
+  }
+  return {
+    generalError: m || 'Não foi possível criar o agendamento.',
+    whatsappError: '',
+    shouldRefresh: false,
+  };
 }
 
-function WhatsAppLinkButton({ href }: { href: string }) {
-  if (!href) return null;
+function WhatsAppTextLink({
+  href,
+  children,
+  className = '',
+}: {
+  href: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+      className={`font-medium text-[#128C7E] underline-offset-2 transition hover:underline ${className}`.trim()}
     >
-      <WhatsAppIcon className="h-4 w-4 shrink-0" />
-      WhatsApp
+      {children}
     </a>
   );
 }
@@ -191,8 +213,8 @@ function bookingStatusDisplay(status: string | undefined | null): {
   if (String(status ?? '').toUpperCase() === 'COMPLETED') {
     return {
       label: 'Realizado',
-      className: 'bg-page text-muted',
-      cardClassName: 'border-border bg-primary-1',
+      className: 'bg-neutral-200 text-neutral-700',
+      cardClassName: 'border-neutral-200 bg-neutral-100',
     };
   }
   return {
@@ -209,11 +231,18 @@ type KanbanDay = {
   date: string;
   bookings: ScheduleItem[];
   blockedSlots: BlockItem[];
+  freeSlots: { startsAt: string; endsAt: string }[];
 };
+
+type KanbanRowEntry =
+  | { kind: 'booking'; startsAt: string; booking: ScheduleItem }
+  | { kind: 'block'; startsAt: string; block: BlockItem }
+  | { kind: 'free'; startsAt: string; endsAt: string };
 
 function buildKanbanDays(
   schedule: SchedulePayload | null,
   allBlocks: BlockItem[],
+  availability: AvailabilityPayload | null,
   timeZone: string,
 ): KanbanDay[] {
   const dates = new Set<string>();
@@ -221,25 +250,42 @@ function buildKanbanDays(
   for (const block of allBlocks) {
     dates.add(ymdInTz(new Date(block.startsAt), timeZone));
   }
+  for (const day of availability?.days ?? []) {
+    if (day.slots.length > 0) dates.add(day.date);
+  }
   return Array.from(dates)
     .sort((a, b) => a.localeCompare(b))
     .map((date) => ({
       date,
       bookings: schedule?.days.find((d) => d.date === date)?.items ?? [],
       blockedSlots: blocksForYmd(allBlocks, date, timeZone),
+      freeSlots: availability?.days.find((d) => d.date === date)?.slots ?? [],
     }));
 }
 
-function formatBlockSlot(block: BlockItem, timeZone: string): string {
-  const start = new Date(block.startsAt);
-  const end = new Date(block.endsAt);
-  return `${start.toLocaleTimeString('pt-PT', { timeZone, hour: '2-digit', minute: '2-digit' })}–${end.toLocaleTimeString('pt-PT', { timeZone, hour: '2-digit', minute: '2-digit' })}`;
+function buildKanbanDayEntries(kanbanDay: KanbanDay): KanbanRowEntry[] {
+  const byStart = new Map<string, KanbanRowEntry>();
+
+  for (const slot of kanbanDay.freeSlots) {
+    byStart.set(slot.startsAt, {
+      kind: 'free',
+      startsAt: slot.startsAt,
+      endsAt: slot.endsAt,
+    });
+  }
+  for (const block of kanbanDay.blockedSlots) {
+    byStart.set(block.startsAt, { kind: 'block', startsAt: block.startsAt, block });
+  }
+  for (const booking of kanbanDay.bookings) {
+    byStart.set(booking.startsAt, { kind: 'booking', startsAt: booking.startsAt, booking });
+  }
+
+  return Array.from(byStart.values()).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 }
 
 function BookingActions({
   row,
   slot,
-  waHref,
   reschedulingBookingId,
   completingBookingId,
   cancelingBookingId,
@@ -249,7 +295,6 @@ function BookingActions({
 }: {
   row: ScheduleItem;
   slot: string;
-  waHref: string;
   reschedulingBookingId: string | null;
   completingBookingId: string | null;
   cancelingBookingId: string | null;
@@ -260,8 +305,7 @@ function BookingActions({
   const editable = canManageBooking(row.status);
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      {waHref ? <WhatsAppLinkButton href={waHref} /> : null}
+    <div className="flex shrink-0 flex-wrap items-center gap-1">
       {editable ? (
         <>
           <button
@@ -300,33 +344,78 @@ function BookingActions({
   );
 }
 
-function BlockKanbanCard({
+function formatSlotRange(startsAt: string, endsAt: string, timeZone: string): string {
+  const start = new Date(startsAt);
+  const end = new Date(endsAt);
+  return `${start.toLocaleTimeString('pt-PT', { timeZone, hour: '2-digit', minute: '2-digit' })}–${end.toLocaleTimeString('pt-PT', { timeZone, hour: '2-digit', minute: '2-digit' })}`;
+}
+
+function FreeKanbanRowContent({
+  startsAt,
+  endsAt,
+  isBlocking,
+  onBlock,
+  onBook,
+}: {
+  startsAt: string;
+  endsAt: string;
+  isBlocking: boolean;
+  onBlock: (startsAt: string, endsAt: string) => void;
+  onBook: () => void;
+}) {
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onBook}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onBook();
+        }
+      }}
+      className="flex min-h-[2.75rem] flex-1 cursor-pointer items-center justify-between gap-2 rounded-lg border border-dashed border-border bg-page/60 px-3 py-2 transition hover:bg-page/90"
+      aria-label="Agendar horário livre"
+    >
+      <span className="text-xs font-medium text-muted">Livre</span>
+      <button
+        type="button"
+        disabled={isBlocking}
+        onClick={(e) => {
+          e.stopPropagation();
+          onBlock(startsAt, endsAt);
+        }}
+        className="shrink-0 cursor-pointer text-xs font-semibold text-foreground underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {isBlocking ? '…' : 'Bloquear'}
+      </button>
+    </div>
+  );
+}
+
+function BlockKanbanRowContent({
   block,
-  tz,
   unblockingId,
   onUnblock,
 }: {
   block: BlockItem;
-  tz: string;
   unblockingId: string | null;
   onUnblock: (blockId: string) => void;
 }) {
-  const slot = formatBlockSlot(block, tz);
   const isUnblocking = unblockingId === block.id;
 
   return (
-    <article className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs">
-      <span className="min-w-0 shrink font-semibold tabular-nums text-red-900">{slot}</span>
-      <span className="shrink-0 font-medium text-red-700">Ocupado</span>
+    <div className="flex min-h-[2.75rem] flex-1 items-center justify-between gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+      <span className="text-xs font-semibold text-red-800">Ocupado</span>
       <button
         type="button"
         disabled={isUnblocking}
         onClick={() => onUnblock(block.id)}
-        className="ml-auto shrink-0 cursor-pointer font-semibold text-red-800 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+        className="shrink-0 cursor-pointer text-xs font-semibold text-red-800 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isUnblocking ? '…' : 'Desbloquear'}
       </button>
-    </article>
+    </div>
   );
 }
 
@@ -358,7 +447,24 @@ function formatBookingSlot(row: ScheduleItem, tz: string): string {
   return `${start.toLocaleTimeString('pt-PT', { timeZone: tz, hour: '2-digit', minute: '2-digit' })}–${end.toLocaleTimeString('pt-PT', { timeZone: tz, hour: '2-digit', minute: '2-digit' })}`;
 }
 
-function BookingKanbanCard({
+function bookingWaHref(row: ScheduleItem, adminTz: string): string {
+  if (!row.whatsappDigits) return '';
+  const messageTz = row.bookingTimezone?.trim() || adminTz;
+  return waUrl(row.whatsappDigits, row.userName, row.startsAt, messageTz);
+}
+
+function KanbanTimeRow({ timeLabel, children }: { timeLabel: string; children: ReactNode }) {
+  return (
+    <div className="flex items-stretch gap-3 border-b border-border py-2.5 last:border-b-0">
+      <time className="w-10 shrink-0 self-center text-xs font-semibold tabular-nums text-muted">
+        {timeLabel}
+      </time>
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
+function BookingKanbanRowContent({
   row,
   tz,
   reschedulingBookingId,
@@ -378,37 +484,41 @@ function BookingKanbanCard({
   onCancel: (row: ScheduleItem, slot: string) => void;
 }) {
   const slot = formatBookingSlot(row, tz);
-  const { label: statusLabel, className: statusClass, cardClassName } = bookingStatusDisplay(row.status);
-  const messageTz = row.bookingTimezone?.trim() || tz;
-  const waHref = row.whatsappDigits
-    ? waUrl(row.whatsappDigits, row.userName, row.startsAt, messageTz)
-    : '';
+  const isCompleted = String(row.status ?? '').toUpperCase() === 'COMPLETED';
+  const { cardClassName } = bookingStatusDisplay(row.status);
+  const waHref = bookingWaHref(row, tz);
 
   return (
-    <article className={`rounded-xl border p-3 shadow-sm ${cardClassName}`}>
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-semibold text-foreground">{slot}</p>
-        <span className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusClass}`}>
-          {statusLabel}
+    <article
+      className={`flex min-h-[2.75rem] flex-1 flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border px-3 py-2 shadow-sm sm:flex-nowrap ${cardClassName}`}
+    >
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-foreground">{row.userName || '—'}</p>
+        {row.whatsappDigits ? (
+          waHref ? (
+            <WhatsAppTextLink href={waHref} className="mt-0.5 block truncate text-xs">
+              {formatWhatsappDigits(row.whatsappDigits)}
+            </WhatsAppTextLink>
+          ) : (
+            <p className="mt-0.5 truncate text-xs text-muted">{formatWhatsappDigits(row.whatsappDigits)}</p>
+          )
+        ) : null}
+      </div>
+      {isCompleted ? (
+        <span className="inline-flex shrink-0 rounded-full bg-page px-2 py-0.5 text-[10px] font-semibold text-muted">
+          Realizado
         </span>
-      </div>
-      <p className="mt-2 font-medium text-foreground">{row.userName || '—'}</p>
-      {row.whatsappDigits ? (
-        <p className="mt-0.5 text-xs text-muted">{formatWhatsappDigits(row.whatsappDigits)}</p>
       ) : null}
-      <div className="mt-3 border-t border-border pt-3">
-        <BookingActions
-          row={row}
-          slot={slot}
-          waHref={waHref}
-          reschedulingBookingId={reschedulingBookingId}
-          completingBookingId={completingBookingId}
-          cancelingBookingId={cancelingBookingId}
-          onReschedule={onReschedule}
-          onComplete={onComplete}
-          onCancel={onCancel}
-        />
-      </div>
+      <BookingActions
+        row={row}
+        slot={slot}
+        reschedulingBookingId={reschedulingBookingId}
+        completingBookingId={completingBookingId}
+        cancelingBookingId={cancelingBookingId}
+        onReschedule={onReschedule}
+        onComplete={onComplete}
+        onCancel={onCancel}
+      />
     </article>
   );
 }
@@ -421,10 +531,13 @@ function DayKanbanColumn({
   completingBookingId,
   cancelingBookingId,
   unblockingId,
+  blockingSlotKey,
   onReschedule,
   onComplete,
   onCancel,
   onUnblock,
+  onBlockSlot,
+  onBookFreeSlot,
 }: {
   kanbanDay: KanbanDay;
   tz: string;
@@ -433,23 +546,15 @@ function DayKanbanColumn({
   completingBookingId: string | null;
   cancelingBookingId: string | null;
   unblockingId: string | null;
+  blockingSlotKey: string | null;
   onReschedule: (row: ScheduleItem) => void;
   onComplete: (row: ScheduleItem, slot: string) => void;
   onCancel: (row: ScheduleItem, slot: string) => void;
   onUnblock: (blockId: string) => void;
+  onBlockSlot: (startsAt: string, endsAt: string) => void;
+  onBookFreeSlot: (startsAt: string, endsAt: string) => void;
 }) {
-  const bookings = [...kanbanDay.bookings].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
-  const blockedSlots = [...kanbanDay.blockedSlots].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
-  const totalItems = bookings.length + blockedSlots.length;
-
-  type KanbanEntry =
-    | { kind: 'booking'; startsAt: string; booking: ScheduleItem }
-    | { kind: 'block'; startsAt: string; block: BlockItem };
-
-  const entries: KanbanEntry[] = [
-    ...bookings.map((booking) => ({ kind: 'booking' as const, startsAt: booking.startsAt, booking })),
-    ...blockedSlots.map((block) => ({ kind: 'block' as const, startsAt: block.startsAt, block })),
-  ].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  const entries = buildKanbanDayEntries(kanbanDay);
 
   return (
     <section
@@ -460,42 +565,267 @@ function DayKanbanColumn({
         <p className="text-sm font-semibold capitalize text-foreground">
           {formatDayKanbanTitle(kanbanDay.date, tz)}
         </p>
-        <p className="text-xs text-muted">
-          {totalItems} {totalItems === 1 ? 'item' : 'itens'}
-          {blockedSlots.length > 0 ? (
-            <span className="text-red-700"> · {blockedSlots.length} ocupado(s)</span>
-          ) : null}
-        </p>
       </header>
-      <div className="flex flex-1 flex-col gap-3 p-3">
+      <div className="flex flex-1 flex-col px-3 py-1">
         {entries.length === 0 ? (
-          <p className="text-xs text-muted">Sem itens neste dia.</p>
-        ) : null}
-        {entries.map((entry) =>
-          entry.kind === 'booking' ? (
-            <BookingKanbanCard
-              key={`b:${entry.booking.id}`}
-              row={entry.booking}
-              tz={tz}
-              reschedulingBookingId={reschedulingBookingId}
-              completingBookingId={completingBookingId}
-              cancelingBookingId={cancelingBookingId}
-              onReschedule={onReschedule}
-              onComplete={onComplete}
-              onCancel={onCancel}
-            />
-          ) : (
-            <BlockKanbanCard
-              key={`x:${entry.block.id}`}
-              block={entry.block}
-              tz={tz}
-              unblockingId={unblockingId}
-              onUnblock={onUnblock}
-            />
-          ),
+          <p className="py-3 text-xs text-muted">Sem itens neste dia.</p>
+        ) : (
+          entries.map((entry) => (
+            <KanbanTimeRow
+              key={
+                entry.kind === 'booking'
+                  ? `b:${entry.booking.id}`
+                  : entry.kind === 'block'
+                    ? `x:${entry.block.id}`
+                    : `f:${entry.startsAt}`
+              }
+              timeLabel={formatSlotTimeInTz(entry.startsAt, tz)}
+            >
+              {entry.kind === 'booking' ? (
+                <BookingKanbanRowContent
+                  row={entry.booking}
+                  tz={tz}
+                  reschedulingBookingId={reschedulingBookingId}
+                  completingBookingId={completingBookingId}
+                  cancelingBookingId={cancelingBookingId}
+                  onReschedule={onReschedule}
+                  onComplete={onComplete}
+                  onCancel={onCancel}
+                />
+              ) : entry.kind === 'block' ? (
+                <BlockKanbanRowContent
+                  block={entry.block}
+                  unblockingId={unblockingId}
+                  onUnblock={onUnblock}
+                />
+              ) : (
+                <FreeKanbanRowContent
+                  startsAt={entry.startsAt}
+                  endsAt={entry.endsAt}
+                  isBlocking={blockingSlotKey === `slot:${entry.startsAt}`}
+                  onBlock={onBlockSlot}
+                  onBook={() => onBookFreeSlot(entry.startsAt, entry.endsAt)}
+                />
+              )}
+            </KanbanTimeRow>
+          ))
         )}
       </div>
     </section>
+  );
+}
+
+function FreeSlotBookModal({
+  date,
+  startsAt,
+  endsAt,
+  tz,
+  name,
+  whatsapp,
+  whatsappError,
+  error,
+  isLoading,
+  onNameChange,
+  onWhatsappChange,
+  onConfirm,
+  onClose,
+}: {
+  date: string;
+  startsAt: string;
+  endsAt: string;
+  tz: string;
+  name: string;
+  whatsapp: string;
+  whatsappError: string;
+  error: string;
+  isLoading: boolean;
+  onNameChange: (value: string) => void;
+  onWhatsappChange: (value: string) => void;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="free-slot-book-modal-title"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 id="free-slot-book-modal-title" className="text-lg font-semibold text-foreground">
+              Agendar horário livre
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              Indica o cliente para confirmar este agendamento.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading}
+            className="cursor-pointer rounded-full px-2 py-1 text-sm text-muted hover:bg-page hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Fechar"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Horário selecionado</p>
+          <p className="mt-1 text-sm font-semibold capitalize text-foreground">{prettyYmdPt(date, tz)}</p>
+          <p className="mt-0.5 text-sm text-foreground/90">{formatSlotRange(startsAt, endsAt, tz)}</p>
+        </div>
+
+        {error ? (
+          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="mt-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground" htmlFor="quick-book-name">
+              Nome do cliente
+            </label>
+            <input
+              id="quick-book-name"
+              type="text"
+              value={name}
+              onChange={(e) => onNameChange(e.target.value)}
+              disabled={isLoading}
+              className="mt-2 w-full rounded-xl border border-border bg-page px-4 py-2.5 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
+              placeholder="Nome"
+              autoComplete="name"
+            />
+          </div>
+          <LoginWhatsappFields
+            key={startsAt}
+            idPrefix="quick-book"
+            label="WhatsApp"
+            value={whatsapp}
+            error={whatsappError}
+            disabled={isLoading}
+            rememberInStorage={false}
+            onChange={onWhatsappChange}
+          />
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={() => void onConfirm()}
+            className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-[14px] bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isLoading ? 'A agendar…' : 'Agendar'}
+          </button>
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={onClose}
+            className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-[14px] border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BookingActionConfirmModal({
+  action,
+  row,
+  slot,
+  isLoading,
+  onConfirm,
+  onClose,
+}: {
+  action: 'cancel' | 'complete';
+  row: ScheduleItem;
+  slot: string;
+  isLoading: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  const isCancel = action === 'cancel';
+  const clientName = (row.userName || '').trim() || '—';
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="booking-action-confirm-title"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start gap-3">
+          {isCancel ? (
+            <CancelCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-red-700" />
+          ) : (
+            <CheckCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" />
+          )}
+          <div className="min-w-0">
+            <h2 id="booking-action-confirm-title" className="text-base font-semibold text-foreground">
+              {isCancel ? 'Cancelar agendamento?' : 'Marcar como realizado?'}
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              {isCancel
+                ? 'Esta ação remove o agendamento. O cliente poderá marcar novamente quando quiser.'
+                : 'Confirma que a videochamada com este cliente já foi realizada.'}
+            </p>
+          </div>
+        </div>
+
+        <div
+          className={`mt-4 rounded-xl border px-4 py-3 ${
+            isCancel ? 'border-red-200 bg-red-50/80' : 'border-emerald-200 bg-emerald-50'
+          }`}
+        >
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Agendamento</p>
+          <p className="mt-1 text-sm font-semibold text-foreground">{clientName}</p>
+          <p className="mt-0.5 text-sm text-foreground/90">{slot}</p>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={() => void onConfirm()}
+            className={`inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 py-2.5 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+              isCancel ? 'bg-red-700 hover:bg-red-800' : 'bg-emerald-700 hover:bg-emerald-800'
+            }`}
+          >
+            {isCancel ? <CancelCircleIcon className="h-4 w-4" /> : <CheckCircleIcon className="h-4 w-4" />}
+            {isLoading
+              ? isCancel
+                ? 'A cancelar…'
+                : 'A guardar…'
+              : isCancel
+                ? 'Confirmar cancelamento'
+                : 'Confirmar realizado'}
+          </button>
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={onClose}
+            className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-[14px] border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Voltar
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -520,31 +850,30 @@ export default function AdminRafaCallHojePage() {
   const tz = ADMIN_SCHEDULE_TZ;
 
   const [blocks, setBlocks] = useState<BlocksPayload['blocks']>([]);
-  const [blocksLoading, setBlocksLoading] = useState(false);
-  const [blocksError, setBlocksError] = useState('');
-  const [selectedDate, setSelectedDate] = useState<string>('');
   const [availability, setAvailability] = useState<
     Awaited<ReturnType<typeof api.rafacall.availability>> | null
   >(null);
-  const [schedLoading, setSchedLoading] = useState(false);
   const [slotMutatingKey, setSlotMutatingKey] = useState<string | null>(null);
-  const [blocksModalOpen, setBlocksModalOpen] = useState(false);
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [createName, setCreateName] = useState('');
-  const [createWhatsapp, setCreateWhatsapp] = useState('');
-  const [createWhatsappError, setCreateWhatsappError] = useState('');
-  const [createAvailability, setCreateAvailability] = useState<
-    Awaited<ReturnType<typeof api.rafacall.guestAvailability>> | null
-  >(null);
-  const [createDate, setCreateDate] = useState('');
-  const [createLoading, setCreateLoading] = useState(false);
-  const [createError, setCreateError] = useState('');
-  const [creatingBooking, setCreatingBooking] = useState(false);
+  const [bookingConfirm, setBookingConfirm] = useState<{
+    kind: 'cancel' | 'complete';
+    row: ScheduleItem;
+    slot: string;
+  } | null>(null);
+  const [quickBookSlot, setQuickBookSlot] = useState<{
+    date: string;
+    startsAt: string;
+    endsAt: string;
+  } | null>(null);
+  const [quickBookName, setQuickBookName] = useState('');
+  const [quickBookWhatsapp, setQuickBookWhatsapp] = useState('');
+  const [quickBookWhatsappError, setQuickBookWhatsappError] = useState('');
+  const [quickBookError, setQuickBookError] = useState('');
+  const [quickBooking, setQuickBooking] = useState(false);
 
   const kanbanDays = useMemo(
-    () => buildKanbanDays(data, blocks, tz),
-    [data, blocks, tz],
+    () => buildKanbanDays(data, blocks, availability, tz),
+    [data, blocks, availability, tz],
   );
 
   const tabletKanbanSlides = useMemo(
@@ -556,55 +885,25 @@ export default function AdminRafaCallHojePage() {
     setLoading(true);
     setError('');
     try {
+      const from = ymdInTz(new Date(), tz);
+      const to = ymdInTz(addDays(new Date(), 14), tz);
       const fromUtcIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const toUtcIso = addDays(new Date(), 14).toISOString();
-      const [res, blocksRes] = await Promise.all([
+      const [res, blocksRes, avail] = await Promise.all([
         api.admin.rafacall.schedule(tz),
         api.admin.rafacall.blocks({ fromUtcIso, toUtcIso }),
+        api.rafacall.guestAvailability({ from, to, tz }),
       ]);
       setData(res);
       setBlocks(blocksRes.blocks);
+      setAvailability(avail);
     } catch (e) {
       setData(null);
       setBlocks([]);
+      setAvailability(null);
       setError(e instanceof Error ? e.message : 'Erro ao carregar.');
     } finally {
       setLoading(false);
-    }
-  }, [tz]);
-
-  const loadBlocksAndAvailability = useCallback(async () => {
-    setBlocksLoading(true);
-    setBlocksError('');
-    setSchedLoading(true);
-    try {
-      const from = ymdInTz(new Date(), tz);
-      const to = ymdInTz(addDays(new Date(), 14), tz);
-
-      const fromUtcIso = new Date().toISOString();
-      const toUtcIso = addDays(new Date(), 14).toISOString();
-
-      const [b, avail] = await Promise.all([
-        api.admin.rafacall.blocks({ fromUtcIso, toUtcIso }),
-        api.rafacall.availability({ from, to, tz }),
-      ]);
-
-      setBlocks(b.blocks);
-      setAvailability(avail);
-      setSelectedDate((prev) => {
-        // Mantém seleção atual se ainda existir na janela.
-        if (prev && avail.days.some((d) => d.date === prev)) return prev;
-        const firstDayWithSlots = avail.days.find((d) => d.slots.length > 0)?.date ?? '';
-        const firstAnyDay = avail.days[0]?.date ?? '';
-        return firstDayWithSlots || firstAnyDay;
-      });
-    } catch (e) {
-      setBlocks([]);
-      setAvailability(null);
-      setBlocksError(e instanceof Error ? e.message : 'Erro ao carregar bloqueios/horários.');
-    } finally {
-      setBlocksLoading(false);
-      setSchedLoading(false);
     }
   }, [tz]);
 
@@ -641,45 +940,58 @@ export default function AdminRafaCallHojePage() {
     setRescheduleError('');
   }, []);
 
-  const handleCancelBooking = useCallback(async (row: ScheduleItem, slot: string) => {
-    const ok = window.confirm(
-      `Cancelar este agendamento?\n\nCliente: ${row.userName}\nHorário: ${slot}`,
-    );
-    if (!ok) return;
-    setCancelingBookingId(row.id);
-    try {
-      await api.admin.rafacall.cancelBooking(row.id, 'admin_cancel');
-      await load();
-    } catch (e) {
-      const message = e instanceof Error ? e.message : 'Não foi possível cancelar.';
-      setError(message);
-      if (/não encontrado|removido|realizado/i.test(message)) {
-        await load();
-      }
-    } finally {
-      setCancelingBookingId(null);
-    }
-  }, [load]);
+  const closeBookingConfirm = useCallback(() => {
+    if (cancelingBookingId || completingBookingId) return;
+    setBookingConfirm(null);
+  }, [cancelingBookingId, completingBookingId]);
 
-  const handleCompleteBooking = useCallback(async (row: ScheduleItem, slot: string) => {
-    const ok = window.confirm(
-      `Marcar como realizado?\n\nCliente: ${row.userName}\nHorário: ${slot}`,
-    );
-    if (!ok) return;
+  const requestCancelBooking = useCallback((row: ScheduleItem, slot: string) => {
+    setBookingConfirm({ kind: 'cancel', row, slot });
+  }, []);
+
+  const requestCompleteBooking = useCallback((row: ScheduleItem, slot: string) => {
+    setBookingConfirm({ kind: 'complete', row, slot });
+  }, []);
+
+  const executeBookingConfirm = useCallback(async () => {
+    if (!bookingConfirm) return;
+    const { kind, row } = bookingConfirm;
+
+    if (kind === 'cancel') {
+      setCancelingBookingId(row.id);
+      try {
+        await api.admin.rafacall.cancelBooking(row.id, 'admin_cancel');
+        setBookingConfirm(null);
+        await load();
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'Não foi possível cancelar.';
+        setError(message);
+        if (/não encontrado|removido|realizado/i.test(message)) {
+          setBookingConfirm(null);
+          await load();
+        }
+      } finally {
+        setCancelingBookingId(null);
+      }
+      return;
+    }
+
     setCompletingBookingId(row.id);
     try {
       await api.admin.rafacall.completeBooking(row.id);
+      setBookingConfirm(null);
       await load();
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Não foi possível marcar como realizado.';
       setError(message);
       if (/não encontrado|removido/i.test(message)) {
+        setBookingConfirm(null);
         await load();
       }
     } finally {
       setCompletingBookingId(null);
     }
-  }, [load]);
+  }, [bookingConfirm, load]);
 
   const handleUnblock = useCallback(async (blockId: string) => {
     const ok = window.confirm('Desbloquear este horário?');
@@ -688,50 +1000,86 @@ export default function AdminRafaCallHojePage() {
     try {
       await api.admin.rafacall.deleteBlock(blockId);
       await load();
-      if (blocksModalOpen) void loadBlocksAndAvailability();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível desbloquear.');
     } finally {
       setUnblockingId(null);
     }
-  }, [load, blocksModalOpen, loadBlocksAndAvailability]);
+  }, [load]);
 
-  const closeCreateModal = useCallback(() => {
-    setCreateModalOpen(false);
-    setCreateAvailability(null);
-    setCreateDate('');
-    setCreateError('');
-    setCreateWhatsappError('');
+  const handleBlockSlot = useCallback(
+    async (startsAt: string, endsAt: string) => {
+      setSlotMutatingKey(`slot:${startsAt}`);
+      try {
+        await api.admin.rafacall.createBlock({
+          startsAtUtcIso: startsAt,
+          endsAtUtcIso: endsAt,
+          reason: 'admin_block',
+        });
+        await load();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Não foi possível bloquear.');
+      } finally {
+        setSlotMutatingKey(null);
+      }
+    },
+    [load],
+  );
+
+  const openQuickBookSlot = useCallback((date: string, startsAt: string, endsAt: string) => {
+    setQuickBookSlot({ date, startsAt, endsAt });
+    setQuickBookName('');
+    setQuickBookWhatsapp('');
+    setQuickBookError('');
+    setQuickBookWhatsappError('');
   }, []);
 
-  const openCreateModal = useCallback(async () => {
-    setCreateModalOpen(true);
-    setCreateError('');
-    setCreateLoading(true);
-    setCreateAvailability(null);
-    try {
-      const from = ymdInTz(new Date(), tz);
-      const to = ymdInTz(addDays(new Date(), 14), tz);
-      const avail = await api.rafacall.guestAvailability({ from, to, tz });
-      setCreateAvailability(avail);
-      const firstDay = avail.days.find((d) => d.slots.length > 0)?.date ?? avail.days[0]?.date ?? '';
-      setCreateDate(firstDay);
-    } catch (e) {
-      setCreateError(e instanceof Error ? e.message : 'Erro ao carregar horários.');
-    } finally {
-      setCreateLoading(false);
+  const closeQuickBookSlot = useCallback(() => {
+    if (quickBooking) return;
+    setQuickBookSlot(null);
+    setQuickBookName('');
+    setQuickBookWhatsapp('');
+    setQuickBookError('');
+    setQuickBookWhatsappError('');
+  }, [quickBooking]);
+
+  const executeQuickBook = useCallback(async () => {
+    if (!quickBookSlot) return;
+    const trimmedName = quickBookName.trim();
+    const trimmedWa = quickBookWhatsapp.replace(/\D/g, '');
+    if (trimmedName.length < 2) {
+      setQuickBookError('Indica o nome do cliente.');
+      return;
     }
-  }, [tz]);
-
-  const closeBlocksModal = useCallback(() => {
-    setBlocksModalOpen(false);
-    setBlocksError('');
-  }, []);
-
-  const openBlocksModal = useCallback(() => {
-    setBlocksModalOpen(true);
-    void loadBlocksAndAvailability();
-  }, [loadBlocksAndAvailability]);
+    if (trimmedWa.length < 8) {
+      setQuickBookWhatsappError('Indica um WhatsApp válido com indicativo.');
+      return;
+    }
+    setQuickBookWhatsappError('');
+    setQuickBooking(true);
+    setQuickBookError('');
+    try {
+      await api.admin.rafacall.createBooking({
+        name: trimmedName,
+        whatsapp: trimmedWa,
+        startsAtUtcIso: quickBookSlot.startsAt,
+        tz,
+      });
+      setQuickBookSlot(null);
+      setQuickBookName('');
+      setQuickBookWhatsapp('');
+      await load();
+    } catch (e) {
+      const message =
+        e instanceof Error ? e.message : 'Não foi possível criar o agendamento.';
+      const { generalError, whatsappError, shouldRefresh } = mapQuickBookError(message);
+      setQuickBookError(generalError);
+      setQuickBookWhatsappError(whatsappError);
+      if (shouldRefresh) void load();
+    } finally {
+      setQuickBooking(false);
+    }
+  }, [quickBookSlot, quickBookName, quickBookWhatsapp, tz, load]);
 
   useEffect(() => {
     if (!user || user.role !== 'ADMIN') return;
@@ -751,29 +1099,11 @@ export default function AdminRafaCallHojePage() {
 
   return (
     <div className="pt-6 md:pt-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Agendamentos de chamadas com clientes</h1>
-          <p className="mt-1 text-sm text-muted">
-            Agrupado por dia em <span className="font-medium">{tz}</span>.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={openBlocksModal}
-            className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-page"
-          >
-            Bloquear horários
-          </button>
-          <button
-            type="button"
-            onClick={() => void openCreateModal()}
-            className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg border border-brand-primary bg-brand-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-          >
-            Adicionar agendamento
-          </button>
-        </div>
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">Agendamentos de chamadas com clientes</h1>
+        <p className="mt-1 text-sm text-muted">
+          Agrupado por dia em <span className="font-medium">{tz}</span>.
+        </p>
       </div>
 
       {error ? (
@@ -783,26 +1113,29 @@ export default function AdminRafaCallHojePage() {
       ) : null}
 
       {kanbanDays.length === 0 && !loading ? (
-        <p className="mt-6 text-sm text-muted">Nenhum agendamento ou horário bloqueado.</p>
+        <p className="mt-6 text-sm text-muted">Nenhum agendamento ou horário disponível.</p>
       ) : null}
 
       {kanbanDays.length > 0 ? (
         <div className="mt-6">
-          <div className="hidden items-start gap-4 overflow-x-auto pb-2 lg:flex">
+          <div className="hidden gap-4 pb-2 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(18.75rem,1fr))]">
             {kanbanDays.map((kanbanDay) => (
               <DayKanbanColumn
                 key={kanbanDay.date}
                 kanbanDay={kanbanDay}
                 tz={tz}
-                className="w-[300px] shrink-0"
+                className="min-w-0 w-full"
                 reschedulingBookingId={reschedulingBookingId}
                 completingBookingId={completingBookingId}
                 cancelingBookingId={cancelingBookingId}
                 unblockingId={unblockingId}
+                blockingSlotKey={slotMutatingKey}
                 onReschedule={(item) => void openReschedule(item)}
-                onComplete={(item, slotLabel) => void handleCompleteBooking(item, slotLabel)}
-                onCancel={(item, slotLabel) => void handleCancelBooking(item, slotLabel)}
+                onComplete={(item, slotLabel) => requestCompleteBooking(item, slotLabel)}
+                onCancel={(item, slotLabel) => requestCancelBooking(item, slotLabel)}
                 onUnblock={(blockId) => void handleUnblock(blockId)}
+                onBlockSlot={(startsAt, endsAt) => void handleBlockSlot(startsAt, endsAt)}
+                onBookFreeSlot={(startsAt, endsAt) => openQuickBookSlot(kanbanDay.date, startsAt, endsAt)}
               />
             ))}
           </div>
@@ -832,10 +1165,15 @@ export default function AdminRafaCallHojePage() {
                         completingBookingId={completingBookingId}
                         cancelingBookingId={cancelingBookingId}
                         unblockingId={unblockingId}
+                        blockingSlotKey={slotMutatingKey}
                         onReschedule={(item) => void openReschedule(item)}
-                        onComplete={(item, slotLabel) => void handleCompleteBooking(item, slotLabel)}
-                        onCancel={(item, slotLabel) => void handleCancelBooking(item, slotLabel)}
+                        onComplete={(item, slotLabel) => requestCompleteBooking(item, slotLabel)}
+                        onCancel={(item, slotLabel) => requestCancelBooking(item, slotLabel)}
                         onUnblock={(blockId) => void handleUnblock(blockId)}
+                        onBlockSlot={(startsAt, endsAt) => void handleBlockSlot(startsAt, endsAt)}
+                        onBookFreeSlot={(startsAt, endsAt) =>
+                          openQuickBookSlot(kanbanDay.date, startsAt, endsAt)
+                        }
                       />
                     ))}
                   </div>
@@ -865,10 +1203,15 @@ export default function AdminRafaCallHojePage() {
                     completingBookingId={completingBookingId}
                     cancelingBookingId={cancelingBookingId}
                     unblockingId={unblockingId}
+                    blockingSlotKey={slotMutatingKey}
                     onReschedule={(item) => void openReschedule(item)}
-                    onComplete={(item, slotLabel) => void handleCompleteBooking(item, slotLabel)}
-                    onCancel={(item, slotLabel) => void handleCancelBooking(item, slotLabel)}
+                    onComplete={(item, slotLabel) => requestCompleteBooking(item, slotLabel)}
+                    onCancel={(item, slotLabel) => requestCancelBooking(item, slotLabel)}
                     onUnblock={(blockId) => void handleUnblock(blockId)}
+                    onBlockSlot={(startsAt, endsAt) => void handleBlockSlot(startsAt, endsAt)}
+                    onBookFreeSlot={(startsAt, endsAt) =>
+                      openQuickBookSlot(kanbanDay.date, startsAt, endsAt)
+                    }
                   />
                 </div>
               ))}
@@ -877,350 +1220,6 @@ export default function AdminRafaCallHojePage() {
         </div>
       ) : null}
 
-      {blocksModalOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="blocks-modal-title"
-          onClick={closeBlocksModal}
-        >
-          <div
-            className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 id="blocks-modal-title" className="text-lg font-semibold text-foreground">
-                  Bloquear horários
-                </h2>
-                <p className="mt-1 text-sm text-muted">
-                  Marca slots como ocupados para eles não aparecerem para o cliente.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => void loadBlocksAndAvailability()}
-                  disabled={blocksLoading || schedLoading}
-                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-page disabled:opacity-50"
-                >
-                  {blocksLoading || schedLoading ? 'A carregar…' : 'Atualizar'}
-                </button>
-                <button
-                  type="button"
-                  onClick={closeBlocksModal}
-                  className="cursor-pointer rounded-full px-2 py-1 text-sm text-muted hover:bg-page hover:text-foreground"
-                  aria-label="Fechar"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            {blocksError ? (
-              <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-                {blocksError}
-              </p>
-            ) : null}
-
-            <div className="mt-4 grid gap-6 md:grid-cols-[260px_1fr]">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted">Dias</p>
-                {blocksLoading || schedLoading ? (
-                  <p className="mt-3 text-sm text-muted">A carregar…</p>
-                ) : !availability ? (
-                  <p className="mt-3 text-sm text-muted">Não foi possível carregar horários.</p>
-                ) : availability.days.length === 0 ? (
-                  <p className="mt-3 text-sm text-muted">Sem dias disponíveis.</p>
-                ) : (
-                  <div className="mt-3 max-h-[360px] space-y-2 overflow-auto pr-1">
-                    {availability.days
-                      .filter((d) => {
-                        if (d.slots.length > 0) return true;
-                        return blocks.some((b) => ymdInTz(new Date(b.startsAt), tz) === d.date);
-                      })
-                      .map((d) => {
-                        const isActive = d.date === selectedDate;
-                        const hasSlots = d.slots.length > 0;
-                        return (
-                          <button
-                            key={d.date}
-                            type="button"
-                            onClick={() => setSelectedDate(d.date)}
-                            className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
-                              isActive
-                                ? 'border-[#efc2c1] bg-[#efc2c1]/40'
-                                : 'border-border bg-card hover:bg-page'
-                            } ${!hasSlots ? 'opacity-70' : ''}`}
-                          >
-                            <span className="font-medium text-foreground">{prettyYmdPt(d.date, tz)}</span>
-                            <span className="text-xs text-muted">{d.slots.length} horários</span>
-                          </button>
-                        );
-                      })}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted">Horários</p>
-                {blocksLoading || schedLoading ? (
-                  <p className="mt-3 text-sm text-muted">A carregar…</p>
-                ) : !availability ? (
-                  <p className="mt-3 text-sm text-muted">Não foi possível carregar horários.</p>
-                ) : (
-                  (() => {
-                    const day = availability.days.find((d) => d.date === selectedDate);
-                    const slots = day?.slots ?? [];
-                    const blockedToday = selectedDate ? blocksForYmd(blocks, selectedDate, tz) : [];
-                    if (!day) {
-                      return <p className="mt-3 text-sm text-muted">Escolhe um dia.</p>;
-                    }
-                    if (slots.length === 0 && blockedToday.length === 0) {
-                      return (
-                        <p className="mt-3 text-sm text-muted">
-                          Este dia não tem horários disponíveis (talvez já estejam todos ocupados).
-                        </p>
-                      );
-                    }
-
-                    const blockedByStart = new Map(blocks.map((b) => [b.startsAt, b]));
-                    const blockedItems = blockedToday.map((b) => ({
-                      startsAt: b.startsAt,
-                      endsAt: b.endsAt,
-                      kind: 'blocked' as const,
-                      blockId: b.id,
-                    }));
-                    const freeItems = slots.map((s) => ({
-                      startsAt: s.startsAt,
-                      endsAt: s.endsAt,
-                      kind: 'free' as const,
-                    }));
-                    const items = [...freeItems, ...blockedItems].sort((a, b) =>
-                      a.startsAt.localeCompare(b.startsAt),
-                    );
-
-                    return (
-                      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                        {items.map((s) => {
-                          const isBlocked =
-                            s.kind === 'blocked' ? true : blockedByStart.has(s.startsAt);
-                          const mutKey =
-                            s.kind === 'blocked' ? `blocked:${s.blockId}` : `slot:${s.startsAt}`;
-                          const isMutating = slotMutatingKey === mutKey;
-                          return (
-                            <button
-                              key={s.startsAt}
-                              type="button"
-                              disabled={isMutating}
-                              onClick={async () => {
-                                setSlotMutatingKey(mutKey);
-                                setBlocksError('');
-                                try {
-                                  if (isBlocked) {
-                                    if (s.kind === 'blocked') {
-                                      await api.admin.rafacall.deleteBlock(s.blockId);
-                                    } else {
-                                      const b = blockedByStart.get(s.startsAt);
-                                      if (b) await api.admin.rafacall.deleteBlock(b.id);
-                                    }
-                                  } else {
-                                    await api.admin.rafacall.createBlock({
-                                      startsAtUtcIso: s.startsAt,
-                                      endsAtUtcIso: s.endsAt,
-                                      reason: 'admin_block',
-                                    });
-                                  }
-                                  void loadBlocksAndAvailability();
-                                  void load();
-                                } catch (e) {
-                                  setBlocksError(
-                                    e instanceof Error ? e.message : 'Erro ao atualizar bloqueio.',
-                                  );
-                                } finally {
-                                  setSlotMutatingKey(null);
-                                }
-                              }}
-                              className={`cursor-pointer rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${
-                                isBlocked
-                                  ? 'border-red-200 bg-red-50 text-red-800 hover:bg-red-100'
-                                  : 'border-border bg-card text-foreground hover:bg-page'
-                              }`}
-                              title={s.startsAt}
-                            >
-                              {formatSlotTimeInTz(s.startsAt, tz)}
-                              <span className="mt-0.5 block text-[11px] font-medium">
-                                {isMutating ? 'Alterando…' : isBlocked ? 'Ocupado' : 'Livre'}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {createModalOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="create-booking-modal-title"
-          onClick={closeCreateModal}
-        >
-          <div
-            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 id="create-booking-modal-title" className="text-lg font-semibold text-foreground">
-                  Adicionar agendamento
-                </h2>
-                <p className="mt-1 text-sm text-muted">
-                  Cria um agendamento manualmente e envia confirmação por WhatsApp.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={closeCreateModal}
-                className="cursor-pointer rounded-full px-2 py-1 text-sm text-muted hover:bg-page hover:text-foreground"
-                aria-label="Fechar"
-              >
-                ✕
-              </button>
-            </div>
-
-            {createError ? (
-              <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-                {createError}
-              </p>
-            ) : null}
-
-            <div className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground" htmlFor="admin-create-name">
-                  Nome do cliente
-                </label>
-                <input
-                  id="admin-create-name"
-                  type="text"
-                  value={createName}
-                  onChange={(e) => setCreateName(e.target.value)}
-                  className="mt-2 w-full rounded-xl border border-border bg-page px-4 py-2.5 text-sm text-foreground outline-none focus:border-brand-primary"
-                  placeholder="Nome"
-                />
-              </div>
-              <LoginWhatsappFields
-                idPrefix="admin-create-booking"
-                label="WhatsApp"
-                value={createWhatsapp}
-                error={createWhatsappError}
-                disabled={creatingBooking}
-                onChange={(v) => {
-                  setCreateWhatsapp(v);
-                  if (createWhatsappError) setCreateWhatsappError('');
-                  if (createError) setCreateError('');
-                }}
-              />
-            </div>
-
-            {createLoading ? (
-              <p className="mt-6 text-sm text-muted">A carregar horários…</p>
-            ) : createAvailability ? (
-              <div className="mt-4 space-y-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">Dia</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {createAvailability.days
-                      .filter((d) => d.slots.length > 0)
-                      .map((d) => (
-                        <button
-                          key={d.date}
-                          type="button"
-                          onClick={() => setCreateDate(d.date)}
-                          className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                            createDate === d.date
-                              ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
-                              : 'border-border bg-card text-foreground hover:bg-page'
-                          }`}
-                        >
-                          {prettyYmdPt(d.date, tz)}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">Horário</p>
-                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {(createAvailability.days.find((d) => d.date === createDate)?.slots ?? []).map(
-                      (slot) => (
-                        <button
-                          key={slot.startsAt}
-                          type="button"
-                          disabled={creatingBooking}
-                          onClick={async () => {
-                            const trimmedName = createName.trim();
-                            const trimmedWa = createWhatsapp.replace(/\D/g, '');
-                            if (trimmedName.length < 2) {
-                              setCreateError('Indica o nome do cliente.');
-                              return;
-                            }
-                            if (trimmedWa.length < 8) {
-                              setCreateWhatsappError('Indica um WhatsApp válido com indicativo.');
-                              return;
-                            }
-                            setCreateWhatsappError('');
-                            const label = formatSlotTimeInTz(slot.startsAt, tz);
-                            const ok = window.confirm(
-                              `Confirmar agendamento?\n\n${trimmedName}\n${prettyYmdPt(createDate, tz)} · ${label}`,
-                            );
-                            if (!ok) return;
-                            setCreatingBooking(true);
-                            setCreateError('');
-                            try {
-                              await api.admin.rafacall.createBooking({
-                                name: trimmedName,
-                                whatsapp: trimmedWa,
-                                startsAtUtcIso: slot.startsAt,
-                                tz,
-                              });
-                              closeCreateModal();
-                              setCreateName('');
-                              setCreateWhatsapp('');
-                              await load();
-                            } catch (e) {
-                              setCreateError(
-                                e instanceof Error ? e.message : 'Não foi possível criar o agendamento.',
-                              );
-                            } finally {
-                              setCreatingBooking(false);
-                            }
-                          }}
-                          className="cursor-pointer rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {formatSlotTimeInTz(slot.startsAt, tz)}
-                        </button>
-                      ),
-                    )}
-                  </div>
-                  {(createAvailability.days.find((d) => d.date === createDate)?.slots ?? []).length ===
-                  0 ? (
-                    <p className="mt-2 text-sm text-muted">Sem horários neste dia.</p>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
 
       {rescheduleTarget ? (
         <div
@@ -1330,6 +1329,46 @@ export default function AdminRafaCallHojePage() {
             ) : null}
           </div>
         </div>
+      ) : null}
+
+      {quickBookSlot ? (
+        <FreeSlotBookModal
+          date={quickBookSlot.date}
+          startsAt={quickBookSlot.startsAt}
+          endsAt={quickBookSlot.endsAt}
+          tz={tz}
+          name={quickBookName}
+          whatsapp={quickBookWhatsapp}
+          whatsappError={quickBookWhatsappError}
+          error={quickBookError}
+          isLoading={quickBooking}
+          onNameChange={(value) => {
+            setQuickBookName(value);
+            if (quickBookError) setQuickBookError('');
+          }}
+          onWhatsappChange={(value) => {
+            setQuickBookWhatsapp(value);
+            if (quickBookWhatsappError) setQuickBookWhatsappError('');
+            if (quickBookError) setQuickBookError('');
+          }}
+          onConfirm={() => void executeQuickBook()}
+          onClose={closeQuickBookSlot}
+        />
+      ) : null}
+
+      {bookingConfirm ? (
+        <BookingActionConfirmModal
+          action={bookingConfirm.kind}
+          row={bookingConfirm.row}
+          slot={bookingConfirm.slot}
+          isLoading={
+            bookingConfirm.kind === 'cancel'
+              ? cancelingBookingId === bookingConfirm.row.id
+              : completingBookingId === bookingConfirm.row.id
+          }
+          onConfirm={() => void executeBookingConfirm()}
+          onClose={closeBookingConfirm}
+        />
       ) : null}
     </div>
   );
