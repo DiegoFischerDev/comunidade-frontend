@@ -217,8 +217,7 @@ export function RafacallManageView({ bookingId }: Props) {
         reason: 'user_cancel',
       });
       clearRafacallGuestBooking();
-      setBooking({ ...booking, status: 'CANCELLED' });
-      setView('detail');
+      window.location.href = '/';
     } catch (e) {
       setActionError(e instanceof Error ? e.message : 'Não foi possível cancelar.');
     } finally {

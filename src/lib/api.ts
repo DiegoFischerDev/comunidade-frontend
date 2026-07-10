@@ -522,10 +522,7 @@ export const api = {
         token: null,
       }),
     guestCancel: (body: { bookingId: string; whatsapp?: string; deviceId?: string; reason?: string | null }) =>
-      request<{
-        id: string;
-        status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
-      }>('/rafacall/guest/cancel', {
+      request<{ ok: true }>('/rafacall/guest/cancel', {
         method: 'POST',
         body: JSON.stringify(body),
         token: null,
@@ -917,11 +914,43 @@ export const api = {
         ),
       deleteBlock: (id: string) =>
         request<{ ok: true }>(`/admin/rafacall/blocks/${id}`, { method: 'DELETE' }),
+      createBooking: (body: {
+        name: string;
+        whatsapp: string;
+        startsAtUtcIso: string;
+        tz: string;
+      }) =>
+        request<{
+          id: string;
+          status: 'SCHEDULED';
+          startsAt: string;
+          endsAt: string;
+          timezone: string;
+          name: string | null;
+          whatsapp: string | null;
+        }>('/admin/rafacall/bookings', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
       cancelBooking: (bookingId: string, reason?: string | null) =>
-        request<{ id: string; status: 'CANCELLED' }>(
+        request<{ ok: true }>(
           `/admin/rafacall/bookings/${bookingId}/cancel`,
           { method: 'POST', body: JSON.stringify({ reason }) },
         ),
+      rescheduleBooking: (
+        bookingId: string,
+        body: { newStartsAtUtcIso: string; tz: string },
+      ) =>
+        request<{
+          id: string;
+          status: 'SCHEDULED' | 'COMPLETED';
+          startsAt: string;
+          endsAt: string;
+          timezone: string;
+        }>(`/admin/rafacall/bookings/${bookingId}/reschedule`, {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
       completeBooking: (bookingId: string) =>
         request<{ id: string; status: 'COMPLETED' }>(
           `/admin/rafacall/bookings/${bookingId}/complete`,

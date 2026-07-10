@@ -9,6 +9,9 @@
 
 const STORAGE_KEY = 'rafacall_guest_booking_v1';
 const DEVICE_ID_KEY = 'rafacall_device_id_v1';
+const LAST_NAME_KEY = 'rafacall_last_name_v1';
+
+const MAX_STORED_NAME_LENGTH = 80;
 
 const UUID_V4 =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -89,6 +92,29 @@ export function clearRafacallGuestBooking(): void {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // noop
+  }
+}
+
+/** Último nome indicado neste dispositivo no fluxo /agendar. */
+export function readRafacallLastName(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(LAST_NAME_KEY)?.trim() ?? '';
+    if (raw.length < 2) return null;
+    return raw.slice(0, MAX_STORED_NAME_LENGTH);
+  } catch {
+    return null;
+  }
+}
+
+export function saveRafacallLastName(name: string): void {
+  if (typeof window === 'undefined') return;
+  const trimmed = name.trim().slice(0, MAX_STORED_NAME_LENGTH);
+  if (trimmed.length < 2) return;
+  try {
+    window.localStorage.setItem(LAST_NAME_KEY, trimmed);
   } catch {
     // noop
   }

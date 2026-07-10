@@ -13,7 +13,9 @@ import {
 import {
   clearRafacallGuestBooking,
   getOrCreateRafacallDeviceId,
+  readRafacallLastName,
   saveRafacallGuestBooking,
+  saveRafacallLastName,
 } from '@/lib/rafacall-guest-storage';
 import { BRAND_LOGO_HORIZONTAL_COLORIDA, SITE_NAME_FULL } from '@/lib/site-branding';
 
@@ -81,6 +83,14 @@ function formatSlotTimeInTz(utcIso: string, timeZone: string): string {
   const d = new Date(utcIso);
   if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleTimeString('pt-PT', { timeZone, hour: '2-digit', minute: '2-digit' });
+}
+
+function formatDayFreeSlotsLabel(
+  slots: { startsAt: string }[],
+  timeZone: string,
+): string {
+  if (slots.length === 0) return 'Sem horários livres';
+  return slots.map((s) => formatSlotTimeInTz(s.startsAt, timeZone)).join(' | ');
 }
 
 function prettyTimezoneCityLabel(tz: string): string {
@@ -156,6 +166,85 @@ function WhatsappDialFlag({ dial, className = 'h-6 w-6' }: { dial: string; class
   );
 }
 
+function CalendarRescheduleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M8 2v4" />
+      <path d="M16 2v4" />
+      <rect width="18" height="18" x="3" y="4" rx="2" />
+      <path d="M3 10h18" />
+      <path d="M16 14h.01" />
+      <path d="M12 14h.01" />
+      <path d="M8 14h.01" />
+      <path d="M7 18h10" />
+    </svg>
+  );
+}
+
+function CancelCircleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="m15 9-6 6" />
+      <path d="m9 9 6 6" />
+    </svg>
+  );
+}
+
+function ArrowLeftIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="m12 19-7-7 7-7" />
+      <path d="M19 12H5" />
+    </svg>
+  );
+}
+
+function HomeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  );
+}
+
 function AgendarBrandLogo() {
   return (
     <div className="mb-6 flex justify-center">
@@ -199,6 +288,12 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
   const [pickerDayStep, setPickerDayStep] = useState<'days' | 'times'>('days');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
+
+  useEffect(() => {
+    if (namePrefill.trim()) return;
+    const saved = readRafacallLastName();
+    if (saved) setName(saved);
+  }, [namePrefill]);
 
   const loadPublicState = useCallback(async () => {
     const wa = whatsappFromUrl.replace(/\D/g, '');
@@ -267,6 +362,7 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
       setActionError('Indica o teu nome para continuar.');
       return;
     }
+    saveRafacallLastName(trimmed);
     setActionError('');
     setPickerDayStep('days');
     setSelectedDate('');
@@ -280,8 +376,10 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
       setActionLoading(true);
       setActionError('');
       try {
+        const trimmedName = name.trim();
+        saveRafacallLastName(trimmedName);
         const created = await api.rafacall.publicBook({
-          name: name.trim(),
+          name: trimmedName,
           whatsapp: whatsappDigits,
           deviceId,
           startsAtUtcIso,
@@ -359,14 +457,13 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
         reason: 'user_cancel',
       });
       clearRafacallGuestBooking();
-      setBooking({ ...booking, status: 'CANCELLED' });
-      setScreen('manage_detail');
+      await loadPublicState();
     } catch (e) {
       setActionError(e instanceof Error ? e.message : 'Não foi possível cancelar.');
     } finally {
       setActionLoading(false);
     }
-  }, [booking, authMode, deviceId, whatsappDigits]);
+  }, [booking, authMode, deviceId, whatsappDigits, loadPublicState]);
 
   const daySlots = useMemo(() => {
     if (!availability || !selectedDate) return [];
@@ -409,13 +506,7 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
           <div className={`mt-3 space-y-2 pr-1 ${showDaysOnly ? '' : 'max-h-[420px] overflow-auto'}`}>
             {availableDays.map((d) => {
               const isActive = d.date === selectedDate;
-              const nBlocked = d.adminBlockedSlots?.length ?? 0;
-              const sub =
-                d.slots.length > 0 && nBlocked > 0
-                  ? `${d.slots.length} livres · ${nBlocked} bloq.`
-                  : d.slots.length > 0
-                    ? `${d.slots.length} livres`
-                    : `${nBlocked} indisponível(is)`;
+              const sub = formatDayFreeSlotsLabel(d.slots, tz);
               return (
                 <button
                   key={d.date}
@@ -425,14 +516,14 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
                     setSelectedDate(d.date);
                     if (isPickerWizard) setPickerDayStep('times');
                   }}
-                  className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
+                  className={`flex w-full flex-col gap-1 rounded-xl border px-3 py-2 text-left text-sm transition-colors sm:flex-row sm:items-center sm:justify-between ${
                     isActive
                       ? 'border-emerald-400 bg-emerald-50'
                       : 'border-border bg-card hover:bg-page'
                   }`}
                 >
                   <span className="font-medium text-foreground">{prettyYmdPt(d.date, tz)}</span>
-                  <span className="text-xs text-muted">{sub}</span>
+                  <span className="text-xs text-muted sm:text-right">{sub}</span>
                 </button>
               );
             })}
@@ -592,6 +683,7 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onBlur={() => saveRafacallLastName(name)}
               placeholder="Seu nome"
               className="mt-2 w-full rounded-xl border border-border bg-page px-4 py-3 text-sm text-foreground outline-none focus:border-brand-primary"
               autoComplete="name"
@@ -671,13 +763,16 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
   return (
     <div className="min-h-screen bg-page py-8">
       <div className="mx-auto max-w-3xl px-4">
+        <AgendarBrandLogo />
         <div className="rounded-2xl bg-card p-6 shadow-sm">
-          <h1 className="text-xl font-bold text-foreground">O teu agendamento com a Rafa &amp; Carol</h1>
-          {booking.name ? (
-            <p className="mt-1 text-sm text-foreground/90">
-              Olá, <span className="font-semibold">{booking.name}</span>.
-            </p>
-          ) : null}
+          {!isCancelled ? (
+            <h1 className="text-xl font-bold leading-snug text-foreground">
+              <span className="text-brand-primary">Tudo certo!</span> O teu agendamento com a Rafa
+              &amp; Carol está confirmado
+            </h1>
+          ) : (
+            <h1 className="text-xl font-bold text-foreground">O teu agendamento com a Rafa &amp; Carol</h1>
+          )}
 
           {actionError ? (
             <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -699,6 +794,12 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
             </p>
           </div>
 
+          {!isCancelled && screen !== 'manage_cancel' ? (
+            <p className="mt-4 text-sm leading-relaxed text-foreground/90">
+              No dia e horário agendado vamos te ligar por videochamada. Anote suas dúvidas e até já! 😊
+            </p>
+          ) : null}
+
           {isCancelled ? (
             <div className="mt-6 space-y-3">
               <p className="text-sm text-foreground/90">
@@ -713,54 +814,75 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
               </button>
             </div>
           ) : screen === 'manage_cancel' ? (
-            <div className="mt-6 rounded-xl border border-border bg-page p-4">
-              <p className="text-sm text-foreground">Queres mesmo cancelar este agendamento?</p>
-              <div className="mt-3 flex flex-wrap gap-3">
+            <div className="mt-6 rounded-xl border border-red-200 bg-red-50/80 p-4">
+              <div className="flex gap-3">
+                <CancelCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-red-700" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-red-900">Queres mesmo cancelar este agendamento?</p>
+                  <p className="mt-1 text-sm text-red-800/90">
+                    Esta ação não pode ser desfeita. Depois podes marcar uma nova chamada quando quiseres.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <button
                   type="button"
                   onClick={() => void doCancel()}
                   disabled={actionLoading}
-                  className="rounded-full bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                  className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] bg-red-700 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
+                  <CancelCircleIcon className="h-5 w-5" />
                   {actionLoading ? 'A cancelar…' : 'Confirmar cancelamento'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setScreen('manage_detail')}
                   disabled={actionLoading}
-                  className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-page disabled:opacity-50"
+                  className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
                 >
+                  <ArrowLeftIcon className="h-5 w-5" />
                   Voltar
                 </button>
               </div>
             </div>
           ) : (
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setScreen('manage_reschedule');
-                  void loadAvailability(booking.id);
-                }}
-                className="rounded-full bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
-              >
-                Reagendar
-              </button>
-              <button
-                type="button"
-                onClick={() => setScreen('manage_cancel')}
-                className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-page"
-              >
-                Cancelar
-              </button>
+            <div className="mt-6">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
+                Gerir agendamento
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScreen('manage_reschedule');
+                    void loadAvailability(booking.id);
+                  }}
+                  className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2.5 rounded-[14px] border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-page"
+                >
+                  <CalendarRescheduleIcon className="h-5 w-5" />
+                  Reagendar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setScreen('manage_cancel')}
+                  className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2.5 rounded-[14px] border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-800 transition-colors hover:border-red-300 hover:bg-red-100"
+                >
+                  <CancelCircleIcon className="h-5 w-5" />
+                  Cancelar
+                </button>
+              </div>
             </div>
           )}
 
-          <p className="mt-8 text-center text-xs text-muted">
-            <Link href="/" className="underline hover:text-foreground/90">
+          <div className="mt-6 flex justify-center border-t border-border pt-6">
+            <Link
+              href="/"
+              className="inline-flex w-full max-w-md cursor-pointer items-center justify-center gap-2.5 rounded-[14px] bg-brand-primary px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 sm:text-base"
+            >
+              <HomeIcon className="h-5 w-5" />
               Ir para o site
             </Link>
-          </p>
+          </div>
         </div>
       </div>
     </div>
