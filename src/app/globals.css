@@ -235,7 +235,7 @@
   border-color: var(--color-sidebar-border);
 }
 
-/* Topbar da home do dashboard — aparece após o primeiro scroll */
+/* Topbar da home do dashboard — oculto em scroll 0, visível ao descer */
 .dashboard-home-topbar-shell {
   background: color-mix(in srgb, var(--color-brand-primary) 88%, transparent);
   border-color: color-mix(in srgb, var(--color-brand-on-primary) 12%, transparent);

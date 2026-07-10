@@ -23,7 +23,7 @@ import {
 } from '@/lib/site-branding';
 
 type Props = {
-  /** Na home, oculto em scroll 0 até o primeiro scroll; depois permanece visível. */
+  /** Na home, oculto em scroll 0; visível quando scrollY > 0. */
   visible: boolean;
   isMenuOpen: boolean;
   onMenuToggle: () => void;

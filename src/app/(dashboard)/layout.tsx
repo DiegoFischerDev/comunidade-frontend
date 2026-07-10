@@ -364,29 +364,27 @@ export default function DashboardLayout({
     };
   }, []);
 
-  // Fecha o menu mobile ao trocar de rota
+  // Fecha o menu mobile e repõe o scroll ao trocar de rota (layout partilhado não
+  // garante scrollY === 0 no App Router).
   useEffect(() => {
     setIsMenuOpen(false);
+    window.scrollTo(0, 0);
   }, [pathname]);
 
-  // Na home, o topbar só aparece após o primeiro scroll e permanece visível
+  // Na home, o topbar fica oculto em scroll 0 e aparece ao descer a página
   useEffect(() => {
     if (!isDashboardHome) {
       setIsHomeTopbarRevealed(true);
       return;
     }
 
-    setIsHomeTopbarRevealed(false);
-
-    const onScroll = () => {
-      if (window.scrollY > 0) {
-        setIsHomeTopbarRevealed(true);
-      }
+    const syncTopbarVisibility = () => {
+      setIsHomeTopbarRevealed(window.scrollY > 0);
     };
 
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    syncTopbarVisibility();
+    window.addEventListener('scroll', syncTopbarVisibility, { passive: true });
+    return () => window.removeEventListener('scroll', syncTopbarVisibility);
   }, [isDashboardHome]);
 
   // Abre modal de boas-vindas após verificação de e-mail e login concluídos

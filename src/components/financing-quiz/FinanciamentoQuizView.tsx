@@ -73,8 +73,11 @@ export function FinanciamentoQuizView() {
     })();
   }, []);
 
+  // Mantém o card do quiz visível ao mudar de pergunta; na intro não faz scroll
+  // para a página abrir no topo (scrollY === 0).
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (phase === 'intro') return;
     if (!cardRef.current) return;
     cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [currentStep, phase]);

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 
+import { WhatsappIcon } from "@/components/icons/WhatsappIcon";
 import { CardLinkButton } from "@/components/ui/CardButton";
 import { TapedCard } from "@/components/ui/taped-card";
 import {
@@ -11,7 +12,10 @@ import {
   formatBrlAmount,
   formatEurAmount,
 } from "@/lib/dashboard-services";
-import { BRAND_SERVICES_SPECIALISTS_IMAGE } from "@/lib/site-branding";
+import {
+  BRAND_SERVICES_SPECIALISTS_IMAGE,
+  SITE_FOUNDERS_WHATSAPP_URL,
+} from "@/lib/site-branding";
 
 function CheckIcon() {
   return (
@@ -127,6 +131,22 @@ function ServicesLearnMoreButton({ className = "" }: { className?: string }) {
       className={`min-w-[12rem] px-8 sm:min-w-[14rem] ${className}`.trim()}
     >
       Saber mais
+    </CardLinkButton>
+  );
+}
+
+function ServicesFoundersWhatsappCta({ className = "" }: { className?: string }) {
+  return (
+    <CardLinkButton
+      href={SITE_FOUNDERS_WHATSAPP_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      variant="secondary"
+      className={`gap-2 px-8 shadow-sm ${className}`.trim()}
+      aria-label="Quero falar com as meninas — WhatsApp"
+    >
+      <WhatsappIcon className="h-5 w-5 shrink-0 text-current" />
+      Quero falar com as meninas
     </CardLinkButton>
   );
 }
@@ -307,7 +327,12 @@ export function DashboardServicesSection({ className = "" }: Props) {
         </p>
       </div>
 
-      <ServicesPricingCard />
+      <ServicesPricingCard
+        showLearnMoreCta={false}
+        imageFloatingCta={
+          <ServicesFoundersWhatsappCta className="w-[min(100%,18rem)] sm:min-w-[20rem] md:w-[min(100%,16rem)]" />
+        }
+      />
     </section>
   );
 }
