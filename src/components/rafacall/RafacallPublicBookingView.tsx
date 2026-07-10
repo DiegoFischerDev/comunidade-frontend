@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { api } from '@/lib/api';
 import {
   clearRafacallGuestBooking,
@@ -28,7 +27,6 @@ type Screen =
   | 'error'
   | 'name'
   | 'picker'
-  | 'manage_confirm'
   | 'manage_detail'
   | 'manage_reschedule'
   | 'manage_cancel';
@@ -116,23 +114,19 @@ function applyPublicState(
     setScreen('name');
     return;
   }
-  if (state.trustedDevice) {
-    setBooking(state.booking);
-    setWhatsappDigits(state.booking.whatsapp ?? '');
-    setAuthMode('device');
-    saveRafacallGuestBooking({
-      bookingId: state.booking.id,
-      startsAt: state.booking.startsAt,
-      endsAt: state.booking.endsAt,
-      timezone: state.booking.timezone,
-      name: state.booking.name ?? '',
-      whatsapp: state.booking.whatsapp ?? '',
-    });
-    setScreen('manage_detail');
-    return;
-  }
-  setAuthMode('whatsapp');
-  setScreen('manage_confirm');
+
+  setBooking(state.booking);
+  setWhatsappDigits(state.booking.whatsapp ?? '');
+  setAuthMode(state.access);
+  saveRafacallGuestBooking({
+    bookingId: state.booking.id,
+    startsAt: state.booking.startsAt,
+    endsAt: state.booking.endsAt,
+    timezone: state.booking.timezone,
+    name: state.booking.name ?? '',
+    whatsapp: state.booking.whatsapp ?? '',
+  });
+  setScreen('manage_detail');
 }
 
 export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }: Props) {
@@ -145,10 +139,6 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
   const [name, setName] = useState(namePrefill.trim());
   const [booking, setBooking] = useState<PublicBooking | null>(null);
   const [authMode, setAuthMode] = useState<'device' | 'whatsapp'>('device');
-  const [pendingBookingId, setPendingBookingId] = useState('');
-  const [confirmWhatsapp, setConfirmWhatsapp] = useState(whatsappFromUrl.replace(/\D/g, ''));
-  const [confirmError, setConfirmError] = useState('');
-  const [confirmLoading, setConfirmLoading] = useState(false);
   const [availability, setAvailability] = useState<AvailabilityPayload | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
@@ -170,9 +160,6 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
     setErrorMessage('');
     try {
       const state = await api.rafacall.publicState({ whatsapp: wa, deviceId });
-      if (state.mode === 'manage' && !state.trustedDevice) {
-        setPendingBookingId(state.bookingId);
-      }
       applyPublicState(state, setBooking, setScreen, setWhatsappDigits, setAuthMode);
     } catch (e) {
       setErrorMessage(e instanceof Error ? e.message : 'Não foi possível carregar o agendamento.');
@@ -237,6 +224,7 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
           tz,
         });
         setBooking(created);
+        setAuthMode('device');
         saveRafacallGuestBooking({
           bookingId: created.id,
           startsAt: created.startsAt,
@@ -254,38 +242,6 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
     },
     [deviceId, name, whatsappDigits, tz],
   );
-
-  const submitConfirm = useCallback(async () => {
-    if (!pendingBookingId || confirmLoading) return;
-    const wa = confirmWhatsapp.replace(/\D/g, '');
-    if (wa.length < 8) {
-      setConfirmError('WhatsApp inválido.');
-      return;
-    }
-    setConfirmLoading(true);
-    setConfirmError('');
-    try {
-      const b = await api.rafacall.guestBooking(pendingBookingId, wa);
-      setBooking(b);
-      setWhatsappDigits(wa);
-      setAuthMode('whatsapp');
-      if (b.name) {
-        saveRafacallGuestBooking({
-          bookingId: b.id,
-          startsAt: b.startsAt,
-          endsAt: b.endsAt,
-          timezone: b.timezone,
-          name: b.name,
-          whatsapp: wa,
-        });
-      }
-      setScreen('manage_detail');
-    } catch (e) {
-      setConfirmError(e instanceof Error ? e.message : 'Não foi possível verificar o WhatsApp.');
-    } finally {
-      setConfirmLoading(false);
-    }
-  }, [pendingBookingId, confirmWhatsapp, confirmLoading]);
 
   const doReschedule = useCallback(
     async (startsAtUtcIso: string) => {
@@ -523,46 +479,6 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
             Voltar ao nome
           </button>
           {slotPicker}
-        </div>
-      </div>
-    );
-  }
-
-  if (screen === 'manage_confirm') {
-    return (
-      <div className="min-h-screen bg-page py-8">
-        <div className="mx-auto max-w-md px-4">
-          <div className="rounded-2xl bg-card p-6 shadow-sm">
-            <h1 className="text-xl font-bold text-foreground">Gerir agendamento</h1>
-            <p className="mt-2 text-sm text-foreground/90">
-              Este número já tem um agendamento ativo. Confirma o WhatsApp para continuar.
-            </p>
-            {confirmError ? (
-              <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-                {confirmError}
-              </p>
-            ) : null}
-            <div className="mt-4">
-              <LoginWhatsappFields
-                idPrefix="rafacall-public-confirm"
-                label="WhatsApp"
-                value={confirmWhatsapp}
-                error={confirmError || undefined}
-                onChange={(v) => {
-                  setConfirmWhatsapp(v);
-                  setConfirmError('');
-                }}
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => void submitConfirm()}
-              disabled={confirmLoading}
-              className="mt-6 w-full rounded-full bg-brand-primary px-5 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
-            >
-              {confirmLoading ? 'A verificar…' : 'Confirmar e abrir agendamento'}
-            </button>
-          </div>
         </div>
       </div>
     );

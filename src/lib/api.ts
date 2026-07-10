@@ -536,7 +536,7 @@ export const api = {
       return request<
         | {
             mode: 'manage';
-            trustedDevice: true;
+            access: 'device' | 'whatsapp';
             booking: {
               id: string;
               status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
@@ -547,11 +547,6 @@ export const api = {
               whatsapp: string | null;
               origin: 'USER_PAID' | 'PUBLIC_FREE';
             };
-          }
-        | {
-            mode: 'manage';
-            trustedDevice: false;
-            bookingId: string;
           }
         | {
             mode: 'book';
