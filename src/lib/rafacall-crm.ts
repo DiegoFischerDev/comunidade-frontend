@@ -13,7 +13,7 @@ export const RAFA_CALL_CRM_STATUS_ORDER: RafacallCrmStatus[] = [
 ];
 
 export const RAFA_CALL_CRM_STATUS_LABELS: Record<RafacallCrmStatus, string> = {
-  ENVIOU_MENSAGEM: 'Enviou mensagem',
+  ENVIOU_MENSAGEM: 'Sem data para imigar',
   IMIGRACAO_LONGE: 'Data para imigrar longe',
   IMIGRACAO_PERTO: 'Data para imigrar perto',
   VIDEO_CHAMADA_AGENDADA: 'Vídeo chamada agendada',

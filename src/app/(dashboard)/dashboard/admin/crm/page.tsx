@@ -813,7 +813,7 @@ function CrmNewClientModal({
               Novo cliente
             </h2>
             <p className="mt-1 text-sm text-muted">
-              Adiciona um lead ao CRM com nome e WhatsApp. Entra na coluna «Enviou mensagem».
+              Adiciona um lead ao CRM com nome e WhatsApp. Entra na coluna «Sem data para imigar».
             </p>
           </div>
           <button
