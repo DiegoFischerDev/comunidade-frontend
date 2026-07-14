@@ -67,6 +67,14 @@ export type RafacallCrmStatus =
   | 'AGUARDANDO_ASSINATURA'
   | 'CONTRATO_ASSINADO';
 
+export type RafacallCrmPropertyTypology =
+  | 'QUARTO'
+  | 'T0'
+  | 'T1'
+  | 'T3'
+  | 'T4'
+  | 'T5';
+
 export type RafacallCrmItem = {
   id: string;
   bookingStatus: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
@@ -74,6 +82,9 @@ export type RafacallCrmItem = {
   crmStatus: RafacallCrmStatus;
   crmComments: string | null;
   crmExpectedImmigrationAt: string | null;
+  crmPropertyTypology: RafacallCrmPropertyTypology | null;
+  crmPreferredCity: string | null;
+  crmHasPet: boolean | null;
   startsAt: string;
   endsAt: string;
   bookingTimezone: string;
@@ -997,6 +1008,8 @@ export const api = {
         name: string;
         whatsapp: string;
         crmExpectedImmigrationAt?: string | null;
+        crmPropertyTypology?: RafacallCrmPropertyTypology | null;
+        crmPreferredCity?: string | null;
       }) =>
         request<RafacallCrmItem>('/admin/rafacall/crm', {
           method: 'POST',
@@ -1010,6 +1023,9 @@ export const api = {
           crmExpectedImmigrationAt?: string | null;
           videoCallStartsAtUtcIso?: string | null;
           videoCallTimezone?: string;
+          crmPropertyTypology?: RafacallCrmPropertyTypology | null;
+          crmPreferredCity?: string | null;
+          crmHasPet?: boolean | null;
         },
       ) =>
         request<RafacallCrmItem>(`/admin/rafacall/crm/${bookingId}`, {

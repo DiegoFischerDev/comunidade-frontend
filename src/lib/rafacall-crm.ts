@@ -1,5 +1,47 @@
 import type { RafacallCrmStatus } from '@/lib/api';
 
+export type RafacallCrmPropertyTypology =
+  | 'QUARTO'
+  | 'T0'
+  | 'T1'
+  | 'T3'
+  | 'T4'
+  | 'T5';
+
+export const RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER: RafacallCrmPropertyTypology[] = [
+  'QUARTO',
+  'T0',
+  'T1',
+  'T3',
+  'T4',
+  'T5',
+];
+
+export const RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS: Record<
+  RafacallCrmPropertyTypology,
+  string
+> = {
+  QUARTO: 'Apenas quarto',
+  T0: 'T0',
+  T1: 'T1',
+  T3: 'T3',
+  T4: 'T4',
+  T5: 'T5',
+};
+
+export function formatCrmPropertyTypologyLabel(
+  value: RafacallCrmPropertyTypology | null | undefined,
+): string | null {
+  if (!value) return null;
+  return RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS[value] ?? value;
+}
+
+export function formatCrmPetLabel(value: boolean | null | undefined): string {
+  if (value === true) return 'Sim';
+  if (value === false) return 'Não';
+  return 'Por definir';
+}
+
 export const CRM_IMMIGRATION_IMMEDIATE_VALUE = 'IMEDIATO';
 
 export const RAFA_CALL_CRM_STATUS_ORDER: RafacallCrmStatus[] = [

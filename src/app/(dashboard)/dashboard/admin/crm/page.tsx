@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, type RafacallCrmItem, type RafacallCrmStatus } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
-import { CRM_IMMIGRATION_IMMEDIATE_VALUE, RAFA_CALL_CRM_STATUS_LABELS, RAFA_CALL_CRM_STATUS_ORDER, getCrmColumnTone, formatImmigrationDateLabel, formatImmigrationMonthYear, isCrmImmigrationImmediate, normalizeCrmBoardColumns, sortCrmBoardColumns, toImmigrationDateInputValue } from '@/lib/rafacall-crm';
+import { CRM_IMMIGRATION_IMMEDIATE_VALUE, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER, RAFA_CALL_CRM_STATUS_LABELS, RAFA_CALL_CRM_STATUS_ORDER, formatCrmPetLabel, formatCrmPropertyTypologyLabel, getCrmColumnTone, formatImmigrationDateLabel, formatImmigrationMonthYear, isCrmImmigrationImmediate, normalizeCrmBoardColumns, sortCrmBoardColumns, toImmigrationDateInputValue } from '@/lib/rafacall-crm';
+import type { RafacallCrmPropertyTypology } from '@/lib/rafacall-crm';
 import {
   CENTERED_PEEK_CAROUSEL_ITEM,
   CENTERED_PEEK_CAROUSEL_TRACK,
@@ -438,6 +439,11 @@ function buildCrmItemSearchHaystack(item: RafacallCrmItem): string {
     formatImmigrationMonthYear(item.crmExpectedImmigrationAt),
     formatImmigrationDateLabel(item.crmExpectedImmigrationAt),
     item.crmExpectedImmigrationAt,
+    item.crmPropertyTypology,
+    formatCrmPropertyTypologyLabel(item.crmPropertyTypology),
+    item.crmPreferredCity,
+    formatCrmPetLabel(item.crmHasPet),
+    item.crmHasPet === true ? 'pet animal estimação' : '',
     formatVideoCallSummary(item),
     item.bookingTimezone,
     item.bookingOrigin === 'USER_PAID' ? 'pago paga' : 'publico gratuito',
@@ -509,10 +515,8 @@ function moveItemBetweenColumns(
 
   const nextItem: RafacallCrmItem = {
     ...movingItem,
+    ...(updatedItem ?? {}),
     crmStatus: toStatus,
-    crmComments: updatedItem?.crmComments ?? movingItem.crmComments,
-    crmExpectedImmigrationAt:
-      updatedItem?.crmExpectedImmigrationAt ?? movingItem.crmExpectedImmigrationAt,
   };
 
   return sortCrmBoardColumns(
@@ -587,6 +591,13 @@ function CrmClientCard({
   const wa = formatWhatsappDigits(item.whatsappDigits);
   const immigrationDateLabel = formatImmigrationDateLabel(item.crmExpectedImmigrationAt);
   const isImmediateImmigration = isCrmImmigrationImmediate(item.crmExpectedImmigrationAt);
+  const propertyTypologyLabel = formatCrmPropertyTypologyLabel(item.crmPropertyTypology);
+  const preferredCityLabel = item.crmPreferredCity?.trim() || null;
+  const petLabel =
+    item.crmHasPet === true || item.crmHasPet === false
+      ? formatCrmPetLabel(item.crmHasPet)
+      : null;
+  const hasPreferences = Boolean(propertyTypologyLabel || preferredCityLabel || petLabel);
 
   return (
     <article
@@ -635,6 +646,26 @@ function CrmClientCard({
               {immigrationDateLabel}
             </p>
           </div>
+        </div>
+      ) : null}
+
+      {hasPreferences ? (
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {propertyTypologyLabel ? (
+            <span className="inline-flex max-w-full items-center rounded-md border border-violet-200/90 bg-violet-50/90 px-2 py-1 text-[10px] font-medium text-violet-900">
+              {propertyTypologyLabel}
+            </span>
+          ) : null}
+          {preferredCityLabel ? (
+            <span className="inline-flex max-w-full items-center rounded-md border border-sky-200/90 bg-sky-50/90 px-2 py-1 text-[10px] font-medium text-sky-900">
+              {preferredCityLabel}
+            </span>
+          ) : null}
+          {petLabel ? (
+            <span className="inline-flex max-w-full items-center rounded-md border border-emerald-200/90 bg-emerald-50/90 px-2 py-1 text-[10px] font-medium text-emerald-900">
+              PET: {petLabel}
+            </span>
+          ) : null}
         </div>
       ) : null}
 
@@ -761,6 +792,17 @@ function normalizeCrmComments(value: string | null | undefined): string {
   return (value ?? '').trim();
 }
 
+function normalizePreferredCityDraft(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function toPropertyTypologyDraft(
+  value: RafacallCrmPropertyTypology | null | undefined,
+): RafacallCrmPropertyTypology | '' {
+  return value ?? '';
+}
+
 function CrmDeleteConfirmModal({
   item,
   saving,
@@ -859,21 +901,29 @@ function ChevronDownIcon({ className }: { className?: string }) {
 function CrmNewClientModal({
   name,
   whatsapp,
+  propertyTypology,
+  preferredCity,
   whatsappError,
   saving,
   error,
   onNameChange,
   onWhatsappChange,
+  onPropertyTypologyChange,
+  onPreferredCityChange,
   onConfirm,
   onClose,
 }: {
   name: string;
   whatsapp: string;
+  propertyTypology: RafacallCrmPropertyTypology | '';
+  preferredCity: string;
   whatsappError: string;
   saving: boolean;
   error: string;
   onNameChange: (value: string) => void;
   onWhatsappChange: (value: string) => void;
+  onPropertyTypologyChange: (value: RafacallCrmPropertyTypology | '') => void;
+  onPreferredCityChange: (value: string) => void;
   onConfirm: () => void;
   onClose: () => void;
 }) {
@@ -936,6 +986,51 @@ function CrmNewClientModal({
             error={whatsappError}
             rememberInStorage={false}
           />
+
+          <div>
+            <label
+              className="block text-sm font-medium text-foreground"
+              htmlFor="crm-new-client-typology"
+            >
+              Tipologia do imóvel
+            </label>
+            <select
+              id="crm-new-client-typology"
+              value={propertyTypology}
+              disabled={saving}
+              onChange={(event) =>
+                onPropertyTypologyChange(
+                  event.target.value as RafacallCrmPropertyTypology | '',
+                )
+              }
+              className="mt-2 w-full rounded-xl border border-border bg-page px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-brand-accent disabled:opacity-50"
+            >
+              <option value="">Por definir</option>
+              {RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER.map((typology) => (
+                <option key={typology} value={typology}>
+                  {RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS[typology]}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label
+              className="block text-sm font-medium text-foreground"
+              htmlFor="crm-new-client-city"
+            >
+              Cidade de preferência
+            </label>
+            <input
+              id="crm-new-client-city"
+              type="text"
+              value={preferredCity}
+              disabled={saving}
+              onChange={(event) => onPreferredCityChange(event.target.value)}
+              placeholder="Ex.: Lisboa, Porto…"
+              className="mt-2 w-full rounded-xl border border-border bg-page px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-brand-accent disabled:opacity-50"
+            />
+          </div>
         </div>
 
         {error ? (
@@ -1015,12 +1110,18 @@ function CrmClientModal({
   immigrationDateDraft,
   videoCallDateDraft,
   videoCallTimeDraft,
+  propertyTypologyDraft,
+  preferredCityDraft,
+  hasPetDraft,
   saving,
   error,
   onCommentsChange,
   onImmigrationDateChange,
   onVideoCallDateChange,
   onVideoCallTimeChange,
+  onPropertyTypologyChange,
+  onPreferredCityChange,
+  onHasPetChange,
   onStatusChange,
   onSave,
   onClose,
@@ -1030,12 +1131,18 @@ function CrmClientModal({
   immigrationDateDraft: string;
   videoCallDateDraft: string;
   videoCallTimeDraft: string;
+  propertyTypologyDraft: RafacallCrmPropertyTypology | '';
+  preferredCityDraft: string;
+  hasPetDraft: boolean | null;
   saving: boolean;
   error: string;
   onCommentsChange: (value: string) => void;
   onImmigrationDateChange: (value: string) => void;
   onVideoCallDateChange: (value: string) => void;
   onVideoCallTimeChange: (value: string) => void;
+  onPropertyTypologyChange: (value: RafacallCrmPropertyTypology | '') => void;
+  onPreferredCityChange: (value: string) => void;
+  onHasPetChange: (value: boolean | null) => void;
   onStatusChange: (status: RafacallCrmStatus) => void;
   onSave: () => void;
   onClose: () => void;
@@ -1075,8 +1182,19 @@ function CrmClientModal({
     canEditVideoCall &&
     (videoCallDateDraft !== toVideoCallDateDraft(item) ||
       videoCallTimeDraft !== toVideoCallTimeDraft(item));
+  const hasPropertyTypologyChanges =
+    (propertyTypologyDraft || null) !== (item.crmPropertyTypology ?? null);
+  const hasPreferredCityChanges =
+    normalizePreferredCityDraft(preferredCityDraft) !==
+    normalizePreferredCityDraft(item.crmPreferredCity ?? '');
+  const hasPetChanges = hasPetDraft !== item.crmHasPet;
   const hasChanges =
-    hasCommentsChanges || hasImmigrationDateChanges || hasVideoCallChanges;
+    hasCommentsChanges ||
+    hasImmigrationDateChanges ||
+    hasVideoCallChanges ||
+    hasPropertyTypologyChanges ||
+    hasPreferredCityChanges ||
+    hasPetChanges;
 
   return (
     <div
@@ -1304,6 +1422,103 @@ function CrmClientModal({
               ) : null}
             </div>
           </div>
+
+          <div className="mt-3 rounded-xl border border-violet-200/80 bg-violet-50/50 px-3.5 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-violet-900/80">
+              Preferências de imóvel
+            </p>
+
+            <div className="mt-3 space-y-3">
+              <div>
+                <label
+                  className="block text-xs font-medium uppercase tracking-wide text-violet-900/70"
+                  htmlFor="crm-property-typology"
+                >
+                  Tipologia
+                </label>
+                <select
+                  id="crm-property-typology"
+                  value={propertyTypologyDraft}
+                  disabled={saving}
+                  onChange={(event) =>
+                    onPropertyTypologyChange(
+                      event.target.value as RafacallCrmPropertyTypology | '',
+                    )
+                  }
+                  className="mt-2 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
+                >
+                  <option value="">Por definir</option>
+                  {RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER.map((typology) => (
+                    <option key={typology} value={typology}>
+                      {RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS[typology]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label
+                  className="block text-xs font-medium uppercase tracking-wide text-violet-900/70"
+                  htmlFor="crm-preferred-city"
+                >
+                  Cidade de preferência
+                </label>
+                <input
+                  id="crm-preferred-city"
+                  type="text"
+                  value={preferredCityDraft}
+                  disabled={saving}
+                  onChange={(event) => onPreferredCityChange(event.target.value)}
+                  placeholder="Ex.: Lisboa, Porto…"
+                  className="mt-2 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
+                />
+              </div>
+
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-violet-900/70">
+                  Tem PET?
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => onHasPetChange(true)}
+                    className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                      hasPetDraft === true
+                        ? 'border-emerald-300 bg-emerald-100 text-emerald-950'
+                        : 'border-border bg-card text-foreground hover:bg-page'
+                    }`}
+                  >
+                    Sim
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => onHasPetChange(false)}
+                    className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                      hasPetDraft === false
+                        ? 'border-emerald-300 bg-emerald-100 text-emerald-950'
+                        : 'border-border bg-card text-foreground hover:bg-page'
+                    }`}
+                  >
+                    Não
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => onHasPetChange(null)}
+                    className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                      hasPetDraft === null
+                        ? 'border-violet-300 bg-violet-100 text-violet-950'
+                        : 'border-border bg-card text-foreground hover:bg-page'
+                    }`}
+                  >
+                    Por definir
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col border-t border-border px-5 py-4">
@@ -1366,6 +1581,11 @@ export default function CrmPage() {
   const [immigrationDateDraft, setImmigrationDateDraft] = useState('');
   const [videoCallDateDraft, setVideoCallDateDraft] = useState('');
   const [videoCallTimeDraft, setVideoCallTimeDraft] = useState('');
+  const [propertyTypologyDraft, setPropertyTypologyDraft] = useState<
+    RafacallCrmPropertyTypology | ''
+  >('');
+  const [preferredCityDraft, setPreferredCityDraft] = useState('');
+  const [hasPetDraft, setHasPetDraft] = useState<boolean | null>(null);
   const [modalSaving, setModalSaving] = useState(false);
   const [modalError, setModalError] = useState('');
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<RafacallCrmItem | null>(null);
@@ -1375,6 +1595,10 @@ export default function CrmPage() {
   const [newClientOpen, setNewClientOpen] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   const [newClientWhatsapp, setNewClientWhatsapp] = useState('');
+  const [newClientPropertyTypology, setNewClientPropertyTypology] = useState<
+    RafacallCrmPropertyTypology | ''
+  >('');
+  const [newClientPreferredCity, setNewClientPreferredCity] = useState('');
   const [newClientWhatsappError, setNewClientWhatsappError] = useState('');
   const [newClientError, setNewClientError] = useState('');
   const [newClientSaving, setNewClientSaving] = useState(false);
@@ -1465,6 +1689,9 @@ export default function CrmPage() {
     setImmigrationDateDraft(toImmigrationDateInputValue(item.crmExpectedImmigrationAt));
     setVideoCallDateDraft(toVideoCallDateDraft(item));
     setVideoCallTimeDraft(toVideoCallTimeDraft(item));
+    setPropertyTypologyDraft(toPropertyTypologyDraft(item.crmPropertyTypology));
+    setPreferredCityDraft(item.crmPreferredCity ?? '');
+    setHasPetDraft(item.crmHasPet);
     setModalError('');
   }, []);
 
@@ -1490,6 +1717,9 @@ export default function CrmPage() {
         setImmigrationDateDraft(toImmigrationDateInputValue(updated.crmExpectedImmigrationAt));
         setVideoCallDateDraft(toVideoCallDateDraft(updated));
         setVideoCallTimeDraft(toVideoCallTimeDraft(updated));
+        setPropertyTypologyDraft(toPropertyTypologyDraft(updated.crmPropertyTypology));
+        setPreferredCityDraft(updated.crmPreferredCity ?? '');
+        setHasPetDraft(updated.crmHasPet);
         setColumns((prev) =>
           moveItemBetweenColumns(prev, selectedItem.id, status, updated),
         );
@@ -1519,8 +1749,23 @@ export default function CrmPage() {
       canEditVideoCall &&
       (videoCallDateDraft !== toVideoCallDateDraft(selectedItem) ||
         videoCallTimeDraft !== toVideoCallTimeDraft(selectedItem));
+    const propertyTypologyChanged =
+      (propertyTypologyDraft || null) !== (selectedItem.crmPropertyTypology ?? null);
+    const preferredCityChanged =
+      normalizePreferredCityDraft(preferredCityDraft) !==
+      normalizePreferredCityDraft(selectedItem.crmPreferredCity ?? '');
+    const hasPetChanged = hasPetDraft !== selectedItem.crmHasPet;
 
-    if (!commentsChanged && !immigrationDateChanged && !videoCallChanged) return;
+    if (
+      !commentsChanged &&
+      !immigrationDateChanged &&
+      !videoCallChanged &&
+      !propertyTypologyChanged &&
+      !preferredCityChanged &&
+      !hasPetChanged
+    ) {
+      return;
+    }
 
     const bookingTimezone = selectedItem.bookingTimezone?.trim() || 'Europe/Lisbon';
     let videoCallStartsAtUtcIso: string | null | undefined;
@@ -1558,12 +1803,22 @@ export default function CrmPage() {
               videoCallTimezone: bookingTimezone,
             }
           : {}),
+        ...(propertyTypologyChanged
+          ? { crmPropertyTypology: propertyTypologyDraft || null }
+          : {}),
+        ...(preferredCityChanged
+          ? { crmPreferredCity: normalizePreferredCityDraft(preferredCityDraft) }
+          : {}),
+        ...(hasPetChanged ? { crmHasPet: hasPetDraft } : {}),
       });
       setSelectedItem(updated);
       setCommentsDraft(updated.crmComments ?? '');
       setImmigrationDateDraft(toImmigrationDateInputValue(updated.crmExpectedImmigrationAt));
       setVideoCallDateDraft(toVideoCallDateDraft(updated));
       setVideoCallTimeDraft(toVideoCallTimeDraft(updated));
+      setPropertyTypologyDraft(toPropertyTypologyDraft(updated.crmPropertyTypology));
+      setPreferredCityDraft(updated.crmPreferredCity ?? '');
+      setHasPetDraft(updated.crmHasPet);
       setColumns((prev) =>
         sortCrmBoardColumns(
           moveItemBetweenColumns(prev, updated.id, updated.crmStatus, updated),
@@ -1574,6 +1829,9 @@ export default function CrmPage() {
       setImmigrationDateDraft('');
       setVideoCallDateDraft('');
       setVideoCallTimeDraft('');
+      setPropertyTypologyDraft('');
+      setPreferredCityDraft('');
+      setHasPetDraft(null);
       setModalError('');
     } catch (err) {
       setModalError(
@@ -1582,7 +1840,16 @@ export default function CrmPage() {
     } finally {
       setModalSaving(false);
     }
-  }, [commentsDraft, immigrationDateDraft, selectedItem, videoCallDateDraft, videoCallTimeDraft]);
+  }, [
+    commentsDraft,
+    hasPetDraft,
+    immigrationDateDraft,
+    preferredCityDraft,
+    propertyTypologyDraft,
+    selectedItem,
+    videoCallDateDraft,
+    videoCallTimeDraft,
+  ]);
 
   const handleRequestDelete = useCallback((item: RafacallCrmItem) => {
     setDeleteConfirmItem(item);
@@ -1593,6 +1860,8 @@ export default function CrmPage() {
     setNewClientOpen(true);
     setNewClientName('');
     setNewClientWhatsapp('');
+    setNewClientPropertyTypology('');
+    setNewClientPreferredCity('');
     setNewClientWhatsappError('');
     setNewClientError('');
   }, []);
@@ -1618,11 +1887,19 @@ export default function CrmPage() {
       const created = await api.admin.rafacall.createCrmClient({
         name: trimmedName,
         whatsapp: whatsappDigits,
+        ...(newClientPropertyTypology
+          ? { crmPropertyTypology: newClientPropertyTypology }
+          : {}),
+        ...(normalizePreferredCityDraft(newClientPreferredCity)
+          ? { crmPreferredCity: normalizePreferredCityDraft(newClientPreferredCity) }
+          : {}),
       });
       setColumns((prev) => insertItemIntoColumns(prev, created));
       setNewClientOpen(false);
       setNewClientName('');
       setNewClientWhatsapp('');
+      setNewClientPropertyTypology('');
+      setNewClientPreferredCity('');
       handleOpenDetails(created);
     } catch (err) {
       const message =
@@ -1635,7 +1912,13 @@ export default function CrmPage() {
     } finally {
       setNewClientSaving(false);
     }
-  }, [handleOpenDetails, newClientName, newClientWhatsapp]);
+  }, [
+    handleOpenDetails,
+    newClientName,
+    newClientPreferredCity,
+    newClientPropertyTypology,
+    newClientWhatsapp,
+  ]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteConfirmItem) return;
@@ -1654,6 +1937,9 @@ export default function CrmPage() {
         setImmigrationDateDraft('');
         setVideoCallDateDraft('');
         setVideoCallTimeDraft('');
+        setPropertyTypologyDraft('');
+        setPreferredCityDraft('');
+        setHasPetDraft(null);
         setModalError('');
       }
       setDeleteConfirmItem(null);
@@ -1729,7 +2015,7 @@ export default function CrmPage() {
             type="search"
             value={filterQuery}
             onChange={(event) => setFilterQuery(event.target.value)}
-            placeholder="Nome, WhatsApp, coluna, comentários…"
+            placeholder="Nome, WhatsApp, tipologia, cidade, PET, coluna, comentários…"
             className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-9 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted/80 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
           />
           <svg
@@ -1790,6 +2076,8 @@ export default function CrmPage() {
         <CrmNewClientModal
           name={newClientName}
           whatsapp={newClientWhatsapp}
+          propertyTypology={newClientPropertyTypology}
+          preferredCity={newClientPreferredCity}
           whatsappError={newClientWhatsappError}
           saving={newClientSaving}
           error={newClientError}
@@ -1802,12 +2090,16 @@ export default function CrmPage() {
             if (newClientWhatsappError) setNewClientWhatsappError('');
             if (newClientError) setNewClientError('');
           }}
+          onPropertyTypologyChange={setNewClientPropertyTypology}
+          onPreferredCityChange={setNewClientPreferredCity}
           onConfirm={() => void handleCreateClient()}
           onClose={() => {
             if (!newClientSaving) {
               setNewClientOpen(false);
               setNewClientName('');
               setNewClientWhatsapp('');
+              setNewClientPropertyTypology('');
+              setNewClientPreferredCity('');
               setNewClientWhatsappError('');
               setNewClientError('');
             }
@@ -1837,12 +2129,18 @@ export default function CrmPage() {
           immigrationDateDraft={immigrationDateDraft}
           videoCallDateDraft={videoCallDateDraft}
           videoCallTimeDraft={videoCallTimeDraft}
+          propertyTypologyDraft={propertyTypologyDraft}
+          preferredCityDraft={preferredCityDraft}
+          hasPetDraft={hasPetDraft}
           saving={modalSaving}
           error={modalError}
           onCommentsChange={setCommentsDraft}
           onImmigrationDateChange={setImmigrationDateDraft}
           onVideoCallDateChange={setVideoCallDateDraft}
           onVideoCallTimeChange={setVideoCallTimeDraft}
+          onPropertyTypologyChange={setPropertyTypologyDraft}
+          onPreferredCityChange={setPreferredCityDraft}
+          onHasPetChange={setHasPetDraft}
           onStatusChange={(status) => void handleModalStatusChange(status)}
           onSave={() => void handleSave()}
           onClose={() => {
@@ -1852,6 +2150,9 @@ export default function CrmPage() {
               setImmigrationDateDraft('');
               setVideoCallDateDraft('');
               setVideoCallTimeDraft('');
+              setPropertyTypologyDraft('');
+              setPreferredCityDraft('');
+              setHasPetDraft(null);
               setModalError('');
             }
           }}
