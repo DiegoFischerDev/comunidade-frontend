@@ -1,9 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { api } from '@/lib/api';
+import { api, getUserFacingApiError } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
+import { getRafacallAdminBookingErrorFeedback } from '@/lib/rafacall-admin-booking-errors';
 import {
   CENTERED_PEEK_CAROUSEL_ITEM,
   CENTERED_PEEK_CAROUSEL_TRACK,
@@ -97,27 +98,16 @@ function waUrl(
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }
 
-function mapQuickBookError(message: string): {
-  generalError: string;
-  whatsappError: string;
-  shouldRefresh: boolean;
-} {
-  const m = message.trim();
-  if (/whatsapp.*agendamento|já tem um agendamento ativo/i.test(m)) {
-    return { generalError: '', whatsappError: m, shouldRefresh: false };
-  }
-  if (/horário|disponível|bloqueado|ocupado/i.test(m)) {
-    return {
-      generalError: m,
-      whatsappError: '',
-      shouldRefresh: true,
-    };
-  }
-  return {
-    generalError: m || 'Não foi possível criar o agendamento.',
-    whatsappError: '',
-    shouldRefresh: false,
-  };
+function AdminModalErrorBanner({ message }: { message?: string }) {
+  if (!message?.trim()) return null;
+  return (
+    <p
+      role="alert"
+      className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+    >
+      {message}
+    </p>
+  );
 }
 
 /** Duração usada só para pré-visualização no admin (alinhada com RAFA_CALL_DURATION_MINUTES). */
@@ -989,12 +979,6 @@ function FreeSlotBookModal({
           </button>
         </div>
 
-        {error ? (
-          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            {error}
-          </p>
-        ) : null}
-
         <div className="mt-4 space-y-4">
           <LoginWhatsappFields
             key={`${manualDate}-${manualTime}`}
@@ -1071,7 +1055,9 @@ function FreeSlotBookModal({
           />
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className="mt-5 space-y-3">
+          <AdminModalErrorBanner message={error || whatsappError} />
+          <div className="grid gap-3 sm:grid-cols-2">
           <button
             type="button"
             disabled={isBusy || !canSubmit}
@@ -1088,6 +1074,7 @@ function FreeSlotBookModal({
           >
             Cancelar
           </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1186,12 +1173,6 @@ function RescheduleBookingModal({
           </div>
         ) : null}
 
-        {error ? (
-          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            {error}
-          </p>
-        ) : null}
-
         <div className="mt-4">
           {isLoadingAvailability ? (
             <p className="text-sm text-muted">A carregar horários…</p>
@@ -1221,7 +1202,9 @@ function RescheduleBookingModal({
           />
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className="mt-5 space-y-3">
+          <AdminModalErrorBanner message={error} />
+          <div className="grid gap-3 sm:grid-cols-2">
           <button
             type="button"
             disabled={isBusy || !preview}
@@ -1238,6 +1221,7 @@ function RescheduleBookingModal({
           >
             Cancelar
           </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1554,9 +1538,16 @@ export default function AdminRafaCallHojePage() {
       resetReschedule();
       await load();
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Não foi possível reagendar.';
-      setRescheduleError(message);
-      if (/horário|disponível|bloqueado|ocupado/i.test(message)) {
+      const message = getUserFacingApiError(e, {
+        context: 'Ao reagendar',
+      });
+      const { submitError, shouldRefreshAvailability } =
+        getRafacallAdminBookingErrorFeedback(
+          message,
+          'Não foi possível reagendar.',
+        );
+      setRescheduleError(submitError);
+      if (shouldRefreshAvailability) {
         try {
           const avail = await reloadRescheduleAvailability(rescheduleTarget);
           const stillHasDay = avail.days.some(
@@ -1820,12 +1811,17 @@ export default function AdminRafaCallHojePage() {
       setQuickBookCrmLookupLoading(false);
       await load();
     } catch (e) {
-      const message =
-        e instanceof Error ? e.message : 'Não foi possível criar o agendamento.';
-      const { generalError, whatsappError, shouldRefresh } = mapQuickBookError(message);
-      setQuickBookError(generalError);
-      setQuickBookWhatsappError(whatsappError);
-      if (shouldRefresh) void load();
+      const message = getUserFacingApiError(e, {
+        context: 'Ao agendar',
+      });
+      const { submitError, whatsappFieldError, shouldRefreshAvailability } =
+        getRafacallAdminBookingErrorFeedback(
+          message,
+          'Não foi possível criar o agendamento.',
+        );
+      setQuickBookError(submitError);
+      setQuickBookWhatsappError(whatsappFieldError);
+      if (shouldRefreshAvailability) void load();
     } finally {
       setQuickBooking(false);
     }

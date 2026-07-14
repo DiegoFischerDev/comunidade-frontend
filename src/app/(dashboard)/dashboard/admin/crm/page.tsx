@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { api, type RafacallCrmItem, type RafacallCrmStatus } from '@/lib/api';
+import { api, getUserFacingApiError, type RafacallCrmItem, type RafacallCrmStatus } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { AdminVideoCallSlotPicker } from '@/components/rafacall/AdminVideoCallSlotPicker';
+import { getRafacallAdminBookingErrorFeedback } from '@/lib/rafacall-admin-booking-errors';
 import { CRM_IMMIGRATION_IMMEDIATE_VALUE, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER, RAFA_CALL_CRM_STATUS_LABELS, RAFA_CALL_CRM_STATUS_ORDER, formatCrmPetLabel, formatCrmPropertyTypologyLabel, getCrmColumnTone, formatImmigrationDateLabel, formatImmigrationMonthYear, isCrmImmigrationImmediate, normalizeCrmBoardColumns, sortCrmBoardColumns, toImmigrationDateInputValue } from '@/lib/rafacall-crm';
 import type { RafacallCrmPropertyTypology } from '@/lib/rafacall-crm';
 import {
@@ -1514,15 +1515,19 @@ function CrmClientModal({
               className="mt-2 min-h-[160px] w-full resize-y rounded-xl border border-border bg-page px-3.5 py-3 text-sm leading-relaxed text-foreground outline-none transition-colors focus:border-brand-accent disabled:opacity-50"
             />
 
-            {error ? (
-              <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-                {error}
-              </p>
-            ) : null}
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-border bg-page/70 px-5 py-4">
+        <div className="shrink-0 border-t border-border bg-page/70 px-5 py-4">
+          {error ? (
+            <p
+              role="alert"
+              className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+            >
+              {error}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
@@ -1539,6 +1544,7 @@ function CrmClientModal({
           >
             {saving ? 'A guardar…' : 'Guardar alterações'}
           </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1760,7 +1766,10 @@ export default function CrmPage() {
         setColumns(previousColumns);
         setSelectedItem(previousItem);
         setModalError(
-          err instanceof Error ? err.message : 'Não foi possível atualizar o estado.',
+          getRafacallAdminBookingErrorFeedback(
+            getUserFacingApiError(err, { context: 'Ao atualizar o estado' }),
+            'Não foi possível atualizar o estado.',
+          ).submitError,
         );
       } finally {
         setModalSaving(false);
@@ -1867,9 +1876,25 @@ export default function CrmPage() {
       setHasPetDraft(null);
       setModalError('');
     } catch (err) {
-      setModalError(
-        err instanceof Error ? err.message : 'Não foi possível guardar as alterações.',
-      );
+      const { submitError, shouldRefreshAvailability } =
+        getRafacallAdminBookingErrorFeedback(
+          getUserFacingApiError(err, { context: 'Ao guardar' }),
+          'Não foi possível guardar as alterações.',
+        );
+      setModalError(submitError);
+      if (shouldRefreshAvailability && selectedItem) {
+        const bookingTimezone = selectedItem.bookingTimezone?.trim() || 'Europe/Lisbon';
+        const from = ymdInTz(new Date(), bookingTimezone);
+        const to = ymdInTz(addDays(new Date(), 14), bookingTimezone);
+        const excludeBookingId =
+          selectedItem.bookingStatus === 'SCHEDULED' && selectedItem.hasVideoCall
+            ? selectedItem.id
+            : undefined;
+        void api.rafacall
+          .guestAvailability({ from, to, tz: bookingTimezone, excludeBookingId })
+          .then(setVideoCallAvailability)
+          .catch(() => undefined);
+      }
     } finally {
       setModalSaving(false);
     }
