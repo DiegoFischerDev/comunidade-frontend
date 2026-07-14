@@ -326,6 +326,91 @@ function openNativeDatePicker(input: HTMLInputElement | null) {
   input.click();
 }
 
+function ymdInTzFromIso(utcIso: string, timeZone: string): string {
+  const d = new Date(utcIso);
+  if (Number.isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('en-CA', { timeZone }).format(d);
+}
+
+function hmInTzFromIso(utcIso: string, timeZone: string): string {
+  const d = new Date(utcIso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('en-GB', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+}
+
+function tzOffsetMinutes(timeZone: string, at: Date): number {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+  const parts = dtf.formatToParts(at);
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? '00';
+  const asUtc = Date.UTC(
+    Number(get('year')),
+    Number(get('month')) - 1,
+    Number(get('day')),
+    Number(get('hour')),
+    Number(get('minute')),
+    Number(get('second')),
+  );
+  return Math.round((asUtc - at.getTime()) / 60000);
+}
+
+function localDateTimeInTzToUtcIso(
+  timeZone: string,
+  ymd: string,
+  hm: string,
+): string | null {
+  const dateMatch = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const timeMatch = hm.match(/^(\d{1,2}):(\d{2})$/);
+  if (!dateMatch || !timeMatch) return null;
+  const year = Number(dateMatch[1]);
+  const month = Number(dateMatch[2]);
+  const day = Number(dateMatch[3]);
+  const hour = Number(timeMatch[1]);
+  const minute = Number(timeMatch[2]);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null;
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+  const guess = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
+  const offset = tzOffsetMinutes(timeZone, guess);
+  const utc = new Date(guess.getTime() - offset * 60000);
+  if (Number.isNaN(utc.getTime())) return null;
+  return utc.toISOString();
+}
+
+function toVideoCallDateDraft(item: RafacallCrmItem): string {
+  if (!item.hasVideoCall) return '';
+  return ymdInTzFromIso(item.startsAt, item.bookingTimezone);
+}
+
+function toVideoCallTimeDraft(item: RafacallCrmItem): string {
+  if (!item.hasVideoCall) return '';
+  return hmInTzFromIso(item.startsAt, item.bookingTimezone);
+}
+
+function formatVideoCallDraftLabel(dateDraft: string, timeDraft: string, timeZone: string): string | null {
+  if (!dateDraft.trim() || !timeDraft.trim()) return null;
+  const iso = localDateTimeInTzToUtcIso(timeZone, dateDraft, timeDraft);
+  if (!iso) return null;
+  return formatVideoCallDetail({
+    hasVideoCall: true,
+    bookingStatus: 'SCHEDULED',
+    startsAt: iso,
+    bookingTimezone: timeZone,
+  }).detail;
+}
+
 function bookingStatusLabel(status: RafacallCrmItem['bookingStatus']): string {
   if (status === 'COMPLETED') return 'Reunião realizada';
   if (status === 'SCHEDULED') return 'Agendado';
@@ -710,8 +795,8 @@ function CrmDeleteConfirmModal({
               Excluir lead do CRM?
             </h2>
             <p className="mt-1 text-sm text-muted">
-              O cliente deixa de aparecer no kanban. Os agendamentos mantêm-se na página de
-              agendamentos.
+              O cliente deixa de aparecer no kanban. Se tiver vídeo chamada agendada, o horário
+              também é removido da página de agendamentos.
             </p>
           </div>
         </div>
@@ -928,10 +1013,14 @@ function CrmClientModal({
   item,
   commentsDraft,
   immigrationDateDraft,
+  videoCallDateDraft,
+  videoCallTimeDraft,
   saving,
   error,
   onCommentsChange,
   onImmigrationDateChange,
+  onVideoCallDateChange,
+  onVideoCallTimeChange,
   onStatusChange,
   onSave,
   onClose,
@@ -939,35 +1028,55 @@ function CrmClientModal({
   item: RafacallCrmItem;
   commentsDraft: string;
   immigrationDateDraft: string;
+  videoCallDateDraft: string;
+  videoCallTimeDraft: string;
   saving: boolean;
   error: string;
   onCommentsChange: (value: string) => void;
   onImmigrationDateChange: (value: string) => void;
+  onVideoCallDateChange: (value: string) => void;
+  onVideoCallTimeChange: (value: string) => void;
   onStatusChange: (status: RafacallCrmStatus) => void;
   onSave: () => void;
   onClose: () => void;
 }) {
   const immigrationDateInputRef = useRef<HTMLInputElement>(null);
+  const videoCallDateInputRef = useRef<HTMLInputElement>(null);
   const name = item.userName?.trim() || 'Sem nome';
+  const bookingTimezone = item.bookingTimezone?.trim() || 'Europe/Lisbon';
   const isImmediateImmigration = isCrmImmigrationImmediate(immigrationDateDraft);
   const immigrationLabel = isImmediateImmigration
     ? 'Imediato'
     : formatImmigrationDateLabel(immigrationDateDraft);
   const hasImmigrationDate = Boolean(immigrationDateDraft.trim());
+  const isCompletedVideoCall =
+    item.hasVideoCall && item.bookingStatus === 'COMPLETED';
+  const canEditVideoCall = !isCompletedVideoCall;
   const videoCall = formatVideoCallDetail(item);
+  const videoCallDraftLabel = formatVideoCallDraftLabel(
+    videoCallDateDraft,
+    videoCallTimeDraft,
+    bookingTimezone,
+  );
+  const hasScheduledVideoCallDraft = Boolean(
+    videoCallDateDraft.trim() && videoCallTimeDraft.trim(),
+  );
   const videoToneClass =
-    videoCall.tone === 'completed'
+    isCompletedVideoCall
       ? 'border-emerald-200/80 bg-emerald-50/70 text-emerald-900'
-      : videoCall.tone === 'cancelled'
-        ? 'border-red-200/80 bg-red-50/70 text-red-900'
-        : videoCall.tone === 'scheduled'
-          ? 'border-sky-200/80 bg-sky-50/70 text-sky-900'
-          : 'border-dashed border-border/80 bg-page/80 text-muted';
+      : hasScheduledVideoCallDraft || item.hasVideoCall
+        ? 'border-sky-200/80 bg-sky-50/70 text-sky-900'
+        : 'border-dashed border-border/80 bg-page/80 text-muted';
   const hasCommentsChanges =
     normalizeCrmComments(commentsDraft) !== normalizeCrmComments(item.crmComments);
   const hasImmigrationDateChanges =
     immigrationDateDraft !== toImmigrationDateInputValue(item.crmExpectedImmigrationAt);
-  const hasChanges = hasCommentsChanges || hasImmigrationDateChanges;
+  const hasVideoCallChanges =
+    canEditVideoCall &&
+    (videoCallDateDraft !== toVideoCallDateDraft(item) ||
+      videoCallTimeDraft !== toVideoCallTimeDraft(item));
+  const hasChanges =
+    hasCommentsChanges || hasImmigrationDateChanges || hasVideoCallChanges;
 
   return (
     <div
@@ -1018,14 +1127,89 @@ function CrmClientModal({
             onChange={onStatusChange}
           />
 
-          <div className={`mt-3 flex items-start gap-3 rounded-xl border px-3.5 py-3 ${videoToneClass}`}>
-            <VideoIcon className="mt-0.5 h-4 w-4 shrink-0 opacity-80" />
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
-                {videoCall.title}
-              </p>
-              <p className="mt-0.5 text-sm font-medium leading-snug">{videoCall.detail}</p>
+          <div className={`mt-3 rounded-xl border px-3.5 py-3 ${videoToneClass}`}>
+            <div className="flex items-start gap-3">
+              <VideoIcon className="mt-0.5 h-4 w-4 shrink-0 opacity-80" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
+                  Vídeo chamada
+                </p>
+                <p className="mt-0.5 text-sm font-medium leading-snug">
+                  {isCompletedVideoCall
+                    ? videoCall.detail
+                    : videoCallDraftLabel ?? videoCall.detail}
+                </p>
+                {!isCompletedVideoCall ? (
+                  <p className="mt-1 text-xs opacity-80">
+                    Horário de {bookingTimezone}
+                  </p>
+                ) : null}
+              </div>
             </div>
+
+            {canEditVideoCall ? (
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label
+                    className="block text-xs font-medium uppercase tracking-wide opacity-80"
+                    htmlFor="crm-video-call-date"
+                  >
+                    Data
+                  </label>
+                  <input
+                    ref={videoCallDateInputRef}
+                    id="crm-video-call-date"
+                    type="date"
+                    value={videoCallDateDraft}
+                    disabled={saving}
+                    onChange={(event) => onVideoCallDateChange(event.target.value)}
+                    className="mt-2 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label
+                    className="block text-xs font-medium uppercase tracking-wide opacity-80"
+                    htmlFor="crm-video-call-time"
+                  >
+                    Hora
+                  </label>
+                  <input
+                    id="crm-video-call-time"
+                    type="time"
+                    value={videoCallTimeDraft}
+                    disabled={saving}
+                    onChange={(event) => onVideoCallTimeChange(event.target.value)}
+                    className="mt-2 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {canEditVideoCall ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => openNativeDatePicker(videoCallDateInputRef.current)}
+                  className="inline-flex min-h-9 cursor-pointer items-center rounded-lg border border-sky-200 bg-sky-50/80 px-3 text-xs font-medium text-sky-900 transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Escolher data
+                </button>
+                {(hasScheduledVideoCallDraft || item.hasVideoCall) ? (
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => {
+                      onVideoCallDateChange('');
+                      onVideoCallTimeChange('');
+                    }}
+                    className="inline-flex min-h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted transition-colors hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Remover agendamento
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-3 space-y-2">
@@ -1180,6 +1364,8 @@ export default function CrmPage() {
   const [selectedItem, setSelectedItem] = useState<RafacallCrmItem | null>(null);
   const [commentsDraft, setCommentsDraft] = useState('');
   const [immigrationDateDraft, setImmigrationDateDraft] = useState('');
+  const [videoCallDateDraft, setVideoCallDateDraft] = useState('');
+  const [videoCallTimeDraft, setVideoCallTimeDraft] = useState('');
   const [modalSaving, setModalSaving] = useState(false);
   const [modalError, setModalError] = useState('');
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<RafacallCrmItem | null>(null);
@@ -1277,6 +1463,8 @@ export default function CrmPage() {
     setSelectedItem(item);
     setCommentsDraft(item.crmComments ?? '');
     setImmigrationDateDraft(toImmigrationDateInputValue(item.crmExpectedImmigrationAt));
+    setVideoCallDateDraft(toVideoCallDateDraft(item));
+    setVideoCallTimeDraft(toVideoCallTimeDraft(item));
     setModalError('');
   }, []);
 
@@ -1300,6 +1488,8 @@ export default function CrmPage() {
         setSelectedItem(updated);
         setCommentsDraft(updated.crmComments ?? '');
         setImmigrationDateDraft(toImmigrationDateInputValue(updated.crmExpectedImmigrationAt));
+        setVideoCallDateDraft(toVideoCallDateDraft(updated));
+        setVideoCallTimeDraft(toVideoCallTimeDraft(updated));
         setColumns((prev) =>
           moveItemBetweenColumns(prev, selectedItem.id, status, updated),
         );
@@ -1323,8 +1513,36 @@ export default function CrmPage() {
       normalizeCrmComments(commentsDraft) !== normalizeCrmComments(selectedItem.crmComments);
     const immigrationDateChanged =
       immigrationDateDraft !== toImmigrationDateInputValue(selectedItem.crmExpectedImmigrationAt);
+    const canEditVideoCall =
+      !(selectedItem.hasVideoCall && selectedItem.bookingStatus === 'COMPLETED');
+    const videoCallChanged =
+      canEditVideoCall &&
+      (videoCallDateDraft !== toVideoCallDateDraft(selectedItem) ||
+        videoCallTimeDraft !== toVideoCallTimeDraft(selectedItem));
 
-    if (!commentsChanged && !immigrationDateChanged) return;
+    if (!commentsChanged && !immigrationDateChanged && !videoCallChanged) return;
+
+    const bookingTimezone = selectedItem.bookingTimezone?.trim() || 'Europe/Lisbon';
+    let videoCallStartsAtUtcIso: string | null | undefined;
+    if (videoCallChanged) {
+      if (!videoCallDateDraft.trim() && !videoCallTimeDraft.trim()) {
+        videoCallStartsAtUtcIso = null;
+      } else if (!videoCallDateDraft.trim() || !videoCallTimeDraft.trim()) {
+        setModalError('Indica data e hora da vídeo chamada.');
+        return;
+      } else {
+        const startsAtUtc = localDateTimeInTzToUtcIso(
+          bookingTimezone,
+          videoCallDateDraft,
+          videoCallTimeDraft,
+        );
+        if (!startsAtUtc) {
+          setModalError('Data ou hora da vídeo chamada inválida.');
+          return;
+        }
+        videoCallStartsAtUtcIso = startsAtUtc;
+      }
+    }
 
     setModalSaving(true);
     setModalError('');
@@ -1334,15 +1552,29 @@ export default function CrmPage() {
         ...(immigrationDateChanged
           ? { crmExpectedImmigrationAt: immigrationDateDraft || null }
           : {}),
+        ...(videoCallChanged
+          ? {
+              videoCallStartsAtUtcIso,
+              videoCallTimezone: bookingTimezone,
+            }
+          : {}),
       });
       setSelectedItem(updated);
       setCommentsDraft(updated.crmComments ?? '');
       setImmigrationDateDraft(toImmigrationDateInputValue(updated.crmExpectedImmigrationAt));
+      setVideoCallDateDraft(toVideoCallDateDraft(updated));
+      setVideoCallTimeDraft(toVideoCallTimeDraft(updated));
       setColumns((prev) =>
         sortCrmBoardColumns(
           moveItemBetweenColumns(prev, updated.id, updated.crmStatus, updated),
         ),
       );
+      setSelectedItem(null);
+      setCommentsDraft('');
+      setImmigrationDateDraft('');
+      setVideoCallDateDraft('');
+      setVideoCallTimeDraft('');
+      setModalError('');
     } catch (err) {
       setModalError(
         err instanceof Error ? err.message : 'Não foi possível guardar as alterações.',
@@ -1350,7 +1582,7 @@ export default function CrmPage() {
     } finally {
       setModalSaving(false);
     }
-  }, [commentsDraft, immigrationDateDraft, selectedItem]);
+  }, [commentsDraft, immigrationDateDraft, selectedItem, videoCallDateDraft, videoCallTimeDraft]);
 
   const handleRequestDelete = useCallback((item: RafacallCrmItem) => {
     setDeleteConfirmItem(item);
@@ -1420,6 +1652,8 @@ export default function CrmPage() {
         setSelectedItem(null);
         setCommentsDraft('');
         setImmigrationDateDraft('');
+        setVideoCallDateDraft('');
+        setVideoCallTimeDraft('');
         setModalError('');
       }
       setDeleteConfirmItem(null);
@@ -1601,10 +1835,14 @@ export default function CrmPage() {
           item={selectedItem}
           commentsDraft={commentsDraft}
           immigrationDateDraft={immigrationDateDraft}
+          videoCallDateDraft={videoCallDateDraft}
+          videoCallTimeDraft={videoCallTimeDraft}
           saving={modalSaving}
           error={modalError}
           onCommentsChange={setCommentsDraft}
           onImmigrationDateChange={setImmigrationDateDraft}
+          onVideoCallDateChange={setVideoCallDateDraft}
+          onVideoCallTimeChange={setVideoCallTimeDraft}
           onStatusChange={(status) => void handleModalStatusChange(status)}
           onSave={() => void handleSave()}
           onClose={() => {
@@ -1612,6 +1850,8 @@ export default function CrmPage() {
               setSelectedItem(null);
               setCommentsDraft('');
               setImmigrationDateDraft('');
+              setVideoCallDateDraft('');
+              setVideoCallTimeDraft('');
               setModalError('');
             }
           }}

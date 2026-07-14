@@ -1008,6 +1008,8 @@ export const api = {
           crmStatus?: RafacallCrmStatus;
           crmComments?: string;
           crmExpectedImmigrationAt?: string | null;
+          videoCallStartsAtUtcIso?: string | null;
+          videoCallTimezone?: string;
         },
       ) =>
         request<RafacallCrmItem>(`/admin/rafacall/crm/${bookingId}`, {
