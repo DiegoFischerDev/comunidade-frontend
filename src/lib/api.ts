@@ -60,9 +60,10 @@ export { getUserFacingApiError } from './api-error-message';
 
 export type RafacallCrmStatus =
   | 'ENVIOU_MENSAGEM'
+  | 'IMIGRACAO_LONGE'
+  | 'IMIGRACAO_PERTO'
   | 'VIDEO_CHAMADA_AGENDADA'
   | 'REALIZOU_VIDEO_CHAMADA'
-  | 'IMIGRACAO_MUITO_LONGE'
   | 'AGUARDANDO_ASSINATURA'
   | 'CONTRATO_ASSINADO';
 
@@ -987,6 +988,15 @@ export const api = {
             items: RafacallCrmItem[];
           }[];
         }>('/admin/rafacall/crm', { method: 'GET' }),
+      createCrmClient: (body: {
+        name: string;
+        whatsapp: string;
+        crmExpectedImmigrationAt?: string | null;
+      }) =>
+        request<RafacallCrmItem>('/admin/rafacall/crm', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
       updateCrm: (
         bookingId: string,
         body: {

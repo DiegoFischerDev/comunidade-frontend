@@ -82,6 +82,8 @@ type HorizontalSnapCarouselProps = {
   navPlacement?: "inset" | "outset";
   /** Dashboard mobile: peek 12vw + zonas de toque nas laterais para avançar. */
   centeredPeek?: boolean;
+  /** Oculta setas em ecrãs mobile (navegação por swipe). */
+  hideNavOnMobile?: boolean;
   prevAriaLabel?: string;
   nextAriaLabel?: string;
 };
@@ -99,6 +101,7 @@ export function HorizontalSnapCarousel({
   loop = false,
   navPlacement = "inset",
   centeredPeek = false,
+  hideNavOnMobile = false,
   prevAriaLabel = "Anterior",
   nextAriaLabel = "Seguinte",
 }: HorizontalSnapCarouselProps) {
@@ -190,6 +193,7 @@ export function HorizontalSnapCarousel({
   );
 
   const showNav = slideCount > 1 || !hideNavWhenSingle;
+  const hideNavMobileClass = hideNavOnMobile ? "max-md:hidden" : "";
 
   return (
     <div
@@ -205,7 +209,7 @@ export function HorizontalSnapCarousel({
             aria-disabled={!canPrev}
             disabled={!canPrev}
             onClick={() => scrollByDir(-1)}
-            className={`${navBtnClass} ${navPosPrev}`}
+            className={`${navBtnClass} ${navPosPrev} ${hideNavMobileClass}`}
           >
             <svg
               aria-hidden
@@ -228,7 +232,7 @@ export function HorizontalSnapCarousel({
             aria-disabled={!canNext}
             disabled={!canNext}
             onClick={() => scrollByDir(1)}
-            className={`${navBtnClass} ${navPosNext}`}
+            className={`${navBtnClass} ${navPosNext} ${hideNavMobileClass}`}
           >
             <svg
               aria-hidden

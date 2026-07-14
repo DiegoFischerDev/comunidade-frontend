@@ -1,8 +1,11 @@
 import type { RafacallCrmStatus } from '@/lib/api';
 
+export const CRM_IMMIGRATION_IMMEDIATE_VALUE = 'IMEDIATO';
+
 export const RAFA_CALL_CRM_STATUS_ORDER: RafacallCrmStatus[] = [
   'ENVIOU_MENSAGEM',
-  'IMIGRACAO_MUITO_LONGE',
+  'IMIGRACAO_LONGE',
+  'IMIGRACAO_PERTO',
   'VIDEO_CHAMADA_AGENDADA',
   'REALIZOU_VIDEO_CHAMADA',
   'AGUARDANDO_ASSINATURA',
@@ -11,10 +14,11 @@ export const RAFA_CALL_CRM_STATUS_ORDER: RafacallCrmStatus[] = [
 
 export const RAFA_CALL_CRM_STATUS_LABELS: Record<RafacallCrmStatus, string> = {
   ENVIOU_MENSAGEM: 'Enviou mensagem',
+  IMIGRACAO_LONGE: 'Data para imigrar longe',
+  IMIGRACAO_PERTO: 'Data para imigrar perto',
   VIDEO_CHAMADA_AGENDADA: 'Vídeo chamada agendada',
   REALIZOU_VIDEO_CHAMADA: 'Realizou vídeo chamada',
-  IMIGRACAO_MUITO_LONGE: 'Data para imigrar muito longe ainda',
-  AGUARDANDO_ASSINATURA: 'Aguardando assinatura do contrato',
+  AGUARDANDO_ASSINATURA: 'Contrato enviado',
   CONTRATO_ASSINADO: 'Contrato assinado',
 };
 
@@ -52,13 +56,21 @@ export const RAFA_CALL_CRM_STATUS_TONES: Record<RafacallCrmStatus, RafacallCrmCo
     dot: 'bg-emerald-400',
     dragRing: 'ring-emerald-300/50',
   },
-  IMIGRACAO_MUITO_LONGE: {
+  IMIGRACAO_LONGE: {
     column: 'bg-amber-500/[0.08]',
     header: 'bg-amber-500/12',
     border: 'border-amber-200/80',
     badge: 'bg-amber-500/15 text-amber-900',
     dot: 'bg-amber-400',
     dragRing: 'ring-amber-300/50',
+  },
+  IMIGRACAO_PERTO: {
+    column: 'bg-orange-500/[0.08]',
+    header: 'bg-orange-500/12',
+    border: 'border-orange-200/80',
+    badge: 'bg-orange-500/15 text-orange-900',
+    dot: 'bg-orange-400',
+    dragRing: 'ring-orange-300/50',
   },
   AGUARDANDO_ASSINATURA: {
     column: 'bg-violet-500/[0.07]',
@@ -78,11 +90,71 @@ export const RAFA_CALL_CRM_STATUS_TONES: Record<RafacallCrmStatus, RafacallCrmCo
   },
 };
 
+const CRM_STATUS_ALIASES: Partial<Record<string, RafacallCrmStatus>> = {
+  IMIGRACAO_MUITO_LONGE: 'IMIGRACAO_LONGE',
+};
+
+const FALLBACK_CRM_COLUMN_TONE = RAFA_CALL_CRM_STATUS_TONES.ENVIOU_MENSAGEM;
+
+export function normalizeCrmStatus(status: string): RafacallCrmStatus {
+  const aliased = CRM_STATUS_ALIASES[status] ?? status;
+  if (RAFA_CALL_CRM_STATUS_ORDER.includes(aliased as RafacallCrmStatus)) {
+    return aliased as RafacallCrmStatus;
+  }
+  return 'ENVIOU_MENSAGEM';
+}
+
+export function getCrmColumnTone(status: string | RafacallCrmStatus): RafacallCrmColumnTone {
+  const normalized = normalizeCrmStatus(status);
+  return RAFA_CALL_CRM_STATUS_TONES[normalized] ?? FALLBACK_CRM_COLUMN_TONE;
+}
+
+export function normalizeCrmBoardColumns<
+  T extends {
+    status: string;
+    label: string;
+    items: Array<{ crmStatus: string } & Record<string, unknown>>;
+  },
+>(columns: T[]): T[] {
+  const byStatus = new Map<string, T>();
+  for (const column of columns) {
+    byStatus.set(normalizeCrmStatus(column.status), column);
+  }
+
+  return RAFA_CALL_CRM_STATUS_ORDER.map((status) => {
+    const existing = byStatus.get(status);
+    if (existing) {
+      return {
+        ...existing,
+        status,
+        label: RAFA_CALL_CRM_STATUS_LABELS[status],
+        items: existing.items.map((item) => ({
+          ...item,
+          crmStatus: normalizeCrmStatus(item.crmStatus),
+        })),
+      };
+    }
+    return {
+      status,
+      label: RAFA_CALL_CRM_STATUS_LABELS[status],
+      items: [],
+    } as T;
+  });
+}
+
+export function isCrmImmigrationImmediate(
+  value: string | null | undefined,
+): boolean {
+  return value?.trim().toUpperCase() === CRM_IMMIGRATION_IMMEDIATE_VALUE;
+}
+
 export function toImmigrationDateInputValue(value: string | null | undefined): string {
+  if (isCrmImmigrationImmediate(value)) return CRM_IMMIGRATION_IMMEDIATE_VALUE;
   return value?.trim() ?? '';
 }
 
 export function formatImmigrationMonthYear(value: string | null | undefined): string | null {
+  if (isCrmImmigrationImmediate(value)) return 'imediato';
   const raw = value?.trim();
   if (!raw) return null;
   const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -99,6 +171,7 @@ export function formatImmigrationMonthYear(value: string | null | undefined): st
 }
 
 export function formatImmigrationDateLabel(value: string | null | undefined): string | null {
+  if (isCrmImmigrationImmediate(value)) return 'Imediato';
   const raw = value?.trim();
   if (!raw) return null;
   const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -116,6 +189,12 @@ export function compareCrmImmigrationDateKeys(
   left: string | null | undefined,
   right: string | null | undefined,
 ): number {
+  const leftImmediate = isCrmImmigrationImmediate(left);
+  const rightImmediate = isCrmImmigrationImmediate(right);
+  if (leftImmediate && rightImmediate) return 0;
+  if (leftImmediate) return -1;
+  if (rightImmediate) return 1;
+
   const leftKey = left?.trim() ?? '';
   const rightKey = right?.trim() ?? '';
   if (!leftKey && !rightKey) return 0;

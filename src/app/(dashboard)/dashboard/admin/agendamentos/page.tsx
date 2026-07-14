@@ -19,6 +19,10 @@ function ymdInTz(date: Date, timeZone: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone }).format(date);
 }
 
+function isTodayYmd(ymd: string, timeZone: string): boolean {
+  return ymd === ymdInTz(new Date(), timeZone);
+}
+
 function prettyYmdPt(ymd: string, timeZone: string): string {
   const m = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!m) return ymd;
@@ -243,6 +247,92 @@ function AdminManualSlotFields({
             className="mt-2 w-full rounded-xl border border-border bg-page px-4 py-2.5 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
           />
         </div>
+      </div>
+    </div>
+  );
+}
+
+type RafacallAvailabilityPayload = Awaited<
+  ReturnType<typeof api.rafacall.guestAvailability>
+>;
+
+function AvailabilityQuickPickSection({
+  tz,
+  availability,
+  selectedDate,
+  manualDate,
+  manualTime,
+  isBusy,
+  onDateChange,
+  onSlotSelect,
+}: {
+  tz: string;
+  availability: RafacallAvailabilityPayload | null;
+  selectedDate: string;
+  manualDate: string;
+  manualTime: string;
+  isBusy: boolean;
+  onDateChange: (date: string) => void;
+  onSlotSelect: (slot: { startsAt: string; endsAt: string }) => void;
+}) {
+  const daySlots = availability?.days.find((d) => d.date === selectedDate)?.slots ?? [];
+
+  if (!availability) return null;
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+        Ou escolhe na grelha
+      </p>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Dia</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {availability.days
+            .filter((d) => d.slots.length > 0)
+            .map((d) => (
+              <button
+                key={d.date}
+                type="button"
+                disabled={isBusy}
+                onClick={() => onDateChange(d.date)}
+                className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                  selectedDate === d.date
+                    ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
+                    : 'border-border bg-card text-foreground hover:bg-page'
+                }`}
+              >
+                {prettyYmdPt(d.date, tz)}
+              </button>
+            ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Horário</p>
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {daySlots.map((slot) => {
+            const slotTime = hmInTz(slot.startsAt, tz);
+            const isSelected = manualDate === selectedDate && manualTime === slotTime;
+            return (
+              <button
+                key={slot.startsAt}
+                type="button"
+                disabled={isBusy}
+                onClick={() => onSlotSelect(slot)}
+                className={`cursor-pointer rounded-xl border px-3 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                  isSelected
+                    ? 'border-emerald-400 bg-emerald-50 text-emerald-900'
+                    : 'border-border bg-card text-foreground hover:bg-page'
+                }`}
+              >
+                {formatSlotTimeInTz(slot.startsAt, tz)}
+              </button>
+            );
+          })}
+        </div>
+        {daySlots.length === 0 ? (
+          <p className="mt-2 text-sm text-muted">Sem horários neste dia.</p>
+        ) : null}
       </div>
     </div>
   );
@@ -687,16 +777,32 @@ function DayKanbanColumn({
   onBookFreeSlot: (startsAt: string, endsAt: string) => void;
 }) {
   const entries = buildKanbanDayEntries(kanbanDay);
+  const isToday = isTodayYmd(kanbanDay.date, tz);
 
   return (
     <section
-      className={`flex h-full min-h-[200px] flex-col rounded-xl border border-border bg-card shadow-sm ${className}`.trim()}
+      className={`flex h-full min-h-[200px] flex-col rounded-xl border shadow-sm ${
+        isToday
+          ? 'border-emerald-200/90 bg-emerald-50/90'
+          : 'border-border bg-card'
+      } ${className}`.trim()}
       aria-label={`Agendamentos de ${formatDayKanbanTitle(kanbanDay.date, tz)}`}
     >
-      <header className="border-b border-border bg-page px-3 py-2.5">
-        <p className="text-sm font-semibold capitalize text-foreground">
-          {formatDayKanbanTitle(kanbanDay.date, tz)}
-        </p>
+      <header
+        className={`border-b px-3 py-2.5 ${
+          isToday ? 'border-emerald-200/80 bg-emerald-100/70' : 'border-border bg-page'
+        }`}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-semibold capitalize text-foreground">
+            {formatDayKanbanTitle(kanbanDay.date, tz)}
+          </p>
+          {isToday ? (
+            <span className="shrink-0 rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+              HOJE
+            </span>
+          ) : null}
+        </div>
       </header>
       <div className="flex flex-1 flex-col px-3 py-1">
         {entries.length === 0 ? (
@@ -749,6 +855,9 @@ function DayKanbanColumn({
 
 function FreeSlotBookModal({
   tz,
+  availability,
+  selectedDate,
+  isLoadingAvailability,
   manualDate,
   manualTime,
   name,
@@ -756,6 +865,8 @@ function FreeSlotBookModal({
   whatsappError,
   error,
   isLoading,
+  onDateChange,
+  onSlotSelect,
   onManualDateChange,
   onManualTimeChange,
   onNameChange,
@@ -764,6 +875,9 @@ function FreeSlotBookModal({
   onClose,
 }: {
   tz: string;
+  availability: RafacallAvailabilityPayload | null;
+  selectedDate: string;
+  isLoadingAvailability: boolean;
   manualDate: string;
   manualTime: string;
   name: string;
@@ -771,6 +885,8 @@ function FreeSlotBookModal({
   whatsappError: string;
   error: string;
   isLoading: boolean;
+  onDateChange: (date: string) => void;
+  onSlotSelect: (slot: { startsAt: string; endsAt: string }) => void;
   onManualDateChange: (value: string) => void;
   onManualTimeChange: (value: string) => void;
   onNameChange: (value: string) => void;
@@ -783,6 +899,7 @@ function FreeSlotBookModal({
   const whatsappDigits = whatsapp.replace(/\D/g, '');
   const canSubmit =
     Boolean(preview) && trimmedName.length >= 2 && whatsappDigits.length >= 8;
+  const isBusy = isLoadingAvailability || isLoading;
 
   return (
     <div
@@ -793,7 +910,7 @@ function FreeSlotBookModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
@@ -802,34 +919,18 @@ function FreeSlotBookModal({
               Agendar horário livre
             </h2>
             <p className="mt-1 text-sm text-muted">
-              Indica data, hora e cliente para confirmar o agendamento.
+              Indica o cliente e escolhe o horário para confirmar o agendamento.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            disabled={isLoading}
+            disabled={isBusy}
             className="cursor-pointer rounded-full px-2 py-1 text-sm text-muted hover:bg-page hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Fechar"
           >
             ✕
           </button>
-        </div>
-
-        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Horário selecionado</p>
-          {preview ? (
-            <>
-              <p className="mt-1 text-sm font-semibold capitalize text-foreground">
-                {prettyYmdPt(manualDate, tz)}
-              </p>
-              <p className="mt-0.5 text-sm text-foreground/90">
-                {formatSlotRange(preview.startsAt, preview.endsAt, tz)}
-              </p>
-            </>
-          ) : (
-            <p className="mt-1 text-sm text-muted">Indica data e hora válidas.</p>
-          )}
         </div>
 
         {error ? (
@@ -839,15 +940,6 @@ function FreeSlotBookModal({
         ) : null}
 
         <div className="mt-4 space-y-4">
-          <AdminManualSlotFields
-            idPrefix="quick-book"
-            date={manualDate}
-            time={manualTime}
-            timeZone={tz}
-            disabled={isLoading}
-            onDateChange={onManualDateChange}
-            onTimeChange={onManualTimeChange}
-          />
           <div>
             <label className="block text-sm font-medium text-foreground" htmlFor="quick-book-name">
               Nome do cliente
@@ -857,7 +949,7 @@ function FreeSlotBookModal({
               type="text"
               value={name}
               onChange={(e) => onNameChange(e.target.value)}
-              disabled={isLoading}
+              disabled={isBusy}
               className="mt-2 w-full rounded-xl border border-border bg-page px-4 py-2.5 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
               placeholder="Nome"
               autoComplete="name"
@@ -869,16 +961,45 @@ function FreeSlotBookModal({
             label="WhatsApp"
             value={whatsapp}
             error={whatsappError}
-            disabled={isLoading}
+            disabled={isBusy}
             rememberInStorage={false}
             onChange={onWhatsappChange}
           />
         </div>
 
+        <div className="mt-4">
+          <AdminManualSlotFields
+            idPrefix="quick-book"
+            date={manualDate}
+            time={manualTime}
+            timeZone={tz}
+            disabled={isBusy}
+            onDateChange={onManualDateChange}
+            onTimeChange={onManualTimeChange}
+          />
+        </div>
+
+        {isLoadingAvailability ? (
+          <p className="mt-6 text-sm text-muted">A carregar horários…</p>
+        ) : (
+          <div className="mt-4">
+            <AvailabilityQuickPickSection
+              tz={tz}
+              availability={availability}
+              selectedDate={selectedDate}
+              manualDate={manualDate}
+              manualTime={manualTime}
+              isBusy={isBusy}
+              onDateChange={onDateChange}
+              onSlotSelect={onSlotSelect}
+            />
+          </div>
+        )}
+
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <button
             type="button"
-            disabled={isLoading || !canSubmit}
+            disabled={isBusy || !canSubmit}
             onClick={() => void onConfirm()}
             className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-[14px] bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -886,7 +1007,7 @@ function FreeSlotBookModal({
           </button>
           <button
             type="button"
-            disabled={isLoading}
+            disabled={isBusy}
             onClick={onClose}
             className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-[14px] border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -931,8 +1052,6 @@ function RescheduleBookingModal({
   onConfirm: () => void;
   onClose: () => void;
 }) {
-  const daySlots =
-    availability?.days.find((d) => d.date === selectedDate)?.slots ?? [];
   const clientName = (target.userName || '').trim() || '—';
   const isBusy = isLoadingAvailability || isSubmitting;
   const preview = previewSlotRangeFromManual(manualDate, manualTime, leadTz);
@@ -1013,60 +1132,17 @@ function RescheduleBookingModal({
         {isLoadingAvailability ? (
           <p className="mt-6 text-sm text-muted">A carregar horários…</p>
         ) : availability ? (
-          <div className="mt-4 space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-              Ou escolhe na grelha
-            </p>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Dia</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {availability.days
-                  .filter((d) => d.slots.length > 0)
-                  .map((d) => (
-                    <button
-                      key={d.date}
-                      type="button"
-                      disabled={isBusy}
-                      onClick={() => onDateChange(d.date)}
-                      className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                        selectedDate === d.date
-                          ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
-                          : 'border-border bg-card text-foreground hover:bg-page'
-                      }`}
-                    >
-                      {prettyYmdPt(d.date, leadTz)}
-                    </button>
-                  ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Horário</p>
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {daySlots.map((slot) => {
-                  const slotTime = hmInTz(slot.startsAt, leadTz);
-                  const isSelected = manualDate === selectedDate && manualTime === slotTime;
-                  return (
-                    <button
-                      key={slot.startsAt}
-                      type="button"
-                      disabled={isBusy}
-                      onClick={() => onSlotSelect(slot)}
-                      className={`cursor-pointer rounded-xl border px-3 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                        isSelected
-                          ? 'border-emerald-400 bg-emerald-50 text-emerald-900'
-                          : 'border-border bg-card text-foreground hover:bg-page'
-                      }`}
-                    >
-                      {formatSlotTimeInTz(slot.startsAt, leadTz)}
-                    </button>
-                  );
-                })}
-              </div>
-              {daySlots.length === 0 ? (
-                <p className="mt-2 text-sm text-muted">Sem horários neste dia.</p>
-              ) : null}
-            </div>
+          <div className="mt-4">
+            <AvailabilityQuickPickSection
+              tz={leadTz}
+              availability={availability}
+              selectedDate={selectedDate}
+              manualDate={manualDate}
+              manualTime={manualTime}
+              isBusy={isBusy}
+              onDateChange={onDateChange}
+              onSlotSelect={onSlotSelect}
+            />
           </div>
         ) : null}
 
@@ -1217,6 +1293,7 @@ export default function AdminRafaCallHojePage() {
     slot: string;
   } | null>(null);
   const [quickBookOpen, setQuickBookOpen] = useState(false);
+  const [quickBookSelectedDate, setQuickBookSelectedDate] = useState('');
   const [quickBookManualDate, setQuickBookManualDate] = useState('');
   const [quickBookManualTime, setQuickBookManualTime] = useState('');
   const [quickBookName, setQuickBookName] = useState('');
@@ -1498,6 +1575,7 @@ export default function AdminRafaCallHojePage() {
 
   const openQuickBookSlot = useCallback((date: string, startsAt: string, _endsAt: string) => {
     setQuickBookOpen(true);
+    setQuickBookSelectedDate(date);
     setQuickBookManualDate(date);
     setQuickBookManualTime(hmInTz(startsAt, tz));
     setQuickBookName('');
@@ -1507,18 +1585,22 @@ export default function AdminRafaCallHojePage() {
   }, [tz]);
 
   const openNewQuickBook = useCallback(() => {
+    const firstDay =
+      availability?.days.find((d) => d.slots.length > 0)?.date ?? '';
     setQuickBookOpen(true);
+    setQuickBookSelectedDate(firstDay);
     setQuickBookManualDate('');
     setQuickBookManualTime('');
     setQuickBookName('');
     setQuickBookWhatsapp('');
     setQuickBookError('');
     setQuickBookWhatsappError('');
-  }, []);
+  }, [availability]);
 
   const closeQuickBook = useCallback(() => {
     if (quickBooking) return;
     setQuickBookOpen(false);
+    setQuickBookSelectedDate('');
     setQuickBookManualDate('');
     setQuickBookManualTime('');
     setQuickBookName('');
@@ -1763,6 +1845,9 @@ export default function AdminRafaCallHojePage() {
       {quickBookOpen ? (
         <FreeSlotBookModal
           tz={tz}
+          availability={availability}
+          selectedDate={quickBookSelectedDate}
+          isLoadingAvailability={loading && !availability}
           manualDate={quickBookManualDate}
           manualTime={quickBookManualTime}
           name={quickBookName}
@@ -1770,8 +1855,20 @@ export default function AdminRafaCallHojePage() {
           whatsappError={quickBookWhatsappError}
           error={quickBookError}
           isLoading={quickBooking}
+          onDateChange={(date) => {
+            setQuickBookSelectedDate(date);
+            setQuickBookManualDate(date);
+            if (quickBookError) setQuickBookError('');
+          }}
+          onSlotSelect={(slot) => {
+            setQuickBookManualDate(ymdInTz(new Date(slot.startsAt), tz));
+            setQuickBookManualTime(hmInTz(slot.startsAt, tz));
+            setQuickBookSelectedDate(ymdInTz(new Date(slot.startsAt), tz));
+            if (quickBookError) setQuickBookError('');
+          }}
           onManualDateChange={(value) => {
             setQuickBookManualDate(value);
+            setQuickBookSelectedDate(value);
             if (quickBookError) setQuickBookError('');
           }}
           onManualTimeChange={(value) => {

@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, type RafacallCrmItem, type RafacallCrmStatus } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { RAFA_CALL_CRM_STATUS_LABELS, RAFA_CALL_CRM_STATUS_ORDER, RAFA_CALL_CRM_STATUS_TONES, formatImmigrationDateLabel, formatImmigrationMonthYear, sortCrmBoardColumns, toImmigrationDateInputValue } from '@/lib/rafacall-crm';
+import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
+import { CRM_IMMIGRATION_IMMEDIATE_VALUE, RAFA_CALL_CRM_STATUS_LABELS, RAFA_CALL_CRM_STATUS_ORDER, getCrmColumnTone, formatImmigrationDateLabel, formatImmigrationMonthYear, isCrmImmigrationImmediate, normalizeCrmBoardColumns, sortCrmBoardColumns, toImmigrationDateInputValue } from '@/lib/rafacall-crm';
 import {
   CENTERED_PEEK_CAROUSEL_ITEM,
   CENTERED_PEEK_CAROUSEL_TRACK,
@@ -14,10 +15,178 @@ import {
 type CrmBoardPayload = Awaited<ReturnType<typeof api.admin.rafacall.crmBoard>>;
 type CrmColumn = CrmBoardPayload['columns'][number];
 
-const CRM_TABLET_SLIDE =
-  'flex-none w-[calc(100vw-2rem)] max-w-3xl snap-center sm:w-[calc(100vw-3rem)]';
+const CRM_COLUMN_WIDTH_REM = 17.5;
+const CRM_COLUMN_GAP_REM = 1;
+const CRM_COLUMN_MAX_WIDTH_CLASS = 'max-w-[17.5rem] max-md:max-w-none';
+const CRM_MOBILE_MEDIA_QUERY = '(max-width: 767px)';
 
-const CRM_DESKTOP_COLUMN = 'flex-none w-[17.5rem] min-w-[17.5rem]';
+function isCrmMobileViewport(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia(CRM_MOBILE_MEDIA_QUERY).matches;
+}
+
+function getColumnsPerSlide(containerWidthPx: number, totalColumns: number): number {
+  if (isCrmMobileViewport()) return 1;
+  return getColumnsThatFit(containerWidthPx, totalColumns);
+}
+
+function crmColumnGridTemplate(columnCount: number): string {
+  return `repeat(${columnCount}, minmax(0, ${CRM_COLUMN_WIDTH_REM}rem))`;
+}
+
+function getColumnsThatFit(containerWidthPx: number, totalColumns: number): number {
+  if (containerWidthPx <= 0 || totalColumns === 0) return 1;
+
+  const rootFontSize =
+    typeof window !== 'undefined'
+      ? Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+      : 16;
+  const columnWidthPx = CRM_COLUMN_WIDTH_REM * rootFontSize;
+  const gapPx = CRM_COLUMN_GAP_REM * rootFontSize;
+  const perSlide = Math.floor((containerWidthPx + gapPx) / (columnWidthPx + gapPx));
+
+  return Math.max(1, Math.min(totalColumns, perSlide || 1));
+}
+
+type CrmKanbanColumnProps = {
+  draggingItemId: string | null;
+  savingItemId: string | null;
+  onDropItem: (itemId: string, targetStatus: RafacallCrmStatus) => void;
+  onOpenDetails: (item: RafacallCrmItem) => void;
+  onRequestDelete: (item: RafacallCrmItem) => void;
+  onDragStart: (itemId: string) => void;
+  onDragEnd: () => void;
+};
+
+function CrmKanbanBoard({
+  columns,
+  columnProps,
+}: {
+  columns: CrmColumn[];
+  columnProps: CrmKanbanColumnProps;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [columnsPerSlide, setColumnsPerSlide] = useState(1);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const update = () => {
+      const mobile = isCrmMobileViewport();
+      setIsMobileViewport(mobile);
+      setColumnsPerSlide(getColumnsPerSlide(container.clientWidth, columns.length));
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(container);
+    const mobileMedia = window.matchMedia(CRM_MOBILE_MEDIA_QUERY);
+    const onMobileMediaChange = () => update();
+    mobileMedia.addEventListener('change', onMobileMediaChange);
+
+    return () => {
+      observer.disconnect();
+      mobileMedia.removeEventListener('change', onMobileMediaChange);
+    };
+  }, [columns.length]);
+
+  const fitsAllColumns = columnsPerSlide >= columns.length;
+
+  if (fitsAllColumns) {
+    return (
+      <div
+        ref={containerRef}
+        className="grid justify-start gap-4"
+        style={{ gridTemplateColumns: crmColumnGridTemplate(columns.length) }}
+      >
+        {columns.map((column) => (
+          <CrmKanbanColumn
+            key={column.status}
+            column={column}
+            {...columnProps}
+            className="min-w-0 w-full"
+          />
+        ))}
+      </div>
+    );
+  }
+
+  const slides = chunkColumns(columns, columnsPerSlide);
+  const useMobilePeekCarousel = isMobileViewport && columnsPerSlide === 1;
+
+  if (useMobilePeekCarousel) {
+    return (
+      <div ref={containerRef} className="min-w-0">
+        <HorizontalSnapCarousel
+          slideCount={columns.length}
+          ariaLabel="Colunas do CRM — deslize para ver mais colunas"
+          className="sm:px-12"
+          navStyle="prominent"
+          hideNavWhenSingle={false}
+          hideNavOnMobile
+          centeredPeek
+          navPlacement="inset"
+          prevAriaLabel="Coluna anterior"
+          nextAriaLabel="Coluna seguinte"
+          trackClassName={`items-stretch ${HORIZONTAL_CAROUSEL_TRACK} ${CENTERED_PEEK_CAROUSEL_TRACK} max-md:gap-3 md:gap-4 md:px-0 pb-2`}
+        >
+          {columns.map((column) => (
+            <div
+              key={column.status}
+              className={`${CENTERED_PEEK_CAROUSEL_ITEM} md:flex md:w-full md:max-w-none md:shrink-0 md:grow-0 md:basis-full md:snap-center`}
+            >
+              <CrmKanbanColumn
+                column={column}
+                {...columnProps}
+                className="h-full min-w-0 w-full"
+              />
+            </div>
+          ))}
+        </HorizontalSnapCarousel>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={containerRef} className="min-w-0">
+      <HorizontalSnapCarousel
+        slideCount={slides.length}
+        ariaLabel="Colunas do CRM — deslize para ver mais colunas"
+        className="sm:px-12"
+        navStyle="prominent"
+        hideNavWhenSingle={false}
+        hideNavOnMobile
+        navPlacement="inset"
+        prevAriaLabel="Colunas anteriores"
+        nextAriaLabel="Colunas seguintes"
+        trackClassName={`items-stretch ${HORIZONTAL_CAROUSEL_TRACK} gap-4 pb-2`}
+      >
+        {slides.map((group, index) => (
+          <div
+            key={`crm-slide:${index}`}
+            className="flex w-full shrink-0 grow-0 basis-full snap-center"
+          >
+            <div
+              className="grid h-full w-full justify-start gap-4"
+              style={{ gridTemplateColumns: crmColumnGridTemplate(group.length) }}
+            >
+              {group.map((column) => (
+                <CrmKanbanColumn
+                  key={column.status}
+                  column={column}
+                  {...columnProps}
+                  className="min-w-0 w-full"
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </HorizontalSnapCarousel>
+    </div>
+  );
+}
 
 function formatWhatsappDigits(digits: string): string {
   const d = String(digits ?? '').replace(/\D/g, '');
@@ -263,6 +432,24 @@ function removeItemFromColumns(columns: CrmColumn[], itemId: string): CrmColumn[
   }));
 }
 
+function insertItemIntoColumns(columns: CrmColumn[], item: RafacallCrmItem): CrmColumn[] {
+  return sortCrmBoardColumns(
+    columns.map((column) =>
+      column.status === item.crmStatus
+        ? {
+            ...column,
+            items: column.items.some((entry) => entry.id === item.id)
+              ? column.items.map((entry) => (entry.id === item.id ? item : entry))
+              : [...column.items, item],
+          }
+        : {
+            ...column,
+            items: column.items.filter((entry) => entry.id !== item.id),
+          },
+    ),
+  );
+}
+
 function TrashIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -300,6 +487,7 @@ function CrmClientCard({
   const name = item.userName?.trim() || 'Sem nome';
   const wa = formatWhatsappDigits(item.whatsappDigits);
   const immigrationDateLabel = formatImmigrationDateLabel(item.crmExpectedImmigrationAt);
+  const isImmediateImmigration = isCrmImmigrationImmediate(item.crmExpectedImmigrationAt);
 
   return (
     <article
@@ -320,13 +508,33 @@ function CrmClientCard({
       </div>
 
       {immigrationDateLabel ? (
-        <div className="mt-2.5 inline-flex max-w-full items-center gap-1.5 rounded-lg border border-amber-200/90 bg-amber-50/90 px-2.5 py-1.5">
-          <CalendarIcon className="h-3.5 w-3.5 shrink-0 text-amber-700" />
+        <div
+          className={`mt-2.5 inline-flex max-w-full items-center gap-1.5 rounded-lg border px-2.5 py-1.5 ${
+            isImmediateImmigration
+              ? 'border-orange-200/90 bg-orange-50/90'
+              : 'border-amber-200/90 bg-amber-50/90'
+          }`}
+        >
+          <CalendarIcon
+            className={`h-3.5 w-3.5 shrink-0 ${
+              isImmediateImmigration ? 'text-orange-700' : 'text-amber-700'
+            }`}
+          />
           <div className="min-w-0">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-amber-800/80">
+            <p
+              className={`text-[10px] font-medium uppercase tracking-wide ${
+                isImmediateImmigration ? 'text-orange-800/80' : 'text-amber-800/80'
+              }`}
+            >
               Imigração prevista
             </p>
-            <p className="truncate text-xs font-semibold text-amber-950">{immigrationDateLabel}</p>
+            <p
+              className={`truncate text-xs font-semibold ${
+                isImmediateImmigration ? 'text-orange-950' : 'text-amber-950'
+              }`}
+            >
+              {immigrationDateLabel}
+            </p>
           </div>
         </div>
       ) : null}
@@ -395,11 +603,11 @@ function CrmKanbanColumn({
   className?: string;
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
-  const tone = RAFA_CALL_CRM_STATUS_TONES[column.status];
+  const tone = getCrmColumnTone(column.status);
 
   return (
     <section
-      className={`flex h-full min-h-[240px] flex-col rounded-xl border shadow-sm transition-shadow ${tone.column} ${tone.border} ${
+      className={`flex h-full min-h-[240px] w-full flex-col rounded-xl border shadow-sm transition-shadow ${CRM_COLUMN_MAX_WIDTH_CLASS} ${tone.column} ${tone.border} ${
         isDragOver ? `ring-2 ${tone.dragRing}` : ''
       } ${className}`.trim()}
       onDragOver={(event) => {
@@ -549,6 +757,117 @@ function ChevronDownIcon({ className }: { className?: string }) {
   );
 }
 
+function CrmNewClientModal({
+  name,
+  whatsapp,
+  whatsappError,
+  saving,
+  error,
+  onNameChange,
+  onWhatsappChange,
+  onConfirm,
+  onClose,
+}: {
+  name: string;
+  whatsapp: string;
+  whatsappError: string;
+  saving: boolean;
+  error: string;
+  onNameChange: (value: string) => void;
+  onWhatsappChange: (value: string) => void;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  const whatsappDigits = whatsapp.replace(/\D/g, '');
+  const canSubmit = name.trim().length >= 2 && whatsappDigits.length >= 8;
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="crm-new-client-title"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-[20px] border border-border bg-card p-5 shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 id="crm-new-client-title" className="text-lg font-semibold text-foreground">
+              Novo cliente
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              Adiciona um lead ao CRM com nome e WhatsApp. Entra na coluna «Enviou mensagem».
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-sm text-muted transition-colors hover:bg-page hover:text-foreground disabled:opacity-50"
+            aria-label="Fechar"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="mt-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground" htmlFor="crm-new-client-name">
+              Nome
+            </label>
+            <input
+              id="crm-new-client-name"
+              type="text"
+              value={name}
+              disabled={saving}
+              onChange={(event) => onNameChange(event.target.value)}
+              placeholder="Nome do cliente"
+              className="mt-2 w-full rounded-xl border border-border bg-page px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-brand-accent disabled:opacity-50"
+            />
+          </div>
+
+          <LoginWhatsappFields
+            idPrefix="crm-new-client"
+            value={whatsapp}
+            onChange={onWhatsappChange}
+            disabled={saving}
+            error={whatsappError}
+            rememberInStorage={false}
+          />
+        </div>
+
+        {error ? (
+          <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="mt-5 flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            className="inline-flex min-h-11 cursor-pointer items-center rounded-[14px] border border-border bg-card px-4 text-sm font-medium text-foreground transition-colors hover:bg-page disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={saving || !canSubmit}
+            className="inline-flex min-h-11 cursor-pointer items-center rounded-[14px] bg-brand-primary px-5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {saving ? 'A adicionar…' : 'Adicionar cliente'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CrmStatusSelect({
   value,
   disabled,
@@ -558,7 +877,7 @@ function CrmStatusSelect({
   disabled: boolean;
   onChange: (status: RafacallCrmStatus) => void;
 }) {
-  const tone = RAFA_CALL_CRM_STATUS_TONES[value];
+  const tone = getCrmColumnTone(value);
 
   return (
     <div className="mt-4">
@@ -616,7 +935,10 @@ function CrmClientModal({
 }) {
   const immigrationDateInputRef = useRef<HTMLInputElement>(null);
   const name = item.userName?.trim() || 'Sem nome';
-  const immigrationLabel = formatImmigrationDateLabel(immigrationDateDraft);
+  const isImmediateImmigration = isCrmImmigrationImmediate(immigrationDateDraft);
+  const immigrationLabel = isImmediateImmigration
+    ? 'Imediato'
+    : formatImmigrationDateLabel(immigrationDateDraft);
   const hasImmigrationDate = Boolean(immigrationDateDraft.trim());
   const videoCall = formatVideoCallDetail(
     item.bookingStatus,
@@ -694,43 +1016,98 @@ function CrmClientModal({
             </div>
           </div>
 
-          <button
-            type="button"
-            disabled={saving}
-            onClick={() => openNativeDatePicker(immigrationDateInputRef.current)}
-            className={`mt-3 flex w-full cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-              hasImmigrationDate
-                ? 'border-amber-200/90 bg-amber-50/90 text-amber-950 hover:border-amber-300 hover:bg-amber-50'
-                : 'border-dashed border-amber-200/70 bg-amber-50/40 text-amber-900/80 hover:border-amber-300 hover:bg-amber-50/70'
-            }`}
-            aria-label="Alterar data prevista para imigração"
-          >
-            <CalendarIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-amber-800/80">
-                Imigração prevista
-              </p>
-              <p
-                className={`mt-0.5 text-sm font-medium leading-snug ${
-                  hasImmigrationDate ? 'text-amber-950' : 'italic text-amber-900/70'
+          <div className="mt-3 space-y-2">
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => openNativeDatePicker(immigrationDateInputRef.current)}
+              className={`flex w-full cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                hasImmigrationDate
+                  ? isImmediateImmigration
+                    ? 'border-orange-300/90 bg-orange-50/95 text-orange-950 hover:border-orange-400 hover:bg-orange-50'
+                    : 'border-amber-200/90 bg-amber-50/90 text-amber-950 hover:border-amber-300 hover:bg-amber-50'
+                  : 'border-dashed border-amber-200/70 bg-amber-50/40 text-amber-900/80 hover:border-amber-300 hover:bg-amber-50/70'
+              }`}
+              aria-label="Alterar data prevista para imigração"
+            >
+              <CalendarIcon
+                className={`mt-0.5 h-4 w-4 shrink-0 ${
+                  isImmediateImmigration ? 'text-orange-700' : 'text-amber-700'
+                }`}
+              />
+              <div className="min-w-0 flex-1">
+                <p
+                  className={`text-xs font-semibold uppercase tracking-wide ${
+                    isImmediateImmigration ? 'text-orange-800/80' : 'text-amber-800/80'
+                  }`}
+                >
+                  Imigração prevista
+                </p>
+                <p
+                  className={`mt-0.5 text-sm font-medium leading-snug ${
+                    hasImmigrationDate
+                      ? isImmediateImmigration
+                        ? 'text-orange-950'
+                        : 'text-amber-950'
+                      : 'italic text-amber-900/70'
+                  }`}
+                >
+                  {immigrationLabel ?? 'Sem data definida — escolhe abaixo'}
+                </p>
+              </div>
+              <span
+                className={`shrink-0 text-xs font-medium ${
+                  isImmediateImmigration ? 'text-orange-800/70' : 'text-amber-800/70'
                 }`}
               >
-                {immigrationLabel ?? 'Sem data definida — clique para definir'}
-              </p>
+                Editar
+              </span>
+              <input
+                ref={immigrationDateInputRef}
+                id="crm-immigration-date"
+                type="date"
+                value={isImmediateImmigration ? '' : immigrationDateDraft}
+                disabled={saving}
+                onChange={(event) => onImmigrationDateChange(event.target.value)}
+                className="sr-only"
+                tabIndex={-1}
+                aria-hidden
+              />
+            </button>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => openNativeDatePicker(immigrationDateInputRef.current)}
+                className="inline-flex min-h-9 cursor-pointer items-center rounded-lg border border-amber-200 bg-amber-50/80 px-3 text-xs font-medium text-amber-900 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Escolher data
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => onImmigrationDateChange(CRM_IMMIGRATION_IMMEDIATE_VALUE)}
+                className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                  isImmediateImmigration
+                    ? 'border-orange-300 bg-orange-100 text-orange-950'
+                    : 'border-orange-200 bg-orange-50/80 text-orange-900 hover:bg-orange-100'
+                }`}
+              >
+                Imediato
+              </button>
+              {hasImmigrationDate ? (
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => onImmigrationDateChange('')}
+                  className="inline-flex min-h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted transition-colors hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Limpar
+                </button>
+              ) : null}
             </div>
-            <span className="shrink-0 text-xs font-medium text-amber-800/70">Editar</span>
-            <input
-              ref={immigrationDateInputRef}
-              id="crm-immigration-date"
-              type="date"
-              value={immigrationDateDraft}
-              disabled={saving}
-              onChange={(event) => onImmigrationDateChange(event.target.value)}
-              className="sr-only"
-              tabIndex={-1}
-              aria-hidden
-            />
-          </button>
+          </div>
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col border-t border-border px-5 py-4">
@@ -797,12 +1174,17 @@ export default function CrmPage() {
   const [deleteSaving, setDeleteSaving] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [filterQuery, setFilterQuery] = useState('');
+  const [newClientOpen, setNewClientOpen] = useState(false);
+  const [newClientName, setNewClientName] = useState('');
+  const [newClientWhatsapp, setNewClientWhatsapp] = useState('');
+  const [newClientWhatsappError, setNewClientWhatsappError] = useState('');
+  const [newClientError, setNewClientError] = useState('');
+  const [newClientSaving, setNewClientSaving] = useState(false);
 
   const filteredColumns = useMemo(
     () => filterCrmColumns(columns, filterQuery),
     [columns, filterQuery],
   );
-  const tabletSlides = useMemo(() => chunkColumns(filteredColumns, 2), [filteredColumns]);
   const totalClients = useMemo(() => countCrmClients(columns), [columns]);
   const filteredClients = useMemo(() => countCrmClients(filteredColumns), [filteredColumns]);
   const isFiltering = normalizeCrmSearchText(filterQuery).length > 0;
@@ -812,7 +1194,7 @@ export default function CrmPage() {
     setError('');
     try {
       const board = await api.admin.rafacall.crmBoard();
-      setColumns(sortCrmBoardColumns(board.columns));
+      setColumns(sortCrmBoardColumns(normalizeCrmBoardColumns(board.columns)));
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'Não foi possível carregar o CRM.',
@@ -946,16 +1328,7 @@ export default function CrmPage() {
       setImmigrationDateDraft(toImmigrationDateInputValue(updated.crmExpectedImmigrationAt));
       setColumns((prev) =>
         sortCrmBoardColumns(
-          prev.map((column) =>
-            column.status === updated.crmStatus
-              ? {
-                  ...column,
-                  items: column.items.map((entry) =>
-                    entry.id === updated.id ? updated : entry,
-                  ),
-                }
-              : column,
-          ),
+          moveItemBetweenColumns(prev, updated.id, updated.crmStatus, updated),
         ),
       );
     } catch (err) {
@@ -971,6 +1344,54 @@ export default function CrmPage() {
     setDeleteConfirmItem(item);
     setDeleteError('');
   }, []);
+
+  const handleOpenNewClient = useCallback(() => {
+    setNewClientOpen(true);
+    setNewClientName('');
+    setNewClientWhatsapp('');
+    setNewClientWhatsappError('');
+    setNewClientError('');
+  }, []);
+
+  const handleCreateClient = useCallback(async () => {
+    const trimmedName = newClientName.trim();
+    const whatsappDigits = newClientWhatsapp.replace(/\D/g, '');
+
+    if (trimmedName.length < 2) {
+      setNewClientError('Indica o nome do cliente.');
+      return;
+    }
+    if (whatsappDigits.length < 8) {
+      setNewClientWhatsappError('Indica um WhatsApp válido com indicativo do país.');
+      return;
+    }
+
+    setNewClientSaving(true);
+    setNewClientError('');
+    setNewClientWhatsappError('');
+
+    try {
+      const created = await api.admin.rafacall.createCrmClient({
+        name: trimmedName,
+        whatsapp: whatsappDigits,
+      });
+      setColumns((prev) => insertItemIntoColumns(prev, created));
+      setNewClientOpen(false);
+      setNewClientName('');
+      setNewClientWhatsapp('');
+      handleOpenDetails(created);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Não foi possível adicionar o cliente.';
+      if (message.toLowerCase().includes('whatsapp')) {
+        setNewClientWhatsappError(message);
+      } else {
+        setNewClientError(message);
+      }
+    } finally {
+      setNewClientSaving(false);
+    }
+  }, [handleOpenDetails, newClientName, newClientWhatsapp]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteConfirmItem) return;
@@ -1038,11 +1459,11 @@ export default function CrmPage() {
         </div>
         <button
           type="button"
-          onClick={() => void loadBoard()}
-          disabled={loading}
-          className="inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center rounded-[14px] border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={handleOpenNewClient}
+          disabled={loading || newClientSaving}
+          className="inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center rounded-[14px] bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Atualizar
+          Novo cliente
         </button>
       </div>
 
@@ -1114,70 +1535,38 @@ export default function CrmPage() {
       ) : null}
 
       {columns.length > 0 && (!isFiltering || filteredClients > 0) ? (
-        <div className="mt-6">
-          <div className="hidden gap-4 overflow-x-auto pb-2 lg:flex">
-            {filteredColumns.map((column) => (
-              <CrmKanbanColumn
-                key={column.status}
-                column={column}
-                {...columnProps}
-                className={CRM_DESKTOP_COLUMN}
-              />
-            ))}
-          </div>
-
-          <div className="hidden md:block lg:hidden">
-            <HorizontalSnapCarousel
-              slideCount={tabletSlides.length}
-              ariaLabel="Colunas do CRM — deslize ou use as setas"
-              navStyle="visible"
-              hideNavWhenSingle={false}
-              prevAriaLabel="Colunas anteriores"
-              nextAriaLabel="Colunas seguintes"
-              trackClassName={`items-stretch ${HORIZONTAL_CAROUSEL_TRACK} gap-4 px-2 pb-2`}
-            >
-              {tabletSlides.map((pair, index) => (
-                <div key={`tablet-slide:${index}`} className={CRM_TABLET_SLIDE}>
-                  <div
-                    className={`grid h-full gap-3 ${pair.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}
-                  >
-                    {pair.map((column) => (
-                      <CrmKanbanColumn
-                        key={column.status}
-                        column={column}
-                        {...columnProps}
-                        className="min-w-0 h-full"
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </HorizontalSnapCarousel>
-          </div>
-
-          <div className="md:hidden">
-            <HorizontalSnapCarousel
-              slideCount={filteredColumns.length}
-              ariaLabel="Colunas do CRM — deslize ou use as setas"
-              navStyle="visible"
-              centeredPeek
-              hideNavWhenSingle={false}
-              prevAriaLabel="Coluna anterior"
-              nextAriaLabel="Coluna seguinte"
-              trackClassName={`items-stretch ${CENTERED_PEEK_CAROUSEL_TRACK} pb-2`}
-            >
-              {filteredColumns.map((column) => (
-                <div key={column.status} className={CENTERED_PEEK_CAROUSEL_ITEM}>
-                  <CrmKanbanColumn
-                    column={column}
-                    {...columnProps}
-                    className="h-full w-[84vw] max-w-[320px]"
-                  />
-                </div>
-              ))}
-            </HorizontalSnapCarousel>
-          </div>
+        <div className="mt-6 min-w-0">
+          <CrmKanbanBoard columns={filteredColumns} columnProps={columnProps} />
         </div>
+      ) : null}
+
+      {newClientOpen ? (
+        <CrmNewClientModal
+          name={newClientName}
+          whatsapp={newClientWhatsapp}
+          whatsappError={newClientWhatsappError}
+          saving={newClientSaving}
+          error={newClientError}
+          onNameChange={(value) => {
+            setNewClientName(value);
+            if (newClientError) setNewClientError('');
+          }}
+          onWhatsappChange={(value) => {
+            setNewClientWhatsapp(value);
+            if (newClientWhatsappError) setNewClientWhatsappError('');
+            if (newClientError) setNewClientError('');
+          }}
+          onConfirm={() => void handleCreateClient()}
+          onClose={() => {
+            if (!newClientSaving) {
+              setNewClientOpen(false);
+              setNewClientName('');
+              setNewClientWhatsapp('');
+              setNewClientWhatsappError('');
+              setNewClientError('');
+            }
+          }}
+        />
       ) : null}
 
       {deleteConfirmItem ? (
