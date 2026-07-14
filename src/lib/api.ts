@@ -62,8 +62,7 @@ export type RafacallCrmStatus =
   | 'ENVIOU_MENSAGEM'
   | 'VIDEO_CHAMADA_AGENDADA'
   | 'REALIZOU_VIDEO_CHAMADA'
-  | 'NAO_TEM_INTERESSE'
-  | 'INTERESSE_FUTURO'
+  | 'IMIGRACAO_MUITO_LONGE'
   | 'AGUARDANDO_ASSINATURA'
   | 'CONTRATO_ASSINADO';
 
@@ -72,6 +71,7 @@ export type RafacallCrmItem = {
   bookingStatus: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
   crmStatus: RafacallCrmStatus;
   crmComments: string | null;
+  crmExpectedImmigrationAt: string | null;
   startsAt: string;
   endsAt: string;
   bookingTimezone: string;
@@ -989,11 +989,19 @@ export const api = {
         }>('/admin/rafacall/crm', { method: 'GET' }),
       updateCrm: (
         bookingId: string,
-        body: { crmStatus?: RafacallCrmStatus; crmComments?: string },
+        body: {
+          crmStatus?: RafacallCrmStatus;
+          crmComments?: string;
+          crmExpectedImmigrationAt?: string | null;
+        },
       ) =>
         request<RafacallCrmItem>(`/admin/rafacall/crm/${bookingId}`, {
           method: 'PATCH',
           body: JSON.stringify(body),
+        }),
+      deleteCrm: (bookingId: string) =>
+        request<{ ok: true }>(`/admin/rafacall/crm/${bookingId}`, {
+          method: 'DELETE',
         }),
     },
     grupoTeste: {
