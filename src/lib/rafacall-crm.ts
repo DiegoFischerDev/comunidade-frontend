@@ -109,14 +109,13 @@ export function getCrmColumnTone(status: string | RafacallCrmStatus): RafacallCr
   return RAFA_CALL_CRM_STATUS_TONES[normalized] ?? FALLBACK_CRM_COLUMN_TONE;
 }
 
-export function normalizeCrmBoardColumns<
-  T extends {
-    status: string;
-    label: string;
-    items: Array<{ crmStatus: string } & Record<string, unknown>>;
-  },
->(columns: T[]): T[] {
-  const byStatus = new Map<string, T>();
+export function normalizeCrmBoardColumns<TItem extends { crmStatus: string }>(
+  columns: Array<{ status: string; label: string; items: TItem[] }>,
+): Array<{ status: RafacallCrmStatus; label: string; items: TItem[] }> {
+  const byStatus = new Map<
+    RafacallCrmStatus,
+    { status: string; label: string; items: TItem[] }
+  >();
   for (const column of columns) {
     byStatus.set(normalizeCrmStatus(column.status), column);
   }
@@ -137,8 +136,8 @@ export function normalizeCrmBoardColumns<
     return {
       status,
       label: RAFA_CALL_CRM_STATUS_LABELS[status],
-      items: [],
-    } as T;
+      items: [] as TItem[],
+    };
   });
 }
 
