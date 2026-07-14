@@ -260,26 +260,32 @@ function CrmKanbanColumn({
   );
 }
 
+function normalizeCrmComments(value: string | null | undefined): string {
+  return (value ?? '').trim();
+}
+
 function CrmClientModal({
   item,
-  commentDraft,
+  commentsDraft,
   saving,
   error,
-  onCommentChange,
+  onCommentsChange,
   onStatusChange,
-  onSaveComment,
+  onSave,
   onClose,
 }: {
   item: RafacallCrmItem;
-  commentDraft: string;
+  commentsDraft: string;
   saving: boolean;
   error: string;
-  onCommentChange: (value: string) => void;
+  onCommentsChange: (value: string) => void;
   onStatusChange: (status: RafacallCrmStatus) => void;
-  onSaveComment: () => void;
+  onSave: () => void;
   onClose: () => void;
 }) {
   const name = item.userName?.trim() || 'Sem nome';
+  const hasCommentsChanges =
+    normalizeCrmComments(commentsDraft) !== normalizeCrmComments(item.crmComments);
 
   return (
     <div
@@ -344,23 +350,16 @@ function CrmClientModal({
           ))}
         </select>
 
-        <div className="mt-5">
-          <p className="text-sm font-medium text-foreground">Histórico e comentários</p>
-          <pre className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap rounded-xl border border-border bg-page p-3 text-xs text-foreground">
-            {item.crmComments?.trim() || 'Sem histórico ainda.'}
-          </pre>
-        </div>
-
-        <label className="mt-4 block text-sm font-medium text-foreground" htmlFor="crm-comment">
-          Novo comentário
+        <label className="mt-5 block text-sm font-medium text-foreground" htmlFor="crm-comments">
+          Histórico e comentários
         </label>
         <textarea
-          id="crm-comment"
-          value={commentDraft}
+          id="crm-comments"
+          value={commentsDraft}
           disabled={saving}
-          onChange={(event) => onCommentChange(event.target.value)}
-          rows={3}
-          placeholder="Ex.: Cliente pediu para voltar a falar em agosto."
+          onChange={(event) => onCommentsChange(event.target.value)}
+          rows={8}
+          placeholder="Notas sobre o cliente, histórico de contactos, etc."
           className="mt-1.5 w-full resize-y rounded-xl border border-border bg-page px-3 py-2.5 text-sm text-foreground outline-none focus:border-brand-accent"
         />
 
@@ -381,11 +380,11 @@ function CrmClientModal({
           </button>
           <button
             type="button"
-            onClick={onSaveComment}
-            disabled={saving || !commentDraft.trim()}
+            onClick={onSave}
+            disabled={saving || !hasCommentsChanges}
             className="inline-flex min-h-11 cursor-pointer items-center rounded-[14px] bg-brand-primary px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {saving ? 'A guardar…' : 'Adicionar comentário'}
+            {saving ? 'A guardar…' : 'Guardar'}
           </button>
         </div>
       </div>
@@ -402,7 +401,7 @@ export default function CrmPage() {
   const [draggingFromStatus, setDraggingFromStatus] = useState<RafacallCrmStatus | null>(null);
   const [savingItemId, setSavingItemId] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<RafacallCrmItem | null>(null);
-  const [commentDraft, setCommentDraft] = useState('');
+  const [commentsDraft, setCommentsDraft] = useState('');
   const [modalSaving, setModalSaving] = useState(false);
   const [modalError, setModalError] = useState('');
 
@@ -488,7 +487,7 @@ export default function CrmPage() {
 
   const handleOpenDetails = useCallback((item: RafacallCrmItem) => {
     setSelectedItem(item);
-    setCommentDraft('');
+    setCommentsDraft(item.crmComments ?? '');
     setModalError('');
   }, []);
 
@@ -510,6 +509,7 @@ export default function CrmPage() {
           crmStatus: status,
         });
         setSelectedItem(updated);
+        setCommentsDraft(updated.crmComments ?? '');
         setColumns((prev) =>
           moveItemBetweenColumns(
             prev,
@@ -532,17 +532,22 @@ export default function CrmPage() {
     [columns, selectedItem],
   );
 
-  const handleSaveComment = useCallback(async () => {
+  const handleSave = useCallback(async () => {
     if (!selectedItem) return;
-    const comment = commentDraft.trim();
-    if (!comment) return;
+    if (
+      normalizeCrmComments(commentsDraft) === normalizeCrmComments(selectedItem.crmComments)
+    ) {
+      return;
+    }
 
     setModalSaving(true);
     setModalError('');
     try {
-      const updated = await api.admin.rafacall.updateCrm(selectedItem.id, { comment });
+      const updated = await api.admin.rafacall.updateCrm(selectedItem.id, {
+        crmComments: commentsDraft,
+      });
       setSelectedItem(updated);
-      setCommentDraft('');
+      setCommentsDraft(updated.crmComments ?? '');
       setColumns((prev) =>
         prev.map((column) =>
           column.status === updated.crmStatus
@@ -557,12 +562,12 @@ export default function CrmPage() {
       );
     } catch (err) {
       setModalError(
-        err instanceof Error ? err.message : 'Não foi possível guardar o comentário.',
+        err instanceof Error ? err.message : 'Não foi possível guardar as alterações.',
       );
     } finally {
       setModalSaving(false);
     }
-  }, [commentDraft, selectedItem]);
+  }, [commentsDraft, selectedItem]);
 
   if (!user) return null;
 
@@ -699,16 +704,16 @@ export default function CrmPage() {
       {selectedItem ? (
         <CrmClientModal
           item={selectedItem}
-          commentDraft={commentDraft}
+          commentsDraft={commentsDraft}
           saving={modalSaving}
           error={modalError}
-          onCommentChange={setCommentDraft}
+          onCommentsChange={setCommentsDraft}
           onStatusChange={(status) => void handleModalStatusChange(status)}
-          onSaveComment={() => void handleSaveComment()}
+          onSave={() => void handleSave()}
           onClose={() => {
             if (!modalSaving) {
               setSelectedItem(null);
-              setCommentDraft('');
+              setCommentsDraft('');
               setModalError('');
             }
           }}

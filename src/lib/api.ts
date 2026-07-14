@@ -989,7 +989,7 @@ export const api = {
         }>('/admin/rafacall/crm', { method: 'GET' }),
       updateCrm: (
         bookingId: string,
-        body: { crmStatus?: RafacallCrmStatus; comment?: string },
+        body: { crmStatus?: RafacallCrmStatus; crmComments?: string },
       ) =>
         request<RafacallCrmItem>(`/admin/rafacall/crm/${bookingId}`, {
           method: 'PATCH',
