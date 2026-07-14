@@ -116,6 +116,138 @@ function mapQuickBookError(message: string): {
   };
 }
 
+/** Duração usada só para pré-visualização no admin (alinhada com RAFA_CALL_DURATION_MINUTES). */
+const ADMIN_SLOT_DURATION_MINUTES = 40;
+
+function tzOffsetMinutes(timeZone: string, at: Date): number {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+  const parts = dtf.formatToParts(at);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '00';
+  const asUtc = Date.UTC(
+    Number(get('year')),
+    Number(get('month')) - 1,
+    Number(get('day')),
+    Number(get('hour')),
+    Number(get('minute')),
+    Number(get('second')),
+  );
+  return Math.round((asUtc - at.getTime()) / 60000);
+}
+
+function hmInTz(utcIso: string, timeZone: string): string {
+  const d = new Date(utcIso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('en-GB', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+}
+
+function localDateTimeInTzToUtcIso(
+  timeZone: string,
+  ymd: string,
+  hm: string,
+): string | null {
+  const dm = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const tm = hm.match(/^(\d{1,2}):(\d{2})$/);
+  if (!dm || !tm) return null;
+  const y = Number(dm[1]);
+  const mo = Number(dm[2]);
+  const d = Number(dm[3]);
+  const h = Number(tm[1]);
+  const mi = Number(tm[2]);
+  if (!Number.isFinite(y) || !Number.isFinite(mo) || !Number.isFinite(d)) return null;
+  if (h < 0 || h > 23 || mi < 0 || mi > 59) return null;
+  const guess = new Date(Date.UTC(y, mo - 1, d, h, mi, 0));
+  const offset = tzOffsetMinutes(timeZone, guess);
+  const utc = new Date(guess.getTime() - offset * 60000);
+  if (Number.isNaN(utc.getTime())) return null;
+  return utc.toISOString();
+}
+
+function previewSlotRangeFromManual(
+  ymd: string,
+  hm: string,
+  timeZone: string,
+): { startsAt: string; endsAt: string } | null {
+  const startsAt = localDateTimeInTzToUtcIso(timeZone, ymd, hm);
+  if (!startsAt) return null;
+  const endsAt = new Date(
+    new Date(startsAt).getTime() + ADMIN_SLOT_DURATION_MINUTES * 60000,
+  ).toISOString();
+  return { startsAt, endsAt };
+}
+
+function AdminManualSlotFields({
+  idPrefix,
+  date,
+  time,
+  timeZone,
+  disabled,
+  onDateChange,
+  onTimeChange,
+}: {
+  idPrefix: string;
+  date: string;
+  time: string;
+  timeZone: string;
+  disabled?: boolean;
+  onDateChange: (value: string) => void;
+  onTimeChange: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-3 rounded-xl border border-dashed border-border bg-page/40 p-4">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+          Dia e hora manual
+        </p>
+        <p className="mt-1 text-xs text-muted">
+          Fora da grelha habitual — qualquer dia ou horário ({timeZone}).
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="block text-sm font-medium text-foreground" htmlFor={`${idPrefix}-date`}>
+            Data
+          </label>
+          <input
+            id={`${idPrefix}-date`}
+            type="date"
+            value={date}
+            disabled={disabled}
+            onChange={(e) => onDateChange(e.target.value)}
+            className="mt-2 w-full rounded-xl border border-border bg-page px-4 py-2.5 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-foreground" htmlFor={`${idPrefix}-time`}>
+            Hora
+          </label>
+          <input
+            id={`${idPrefix}-time`}
+            type="time"
+            value={time}
+            disabled={disabled}
+            onChange={(e) => onTimeChange(e.target.value)}
+            className="mt-2 w-full rounded-xl border border-border bg-page px-4 py-2.5 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function WhatsAppTextLink({
   href,
   children,
@@ -616,34 +748,42 @@ function DayKanbanColumn({
 }
 
 function FreeSlotBookModal({
-  date,
-  startsAt,
-  endsAt,
   tz,
+  manualDate,
+  manualTime,
   name,
   whatsapp,
   whatsappError,
   error,
   isLoading,
+  onManualDateChange,
+  onManualTimeChange,
   onNameChange,
   onWhatsappChange,
   onConfirm,
   onClose,
 }: {
-  date: string;
-  startsAt: string;
-  endsAt: string;
   tz: string;
+  manualDate: string;
+  manualTime: string;
   name: string;
   whatsapp: string;
   whatsappError: string;
   error: string;
   isLoading: boolean;
+  onManualDateChange: (value: string) => void;
+  onManualTimeChange: (value: string) => void;
   onNameChange: (value: string) => void;
   onWhatsappChange: (value: string) => void;
   onConfirm: () => void;
   onClose: () => void;
 }) {
+  const preview = previewSlotRangeFromManual(manualDate, manualTime, tz);
+  const trimmedName = name.trim();
+  const whatsappDigits = whatsapp.replace(/\D/g, '');
+  const canSubmit =
+    Boolean(preview) && trimmedName.length >= 2 && whatsappDigits.length >= 8;
+
   return (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4"
@@ -662,7 +802,7 @@ function FreeSlotBookModal({
               Agendar horário livre
             </h2>
             <p className="mt-1 text-sm text-muted">
-              Indica o cliente para confirmar este agendamento.
+              Indica data, hora e cliente para confirmar o agendamento.
             </p>
           </div>
           <button
@@ -678,8 +818,18 @@ function FreeSlotBookModal({
 
         <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">Horário selecionado</p>
-          <p className="mt-1 text-sm font-semibold capitalize text-foreground">{prettyYmdPt(date, tz)}</p>
-          <p className="mt-0.5 text-sm text-foreground/90">{formatSlotRange(startsAt, endsAt, tz)}</p>
+          {preview ? (
+            <>
+              <p className="mt-1 text-sm font-semibold capitalize text-foreground">
+                {prettyYmdPt(manualDate, tz)}
+              </p>
+              <p className="mt-0.5 text-sm text-foreground/90">
+                {formatSlotRange(preview.startsAt, preview.endsAt, tz)}
+              </p>
+            </>
+          ) : (
+            <p className="mt-1 text-sm text-muted">Indica data e hora válidas.</p>
+          )}
         </div>
 
         {error ? (
@@ -689,6 +839,15 @@ function FreeSlotBookModal({
         ) : null}
 
         <div className="mt-4 space-y-4">
+          <AdminManualSlotFields
+            idPrefix="quick-book"
+            date={manualDate}
+            time={manualTime}
+            timeZone={tz}
+            disabled={isLoading}
+            onDateChange={onManualDateChange}
+            onTimeChange={onManualTimeChange}
+          />
           <div>
             <label className="block text-sm font-medium text-foreground" htmlFor="quick-book-name">
               Nome do cliente
@@ -705,7 +864,7 @@ function FreeSlotBookModal({
             />
           </div>
           <LoginWhatsappFields
-            key={startsAt}
+            key={`${manualDate}-${manualTime}`}
             idPrefix="quick-book"
             label="WhatsApp"
             value={whatsapp}
@@ -719,7 +878,7 @@ function FreeSlotBookModal({
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <button
             type="button"
-            disabled={isLoading}
+            disabled={isLoading || !canSubmit}
             onClick={() => void onConfirm()}
             className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-[14px] bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -728,6 +887,201 @@ function FreeSlotBookModal({
           <button
             type="button"
             disabled={isLoading}
+            onClick={onClose}
+            className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-[14px] border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RescheduleBookingModal({
+  target,
+  leadTz,
+  availability,
+  selectedDate,
+  manualDate,
+  manualTime,
+  error,
+  isLoadingAvailability,
+  isSubmitting,
+  onDateChange,
+  onSlotSelect,
+  onManualDateChange,
+  onManualTimeChange,
+  onConfirm,
+  onClose,
+}: {
+  target: ScheduleItem;
+  leadTz: string;
+  availability: Awaited<ReturnType<typeof api.rafacall.guestAvailability>> | null;
+  selectedDate: string;
+  manualDate: string;
+  manualTime: string;
+  error: string;
+  isLoadingAvailability: boolean;
+  isSubmitting: boolean;
+  onDateChange: (date: string) => void;
+  onSlotSelect: (slot: { startsAt: string; endsAt: string }) => void;
+  onManualDateChange: (value: string) => void;
+  onManualTimeChange: (value: string) => void;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  const daySlots =
+    availability?.days.find((d) => d.date === selectedDate)?.slots ?? [];
+  const clientName = (target.userName || '').trim() || '—';
+  const isBusy = isLoadingAvailability || isSubmitting;
+  const preview = previewSlotRangeFromManual(manualDate, manualTime, leadTz);
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reschedule-modal-title"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 id="reschedule-modal-title" className="text-lg font-semibold text-foreground">
+              Alterar agendamento
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              Escolhe o novo horário para confirmar a alteração.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isBusy}
+            className="cursor-pointer rounded-full px-2 py-1 text-sm text-muted hover:bg-page hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Fechar"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-border bg-page/60 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Cliente</p>
+          <p className="mt-1 text-sm font-semibold text-foreground">{clientName}</p>
+          {target.whatsappDigits ? (
+            <p className="mt-0.5 text-sm text-foreground/90">
+              {formatWhatsappDigits(target.whatsappDigits)}
+            </p>
+          ) : null}
+          <p className="mt-1 text-xs text-muted">Fuso {leadTz}</p>
+        </div>
+
+        {preview ? (
+          <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Horário selecionado</p>
+            <p className="mt-1 text-sm font-semibold capitalize text-foreground">
+              {prettyYmdPt(manualDate, leadTz)}
+            </p>
+            <p className="mt-0.5 text-sm text-foreground/90">
+              {formatSlotRange(preview.startsAt, preview.endsAt, leadTz)}
+            </p>
+          </div>
+        ) : null}
+
+        {error ? (
+          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="mt-4">
+          <AdminManualSlotFields
+            idPrefix="reschedule"
+            date={manualDate}
+            time={manualTime}
+            timeZone={leadTz}
+            disabled={isBusy}
+            onDateChange={onManualDateChange}
+            onTimeChange={onManualTimeChange}
+          />
+        </div>
+
+        {isLoadingAvailability ? (
+          <p className="mt-6 text-sm text-muted">A carregar horários…</p>
+        ) : availability ? (
+          <div className="mt-4 space-y-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Ou escolhe na grelha
+            </p>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Dia</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {availability.days
+                  .filter((d) => d.slots.length > 0)
+                  .map((d) => (
+                    <button
+                      key={d.date}
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => onDateChange(d.date)}
+                      className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                        selectedDate === d.date
+                          ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
+                          : 'border-border bg-card text-foreground hover:bg-page'
+                      }`}
+                    >
+                      {prettyYmdPt(d.date, leadTz)}
+                    </button>
+                  ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Horário</p>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {daySlots.map((slot) => {
+                  const slotTime = hmInTz(slot.startsAt, leadTz);
+                  const isSelected = manualDate === selectedDate && manualTime === slotTime;
+                  return (
+                    <button
+                      key={slot.startsAt}
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => onSlotSelect(slot)}
+                      className={`cursor-pointer rounded-xl border px-3 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                        isSelected
+                          ? 'border-emerald-400 bg-emerald-50 text-emerald-900'
+                          : 'border-border bg-card text-foreground hover:bg-page'
+                      }`}
+                    >
+                      {formatSlotTimeInTz(slot.startsAt, leadTz)}
+                    </button>
+                  );
+                })}
+              </div>
+              {daySlots.length === 0 ? (
+                <p className="mt-2 text-sm text-muted">Sem horários neste dia.</p>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            disabled={isBusy || !preview}
+            onClick={() => void onConfirm()}
+            className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-[14px] bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSubmitting ? 'A reagendar…' : 'Reagendar'}
+          </button>
+          <button
+            type="button"
+            disabled={isBusy}
             onClick={onClose}
             className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-[14px] border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -842,6 +1196,8 @@ export default function AdminRafaCallHojePage() {
     Awaited<ReturnType<typeof api.rafacall.guestAvailability>> | null
   >(null);
   const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleManualDate, setRescheduleManualDate] = useState('');
+  const [rescheduleManualTime, setRescheduleManualTime] = useState('');
   const [rescheduleLoading, setRescheduleLoading] = useState(false);
   const [rescheduleError, setRescheduleError] = useState('');
 
@@ -860,11 +1216,9 @@ export default function AdminRafaCallHojePage() {
     row: ScheduleItem;
     slot: string;
   } | null>(null);
-  const [quickBookSlot, setQuickBookSlot] = useState<{
-    date: string;
-    startsAt: string;
-    endsAt: string;
-  } | null>(null);
+  const [quickBookOpen, setQuickBookOpen] = useState(false);
+  const [quickBookManualDate, setQuickBookManualDate] = useState('');
+  const [quickBookManualTime, setQuickBookManualTime] = useState('');
   const [quickBookName, setQuickBookName] = useState('');
   const [quickBookWhatsapp, setQuickBookWhatsapp] = useState('');
   const [quickBookWhatsappError, setQuickBookWhatsappError] = useState('');
@@ -889,19 +1243,55 @@ export default function AdminRafaCallHojePage() {
       const to = ymdInTz(addDays(new Date(), 14), tz);
       const fromUtcIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const toUtcIso = addDays(new Date(), 14).toISOString();
-      const [res, blocksRes, avail] = await Promise.all([
+
+      const [scheduleRes, blocksRes, availRes] = await Promise.allSettled([
         api.admin.rafacall.schedule(tz),
         api.admin.rafacall.blocks({ fromUtcIso, toUtcIso }),
         api.rafacall.guestAvailability({ from, to, tz }),
       ]);
-      setData(res);
-      setBlocks(blocksRes.blocks);
-      setAvailability(avail);
-    } catch (e) {
-      setData(null);
-      setBlocks([]);
-      setAvailability(null);
-      setError(e instanceof Error ? e.message : 'Erro ao carregar.');
+
+      const errors: string[] = [];
+
+      if (scheduleRes.status === 'fulfilled') {
+        setData(scheduleRes.value);
+      } else {
+        setData(null);
+        errors.push(
+          scheduleRes.reason instanceof Error
+            ? scheduleRes.reason.message
+            : 'Erro ao carregar agendamentos.',
+        );
+      }
+
+      if (blocksRes.status === 'fulfilled') {
+        setBlocks(blocksRes.value.blocks);
+      } else {
+        setBlocks([]);
+        errors.push(
+          blocksRes.reason instanceof Error
+            ? blocksRes.reason.message
+            : 'Erro ao carregar bloqueios.',
+        );
+      }
+
+      if (availRes.status === 'fulfilled') {
+        setAvailability(availRes.value);
+      } else {
+        setAvailability(null);
+        errors.push(
+          availRes.reason instanceof Error
+            ? availRes.reason.message
+            : 'Erro ao carregar horários livres.',
+        );
+      }
+
+      if (errors.length > 0) {
+        setError(
+          errors.length === 3
+            ? errors[0] ?? 'Erro ao carregar.'
+            : `Alguns dados não carregaram: ${errors.join(' ')}`,
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -910,6 +1300,8 @@ export default function AdminRafaCallHojePage() {
   const openReschedule = useCallback(async (item: ScheduleItem) => {
     setRescheduleTarget(item);
     setRescheduleError('');
+    setRescheduleManualDate('');
+    setRescheduleManualTime('');
     setRescheduleLoading(true);
     setRescheduleAvailability(null);
     try {
@@ -926,6 +1318,10 @@ export default function AdminRafaCallHojePage() {
       const firstDay =
         avail.days.find((d) => d.slots.length > 0)?.date ?? avail.days[0]?.date ?? '';
       setRescheduleDate(firstDay);
+      if (item.startsAt) {
+        setRescheduleManualDate(ymdInTz(new Date(item.startsAt), leadTz));
+        setRescheduleManualTime(hmInTz(item.startsAt, leadTz));
+      }
     } catch (e) {
       setRescheduleError(e instanceof Error ? e.message : 'Erro ao carregar horários.');
     } finally {
@@ -933,12 +1329,86 @@ export default function AdminRafaCallHojePage() {
     }
   }, [tz]);
 
-  const closeReschedule = useCallback(() => {
+  const resetReschedule = useCallback(() => {
     setRescheduleTarget(null);
     setRescheduleAvailability(null);
     setRescheduleDate('');
+    setRescheduleManualDate('');
+    setRescheduleManualTime('');
     setRescheduleError('');
   }, []);
+
+  const closeReschedule = useCallback(() => {
+    if (reschedulingBookingId) return;
+    resetReschedule();
+  }, [reschedulingBookingId, resetReschedule]);
+
+  const reloadRescheduleAvailability = useCallback(async (item: ScheduleItem) => {
+    const leadTz = item.bookingTimezone?.trim() || tz;
+    const from = ymdInTz(new Date(), leadTz);
+    const to = ymdInTz(addDays(new Date(), 14), leadTz);
+    const avail = await api.rafacall.guestAvailability({
+      from,
+      to,
+      tz: leadTz,
+      excludeBookingId: item.id,
+    });
+    setRescheduleAvailability(avail);
+    return avail;
+  }, [tz]);
+
+  const executeReschedule = useCallback(async () => {
+    if (!rescheduleTarget) return;
+    const leadTz = rescheduleTarget.bookingTimezone?.trim() || tz;
+    const startsAtUtc = localDateTimeInTzToUtcIso(
+      leadTz,
+      rescheduleManualDate,
+      rescheduleManualTime,
+    );
+    if (!startsAtUtc) {
+      setRescheduleError('Indica data e hora válidas.');
+      return;
+    }
+    setReschedulingBookingId(rescheduleTarget.id);
+    setRescheduleError('');
+    try {
+      await api.admin.rafacall.rescheduleBooking(rescheduleTarget.id, {
+        newStartsAtUtcIso: startsAtUtc,
+        tz: leadTz,
+      });
+      resetReschedule();
+      await load();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Não foi possível reagendar.';
+      setRescheduleError(message);
+      if (/horário|disponível|bloqueado|ocupado/i.test(message)) {
+        try {
+          const avail = await reloadRescheduleAvailability(rescheduleTarget);
+          const stillHasDay = avail.days.some(
+            (d) => d.date === rescheduleDate && d.slots.length > 0,
+          );
+          if (!stillHasDay) {
+            const firstDay =
+              avail.days.find((d) => d.slots.length > 0)?.date ?? avail.days[0]?.date ?? '';
+            setRescheduleDate(firstDay);
+          }
+        } catch {
+          // Mantém erro principal visível.
+        }
+      }
+    } finally {
+      setReschedulingBookingId(null);
+    }
+  }, [
+    rescheduleTarget,
+    rescheduleManualDate,
+    rescheduleManualTime,
+    rescheduleDate,
+    tz,
+    resetReschedule,
+    load,
+    reloadRescheduleAvailability,
+  ]);
 
   const closeBookingConfirm = useCallback(() => {
     if (cancelingBookingId || completingBookingId) return;
@@ -1026,17 +1496,31 @@ export default function AdminRafaCallHojePage() {
     [load],
   );
 
-  const openQuickBookSlot = useCallback((date: string, startsAt: string, endsAt: string) => {
-    setQuickBookSlot({ date, startsAt, endsAt });
+  const openQuickBookSlot = useCallback((date: string, startsAt: string, _endsAt: string) => {
+    setQuickBookOpen(true);
+    setQuickBookManualDate(date);
+    setQuickBookManualTime(hmInTz(startsAt, tz));
+    setQuickBookName('');
+    setQuickBookWhatsapp('');
+    setQuickBookError('');
+    setQuickBookWhatsappError('');
+  }, [tz]);
+
+  const openNewQuickBook = useCallback(() => {
+    setQuickBookOpen(true);
+    setQuickBookManualDate('');
+    setQuickBookManualTime('');
     setQuickBookName('');
     setQuickBookWhatsapp('');
     setQuickBookError('');
     setQuickBookWhatsappError('');
   }, []);
 
-  const closeQuickBookSlot = useCallback(() => {
+  const closeQuickBook = useCallback(() => {
     if (quickBooking) return;
-    setQuickBookSlot(null);
+    setQuickBookOpen(false);
+    setQuickBookManualDate('');
+    setQuickBookManualTime('');
     setQuickBookName('');
     setQuickBookWhatsapp('');
     setQuickBookError('');
@@ -1044,7 +1528,7 @@ export default function AdminRafaCallHojePage() {
   }, [quickBooking]);
 
   const executeQuickBook = useCallback(async () => {
-    if (!quickBookSlot) return;
+    if (!quickBookOpen) return;
     const trimmedName = quickBookName.trim();
     const trimmedWa = quickBookWhatsapp.replace(/\D/g, '');
     if (trimmedName.length < 2) {
@@ -1055,6 +1539,11 @@ export default function AdminRafaCallHojePage() {
       setQuickBookWhatsappError('Indica um WhatsApp válido com indicativo.');
       return;
     }
+    const startsAtUtc = localDateTimeInTzToUtcIso(tz, quickBookManualDate, quickBookManualTime);
+    if (!startsAtUtc) {
+      setQuickBookError('Indica data e hora válidas.');
+      return;
+    }
     setQuickBookWhatsappError('');
     setQuickBooking(true);
     setQuickBookError('');
@@ -1062,10 +1551,12 @@ export default function AdminRafaCallHojePage() {
       await api.admin.rafacall.createBooking({
         name: trimmedName,
         whatsapp: trimmedWa,
-        startsAtUtcIso: quickBookSlot.startsAt,
+        startsAtUtcIso: startsAtUtc,
         tz,
       });
-      setQuickBookSlot(null);
+      setQuickBookOpen(false);
+      setQuickBookManualDate('');
+      setQuickBookManualTime('');
       setQuickBookName('');
       setQuickBookWhatsapp('');
       await load();
@@ -1079,7 +1570,7 @@ export default function AdminRafaCallHojePage() {
     } finally {
       setQuickBooking(false);
     }
-  }, [quickBookSlot, quickBookName, quickBookWhatsapp, tz, load]);
+  }, [quickBookOpen, quickBookName, quickBookWhatsapp, quickBookManualDate, quickBookManualTime, tz, load]);
 
   useEffect(() => {
     if (!user || user.role !== 'ADMIN') return;
@@ -1099,17 +1590,31 @@ export default function AdminRafaCallHojePage() {
 
   return (
     <div className="pt-6 md:pt-8">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">Agendamentos de chamadas com clientes</h1>
-        <p className="mt-1 text-sm text-muted">
-          Agrupado por dia em <span className="font-medium">{tz}</span>.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Agendamentos de chamadas com clientes</h1>
+          <p className="mt-1 text-sm text-muted">
+            Agrupado por dia em <span className="font-medium">{tz}</span>.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={openNewQuickBook}
+          disabled={quickBooking}
+          className="inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center rounded-[14px] bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Novo agendamento
+        </button>
       </div>
 
       {error ? (
         <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {error}
         </p>
+      ) : null}
+
+      {loading && kanbanDays.length === 0 ? (
+        <p className="mt-6 text-sm text-muted">A carregar agenda…</p>
       ) : null}
 
       {kanbanDays.length === 0 && !loading ? (
@@ -1222,126 +1727,57 @@ export default function AdminRafaCallHojePage() {
 
 
       {rescheduleTarget ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="reschedule-modal-title"
-        >
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-xl">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 id="reschedule-modal-title" className="text-lg font-semibold text-foreground">
-                  Alterar agendamento
-                </h2>
-                <p className="mt-1 text-sm text-muted">
-                  {rescheduleTarget.userName || 'Lead'} · fuso {rescheduleTarget.bookingTimezone || tz}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={closeReschedule}
-                className="cursor-pointer rounded-full px-2 py-1 text-sm text-muted hover:bg-page hover:text-foreground"
-                aria-label="Fechar"
-              >
-                ✕
-              </button>
-            </div>
-
-            {rescheduleError ? (
-              <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-                {rescheduleError}
-              </p>
-            ) : null}
-
-            {rescheduleLoading ? (
-              <p className="mt-6 text-sm text-muted">A carregar horários…</p>
-            ) : rescheduleAvailability ? (
-              <div className="mt-4 space-y-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">Dia</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {rescheduleAvailability.days
-                      .filter((d) => d.slots.length > 0)
-                      .map((d) => (
-                        <button
-                          key={d.date}
-                          type="button"
-                          onClick={() => setRescheduleDate(d.date)}
-                          className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                            rescheduleDate === d.date
-                              ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
-                              : 'border-border bg-card text-foreground hover:bg-page'
-                          }`}
-                        >
-                          {prettyYmdPt(d.date, rescheduleTarget.bookingTimezone || tz)}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">Horário</p>
-                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {(rescheduleAvailability.days.find((d) => d.date === rescheduleDate)?.slots ?? []).map(
-                      (slot) => (
-                        <button
-                          key={slot.startsAt}
-                          type="button"
-                          disabled={reschedulingBookingId === rescheduleTarget.id}
-                          onClick={async () => {
-                            const leadTz = rescheduleTarget.bookingTimezone?.trim() || tz;
-                            const label = formatSlotTimeInTz(slot.startsAt, leadTz);
-                            const ok = window.confirm(
-                              `Confirmar novo horário?\n\n${rescheduleTarget.userName}\n${prettyYmdPt(rescheduleDate, leadTz)} · ${label}`,
-                            );
-                            if (!ok) return;
-                            setReschedulingBookingId(rescheduleTarget.id);
-                            setRescheduleError('');
-                            try {
-                              await api.admin.rafacall.rescheduleBooking(rescheduleTarget.id, {
-                                newStartsAtUtcIso: slot.startsAt,
-                                tz: leadTz,
-                              });
-                              closeReschedule();
-                              await load();
-                            } catch (e) {
-                              setRescheduleError(
-                                e instanceof Error ? e.message : 'Não foi possível reagendar.',
-                              );
-                            } finally {
-                              setReschedulingBookingId(null);
-                            }
-                          }}
-                          className="cursor-pointer rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {formatSlotTimeInTz(slot.startsAt, rescheduleTarget.bookingTimezone || tz)}
-                        </button>
-                      ),
-                    )}
-                  </div>
-                  {(rescheduleAvailability.days.find((d) => d.date === rescheduleDate)?.slots ?? [])
-                    .length === 0 ? (
-                    <p className="mt-2 text-sm text-muted">Sem horários neste dia.</p>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
+        <RescheduleBookingModal
+          target={rescheduleTarget}
+          leadTz={rescheduleTarget.bookingTimezone?.trim() || tz}
+          availability={rescheduleAvailability}
+          selectedDate={rescheduleDate}
+          manualDate={rescheduleManualDate}
+          manualTime={rescheduleManualTime}
+          error={rescheduleError}
+          isLoadingAvailability={rescheduleLoading}
+          isSubmitting={reschedulingBookingId === rescheduleTarget.id}
+          onDateChange={(date) => {
+            setRescheduleDate(date);
+            if (rescheduleError) setRescheduleError('');
+          }}
+          onSlotSelect={(slot) => {
+            const leadTz = rescheduleTarget.bookingTimezone?.trim() || tz;
+            setRescheduleManualDate(ymdInTz(new Date(slot.startsAt), leadTz));
+            setRescheduleManualTime(hmInTz(slot.startsAt, leadTz));
+            if (rescheduleError) setRescheduleError('');
+          }}
+          onManualDateChange={(value) => {
+            setRescheduleManualDate(value);
+            if (rescheduleError) setRescheduleError('');
+          }}
+          onManualTimeChange={(value) => {
+            setRescheduleManualTime(value);
+            if (rescheduleError) setRescheduleError('');
+          }}
+          onConfirm={() => void executeReschedule()}
+          onClose={closeReschedule}
+        />
       ) : null}
 
-      {quickBookSlot ? (
+      {quickBookOpen ? (
         <FreeSlotBookModal
-          date={quickBookSlot.date}
-          startsAt={quickBookSlot.startsAt}
-          endsAt={quickBookSlot.endsAt}
           tz={tz}
+          manualDate={quickBookManualDate}
+          manualTime={quickBookManualTime}
           name={quickBookName}
           whatsapp={quickBookWhatsapp}
           whatsappError={quickBookWhatsappError}
           error={quickBookError}
           isLoading={quickBooking}
+          onManualDateChange={(value) => {
+            setQuickBookManualDate(value);
+            if (quickBookError) setQuickBookError('');
+          }}
+          onManualTimeChange={(value) => {
+            setQuickBookManualTime(value);
+            if (quickBookError) setQuickBookError('');
+          }}
           onNameChange={(value) => {
             setQuickBookName(value);
             if (quickBookError) setQuickBookError('');
@@ -1352,7 +1788,7 @@ export default function AdminRafaCallHojePage() {
             if (quickBookError) setQuickBookError('');
           }}
           onConfirm={() => void executeQuickBook()}
-          onClose={closeQuickBookSlot}
+          onClose={closeQuickBook}
         />
       ) : null}
 

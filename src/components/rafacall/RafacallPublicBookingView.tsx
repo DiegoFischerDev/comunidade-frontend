@@ -477,7 +477,7 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
   }, [availability]);
 
   const slotPicker = (() => {
-    const isPickerWizard = screen === 'picker';
+    const isPickerWizard = screen === 'picker' || screen === 'manage_reschedule';
     const showDaysOnly = isPickerWizard && pickerDayStep === 'days';
     const showTimesOnly = isPickerWizard && pickerDayStep === 'times';
 
@@ -709,13 +709,22 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
   if (screen === 'manage_reschedule') {
     return (
       <div className="mx-auto max-w-3xl px-4 py-8">
+        <AgendarBrandLogo />
         <div className="rounded-2xl bg-card p-6 shadow-sm">
           <div className="flex items-center justify-between gap-2">
-            <h1 className="text-xl font-bold text-foreground">Reagendar</h1>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Reagendar</h1>
+              <p className="mt-1 text-sm text-foreground/90">
+                Olá, <span className="font-semibold">{booking.name?.trim() || name.trim()}</span>.
+                {pickerDayStep === 'days'
+                  ? ' Escolhe um dia para ver os horários disponíveis.'
+                  : ` Horários no teu fuso horário (${prettyTimezoneCityLabel(booking.timezone || tz)}).`}
+              </p>
+            </div>
             <button
               type="button"
               onClick={() => setScreen('manage_detail')}
-              className="rounded-full px-3 py-1.5 text-sm text-muted hover:bg-primary-1"
+              className="shrink-0 rounded-full px-3 py-1.5 text-sm text-muted hover:bg-primary-1"
             >
               Voltar
             </button>
@@ -767,7 +776,7 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
 
           {!isCancelled && screen !== 'manage_cancel' ? (
             <p className="mt-4 text-sm leading-relaxed text-foreground/90">
-              No dia e horário agendado vamos te ligar por videochamada. Anote suas dúvidas e até já! 😊
+              No dia e horário agendado vamos te enviar o link da videochamada por aqui. Anote suas dúvidas e até já! 😊
             </p>
           ) : null}
 
@@ -825,8 +834,11 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
                 <button
                   type="button"
                   onClick={() => {
+                    setPickerDayStep('days');
+                    setSelectedDate('');
+                    setActionError('');
                     setScreen('manage_reschedule');
-                    void loadAvailability(booking.id);
+                    void loadAvailability(booking.id, { autoSelectDay: false });
                   }}
                   className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2.5 rounded-[14px] border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-page"
                 >
