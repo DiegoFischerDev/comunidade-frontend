@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { api, getUserFacingApiError } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
-import { getRafacallAdminBookingErrorFeedback } from '@/lib/rafacall-admin-booking-errors';
+import { showRafacallAdminBookingErrorToast } from '@/lib/rafacall-admin-booking-errors';
+import { toast } from '@/lib/toast';
 import {
   CENTERED_PEEK_CAROUSEL_ITEM,
   CENTERED_PEEK_CAROUSEL_TRACK,
@@ -96,18 +97,6 @@ function waUrl(
   const name = (leadName || '').trim() || '!';
   const text = `Oi ${name}, em relação ao nosso agendamento no ${day} às ${hour}.`;
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
-}
-
-function AdminModalErrorBanner({ message }: { message?: string }) {
-  if (!message?.trim()) return null;
-  return (
-    <p
-      role="alert"
-      className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-    >
-      {message}
-    </p>
-  );
 }
 
 /** Duração usada só para pré-visualização no admin (alinhada com RAFA_CALL_DURATION_MINUTES). */
@@ -906,7 +895,6 @@ function FreeSlotBookModal({
   nameLocked,
   isCrmLookupLoading,
   crmClientFound,
-  error,
   isLoading,
   onDateChange,
   onSlotSelect,
@@ -929,7 +917,6 @@ function FreeSlotBookModal({
   nameLocked: boolean;
   isCrmLookupLoading: boolean;
   crmClientFound: boolean;
-  error: string;
   isLoading: boolean;
   onDateChange: (date: string) => void;
   onSlotSelect: (slot: { startsAt: string; endsAt: string }) => void;
@@ -1055,8 +1042,7 @@ function FreeSlotBookModal({
           />
         </div>
 
-        <div className="mt-5 space-y-3">
-          <AdminModalErrorBanner message={error || whatsappError} />
+        <div className="mt-5">
           <div className="grid gap-3 sm:grid-cols-2">
           <button
             type="button"
@@ -1088,7 +1074,6 @@ function RescheduleBookingModal({
   selectedDate,
   manualDate,
   manualTime,
-  error,
   isLoadingAvailability,
   isSubmitting,
   onDateChange,
@@ -1104,7 +1089,6 @@ function RescheduleBookingModal({
   selectedDate: string;
   manualDate: string;
   manualTime: string;
-  error: string;
   isLoadingAvailability: boolean;
   isSubmitting: boolean;
   onDateChange: (date: string) => void;
@@ -1202,8 +1186,7 @@ function RescheduleBookingModal({
           />
         </div>
 
-        <div className="mt-5 space-y-3">
-          <AdminModalErrorBanner message={error} />
+        <div className="mt-5">
           <div className="grid gap-3 sm:grid-cols-2">
           <button
             type="button"
@@ -1354,7 +1337,6 @@ export default function AdminRafaCallHojePage() {
   const [rescheduleManualDate, setRescheduleManualDate] = useState('');
   const [rescheduleManualTime, setRescheduleManualTime] = useState('');
   const [rescheduleLoading, setRescheduleLoading] = useState(false);
-  const [rescheduleError, setRescheduleError] = useState('');
 
   /** Tabela de agenda admin + bloqueios: sempre horário de Lisboa (agrupamento alinhado com API admin). */
   const ADMIN_SCHEDULE_TZ = 'Europe/Lisbon' as const;
@@ -1381,7 +1363,6 @@ export default function AdminRafaCallHojePage() {
   const [quickBookNameLocked, setQuickBookNameLocked] = useState(false);
   const [quickBookCrmFound, setQuickBookCrmFound] = useState(false);
   const [quickBookCrmLookupLoading, setQuickBookCrmLookupLoading] = useState(false);
-  const [quickBookError, setQuickBookError] = useState('');
   const [quickBooking, setQuickBooking] = useState(false);
 
   const kanbanDays = useMemo(
@@ -1458,7 +1439,6 @@ export default function AdminRafaCallHojePage() {
 
   const openReschedule = useCallback(async (item: ScheduleItem) => {
     setRescheduleTarget(item);
-    setRescheduleError('');
     setRescheduleManualDate('');
     setRescheduleManualTime('');
     setRescheduleLoading(true);
@@ -1482,7 +1462,9 @@ export default function AdminRafaCallHojePage() {
         setRescheduleManualTime(hmInTz(item.startsAt, leadTz));
       }
     } catch (e) {
-      setRescheduleError(e instanceof Error ? e.message : 'Erro ao carregar horários.');
+      toast.error(
+        e instanceof Error ? e.message : 'Erro ao carregar horários.',
+      );
     } finally {
       setRescheduleLoading(false);
     }
@@ -1494,7 +1476,6 @@ export default function AdminRafaCallHojePage() {
     setRescheduleDate('');
     setRescheduleManualDate('');
     setRescheduleManualTime('');
-    setRescheduleError('');
   }, []);
 
   const closeReschedule = useCallback(() => {
@@ -1525,28 +1506,26 @@ export default function AdminRafaCallHojePage() {
       rescheduleManualTime,
     );
     if (!startsAtUtc) {
-      setRescheduleError('Indica data e hora válidas.');
+      toast.error('Indica data e hora válidas.');
       return;
     }
     setReschedulingBookingId(rescheduleTarget.id);
-    setRescheduleError('');
     try {
       await api.admin.rafacall.rescheduleBooking(rescheduleTarget.id, {
         newStartsAtUtcIso: startsAtUtc,
         tz: leadTz,
       });
       resetReschedule();
+      toast.success('Agendamento reagendado com sucesso.');
       await load();
     } catch (e) {
       const message = getUserFacingApiError(e, {
         context: 'Ao reagendar',
       });
-      const { submitError, shouldRefreshAvailability } =
-        getRafacallAdminBookingErrorFeedback(
-          message,
-          'Não foi possível reagendar.',
-        );
-      setRescheduleError(submitError);
+      const { shouldRefreshAvailability } = showRafacallAdminBookingErrorToast(
+        message,
+        'Não foi possível reagendar.',
+      );
       if (shouldRefreshAvailability) {
         try {
           const avail = await reloadRescheduleAvailability(rescheduleTarget);
@@ -1653,8 +1632,6 @@ export default function AdminRafaCallHojePage() {
   }, [bookingConfirm, load]);
 
   const handleUnblock = useCallback(async (blockId: string) => {
-    const ok = window.confirm('Desbloquear este horário?');
-    if (!ok) return;
     setUnblockingId(blockId);
     try {
       await api.admin.rafacall.deleteBlock(blockId);
@@ -1695,7 +1672,6 @@ export default function AdminRafaCallHojePage() {
     setQuickBookNameLocked(false);
     setQuickBookCrmFound(false);
     setQuickBookCrmLookupLoading(false);
-    setQuickBookError('');
     setQuickBookWhatsappError('');
   }, [tz]);
 
@@ -1711,7 +1687,6 @@ export default function AdminRafaCallHojePage() {
     setQuickBookNameLocked(false);
     setQuickBookCrmFound(false);
     setQuickBookCrmLookupLoading(false);
-    setQuickBookError('');
     setQuickBookWhatsappError('');
   }, [availability]);
 
@@ -1726,7 +1701,6 @@ export default function AdminRafaCallHojePage() {
     setQuickBookNameLocked(false);
     setQuickBookCrmFound(false);
     setQuickBookCrmLookupLoading(false);
-    setQuickBookError('');
     setQuickBookWhatsappError('');
   }, [quickBooking]);
 
@@ -1779,21 +1753,22 @@ export default function AdminRafaCallHojePage() {
     const trimmedName = quickBookName.trim();
     const trimmedWa = quickBookWhatsapp.replace(/\D/g, '');
     if (trimmedName.length < 2) {
-      setQuickBookError('Indica o nome do cliente.');
+      toast.error('Indica o nome do cliente.');
       return;
     }
     if (trimmedWa.length < 8) {
-      setQuickBookWhatsappError('Indica um WhatsApp válido com indicativo.');
+      const waMessage = 'Indica um WhatsApp válido com indicativo.';
+      setQuickBookWhatsappError(waMessage);
+      toast.error(waMessage);
       return;
     }
     const startsAtUtc = localDateTimeInTzToUtcIso(tz, quickBookManualDate, quickBookManualTime);
     if (!startsAtUtc) {
-      setQuickBookError('Indica data e hora válidas.');
+      toast.error('Indica data e hora válidas.');
       return;
     }
     setQuickBookWhatsappError('');
     setQuickBooking(true);
-    setQuickBookError('');
     try {
       await api.admin.rafacall.createBooking({
         name: trimmedName,
@@ -1809,17 +1784,17 @@ export default function AdminRafaCallHojePage() {
       setQuickBookNameLocked(false);
       setQuickBookCrmFound(false);
       setQuickBookCrmLookupLoading(false);
+      toast.success('Agendamento criado com sucesso.');
       await load();
     } catch (e) {
       const message = getUserFacingApiError(e, {
         context: 'Ao agendar',
       });
-      const { submitError, whatsappFieldError, shouldRefreshAvailability } =
-        getRafacallAdminBookingErrorFeedback(
+      const { whatsappFieldError, shouldRefreshAvailability } =
+        showRafacallAdminBookingErrorToast(
           message,
           'Não foi possível criar o agendamento.',
         );
-      setQuickBookError(submitError);
       setQuickBookWhatsappError(whatsappFieldError);
       if (shouldRefreshAvailability) void load();
     } finally {
@@ -1995,27 +1970,16 @@ export default function AdminRafaCallHojePage() {
           selectedDate={rescheduleDate}
           manualDate={rescheduleManualDate}
           manualTime={rescheduleManualTime}
-          error={rescheduleError}
           isLoadingAvailability={rescheduleLoading}
           isSubmitting={reschedulingBookingId === rescheduleTarget.id}
-          onDateChange={(date) => {
-            setRescheduleDate(date);
-            if (rescheduleError) setRescheduleError('');
-          }}
+          onDateChange={setRescheduleDate}
           onSlotSelect={(slot) => {
             const leadTz = rescheduleTarget.bookingTimezone?.trim() || tz;
             setRescheduleManualDate(ymdInTz(new Date(slot.startsAt), leadTz));
             setRescheduleManualTime(hmInTz(slot.startsAt, leadTz));
-            if (rescheduleError) setRescheduleError('');
           }}
-          onManualDateChange={(value) => {
-            setRescheduleManualDate(value);
-            if (rescheduleError) setRescheduleError('');
-          }}
-          onManualTimeChange={(value) => {
-            setRescheduleManualTime(value);
-            if (rescheduleError) setRescheduleError('');
-          }}
+          onManualDateChange={setRescheduleManualDate}
+          onManualTimeChange={setRescheduleManualTime}
           onConfirm={() => void executeReschedule()}
           onClose={closeReschedule}
         />
@@ -2035,37 +1999,28 @@ export default function AdminRafaCallHojePage() {
           nameLocked={quickBookNameLocked}
           isCrmLookupLoading={quickBookCrmLookupLoading}
           crmClientFound={quickBookCrmFound}
-          error={quickBookError}
           isLoading={quickBooking}
           onDateChange={(date) => {
             setQuickBookSelectedDate(date);
             setQuickBookManualDate(date);
-            if (quickBookError) setQuickBookError('');
           }}
           onSlotSelect={(slot) => {
             setQuickBookManualDate(ymdInTz(new Date(slot.startsAt), tz));
             setQuickBookManualTime(hmInTz(slot.startsAt, tz));
             setQuickBookSelectedDate(ymdInTz(new Date(slot.startsAt), tz));
-            if (quickBookError) setQuickBookError('');
           }}
           onManualDateChange={(value) => {
             setQuickBookManualDate(value);
             setQuickBookSelectedDate(value);
-            if (quickBookError) setQuickBookError('');
           }}
-          onManualTimeChange={(value) => {
-            setQuickBookManualTime(value);
-            if (quickBookError) setQuickBookError('');
-          }}
+          onManualTimeChange={setQuickBookManualTime}
           onNameChange={(value) => {
             if (quickBookNameLocked) return;
             setQuickBookName(value);
-            if (quickBookError) setQuickBookError('');
           }}
           onWhatsappChange={(value) => {
             setQuickBookWhatsapp(value);
             if (quickBookWhatsappError) setQuickBookWhatsappError('');
-            if (quickBookError) setQuickBookError('');
           }}
           onConfirm={() => void executeQuickBook()}
           onClose={closeQuickBook}

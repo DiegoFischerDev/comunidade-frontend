@@ -1,3 +1,5 @@
+import { toast } from '@/lib/toast';
+
 export type RafacallAdminBookingErrorFeedback = {
   /** Mensagem principal — mostrar acima do botão de confirmar. */
   submitError: string;
@@ -24,4 +26,14 @@ export function getRafacallAdminBookingErrorFeedback(
     whatsappFieldError: isWhatsappConflict ? submitError : '',
     shouldRefreshAvailability: SLOT_UNAVAILABLE_PATTERN.test(submitError),
   };
+}
+
+/** Mostra o erro num toast persistente e devolve o feedback para estado de campo / refresh. */
+export function showRafacallAdminBookingErrorToast(
+  message: string,
+  fallback = 'Não foi possível concluir o agendamento.',
+): RafacallAdminBookingErrorFeedback {
+  const feedback = getRafacallAdminBookingErrorFeedback(message, fallback);
+  toast.error(feedback.submitError);
+  return feedback;
 }

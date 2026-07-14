@@ -1,11 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { api, getUserFacingApiError, type RafacallCrmItem, type RafacallCrmStatus } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { AdminVideoCallSlotPicker } from '@/components/rafacall/AdminVideoCallSlotPicker';
-import { getRafacallAdminBookingErrorFeedback } from '@/lib/rafacall-admin-booking-errors';
+import { showRafacallAdminBookingErrorToast } from '@/lib/rafacall-admin-booking-errors';
+import { toast } from '@/lib/toast';
 import { CRM_IMMIGRATION_IMMEDIATE_VALUE, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER, RAFA_CALL_CRM_STATUS_LABELS, RAFA_CALL_CRM_STATUS_ORDER, formatCrmPetLabel, formatCrmPropertyTypologyLabel, getCrmColumnTone, formatImmigrationDateLabel, formatImmigrationMonthYear, isCrmImmigrationImmediate, normalizeCrmBoardColumns, sortCrmBoardColumns, toImmigrationDateInputValue } from '@/lib/rafacall-crm';
 import type { RafacallCrmPropertyTypology } from '@/lib/rafacall-crm';
 import {
@@ -350,6 +352,152 @@ function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
+function InfoIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 10v6M12 8h.01" />
+    </svg>
+  );
+}
+
+function normalizeCrmComments(value: string | null | undefined): string {
+  return (value ?? '').trim();
+}
+
+const CRM_COMMENT_POPUP_MAX_WIDTH_PX = 320;
+const CRM_COMMENT_POPUP_MAX_HEIGHT_PX = 192;
+const CRM_COMMENT_POPUP_GAP_PX = 6;
+
+function CrmCommentInfoBadge({ comments }: { comments: string }) {
+  const anchorRef = useRef<HTMLSpanElement>(null);
+  const hideTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout>>();
+  const [open, setOpen] = useState(false);
+  const [popupStyle, setPopupStyle] = useState<{
+    top: number;
+    left: number;
+    maxWidth: number;
+    transform?: string;
+  } | null>(null);
+
+  const show = useCallback(() => {
+    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    setOpen(true);
+  }, []);
+
+  const scheduleHide = useCallback(() => {
+    hideTimeoutRef.current = globalThis.setTimeout(() => setOpen(false), 120);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open || !anchorRef.current) return;
+
+    const updatePosition = () => {
+      const anchor = anchorRef.current;
+      if (!anchor) return;
+
+      const rect = anchor.getBoundingClientRect();
+      const margin = 8;
+      const maxWidth = Math.min(
+        CRM_COMMENT_POPUP_MAX_WIDTH_PX,
+        window.innerWidth - margin * 2,
+      );
+      let left = rect.left;
+      if (left + maxWidth > window.innerWidth - margin) {
+        left = Math.max(margin, window.innerWidth - margin - maxWidth);
+      }
+      if (left < margin) left = margin;
+
+      const estimatedHeight = CRM_COMMENT_POPUP_MAX_HEIGHT_PX + 48;
+      const spaceBelow = window.innerHeight - rect.bottom - CRM_COMMENT_POPUP_GAP_PX;
+      const spaceAbove = rect.top - CRM_COMMENT_POPUP_GAP_PX;
+      const showAbove = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+
+      if (showAbove) {
+        setPopupStyle({
+          top: rect.top - CRM_COMMENT_POPUP_GAP_PX,
+          left,
+          maxWidth,
+          transform: 'translateY(-100%)',
+        });
+        return;
+      }
+
+      setPopupStyle({
+        top: rect.bottom + CRM_COMMENT_POPUP_GAP_PX,
+        left,
+        maxWidth,
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [open]);
+
+  useEffect(
+    () => () => {
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    },
+    [],
+  );
+
+  return (
+    <>
+      <span
+        ref={anchorRef}
+        tabIndex={0}
+        className="inline-flex h-5 w-5 shrink-0 cursor-default items-center justify-center rounded-full text-muted/60 transition-colors hover:bg-brand-primary/10 hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
+        aria-label="Cliente com comentário"
+        onMouseDown={(event) => event.stopPropagation()}
+        onMouseEnter={show}
+        onMouseLeave={scheduleHide}
+        onFocus={show}
+        onBlur={scheduleHide}
+      >
+        <InfoIcon className="h-3.5 w-3.5" />
+      </span>
+      {open && popupStyle && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              role="tooltip"
+              style={{
+                position: 'fixed',
+                top: popupStyle.top,
+                left: popupStyle.left,
+                maxWidth: popupStyle.maxWidth,
+                transform: popupStyle.transform,
+                zIndex: 130,
+              }}
+              className="w-max rounded-xl border border-border bg-card p-4 text-sm leading-relaxed text-foreground shadow-lg"
+              onMouseEnter={show}
+              onMouseLeave={scheduleHide}
+            >
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                Comentário
+              </p>
+              <p className="max-h-48 overflow-y-auto whitespace-pre-wrap break-words">{comments}</p>
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
+  );
+}
+
 function openNativeDatePicker(input: HTMLInputElement | null) {
   if (!input) return;
   if ('showPicker' in input && typeof input.showPicker === 'function') {
@@ -643,6 +791,7 @@ function CrmClientCard({
   const preferredCityLabel = item.crmPreferredCity?.trim() || null;
   const hasPet = item.crmHasPet === true;
   const hasPreferences = Boolean(propertyTypologyLabel || preferredCityLabel || hasPet);
+  const crmComments = normalizeCrmComments(item.crmComments);
 
   return (
     <article
@@ -653,12 +802,15 @@ function CrmClientCard({
         onDragStart();
       }}
       onDragEnd={onDragEnd}
-      className={`cursor-grab rounded-lg border border-border bg-page p-3 shadow-sm transition-opacity active:cursor-grabbing ${
+      className={`relative cursor-grab rounded-lg border border-border bg-page p-3 shadow-sm transition-opacity active:cursor-grabbing ${
         isDragging ? 'opacity-40' : ''
       } ${isSaving ? 'pointer-events-none opacity-60' : ''}`}
     >
       <div className="min-w-0">
-        <p className="truncate text-sm font-semibold text-foreground">{name}</p>
+        <div className="flex min-w-0 items-center gap-1.5">
+          {crmComments ? <CrmCommentInfoBadge comments={crmComments} /> : null}
+          <p className="min-w-0 truncate text-sm font-semibold text-foreground">{name}</p>
+        </div>
         <p className="mt-0.5 truncate text-[10px] text-muted/60">{wa}</p>
       </div>
 
@@ -832,10 +984,6 @@ function CrmKanbanColumn({
       </div>
     </section>
   );
-}
-
-function normalizeCrmComments(value: string | null | undefined): string {
-  return (value ?? '').trim();
 }
 
 function normalizePreferredCityDraft(value: string): string | null {
@@ -1110,7 +1258,6 @@ function CrmClientModal({
   preferredCityDraft,
   hasPetDraft,
   saving,
-  error,
   onCommentsChange,
   onImmigrationDateChange,
   onVideoCallDateChange,
@@ -1136,7 +1283,6 @@ function CrmClientModal({
   preferredCityDraft: string;
   hasPetDraft: boolean | null;
   saving: boolean;
-  error: string;
   onCommentsChange: (value: string) => void;
   onImmigrationDateChange: (value: string) => void;
   onVideoCallDateChange: (value: string) => void;
@@ -1151,6 +1297,7 @@ function CrmClientModal({
   onClose: () => void;
 }) {
   const immigrationDateInputRef = useRef<HTMLInputElement>(null);
+  const [immigrationOptionsOpen, setImmigrationOptionsOpen] = useState(false);
   const name = item.userName?.trim() || 'Sem nome';
   const bookingTimezone = item.bookingTimezone?.trim() || 'Europe/Lisbon';
   const isImmediateImmigration = isCrmImmigrationImmediate(immigrationDateDraft);
@@ -1253,7 +1400,7 @@ function CrmClientModal({
             <button
               type="button"
               disabled={saving}
-              onClick={() => openNativeDatePicker(immigrationDateInputRef.current)}
+              onClick={() => setImmigrationOptionsOpen((open) => !open)}
               className={`flex w-full cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                 hasImmigrationDate
                   ? isImmediateImmigration
@@ -1261,7 +1408,8 @@ function CrmClientModal({
                     : 'border-amber-200/90 bg-amber-50/90 text-amber-950 hover:border-amber-300 hover:bg-amber-50'
                   : 'border-dashed border-amber-200/70 bg-amber-50/40 text-amber-900/80 hover:border-amber-300 hover:bg-amber-50/70'
               }`}
-              aria-label="Alterar data prevista para imigração"
+              aria-expanded={immigrationOptionsOpen}
+              aria-label="Imigração prevista — escolher opção"
             >
               <CalendarIcon
                 className={`mt-0.5 h-4 w-4 shrink-0 ${
@@ -1285,7 +1433,7 @@ function CrmClientModal({
                       : 'italic text-amber-900/70'
                   }`}
                 >
-                  {immigrationLabel ?? 'Sem data definida — escolhe abaixo'}
+                  {immigrationLabel ?? 'Sem data definida — clica para escolher'}
                 </p>
               </div>
               <span
@@ -1293,7 +1441,7 @@ function CrmClientModal({
                   isImmediateImmigration ? 'text-orange-800/70' : 'text-amber-800/70'
                 }`}
               >
-                Editar
+                {immigrationOptionsOpen ? 'Fechar' : 'Editar'}
               </span>
               <input
                 ref={immigrationDateInputRef}
@@ -1301,13 +1449,17 @@ function CrmClientModal({
                 type="date"
                 value={isImmediateImmigration ? '' : immigrationDateDraft}
                 disabled={saving}
-                onChange={(event) => onImmigrationDateChange(event.target.value)}
+                onChange={(event) => {
+                  onImmigrationDateChange(event.target.value);
+                  setImmigrationOptionsOpen(false);
+                }}
                 className="sr-only"
                 tabIndex={-1}
                 aria-hidden
               />
             </button>
 
+            {immigrationOptionsOpen ? (
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -1320,7 +1472,10 @@ function CrmClientModal({
               <button
                 type="button"
                 disabled={saving}
-                onClick={() => onImmigrationDateChange(CRM_IMMIGRATION_IMMEDIATE_VALUE)}
+                onClick={() => {
+                  onImmigrationDateChange(CRM_IMMIGRATION_IMMEDIATE_VALUE);
+                  setImmigrationOptionsOpen(false);
+                }}
                 className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                   isImmediateImmigration
                     ? 'border-orange-300 bg-orange-100 text-orange-950'
@@ -1333,13 +1488,17 @@ function CrmClientModal({
                 <button
                   type="button"
                   disabled={saving}
-                  onClick={() => onImmigrationDateChange('')}
+                  onClick={() => {
+                    onImmigrationDateChange('');
+                    setImmigrationOptionsOpen(false);
+                  }}
                   className="inline-flex min-h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted transition-colors hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Limpar
                 </button>
               ) : null}
             </div>
+            ) : null}
           </div>
 
           <div className={`mt-3 rounded-xl border px-3.5 py-3 ${videoToneClass}`}>
@@ -1519,14 +1678,6 @@ function CrmClientModal({
         </div>
 
         <div className="shrink-0 border-t border-border bg-page/70 px-5 py-4">
-          {error ? (
-            <p
-              role="alert"
-              className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
-            >
-              {error}
-            </p>
-          ) : null}
           <div className="flex flex-wrap justify-end gap-2">
           <button
             type="button"
@@ -1574,7 +1725,6 @@ export default function CrmPage() {
   const [preferredCityDraft, setPreferredCityDraft] = useState('');
   const [hasPetDraft, setHasPetDraft] = useState<boolean | null>(null);
   const [modalSaving, setModalSaving] = useState(false);
-  const [modalError, setModalError] = useState('');
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<RafacallCrmItem | null>(null);
   const [deleteSaving, setDeleteSaving] = useState(false);
   const [deleteError, setDeleteError] = useState('');
@@ -1731,7 +1881,6 @@ export default function CrmPage() {
     setPropertyTypologyDraft(toPropertyTypologyDraft(item.crmPropertyTypology));
     setPreferredCityDraft(item.crmPreferredCity ?? '');
     setHasPetDraft(item.crmHasPet);
-    setModalError('');
   }, []);
 
   const handleModalStatusChange = useCallback(
@@ -1741,7 +1890,6 @@ export default function CrmPage() {
       const previousColumns = columns;
       const previousItem = selectedItem;
       setModalSaving(true);
-      setModalError('');
       setColumns((prev) =>
         moveItemBetweenColumns(prev, selectedItem.id, status),
       );
@@ -1765,11 +1913,9 @@ export default function CrmPage() {
       } catch (err) {
         setColumns(previousColumns);
         setSelectedItem(previousItem);
-        setModalError(
-          getRafacallAdminBookingErrorFeedback(
-            getUserFacingApiError(err, { context: 'Ao atualizar o estado' }),
-            'Não foi possível atualizar o estado.',
-          ).submitError,
+        showRafacallAdminBookingErrorToast(
+          getUserFacingApiError(err, { context: 'Ao atualizar o estado' }),
+          'Não foi possível atualizar o estado.',
         );
       } finally {
         setModalSaving(false);
@@ -1815,7 +1961,7 @@ export default function CrmPage() {
       if (!videoCallDateDraft.trim() && !videoCallTimeDraft.trim()) {
         videoCallStartsAtUtcIso = null;
       } else if (!videoCallDateDraft.trim() || !videoCallTimeDraft.trim()) {
-        setModalError('Indica data e hora da vídeo chamada.');
+        toast.error('Indica data e hora da vídeo chamada.');
         return;
       } else {
         const startsAtUtc = localDateTimeInTzToUtcIso(
@@ -1824,7 +1970,7 @@ export default function CrmPage() {
           videoCallTimeDraft,
         );
         if (!startsAtUtc) {
-          setModalError('Data ou hora da vídeo chamada inválida.');
+          toast.error('Data ou hora da vídeo chamada inválida.');
           return;
         }
         videoCallStartsAtUtcIso = startsAtUtc;
@@ -1832,7 +1978,6 @@ export default function CrmPage() {
     }
 
     setModalSaving(true);
-    setModalError('');
     try {
       const updated = await api.admin.rafacall.updateCrm(selectedItem.id, {
         ...(commentsChanged ? { crmComments: commentsDraft } : {}),
@@ -1874,14 +2019,12 @@ export default function CrmPage() {
       setPropertyTypologyDraft('');
       setPreferredCityDraft('');
       setHasPetDraft(null);
-      setModalError('');
+      toast.success('Alterações guardadas com sucesso.');
     } catch (err) {
-      const { submitError, shouldRefreshAvailability } =
-        getRafacallAdminBookingErrorFeedback(
-          getUserFacingApiError(err, { context: 'Ao guardar' }),
-          'Não foi possível guardar as alterações.',
-        );
-      setModalError(submitError);
+      const { shouldRefreshAvailability } = showRafacallAdminBookingErrorToast(
+        getUserFacingApiError(err, { context: 'Ao guardar' }),
+        'Não foi possível guardar as alterações.',
+      );
       if (shouldRefreshAvailability && selectedItem) {
         const bookingTimezone = selectedItem.bookingTimezone?.trim() || 'Europe/Lisbon';
         const from = ymdInTz(new Date(), bookingTimezone);
@@ -1982,7 +2125,6 @@ export default function CrmPage() {
         setPropertyTypologyDraft('');
         setPreferredCityDraft('');
         setHasPetDraft(null);
-        setModalError('');
       }
       setDeleteConfirmItem(null);
     } catch (err) {
@@ -2172,7 +2314,6 @@ export default function CrmPage() {
           preferredCityDraft={preferredCityDraft}
           hasPetDraft={hasPetDraft}
           saving={modalSaving}
-          error={modalError}
           onCommentsChange={setCommentsDraft}
           onImmigrationDateChange={setImmigrationDateDraft}
           onVideoCallDateChange={setVideoCallDateDraft}
@@ -2205,7 +2346,6 @@ export default function CrmPage() {
               setPropertyTypologyDraft('');
               setPreferredCityDraft('');
               setHasPetDraft(null);
-              setModalError('');
             }
           }}
         />
