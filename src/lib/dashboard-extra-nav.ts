@@ -16,6 +16,11 @@ export const ADMIN_NAV_ITEMS: DashboardExtraNavItem[] = [
     isActive: (pathname) => pathname === '/dashboard/admin/rafacall-hoje',
   },
   {
+    href: '/dashboard/admin/crm',
+    label: 'CRM',
+    isActive: (pathname) => pathname === '/dashboard/admin/crm',
+  },
+  {
     href: '/dashboard/admin/houses',
     label: 'Casas (anúncios)',
     isActive: (pathname) => pathname === '/dashboard/admin/houses',

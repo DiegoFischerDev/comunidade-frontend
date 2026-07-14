@@ -58,6 +58,29 @@ export const getAuthToken = getToken;
 export type ApiHttpError = HttpErrorLike;
 export { getUserFacingApiError } from './api-error-message';
 
+export type RafacallCrmStatus =
+  | 'ENVIOU_MENSAGEM'
+  | 'VIDEO_CHAMADA_AGENDADA'
+  | 'REALIZOU_VIDEO_CHAMADA'
+  | 'NAO_TEM_INTERESSE'
+  | 'INTERESSE_FUTURO'
+  | 'AGUARDANDO_ASSINATURA'
+  | 'CONTRATO_ASSINADO';
+
+export type RafacallCrmItem = {
+  id: string;
+  bookingStatus: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+  crmStatus: RafacallCrmStatus;
+  crmComments: string | null;
+  startsAt: string;
+  endsAt: string;
+  bookingTimezone: string;
+  bookingOrigin: 'USER_PAID' | 'PUBLIC_FREE';
+  userId: string | null;
+  userName: string | null;
+  whatsappDigits: string;
+};
+
 function enrichApiHttpError(
   err: ApiHttpError,
   res: Response,
@@ -956,6 +979,22 @@ export const api = {
           `/admin/rafacall/bookings/${bookingId}/complete`,
           { method: 'POST', body: JSON.stringify({}) },
         ),
+      crmBoard: () =>
+        request<{
+          columns: {
+            status: RafacallCrmStatus;
+            label: string;
+            items: RafacallCrmItem[];
+          }[];
+        }>('/admin/rafacall/crm', { method: 'GET' }),
+      updateCrm: (
+        bookingId: string,
+        body: { crmStatus?: RafacallCrmStatus; comment?: string },
+      ) =>
+        request<RafacallCrmItem>(`/admin/rafacall/crm/${bookingId}`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        }),
     },
     grupoTeste: {
       list: () =>
