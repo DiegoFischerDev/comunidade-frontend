@@ -205,19 +205,33 @@ function formatWhatsappDigits(digits: string): string {
   return `+${d}`;
 }
 
-function formatVideoCallSummary(
-  status: RafacallCrmItem['bookingStatus'],
-  startsAt: string,
-  timeZone: string,
-): string {
-  return formatVideoCallDetail(status, startsAt, timeZone).detail;
+function formatVideoCallSummary(item: Pick<
+  RafacallCrmItem,
+  'bookingStatus' | 'hasVideoCall' | 'startsAt' | 'bookingTimezone'
+>): string {
+  return formatVideoCallDetail(item).detail;
 }
 
 function formatVideoCallDetail(
-  status: RafacallCrmItem['bookingStatus'],
-  startsAt: string,
-  timeZone: string,
-): { title: string; detail: string; tone: 'scheduled' | 'completed' | 'cancelled' } {
+  item: Pick<
+    RafacallCrmItem,
+    'bookingStatus' | 'hasVideoCall' | 'startsAt' | 'bookingTimezone'
+  >,
+): {
+  title: string;
+  detail: string;
+  tone: 'scheduled' | 'completed' | 'cancelled' | 'none';
+} {
+  if (!item.hasVideoCall) {
+    return {
+      title: 'Vídeo chamada',
+      detail: 'Sem agendamento',
+      tone: 'none',
+    };
+  }
+
+  const { bookingStatus: status, startsAt, bookingTimezone: timeZone } = item;
+
   if (status === 'CANCELLED') {
     return { title: 'Vídeo chamada', detail: 'Cancelada', tone: 'cancelled' };
   }
@@ -339,7 +353,7 @@ function buildCrmItemSearchHaystack(item: RafacallCrmItem): string {
     formatImmigrationMonthYear(item.crmExpectedImmigrationAt),
     formatImmigrationDateLabel(item.crmExpectedImmigrationAt),
     item.crmExpectedImmigrationAt,
-    formatVideoCallSummary(item.bookingStatus, item.startsAt, item.bookingTimezone),
+    formatVideoCallSummary(item),
     item.bookingTimezone,
     item.bookingOrigin === 'USER_PAID' ? 'pago paga' : 'publico gratuito',
     item.id,
@@ -940,17 +954,15 @@ function CrmClientModal({
     ? 'Imediato'
     : formatImmigrationDateLabel(immigrationDateDraft);
   const hasImmigrationDate = Boolean(immigrationDateDraft.trim());
-  const videoCall = formatVideoCallDetail(
-    item.bookingStatus,
-    item.startsAt,
-    item.bookingTimezone,
-  );
+  const videoCall = formatVideoCallDetail(item);
   const videoToneClass =
     videoCall.tone === 'completed'
       ? 'border-emerald-200/80 bg-emerald-50/70 text-emerald-900'
       : videoCall.tone === 'cancelled'
         ? 'border-red-200/80 bg-red-50/70 text-red-900'
-        : 'border-sky-200/80 bg-sky-50/70 text-sky-900';
+        : videoCall.tone === 'scheduled'
+          ? 'border-sky-200/80 bg-sky-50/70 text-sky-900'
+          : 'border-dashed border-border/80 bg-page/80 text-muted';
   const hasCommentsChanges =
     normalizeCrmComments(commentsDraft) !== normalizeCrmComments(item.crmComments);
   const hasImmigrationDateChanges =

@@ -70,6 +70,7 @@ export type RafacallCrmStatus =
 export type RafacallCrmItem = {
   id: string;
   bookingStatus: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+  hasVideoCall: boolean;
   crmStatus: RafacallCrmStatus;
   crmComments: string | null;
   crmExpectedImmigrationAt: string | null;
@@ -980,6 +981,10 @@ export const api = {
           `/admin/rafacall/bookings/${bookingId}/complete`,
           { method: 'POST', body: JSON.stringify({}) },
         ),
+      deleteBooking: (bookingId: string) =>
+        request<{ ok: true }>(`/admin/rafacall/bookings/${bookingId}`, {
+          method: 'DELETE',
+        }),
       crmBoard: () =>
         request<{
           columns: {

@@ -214,7 +214,7 @@ function AdminManualSlotFields({
     <div className="space-y-3 rounded-xl border border-dashed border-border bg-page/40 p-4">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Dia e hora manual
+          Ou dia e hora manual
         </p>
         <p className="mt-1 text-xs text-muted">
           Fora da grelha habitual — qualquer dia ou horário ({timeZone}).
@@ -282,7 +282,7 @@ function AvailabilityQuickPickSection({
   return (
     <div className="space-y-4">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-        Ou escolhe na grelha
+        Escolhe na grelha
       </p>
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">Dia</p>
@@ -420,11 +420,32 @@ function CancelCircleIcon({ className }: { className?: string }) {
   );
 }
 
+function TrashIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
+    </svg>
+  );
+}
+
 const BOOKING_ACTION_ICON_BTN =
   'inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 
+function isBookingCompleted(status: string | undefined | null): boolean {
+  return String(status ?? '').toUpperCase() === 'COMPLETED';
+}
+
 function canManageBooking(status: string | undefined | null): boolean {
-  return String(status ?? 'SCHEDULED').toUpperCase() !== 'COMPLETED';
+  return !isBookingCompleted(status);
 }
 
 function bookingStatusDisplay(status: string | undefined | null): {
@@ -511,20 +532,25 @@ function BookingActions({
   reschedulingBookingId,
   completingBookingId,
   cancelingBookingId,
+  deletingBookingId,
   onReschedule,
   onComplete,
   onCancel,
+  onDelete,
 }: {
   row: ScheduleItem;
   slot: string;
   reschedulingBookingId: string | null;
   completingBookingId: string | null;
   cancelingBookingId: string | null;
+  deletingBookingId: string | null;
   onReschedule: (row: ScheduleItem) => void;
   onComplete: (row: ScheduleItem, slot: string) => void;
   onCancel: (row: ScheduleItem, slot: string) => void;
+  onDelete: (row: ScheduleItem, slot: string) => void;
 }) {
   const editable = canManageBooking(row.status);
+  const completed = isBookingCompleted(row.status);
 
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-1">
@@ -561,6 +587,18 @@ function BookingActions({
             <CancelCircleIcon className="h-4 w-4" />
           </button>
         </>
+      ) : null}
+      {completed ? (
+        <button
+          type="button"
+          disabled={deletingBookingId === row.id}
+          onClick={() => onDelete(row, slot)}
+          title={deletingBookingId === row.id ? 'A excluir…' : 'Excluir registo'}
+          aria-label={deletingBookingId === row.id ? 'A excluir registo' : 'Excluir registo'}
+          className={`${BOOKING_ACTION_ICON_BTN} border-red-200 bg-red-50 text-red-800 hover:bg-red-100`}
+        >
+          <TrashIcon className="h-4 w-4" />
+        </button>
       ) : null}
     </div>
   );
@@ -692,18 +730,22 @@ function BookingKanbanRowContent({
   reschedulingBookingId,
   completingBookingId,
   cancelingBookingId,
+  deletingBookingId,
   onReschedule,
   onComplete,
   onCancel,
+  onDelete,
 }: {
   row: ScheduleItem;
   tz: string;
   reschedulingBookingId: string | null;
   completingBookingId: string | null;
   cancelingBookingId: string | null;
+  deletingBookingId: string | null;
   onReschedule: (row: ScheduleItem) => void;
   onComplete: (row: ScheduleItem, slot: string) => void;
   onCancel: (row: ScheduleItem, slot: string) => void;
+  onDelete: (row: ScheduleItem, slot: string) => void;
 }) {
   const slot = formatBookingSlot(row, tz);
   const isCompleted = String(row.status ?? '').toUpperCase() === 'COMPLETED';
@@ -737,9 +779,11 @@ function BookingKanbanRowContent({
         reschedulingBookingId={reschedulingBookingId}
         completingBookingId={completingBookingId}
         cancelingBookingId={cancelingBookingId}
+        deletingBookingId={deletingBookingId}
         onReschedule={onReschedule}
         onComplete={onComplete}
         onCancel={onCancel}
+        onDelete={onDelete}
       />
     </article>
   );
@@ -752,11 +796,13 @@ function DayKanbanColumn({
   reschedulingBookingId,
   completingBookingId,
   cancelingBookingId,
+  deletingBookingId,
   unblockingId,
   blockingSlotKey,
   onReschedule,
   onComplete,
   onCancel,
+  onDelete,
   onUnblock,
   onBlockSlot,
   onBookFreeSlot,
@@ -767,11 +813,13 @@ function DayKanbanColumn({
   reschedulingBookingId: string | null;
   completingBookingId: string | null;
   cancelingBookingId: string | null;
+  deletingBookingId: string | null;
   unblockingId: string | null;
   blockingSlotKey: string | null;
   onReschedule: (row: ScheduleItem) => void;
   onComplete: (row: ScheduleItem, slot: string) => void;
   onCancel: (row: ScheduleItem, slot: string) => void;
+  onDelete: (row: ScheduleItem, slot: string) => void;
   onUnblock: (blockId: string) => void;
   onBlockSlot: (startsAt: string, endsAt: string) => void;
   onBookFreeSlot: (startsAt: string, endsAt: string) => void;
@@ -826,9 +874,11 @@ function DayKanbanColumn({
                   reschedulingBookingId={reschedulingBookingId}
                   completingBookingId={completingBookingId}
                   cancelingBookingId={cancelingBookingId}
+                  deletingBookingId={deletingBookingId}
                   onReschedule={onReschedule}
                   onComplete={onComplete}
                   onCancel={onCancel}
+                  onDelete={onDelete}
                 />
               ) : entry.kind === 'block' ? (
                 <BlockKanbanRowContent
@@ -968,21 +1018,9 @@ function FreeSlotBookModal({
         </div>
 
         <div className="mt-4">
-          <AdminManualSlotFields
-            idPrefix="quick-book"
-            date={manualDate}
-            time={manualTime}
-            timeZone={tz}
-            disabled={isBusy}
-            onDateChange={onManualDateChange}
-            onTimeChange={onManualTimeChange}
-          />
-        </div>
-
-        {isLoadingAvailability ? (
-          <p className="mt-6 text-sm text-muted">A carregar horários…</p>
-        ) : (
-          <div className="mt-4">
+          {isLoadingAvailability ? (
+            <p className="text-sm text-muted">A carregar horários…</p>
+          ) : (
             <AvailabilityQuickPickSection
               tz={tz}
               availability={availability}
@@ -993,8 +1031,20 @@ function FreeSlotBookModal({
               onDateChange={onDateChange}
               onSlotSelect={onSlotSelect}
             />
-          </div>
-        )}
+          )}
+        </div>
+
+        <div className="mt-4">
+          <AdminManualSlotFields
+            idPrefix="quick-book"
+            date={manualDate}
+            time={manualTime}
+            timeZone={tz}
+            disabled={isBusy}
+            onDateChange={onManualDateChange}
+            onTimeChange={onManualTimeChange}
+          />
+        </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <button
@@ -1118,21 +1168,9 @@ function RescheduleBookingModal({
         ) : null}
 
         <div className="mt-4">
-          <AdminManualSlotFields
-            idPrefix="reschedule"
-            date={manualDate}
-            time={manualTime}
-            timeZone={leadTz}
-            disabled={isBusy}
-            onDateChange={onManualDateChange}
-            onTimeChange={onManualTimeChange}
-          />
-        </div>
-
-        {isLoadingAvailability ? (
-          <p className="mt-6 text-sm text-muted">A carregar horários…</p>
-        ) : availability ? (
-          <div className="mt-4">
+          {isLoadingAvailability ? (
+            <p className="text-sm text-muted">A carregar horários…</p>
+          ) : availability ? (
             <AvailabilityQuickPickSection
               tz={leadTz}
               availability={availability}
@@ -1143,8 +1181,20 @@ function RescheduleBookingModal({
               onDateChange={onDateChange}
               onSlotSelect={onSlotSelect}
             />
-          </div>
-        ) : null}
+          ) : null}
+        </div>
+
+        <div className="mt-4">
+          <AdminManualSlotFields
+            idPrefix="reschedule"
+            date={manualDate}
+            time={manualTime}
+            timeZone={leadTz}
+            disabled={isBusy}
+            onDateChange={onManualDateChange}
+            onTimeChange={onManualTimeChange}
+          />
+        </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <button
@@ -1177,7 +1227,7 @@ function BookingActionConfirmModal({
   onConfirm,
   onClose,
 }: {
-  action: 'cancel' | 'complete';
+  action: 'cancel' | 'complete' | 'delete';
   row: ScheduleItem;
   slot: string;
   isLoading: boolean;
@@ -1185,6 +1235,7 @@ function BookingActionConfirmModal({
   onClose: () => void;
 }) {
   const isCancel = action === 'cancel';
+  const isDelete = action === 'delete';
   const clientName = (row.userName || '').trim() || '—';
 
   return (
@@ -1200,26 +1251,34 @@ function BookingActionConfirmModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3">
-          {isCancel ? (
+          {isDelete ? (
+            <TrashIcon className="mt-0.5 h-5 w-5 shrink-0 text-red-700" />
+          ) : isCancel ? (
             <CancelCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-red-700" />
           ) : (
             <CheckCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" />
           )}
           <div className="min-w-0">
             <h2 id="booking-action-confirm-title" className="text-base font-semibold text-foreground">
-              {isCancel ? 'Cancelar agendamento?' : 'Marcar como realizado?'}
+              {isDelete
+                ? 'Excluir registo?'
+                : isCancel
+                  ? 'Cancelar agendamento?'
+                  : 'Marcar como realizado?'}
             </h2>
             <p className="mt-1 text-sm text-muted">
-              {isCancel
-                ? 'Esta ação remove o agendamento. O cliente poderá marcar novamente quando quiser.'
-                : 'Confirma que a videochamada com este cliente já foi realizada.'}
+              {isDelete
+                ? 'Remove este registo da agenda. O cliente no CRM mantém-se, se existir.'
+                : isCancel
+                  ? 'Esta ação remove o agendamento. O cliente poderá marcar novamente quando quiser.'
+                  : 'Confirma que a videochamada com este cliente já foi realizada.'}
             </p>
           </div>
         </div>
 
         <div
           className={`mt-4 rounded-xl border px-4 py-3 ${
-            isCancel ? 'border-red-200 bg-red-50/80' : 'border-emerald-200 bg-emerald-50'
+            isCancel || isDelete ? 'border-red-200 bg-red-50/80' : 'border-emerald-200 bg-emerald-50'
           }`}
         >
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">Agendamento</p>
@@ -1233,17 +1292,27 @@ function BookingActionConfirmModal({
             disabled={isLoading}
             onClick={() => void onConfirm()}
             className={`inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 py-2.5 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-              isCancel ? 'bg-red-700 hover:bg-red-800' : 'bg-emerald-700 hover:bg-emerald-800'
+              isCancel || isDelete ? 'bg-red-700 hover:bg-red-800' : 'bg-emerald-700 hover:bg-emerald-800'
             }`}
           >
-            {isCancel ? <CancelCircleIcon className="h-4 w-4" /> : <CheckCircleIcon className="h-4 w-4" />}
+            {isDelete ? (
+              <TrashIcon className="h-4 w-4" />
+            ) : isCancel ? (
+              <CancelCircleIcon className="h-4 w-4" />
+            ) : (
+              <CheckCircleIcon className="h-4 w-4" />
+            )}
             {isLoading
-              ? isCancel
-                ? 'A cancelar…'
-                : 'A guardar…'
-              : isCancel
-                ? 'Confirmar cancelamento'
-                : 'Confirmar realizado'}
+              ? isDelete
+                ? 'A excluir…'
+                : isCancel
+                  ? 'A cancelar…'
+                  : 'A guardar…'
+              : isDelete
+                ? 'Confirmar exclusão'
+                : isCancel
+                  ? 'Confirmar cancelamento'
+                  : 'Confirmar realizado'}
           </button>
           <button
             type="button"
@@ -1265,6 +1334,7 @@ export default function AdminRafaCallHojePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cancelingBookingId, setCancelingBookingId] = useState<string | null>(null);
+  const [deletingBookingId, setDeletingBookingId] = useState<string | null>(null);
   const [completingBookingId, setCompletingBookingId] = useState<string | null>(null);
   const [reschedulingBookingId, setReschedulingBookingId] = useState<string | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<ScheduleItem | null>(null);
@@ -1288,7 +1358,7 @@ export default function AdminRafaCallHojePage() {
   const [slotMutatingKey, setSlotMutatingKey] = useState<string | null>(null);
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
   const [bookingConfirm, setBookingConfirm] = useState<{
-    kind: 'cancel' | 'complete';
+    kind: 'cancel' | 'complete' | 'delete';
     row: ScheduleItem;
     slot: string;
   } | null>(null);
@@ -1488,12 +1558,16 @@ export default function AdminRafaCallHojePage() {
   ]);
 
   const closeBookingConfirm = useCallback(() => {
-    if (cancelingBookingId || completingBookingId) return;
+    if (cancelingBookingId || completingBookingId || deletingBookingId) return;
     setBookingConfirm(null);
-  }, [cancelingBookingId, completingBookingId]);
+  }, [cancelingBookingId, completingBookingId, deletingBookingId]);
 
   const requestCancelBooking = useCallback((row: ScheduleItem, slot: string) => {
     setBookingConfirm({ kind: 'cancel', row, slot });
+  }, []);
+
+  const requestDeleteBooking = useCallback((row: ScheduleItem, slot: string) => {
+    setBookingConfirm({ kind: 'delete', row, slot });
   }, []);
 
   const requestCompleteBooking = useCallback((row: ScheduleItem, slot: string) => {
@@ -1519,6 +1593,25 @@ export default function AdminRafaCallHojePage() {
         }
       } finally {
         setCancelingBookingId(null);
+      }
+      return;
+    }
+
+    if (kind === 'delete') {
+      setDeletingBookingId(row.id);
+      try {
+        await api.admin.rafacall.deleteBooking(row.id);
+        setBookingConfirm(null);
+        await load();
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'Não foi possível excluir.';
+        setError(message);
+        if (/não encontrado|removido/i.test(message)) {
+          setBookingConfirm(null);
+          await load();
+        }
+      } finally {
+        setDeletingBookingId(null);
       }
       return;
     }
@@ -1715,11 +1808,13 @@ export default function AdminRafaCallHojePage() {
                 reschedulingBookingId={reschedulingBookingId}
                 completingBookingId={completingBookingId}
                 cancelingBookingId={cancelingBookingId}
+                deletingBookingId={deletingBookingId}
                 unblockingId={unblockingId}
                 blockingSlotKey={slotMutatingKey}
                 onReschedule={(item) => void openReschedule(item)}
                 onComplete={(item, slotLabel) => requestCompleteBooking(item, slotLabel)}
                 onCancel={(item, slotLabel) => requestCancelBooking(item, slotLabel)}
+                onDelete={(item, slotLabel) => requestDeleteBooking(item, slotLabel)}
                 onUnblock={(blockId) => void handleUnblock(blockId)}
                 onBlockSlot={(startsAt, endsAt) => void handleBlockSlot(startsAt, endsAt)}
                 onBookFreeSlot={(startsAt, endsAt) => openQuickBookSlot(kanbanDay.date, startsAt, endsAt)}
@@ -1751,11 +1846,13 @@ export default function AdminRafaCallHojePage() {
                         reschedulingBookingId={reschedulingBookingId}
                         completingBookingId={completingBookingId}
                         cancelingBookingId={cancelingBookingId}
+                        deletingBookingId={deletingBookingId}
                         unblockingId={unblockingId}
                         blockingSlotKey={slotMutatingKey}
                         onReschedule={(item) => void openReschedule(item)}
                         onComplete={(item, slotLabel) => requestCompleteBooking(item, slotLabel)}
                         onCancel={(item, slotLabel) => requestCancelBooking(item, slotLabel)}
+                        onDelete={(item, slotLabel) => requestDeleteBooking(item, slotLabel)}
                         onUnblock={(blockId) => void handleUnblock(blockId)}
                         onBlockSlot={(startsAt, endsAt) => void handleBlockSlot(startsAt, endsAt)}
                         onBookFreeSlot={(startsAt, endsAt) =>
@@ -1789,11 +1886,13 @@ export default function AdminRafaCallHojePage() {
                     reschedulingBookingId={reschedulingBookingId}
                     completingBookingId={completingBookingId}
                     cancelingBookingId={cancelingBookingId}
+                    deletingBookingId={deletingBookingId}
                     unblockingId={unblockingId}
                     blockingSlotKey={slotMutatingKey}
                     onReschedule={(item) => void openReschedule(item)}
                     onComplete={(item, slotLabel) => requestCompleteBooking(item, slotLabel)}
                     onCancel={(item, slotLabel) => requestCancelBooking(item, slotLabel)}
+                    onDelete={(item, slotLabel) => requestDeleteBooking(item, slotLabel)}
                     onUnblock={(blockId) => void handleUnblock(blockId)}
                     onBlockSlot={(startsAt, endsAt) => void handleBlockSlot(startsAt, endsAt)}
                     onBookFreeSlot={(startsAt, endsAt) =>
@@ -1897,7 +1996,9 @@ export default function AdminRafaCallHojePage() {
           isLoading={
             bookingConfirm.kind === 'cancel'
               ? cancelingBookingId === bookingConfirm.row.id
-              : completingBookingId === bookingConfirm.row.id
+              : bookingConfirm.kind === 'delete'
+                ? deletingBookingId === bookingConfirm.row.id
+                : completingBookingId === bookingConfirm.row.id
           }
           onConfirm={() => void executeBookingConfirm()}
           onClose={closeBookingConfirm}
