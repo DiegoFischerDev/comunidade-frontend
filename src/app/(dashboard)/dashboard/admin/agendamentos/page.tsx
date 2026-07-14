@@ -913,6 +913,9 @@ function FreeSlotBookModal({
   name,
   whatsapp,
   whatsappError,
+  nameLocked,
+  isCrmLookupLoading,
+  crmClientFound,
   error,
   isLoading,
   onDateChange,
@@ -933,6 +936,9 @@ function FreeSlotBookModal({
   name: string;
   whatsapp: string;
   whatsappError: string;
+  nameLocked: boolean;
+  isCrmLookupLoading: boolean;
+  crmClientFound: boolean;
   error: string;
   isLoading: boolean;
   onDateChange: (date: string) => void;
@@ -949,7 +955,7 @@ function FreeSlotBookModal({
   const whatsappDigits = whatsapp.replace(/\D/g, '');
   const canSubmit =
     Boolean(preview) && trimmedName.length >= 2 && whatsappDigits.length >= 8;
-  const isBusy = isLoadingAvailability || isLoading;
+  const isBusy = isLoadingAvailability || isLoading || isCrmLookupLoading;
 
   return (
     <div
@@ -969,7 +975,7 @@ function FreeSlotBookModal({
               Agendar horário livre
             </h2>
             <p className="mt-1 text-sm text-muted">
-              Indica o cliente e escolhe o horário para confirmar o agendamento.
+              Indica o WhatsApp do cliente e escolhe o horário para confirmar o agendamento.
             </p>
           </div>
           <button
@@ -990,21 +996,6 @@ function FreeSlotBookModal({
         ) : null}
 
         <div className="mt-4 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground" htmlFor="quick-book-name">
-              Nome do cliente
-            </label>
-            <input
-              id="quick-book-name"
-              type="text"
-              value={name}
-              onChange={(e) => onNameChange(e.target.value)}
-              disabled={isBusy}
-              className="mt-2 w-full rounded-xl border border-border bg-page px-4 py-2.5 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
-              placeholder="Nome"
-              autoComplete="name"
-            />
-          </div>
           <LoginWhatsappFields
             key={`${manualDate}-${manualTime}`}
             idPrefix="quick-book"
@@ -1015,6 +1006,40 @@ function FreeSlotBookModal({
             rememberInStorage={false}
             onChange={onWhatsappChange}
           />
+
+          <div>
+            <label className="block text-sm font-medium text-foreground" htmlFor="quick-book-name">
+              Nome do cliente
+            </label>
+            <input
+              id="quick-book-name"
+              type="text"
+              value={name}
+              onChange={(e) => onNameChange(e.target.value)}
+              disabled={isBusy || nameLocked}
+              readOnly={nameLocked}
+              className={`mt-2 w-full rounded-xl border border-border bg-page px-4 py-2.5 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50 ${
+                nameLocked ? 'cursor-not-allowed bg-page/80' : ''
+              }`}
+              placeholder={nameLocked ? '' : 'Nome do cliente'}
+              autoComplete="name"
+            />
+            {isCrmLookupLoading ? (
+              <p className="mt-1.5 text-xs text-muted">A verificar CRM…</p>
+            ) : nameLocked ? (
+              <p className="mt-1.5 text-xs text-muted">
+                Cliente encontrado no CRM — o nome não pode ser alterado.
+              </p>
+            ) : crmClientFound ? (
+              <p className="mt-1.5 text-xs text-muted">
+                Cliente no CRM sem nome registado — indica o nome para concluir.
+              </p>
+            ) : whatsappDigits.length >= 8 ? (
+              <p className="mt-1.5 text-xs text-muted">
+                Cliente novo — indica o nome para concluir o agendamento.
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <div className="mt-4">
@@ -1369,6 +1394,9 @@ export default function AdminRafaCallHojePage() {
   const [quickBookName, setQuickBookName] = useState('');
   const [quickBookWhatsapp, setQuickBookWhatsapp] = useState('');
   const [quickBookWhatsappError, setQuickBookWhatsappError] = useState('');
+  const [quickBookNameLocked, setQuickBookNameLocked] = useState(false);
+  const [quickBookCrmFound, setQuickBookCrmFound] = useState(false);
+  const [quickBookCrmLookupLoading, setQuickBookCrmLookupLoading] = useState(false);
   const [quickBookError, setQuickBookError] = useState('');
   const [quickBooking, setQuickBooking] = useState(false);
 
@@ -1673,6 +1701,9 @@ export default function AdminRafaCallHojePage() {
     setQuickBookManualTime(hmInTz(startsAt, tz));
     setQuickBookName('');
     setQuickBookWhatsapp('');
+    setQuickBookNameLocked(false);
+    setQuickBookCrmFound(false);
+    setQuickBookCrmLookupLoading(false);
     setQuickBookError('');
     setQuickBookWhatsappError('');
   }, [tz]);
@@ -1686,6 +1717,9 @@ export default function AdminRafaCallHojePage() {
     setQuickBookManualTime('');
     setQuickBookName('');
     setQuickBookWhatsapp('');
+    setQuickBookNameLocked(false);
+    setQuickBookCrmFound(false);
+    setQuickBookCrmLookupLoading(false);
     setQuickBookError('');
     setQuickBookWhatsappError('');
   }, [availability]);
@@ -1698,9 +1732,56 @@ export default function AdminRafaCallHojePage() {
     setQuickBookManualTime('');
     setQuickBookName('');
     setQuickBookWhatsapp('');
+    setQuickBookNameLocked(false);
+    setQuickBookCrmFound(false);
+    setQuickBookCrmLookupLoading(false);
     setQuickBookError('');
     setQuickBookWhatsappError('');
   }, [quickBooking]);
+
+  useEffect(() => {
+    if (!quickBookOpen) return;
+
+    const digits = quickBookWhatsapp.replace(/\D/g, '');
+    if (digits.length < 8) {
+      setQuickBookNameLocked(false);
+      setQuickBookCrmFound(false);
+      setQuickBookCrmLookupLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      setQuickBookCrmLookupLoading(true);
+      void api.admin.rafacall
+        .lookupCrmClient(digits)
+        .then((result) => {
+          if (cancelled) return;
+          if (result.inCrm) {
+            setQuickBookCrmFound(true);
+            setQuickBookName(result.name?.trim() ?? '');
+            setQuickBookNameLocked(Boolean(result.name?.trim()));
+          } else {
+            setQuickBookCrmFound(false);
+            setQuickBookName('');
+            setQuickBookNameLocked(false);
+          }
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setQuickBookCrmFound(false);
+          setQuickBookNameLocked(false);
+        })
+        .finally(() => {
+          if (!cancelled) setQuickBookCrmLookupLoading(false);
+        });
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [quickBookOpen, quickBookWhatsapp]);
 
   const executeQuickBook = useCallback(async () => {
     if (!quickBookOpen) return;
@@ -1734,6 +1815,9 @@ export default function AdminRafaCallHojePage() {
       setQuickBookManualTime('');
       setQuickBookName('');
       setQuickBookWhatsapp('');
+      setQuickBookNameLocked(false);
+      setQuickBookCrmFound(false);
+      setQuickBookCrmLookupLoading(false);
       await load();
     } catch (e) {
       const message =
@@ -1952,6 +2036,9 @@ export default function AdminRafaCallHojePage() {
           name={quickBookName}
           whatsapp={quickBookWhatsapp}
           whatsappError={quickBookWhatsappError}
+          nameLocked={quickBookNameLocked}
+          isCrmLookupLoading={quickBookCrmLookupLoading}
+          crmClientFound={quickBookCrmFound}
           error={quickBookError}
           isLoading={quickBooking}
           onDateChange={(date) => {
@@ -1975,6 +2062,7 @@ export default function AdminRafaCallHojePage() {
             if (quickBookError) setQuickBookError('');
           }}
           onNameChange={(value) => {
+            if (quickBookNameLocked) return;
             setQuickBookName(value);
             if (quickBookError) setQuickBookError('');
           }}

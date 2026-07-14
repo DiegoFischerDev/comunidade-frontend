@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, type RafacallCrmItem, type RafacallCrmStatus } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
+import { AdminVideoCallSlotPicker } from '@/components/rafacall/AdminVideoCallSlotPicker';
 import { CRM_IMMIGRATION_IMMEDIATE_VALUE, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER, RAFA_CALL_CRM_STATUS_LABELS, RAFA_CALL_CRM_STATUS_ORDER, formatCrmPetLabel, formatCrmPropertyTypologyLabel, getCrmColumnTone, formatImmigrationDateLabel, formatImmigrationMonthYear, isCrmImmigrationImmediate, normalizeCrmBoardColumns, sortCrmBoardColumns, toImmigrationDateInputValue } from '@/lib/rafacall-crm';
 import type { RafacallCrmPropertyTypology } from '@/lib/rafacall-crm';
 import {
@@ -15,6 +16,9 @@ import {
 
 type CrmBoardPayload = Awaited<ReturnType<typeof api.admin.rafacall.crmBoard>>;
 type CrmColumn = CrmBoardPayload['columns'][number];
+type RafacallAvailabilityPayload = Awaited<
+  ReturnType<typeof api.rafacall.guestAvailability>
+>;
 
 const CRM_COLUMN_WIDTH_REM = 17.5;
 const CRM_COLUMN_GAP_REM = 1;
@@ -272,6 +276,37 @@ function formatVideoCallDetail(
   };
 }
 
+function formatVideoCallBadgeLabel(
+  item: Pick<
+    RafacallCrmItem,
+    'bookingStatus' | 'hasVideoCall' | 'startsAt' | 'bookingTimezone'
+  >,
+): { label: string; tone: 'scheduled' | 'completed' } | null {
+  if (!item.hasVideoCall) return null;
+  if (item.bookingStatus === 'CANCELLED') return null;
+
+  const d = new Date(item.startsAt);
+  if (Number.isNaN(d.getTime())) return null;
+
+  const timeZone = item.bookingTimezone?.trim() || 'Europe/Lisbon';
+  const datePart = d.toLocaleDateString('pt-PT', {
+    timeZone,
+    day: '2-digit',
+    month: '2-digit',
+  });
+  const timePart = d.toLocaleTimeString('pt-PT', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  return {
+    label: `${datePart} · ${timePart}`,
+    tone: item.bookingStatus === 'COMPLETED' ? 'completed' : 'scheduled',
+  };
+}
+
 function getLeadInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return '?';
@@ -331,6 +366,16 @@ function ymdInTzFromIso(utcIso: string, timeZone: string): string {
   const d = new Date(utcIso);
   if (Number.isNaN(d.getTime())) return '';
   return new Intl.DateTimeFormat('en-CA', { timeZone }).format(d);
+}
+
+function ymdInTz(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone }).format(date);
+}
+
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
 }
 
 function hmInTzFromIso(utcIso: string, timeZone: string): string {
@@ -445,6 +490,7 @@ function buildCrmItemSearchHaystack(item: RafacallCrmItem): string {
     formatCrmPetLabel(item.crmHasPet),
     item.crmHasPet === true ? 'pet animal estimação' : '',
     formatVideoCallSummary(item),
+    formatVideoCallBadgeLabel(item)?.label,
     item.bookingTimezone,
     item.bookingOrigin === 'USER_PAID' ? 'pago paga' : 'publico gratuito',
     item.id,
@@ -591,13 +637,11 @@ function CrmClientCard({
   const wa = formatWhatsappDigits(item.whatsappDigits);
   const immigrationDateLabel = formatImmigrationDateLabel(item.crmExpectedImmigrationAt);
   const isImmediateImmigration = isCrmImmigrationImmediate(item.crmExpectedImmigrationAt);
+  const videoCallBadge = formatVideoCallBadgeLabel(item);
   const propertyTypologyLabel = formatCrmPropertyTypologyLabel(item.crmPropertyTypology);
   const preferredCityLabel = item.crmPreferredCity?.trim() || null;
-  const petLabel =
-    item.crmHasPet === true || item.crmHasPet === false
-      ? formatCrmPetLabel(item.crmHasPet)
-      : null;
-  const hasPreferences = Boolean(propertyTypologyLabel || preferredCityLabel || petLabel);
+  const hasPet = item.crmHasPet === true;
+  const hasPreferences = Boolean(propertyTypologyLabel || preferredCityLabel || hasPet);
 
   return (
     <article
@@ -614,38 +658,43 @@ function CrmClientCard({
     >
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-foreground">{name}</p>
-        <p className="mt-0.5 truncate text-xs text-muted">{wa}</p>
+        <p className="mt-0.5 truncate text-[10px] text-muted/60">{wa}</p>
       </div>
 
-      {immigrationDateLabel ? (
-        <div
-          className={`mt-2.5 inline-flex max-w-full items-center gap-1.5 rounded-lg border px-2.5 py-1.5 ${
-            isImmediateImmigration
-              ? 'border-orange-200/90 bg-orange-50/90'
-              : 'border-amber-200/90 bg-amber-50/90'
-          }`}
-        >
-          <CalendarIcon
-            className={`h-3.5 w-3.5 shrink-0 ${
-              isImmediateImmigration ? 'text-orange-700' : 'text-amber-700'
-            }`}
-          />
-          <div className="min-w-0">
-            <p
-              className={`text-[10px] font-medium uppercase tracking-wide ${
-                isImmediateImmigration ? 'text-orange-800/80' : 'text-amber-800/80'
+      {immigrationDateLabel || videoCallBadge ? (
+        <div className="mt-2 flex flex-nowrap items-center gap-1">
+          {immigrationDateLabel ? (
+            <span
+              className={`inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold whitespace-nowrap ${
+                isImmediateImmigration
+                  ? 'border-orange-200/90 bg-orange-50/90 text-orange-950'
+                  : 'border-amber-200/90 bg-amber-50/90 text-amber-950'
               }`}
             >
-              Imigração prevista
-            </p>
-            <p
-              className={`truncate text-xs font-semibold ${
-                isImmediateImmigration ? 'text-orange-950' : 'text-amber-950'
-              }`}
-            >
+              <CalendarIcon
+                className={`h-3.5 w-3.5 shrink-0 ${
+                  isImmediateImmigration ? 'text-orange-700' : 'text-amber-700'
+                }`}
+              />
               {immigrationDateLabel}
-            </p>
-          </div>
+            </span>
+          ) : null}
+          {videoCallBadge ? (
+            <span
+              className={`inline-flex min-w-0 items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold whitespace-nowrap ${
+                videoCallBadge.tone === 'completed'
+                  ? 'border-emerald-200/90 bg-emerald-50/90 text-emerald-950'
+                  : 'border-sky-200/90 bg-sky-50/90 text-sky-950'
+              }`}
+            >
+              <VideoIcon
+                className={`h-3.5 w-3.5 shrink-0 ${
+                  videoCallBadge.tone === 'completed' ? 'text-emerald-700' : 'text-sky-700'
+                }`}
+              />
+              <span className="truncate">{videoCallBadge.label}</span>
+            </span>
+          ) : null}
         </div>
       ) : null}
 
@@ -661,16 +710,12 @@ function CrmClientCard({
               {preferredCityLabel}
             </span>
           ) : null}
-          {petLabel ? (
+          {hasPet ? (
             <span className="inline-flex max-w-full items-center rounded-md border border-emerald-200/90 bg-emerald-50/90 px-2 py-1 text-[10px] font-medium text-emerald-900">
-              PET: {petLabel}
+              PET
             </span>
           ) : null}
         </div>
-      ) : null}
-
-      {item.crmComments?.trim() ? (
-        <p className="mt-2 line-clamp-2 text-xs text-muted">{item.crmComments.trim()}</p>
       ) : null}
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -901,29 +946,21 @@ function ChevronDownIcon({ className }: { className?: string }) {
 function CrmNewClientModal({
   name,
   whatsapp,
-  propertyTypology,
-  preferredCity,
   whatsappError,
   saving,
   error,
   onNameChange,
   onWhatsappChange,
-  onPropertyTypologyChange,
-  onPreferredCityChange,
   onConfirm,
   onClose,
 }: {
   name: string;
   whatsapp: string;
-  propertyTypology: RafacallCrmPropertyTypology | '';
-  preferredCity: string;
   whatsappError: string;
   saving: boolean;
   error: string;
   onNameChange: (value: string) => void;
   onWhatsappChange: (value: string) => void;
-  onPropertyTypologyChange: (value: RafacallCrmPropertyTypology | '') => void;
-  onPreferredCityChange: (value: string) => void;
   onConfirm: () => void;
   onClose: () => void;
 }) {
@@ -986,51 +1023,6 @@ function CrmNewClientModal({
             error={whatsappError}
             rememberInStorage={false}
           />
-
-          <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="crm-new-client-typology"
-            >
-              Tipologia do imóvel
-            </label>
-            <select
-              id="crm-new-client-typology"
-              value={propertyTypology}
-              disabled={saving}
-              onChange={(event) =>
-                onPropertyTypologyChange(
-                  event.target.value as RafacallCrmPropertyTypology | '',
-                )
-              }
-              className="mt-2 w-full rounded-xl border border-border bg-page px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-brand-accent disabled:opacity-50"
-            >
-              <option value="">Por definir</option>
-              {RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER.map((typology) => (
-                <option key={typology} value={typology}>
-                  {RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS[typology]}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="crm-new-client-city"
-            >
-              Cidade de preferência
-            </label>
-            <input
-              id="crm-new-client-city"
-              type="text"
-              value={preferredCity}
-              disabled={saving}
-              onChange={(event) => onPreferredCityChange(event.target.value)}
-              placeholder="Ex.: Lisboa, Porto…"
-              className="mt-2 w-full rounded-xl border border-border bg-page px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-brand-accent disabled:opacity-50"
-            />
-          </div>
         </div>
 
         {error ? (
@@ -1110,6 +1102,9 @@ function CrmClientModal({
   immigrationDateDraft,
   videoCallDateDraft,
   videoCallTimeDraft,
+  videoCallAvailability,
+  videoCallAvailabilityLoading,
+  videoCallSelectedDate,
   propertyTypologyDraft,
   preferredCityDraft,
   hasPetDraft,
@@ -1119,6 +1114,8 @@ function CrmClientModal({
   onImmigrationDateChange,
   onVideoCallDateChange,
   onVideoCallTimeChange,
+  onVideoCallSelectedDateChange,
+  onVideoCallSlotSelect,
   onPropertyTypologyChange,
   onPreferredCityChange,
   onHasPetChange,
@@ -1131,6 +1128,9 @@ function CrmClientModal({
   immigrationDateDraft: string;
   videoCallDateDraft: string;
   videoCallTimeDraft: string;
+  videoCallAvailability: RafacallAvailabilityPayload | null;
+  videoCallAvailabilityLoading: boolean;
+  videoCallSelectedDate: string;
   propertyTypologyDraft: RafacallCrmPropertyTypology | '';
   preferredCityDraft: string;
   hasPetDraft: boolean | null;
@@ -1140,6 +1140,8 @@ function CrmClientModal({
   onImmigrationDateChange: (value: string) => void;
   onVideoCallDateChange: (value: string) => void;
   onVideoCallTimeChange: (value: string) => void;
+  onVideoCallSelectedDateChange: (value: string) => void;
+  onVideoCallSlotSelect: (slot: { startsAt: string; endsAt: string }) => void;
   onPropertyTypologyChange: (value: RafacallCrmPropertyTypology | '') => void;
   onPreferredCityChange: (value: string) => void;
   onHasPetChange: (value: boolean | null) => void;
@@ -1148,7 +1150,6 @@ function CrmClientModal({
   onClose: () => void;
 }) {
   const immigrationDateInputRef = useRef<HTMLInputElement>(null);
-  const videoCallDateInputRef = useRef<HTMLInputElement>(null);
   const name = item.userName?.trim() || 'Sem nome';
   const bookingTimezone = item.bookingTimezone?.trim() || 'Europe/Lisbon';
   const isImmediateImmigration = isCrmImmigrationImmediate(immigrationDateDraft);
@@ -1208,7 +1209,7 @@ function CrmClientModal({
         className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-[20px] border border-border bg-card shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="shrink-0 bg-page px-5 pb-4 pt-5">
+        <div className="shrink-0 border-b border-border bg-page px-5 pb-4 pt-5">
           <div className="flex items-start gap-3">
             <div
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-primary text-sm font-semibold text-white shadow-sm"
@@ -1244,93 +1245,10 @@ function CrmClientModal({
             disabled={saving}
             onChange={onStatusChange}
           />
+        </div>
 
-          <div className={`mt-3 rounded-xl border px-3.5 py-3 ${videoToneClass}`}>
-            <div className="flex items-start gap-3">
-              <VideoIcon className="mt-0.5 h-4 w-4 shrink-0 opacity-80" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
-                  Vídeo chamada
-                </p>
-                <p className="mt-0.5 text-sm font-medium leading-snug">
-                  {isCompletedVideoCall
-                    ? videoCall.detail
-                    : videoCallDraftLabel ?? videoCall.detail}
-                </p>
-                {!isCompletedVideoCall ? (
-                  <p className="mt-1 text-xs opacity-80">
-                    Horário de {bookingTimezone}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-
-            {canEditVideoCall ? (
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label
-                    className="block text-xs font-medium uppercase tracking-wide opacity-80"
-                    htmlFor="crm-video-call-date"
-                  >
-                    Data
-                  </label>
-                  <input
-                    ref={videoCallDateInputRef}
-                    id="crm-video-call-date"
-                    type="date"
-                    value={videoCallDateDraft}
-                    disabled={saving}
-                    onChange={(event) => onVideoCallDateChange(event.target.value)}
-                    className="mt-2 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
-                  />
-                </div>
-                <div>
-                  <label
-                    className="block text-xs font-medium uppercase tracking-wide opacity-80"
-                    htmlFor="crm-video-call-time"
-                  >
-                    Hora
-                  </label>
-                  <input
-                    id="crm-video-call-time"
-                    type="time"
-                    value={videoCallTimeDraft}
-                    disabled={saving}
-                    onChange={(event) => onVideoCallTimeChange(event.target.value)}
-                    className="mt-2 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
-                  />
-                </div>
-              </div>
-            ) : null}
-
-            {canEditVideoCall ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => openNativeDatePicker(videoCallDateInputRef.current)}
-                  className="inline-flex min-h-9 cursor-pointer items-center rounded-lg border border-sky-200 bg-sky-50/80 px-3 text-xs font-medium text-sky-900 transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Escolher data
-                </button>
-                {(hasScheduledVideoCallDraft || item.hasVideoCall) ? (
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => {
-                      onVideoCallDateChange('');
-                      onVideoCallTimeChange('');
-                    }}
-                    className="inline-flex min-h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted transition-colors hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Remover agendamento
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="mt-3 space-y-2">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          <div className="space-y-2">
             <button
               type="button"
               disabled={saving}
@@ -1421,6 +1339,65 @@ function CrmClientModal({
                 </button>
               ) : null}
             </div>
+          </div>
+
+          <div className={`mt-3 rounded-xl border px-3.5 py-3 ${videoToneClass}`}>
+            <div className="flex items-start gap-3">
+              <VideoIcon className="mt-0.5 h-4 w-4 shrink-0 opacity-80" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
+                  Vídeo chamada
+                </p>
+                <p className="mt-0.5 text-sm font-medium leading-snug">
+                  {isCompletedVideoCall
+                    ? videoCall.detail
+                    : videoCallDraftLabel ?? videoCall.detail}
+                </p>
+                {!isCompletedVideoCall ? (
+                  <p className="mt-1 text-xs opacity-80">
+                    Horário de {bookingTimezone}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            {canEditVideoCall ? (
+              <div className="mt-3">
+                <AdminVideoCallSlotPicker
+                  key={item.id}
+                  idPrefix="crm-video-call"
+                  tz={bookingTimezone}
+                  availability={videoCallAvailability}
+                  isLoadingAvailability={videoCallAvailabilityLoading}
+                  selectedDate={videoCallSelectedDate}
+                  manualDate={videoCallDateDraft}
+                  manualTime={videoCallTimeDraft}
+                  disabled={saving}
+                  onDateChange={onVideoCallSelectedDateChange}
+                  onSlotSelect={onVideoCallSlotSelect}
+                  onManualDateChange={onVideoCallDateChange}
+                  onManualTimeChange={onVideoCallTimeChange}
+                />
+              </div>
+            ) : null}
+
+            {canEditVideoCall ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(hasScheduledVideoCallDraft || item.hasVideoCall) ? (
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => {
+                      onVideoCallDateChange('');
+                      onVideoCallTimeChange('');
+                    }}
+                    className="inline-flex min-h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted transition-colors hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Remover agendamento
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-3 rounded-xl border border-violet-200/80 bg-violet-50/50 px-3.5 py-3">
@@ -1519,30 +1496,30 @@ function CrmClientModal({
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex min-h-0 flex-1 flex-col border-t border-border px-5 py-4">
-          <label
-            className="text-xs font-medium uppercase tracking-wide text-muted"
-            htmlFor="crm-comments"
-          >
-            Histórico e comentários
-          </label>
-          <textarea
-            id="crm-comments"
-            value={commentsDraft}
-            disabled={saving}
-            onChange={(event) => onCommentsChange(event.target.value)}
-            rows={11}
-            placeholder="Notas sobre o cliente, histórico de contactos, etc."
-            className="mt-2 min-h-[200px] w-full flex-1 resize-y rounded-xl border border-border bg-page px-3.5 py-3 text-sm leading-relaxed text-foreground outline-none transition-colors focus:border-brand-accent disabled:opacity-50"
-          />
+          <div className="mt-4 border-t border-border pt-4">
+            <label
+              className="text-xs font-medium uppercase tracking-wide text-muted"
+              htmlFor="crm-comments"
+            >
+              Comentários
+            </label>
+            <textarea
+              id="crm-comments"
+              value={commentsDraft}
+              disabled={saving}
+              onChange={(event) => onCommentsChange(event.target.value)}
+              rows={8}
+              placeholder="Notas adicionadas manualmente sobre o cliente."
+              className="mt-2 min-h-[160px] w-full resize-y rounded-xl border border-border bg-page px-3.5 py-3 text-sm leading-relaxed text-foreground outline-none transition-colors focus:border-brand-accent disabled:opacity-50"
+            />
 
-          {error ? (
-            <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-              {error}
-            </p>
-          ) : null}
+            {error ? (
+              <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                {error}
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-border bg-page/70 px-5 py-4">
@@ -1581,6 +1558,10 @@ export default function CrmPage() {
   const [immigrationDateDraft, setImmigrationDateDraft] = useState('');
   const [videoCallDateDraft, setVideoCallDateDraft] = useState('');
   const [videoCallTimeDraft, setVideoCallTimeDraft] = useState('');
+  const [videoCallAvailability, setVideoCallAvailability] =
+    useState<RafacallAvailabilityPayload | null>(null);
+  const [videoCallAvailabilityLoading, setVideoCallAvailabilityLoading] = useState(false);
+  const [videoCallSelectedDate, setVideoCallSelectedDate] = useState('');
   const [propertyTypologyDraft, setPropertyTypologyDraft] = useState<
     RafacallCrmPropertyTypology | ''
   >('');
@@ -1595,10 +1576,6 @@ export default function CrmPage() {
   const [newClientOpen, setNewClientOpen] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   const [newClientWhatsapp, setNewClientWhatsapp] = useState('');
-  const [newClientPropertyTypology, setNewClientPropertyTypology] = useState<
-    RafacallCrmPropertyTypology | ''
-  >('');
-  const [newClientPreferredCity, setNewClientPreferredCity] = useState('');
   const [newClientWhatsappError, setNewClientWhatsappError] = useState('');
   const [newClientError, setNewClientError] = useState('');
   const [newClientSaving, setNewClientSaving] = useState(false);
@@ -1629,6 +1606,62 @@ export default function CrmPage() {
   useEffect(() => {
     if (user?.role === 'ADMIN') void loadBoard();
   }, [user?.role, loadBoard]);
+
+  useEffect(() => {
+    if (!selectedItem) {
+      setVideoCallAvailability(null);
+      setVideoCallAvailabilityLoading(false);
+      setVideoCallSelectedDate('');
+      return;
+    }
+
+    const canEditVideoCall =
+      !(selectedItem.hasVideoCall && selectedItem.bookingStatus === 'COMPLETED');
+    if (!canEditVideoCall) {
+      setVideoCallAvailability(null);
+      setVideoCallAvailabilityLoading(false);
+      setVideoCallSelectedDate('');
+      return;
+    }
+
+    const bookingTimezone = selectedItem.bookingTimezone?.trim() || 'Europe/Lisbon';
+    const existingDate = toVideoCallDateDraft(selectedItem);
+    let cancelled = false;
+
+    setVideoCallAvailabilityLoading(true);
+    setVideoCallAvailability(null);
+
+    const from = ymdInTz(new Date(), bookingTimezone);
+    const to = ymdInTz(addDays(new Date(), 14), bookingTimezone);
+    const excludeBookingId =
+      selectedItem.bookingStatus === 'SCHEDULED' && selectedItem.hasVideoCall
+        ? selectedItem.id
+        : undefined;
+
+    void api.rafacall
+      .guestAvailability({ from, to, tz: bookingTimezone, excludeBookingId })
+      .then((availability) => {
+        if (cancelled) return;
+        setVideoCallAvailability(availability);
+        const firstDay =
+          availability.days.find((day) => day.slots.length > 0)?.date ??
+          availability.days[0]?.date ??
+          '';
+        setVideoCallSelectedDate(existingDate || firstDay);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setVideoCallAvailability(null);
+        setVideoCallSelectedDate(existingDate);
+      })
+      .finally(() => {
+        if (!cancelled) setVideoCallAvailabilityLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedItem?.id]);
 
   const findItemById = useCallback(
     (itemId: string): { item: RafacallCrmItem; status: RafacallCrmStatus } | null => {
@@ -1860,8 +1893,6 @@ export default function CrmPage() {
     setNewClientOpen(true);
     setNewClientName('');
     setNewClientWhatsapp('');
-    setNewClientPropertyTypology('');
-    setNewClientPreferredCity('');
     setNewClientWhatsappError('');
     setNewClientError('');
   }, []);
@@ -1887,19 +1918,11 @@ export default function CrmPage() {
       const created = await api.admin.rafacall.createCrmClient({
         name: trimmedName,
         whatsapp: whatsappDigits,
-        ...(newClientPropertyTypology
-          ? { crmPropertyTypology: newClientPropertyTypology }
-          : {}),
-        ...(normalizePreferredCityDraft(newClientPreferredCity)
-          ? { crmPreferredCity: normalizePreferredCityDraft(newClientPreferredCity) }
-          : {}),
       });
       setColumns((prev) => insertItemIntoColumns(prev, created));
       setNewClientOpen(false);
       setNewClientName('');
       setNewClientWhatsapp('');
-      setNewClientPropertyTypology('');
-      setNewClientPreferredCity('');
       handleOpenDetails(created);
     } catch (err) {
       const message =
@@ -1912,13 +1935,7 @@ export default function CrmPage() {
     } finally {
       setNewClientSaving(false);
     }
-  }, [
-    handleOpenDetails,
-    newClientName,
-    newClientPreferredCity,
-    newClientPropertyTypology,
-    newClientWhatsapp,
-  ]);
+  }, [handleOpenDetails, newClientName, newClientWhatsapp]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteConfirmItem) return;
@@ -1986,7 +2003,7 @@ export default function CrmPage() {
           <h1 className="text-2xl font-semibold text-foreground">CRM</h1>
           <p className="mt-1 text-sm text-muted">
             Acompanhe o follow-up dos clientes após o agendamento. Arraste entre colunas
-            para registar o histórico automaticamente.
+            para atualizar o estado.
           </p>
         </div>
         <button
@@ -2076,8 +2093,6 @@ export default function CrmPage() {
         <CrmNewClientModal
           name={newClientName}
           whatsapp={newClientWhatsapp}
-          propertyTypology={newClientPropertyTypology}
-          preferredCity={newClientPreferredCity}
           whatsappError={newClientWhatsappError}
           saving={newClientSaving}
           error={newClientError}
@@ -2090,16 +2105,12 @@ export default function CrmPage() {
             if (newClientWhatsappError) setNewClientWhatsappError('');
             if (newClientError) setNewClientError('');
           }}
-          onPropertyTypologyChange={setNewClientPropertyTypology}
-          onPreferredCityChange={setNewClientPreferredCity}
           onConfirm={() => void handleCreateClient()}
           onClose={() => {
             if (!newClientSaving) {
               setNewClientOpen(false);
               setNewClientName('');
               setNewClientWhatsapp('');
-              setNewClientPropertyTypology('');
-              setNewClientPreferredCity('');
               setNewClientWhatsappError('');
               setNewClientError('');
             }
@@ -2129,6 +2140,9 @@ export default function CrmPage() {
           immigrationDateDraft={immigrationDateDraft}
           videoCallDateDraft={videoCallDateDraft}
           videoCallTimeDraft={videoCallTimeDraft}
+          videoCallAvailability={videoCallAvailability}
+          videoCallAvailabilityLoading={videoCallAvailabilityLoading}
+          videoCallSelectedDate={videoCallSelectedDate}
           propertyTypologyDraft={propertyTypologyDraft}
           preferredCityDraft={preferredCityDraft}
           hasPetDraft={hasPetDraft}
@@ -2138,6 +2152,16 @@ export default function CrmPage() {
           onImmigrationDateChange={setImmigrationDateDraft}
           onVideoCallDateChange={setVideoCallDateDraft}
           onVideoCallTimeChange={setVideoCallTimeDraft}
+          onVideoCallSelectedDateChange={setVideoCallSelectedDate}
+          onVideoCallSlotSelect={(slot) => {
+            const bookingTimezone =
+              selectedItem.bookingTimezone?.trim() || 'Europe/Lisbon';
+            const date = ymdInTzFromIso(slot.startsAt, bookingTimezone);
+            const time = hmInTzFromIso(slot.startsAt, bookingTimezone);
+            setVideoCallDateDraft(date);
+            setVideoCallTimeDraft(time);
+            setVideoCallSelectedDate(date);
+          }}
           onPropertyTypologyChange={setPropertyTypologyDraft}
           onPreferredCityChange={setPreferredCityDraft}
           onHasPetChange={setHasPetDraft}
@@ -2150,6 +2174,9 @@ export default function CrmPage() {
               setImmigrationDateDraft('');
               setVideoCallDateDraft('');
               setVideoCallTimeDraft('');
+              setVideoCallAvailability(null);
+              setVideoCallAvailabilityLoading(false);
+              setVideoCallSelectedDate('');
               setPropertyTypologyDraft('');
               setPreferredCityDraft('');
               setHasPetDraft(null);

@@ -1004,6 +1004,11 @@ export const api = {
             items: RafacallCrmItem[];
           }[];
         }>('/admin/rafacall/crm', { method: 'GET' }),
+      lookupCrmClient: (whatsapp: string) =>
+        request<{ inCrm: boolean; name: string | null }>(
+          `/admin/rafacall/crm/lookup?whatsapp=${encodeURIComponent(whatsapp)}`,
+          { method: 'GET' },
+        ),
       createCrmClient: (body: {
         name: string;
         whatsapp: string;
