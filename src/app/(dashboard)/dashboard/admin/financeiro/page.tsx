@@ -175,6 +175,7 @@ export default function AdminFinanceiroPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<EntryFormState>(EMPTY_FORM);
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
+  const [deleteConfirmEntry, setDeleteConfirmEntry] = useState<FinanceEntry | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const activePeriod = useMemo(() => {
@@ -395,15 +396,15 @@ export default function AdminFinanceiroPage() {
     }
   };
 
-  const handleDelete = async (entry: FinanceEntry) => {
-    const label = entry.kind === 'INCOME' ? 'receita' : 'despesa';
-    const ok = window.confirm(`Apagar esta ${label} de ${formatCrmEuroAmount(entry.amount)}?`);
-    if (!ok) return;
+  const handleDelete = async () => {
+    if (!deleteConfirmEntry) return;
+    const entry = deleteConfirmEntry;
 
     setBusy(true);
     try {
       await api.admin.finance.delete(entry.id);
       if (editingId === entry.id) resetForm();
+      setDeleteConfirmEntry(null);
       toast.success(entry.kind === 'INCOME' ? 'Receita removida.' : 'Despesa removida.');
       await load();
     } catch (err) {
@@ -485,24 +486,25 @@ export default function AdminFinanceiroPage() {
         </p>
       ) : null}
 
-      <section className="overflow-hidden rounded-[18px] border border-border/80 bg-card shadow-[0_1px_3px_rgba(12,58,51,0.05)]">
-        <div className="grid sm:grid-cols-3 sm:divide-x sm:divide-border/70">
-          <SummaryStat
-            label="Receitas"
-            value={formatCrmEuroAmount(incomesTotal)}
-            tone="income"
-          />
-          <SummaryStat
-            label="Despesas"
-            value={formatCrmEuroAmount(expensesTotal)}
-            tone="expense"
-          />
-          <SummaryStat
-            label="Saldo"
-            value={formatCrmEuroAmount(balance)}
-            tone={balance >= 0 ? 'balance-positive' : 'balance-negative'}
-          />
-        </div>
+      <section className="grid gap-3 sm:grid-cols-3">
+        <SummaryStat
+          label="Receitas"
+          value={formatCrmEuroAmount(incomesTotal)}
+          tone="income"
+        />
+        <SummaryStat
+          label="Despesas"
+          value={formatCrmEuroAmount(expensesTotal)}
+          tone="expense"
+        />
+        <SummaryStat
+          label="Saldo"
+          value={formatCrmEuroAmount(balance)}
+          tone={balance >= 0 ? 'balance-positive' : 'balance-negative'}
+          emphasized
+          caption={periodSummaryLabel}
+          captionCapitalize={periodMode === 'month'}
+        />
       </section>
 
       <div className="grid gap-8 lg:grid-cols-2">
@@ -514,7 +516,6 @@ export default function AdminFinanceiroPage() {
           busy={isBusy}
           onAdd={() => startAdd('INCOME')}
           onEdit={startEdit}
-          onDelete={(entry) => void handleDelete(entry)}
           onPreviewReceipt={(url) => setReceiptPreviewUrl(url)}
         />
         <EntryList
@@ -525,7 +526,6 @@ export default function AdminFinanceiroPage() {
           busy={isBusy}
           onAdd={() => startAdd('EXPENSE')}
           onEdit={startEdit}
-          onDelete={(entry) => void handleDelete(entry)}
           onPreviewReceipt={(url) => setReceiptPreviewUrl(url)}
         />
       </div>
@@ -546,6 +546,19 @@ export default function AdminFinanceiroPage() {
               onClose={resetForm}
               onSave={() => void handleSave()}
               onPreviewReceipt={(url) => setReceiptPreviewUrl(url)}
+              onDelete={
+                editingId
+                  ? () => {
+                      const entry =
+                        board?.incomes.find((item) => item.id === editingId) ??
+                        board?.expenses.find((item) => item.id === editingId) ??
+                        null;
+                      if (!entry) return;
+                      resetForm();
+                      setDeleteConfirmEntry(entry);
+                    }
+                  : undefined
+              }
             />,
             document.body,
           )
@@ -556,6 +569,20 @@ export default function AdminFinanceiroPage() {
             <ReceiptPreviewModal
               url={receiptPreviewUrl}
               onClose={() => setReceiptPreviewUrl(null)}
+            />,
+            document.body,
+          )
+        : null}
+
+      {deleteConfirmEntry
+        ? createPortal(
+            <DeleteConfirmModal
+              entry={deleteConfirmEntry}
+              busy={busy}
+              onConfirm={() => void handleDelete()}
+              onClose={() => {
+                if (!busy) setDeleteConfirmEntry(null);
+              }}
             />,
             document.body,
           )
@@ -766,18 +793,24 @@ function SummaryStat({
   label,
   value,
   tone,
+  emphasized = false,
+  caption,
+  captionCapitalize = false,
 }: {
   label: string;
   value: string;
   tone: 'income' | 'expense' | 'balance-positive' | 'balance-negative';
+  emphasized?: boolean;
+  caption?: string;
+  captionCapitalize?: boolean;
 }) {
   const styles = {
     income: {
-      shell: 'bg-gradient-to-br from-emerald-50/90 via-card to-card',
-      accent: 'bg-emerald-500',
-      label: 'text-emerald-800/75',
+      shell: 'border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-emerald-50/40 to-card',
+      bar: 'bg-emerald-500',
+      label: 'text-emerald-800/80',
       value: 'text-emerald-950',
-      iconWrap: 'bg-emerald-500/12 text-emerald-700',
+      iconWrap: 'bg-emerald-600/10 text-emerald-700 ring-1 ring-emerald-600/10',
       icon: (
         <path
           d="M12 19V5M5 12l7-7 7 7"
@@ -789,11 +822,11 @@ function SummaryStat({
       ),
     },
     expense: {
-      shell: 'bg-gradient-to-br from-rose-50/90 via-card to-card',
-      accent: 'bg-rose-500',
-      label: 'text-rose-800/75',
+      shell: 'border-rose-200/70 bg-gradient-to-br from-rose-50 via-rose-50/40 to-card',
+      bar: 'bg-rose-500',
+      label: 'text-rose-800/80',
       value: 'text-rose-950',
-      iconWrap: 'bg-rose-500/12 text-rose-700',
+      iconWrap: 'bg-rose-600/10 text-rose-700 ring-1 ring-rose-600/10',
       icon: (
         <path
           d="M12 5v14M5 12l7 7 7-7"
@@ -805,69 +838,88 @@ function SummaryStat({
       ),
     },
     'balance-positive': {
-      shell: 'bg-gradient-to-br from-brand-primary/[0.07] via-card to-brand-secondary/25',
-      accent: 'bg-brand-accent',
-      label: 'text-brand-primary/70',
+      shell:
+        'border-brand-primary/15 bg-gradient-to-br from-brand-primary/[0.08] via-brand-secondary/20 to-card',
+      bar: 'bg-brand-accent',
+      label: 'text-brand-primary/75',
       value: 'text-brand-primary',
-      iconWrap: 'bg-brand-primary/10 text-brand-primary',
+      iconWrap: 'bg-brand-primary/10 text-brand-primary ring-1 ring-brand-primary/10',
       icon: (
-        <>
-          <path
-            d="M4 7h16M4 12h16M4 17h10"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </>
+        <path
+          d="M4 7h16M4 12h16M4 17h10"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
       ),
     },
     'balance-negative': {
-      shell: 'bg-gradient-to-br from-rose-50/80 via-card to-card',
-      accent: 'bg-rose-400',
-      label: 'text-rose-800/70',
+      shell: 'border-rose-200/80 bg-gradient-to-br from-rose-100/80 via-rose-50/50 to-card',
+      bar: 'bg-rose-500',
+      label: 'text-rose-800/80',
       value: 'text-rose-900',
-      iconWrap: 'bg-rose-500/12 text-rose-700',
+      iconWrap: 'bg-rose-600/10 text-rose-700 ring-1 ring-rose-600/10',
       icon: (
-        <>
-          <path
-            d="M4 7h16M4 12h16M4 17h10"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </>
+        <path
+          d="M4 7h16M4 12h16M4 17h10"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
       ),
     },
   }[tone];
 
   return (
     <div
-      className={`relative px-5 py-5 sm:px-6 sm:py-6 ${styles.shell} border-b border-border/70 last:border-b-0 sm:border-b-0`}
+      className={`relative overflow-hidden rounded-[18px] border px-5 py-5 shadow-[0_1px_2px_rgba(12,58,51,0.04)] sm:px-6 sm:py-6 ${styles.shell} ${
+        emphasized ? 'sm:shadow-[0_4px_18px_rgba(12,58,51,0.07)]' : ''
+      }`}
     >
-      <div className="flex items-start justify-between gap-3">
+      <span
+        className={`absolute inset-y-0 left-0 w-1 ${styles.bar}`}
+        aria-hidden
+      />
+      <div className="flex items-start justify-between gap-4 pl-1">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span
-              className={`h-1.5 w-1.5 shrink-0 rounded-full ${styles.accent}`}
-              aria-hidden
-            />
-            <p
-              className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${styles.label}`}
-            >
-              {label}
-            </p>
-          </div>
           <p
-            className={`mt-2.5 text-2xl font-semibold tracking-tight tabular-nums sm:text-[1.75rem] ${styles.value}`}
+            className={`text-[11px] font-semibold uppercase tracking-[0.16em] ${styles.label}`}
+          >
+            {label}
+          </p>
+          <p
+            className={`mt-3 text-[1.65rem] font-semibold leading-none tracking-tight tabular-nums sm:text-[1.85rem] ${styles.value}`}
           >
             {value}
           </p>
+          {emphasized && caption ? (
+            <span
+              className={`mt-3 inline-flex max-w-full items-center gap-1.5 rounded-full border border-brand-accent/35 bg-brand-accent/15 px-2.5 py-1 text-xs font-semibold text-brand-primary ${
+                captionCapitalize ? 'capitalize' : ''
+              }`}
+            >
+              <svg
+                className="h-3.5 w-3.5 shrink-0 text-brand-accent-dark"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
+              <span className="truncate">{caption}</span>
+            </span>
+          ) : null}
         </div>
         <span
-          className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${styles.iconWrap}`}
+          className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${styles.iconWrap}`}
           aria-hidden
         >
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
+          <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none">
             {styles.icon}
           </svg>
         </span>
@@ -884,7 +936,6 @@ function EntryList({
   busy,
   onAdd,
   onEdit,
-  onDelete,
   onPreviewReceipt,
 }: {
   title: string;
@@ -894,13 +945,14 @@ function EntryList({
   busy: boolean;
   onAdd: () => void;
   onEdit: (entry: FinanceEntry) => void;
-  onDelete: (entry: FinanceEntry) => void;
   onPreviewReceipt: (url: string) => void;
 }) {
   const titleClass =
     tone === 'income' ? 'text-emerald-950' : 'text-rose-950';
   const borderClass =
     tone === 'income' ? 'border-emerald-200/80' : 'border-rose-200/80';
+  const hoverClass =
+    tone === 'income' ? 'hover:bg-emerald-50' : 'hover:bg-rose-50';
   const buttonAccent =
     tone === 'income'
       ? 'border-emerald-300 bg-emerald-100/80 text-emerald-950 hover:bg-emerald-100'
@@ -934,18 +986,33 @@ function EntryList({
       ) : (
         <ul className="space-y-2">
           {entries.map((entry) => (
-            <li
-              key={entry.id}
-              className={`rounded-xl border bg-card px-3 py-2.5 ${borderClass}`}
-            >
-              <div className="flex items-start gap-3">
+            <li key={entry.id}>
+              <div
+                role="button"
+                tabIndex={busy ? -1 : 0}
+                onClick={() => {
+                  if (!busy) onEdit(entry);
+                }}
+                onKeyDown={(event) => {
+                  if (busy) return;
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onEdit(entry);
+                  }
+                }}
+                className={`flex w-full cursor-pointer items-start gap-3 rounded-xl border bg-card px-3.5 py-3 text-left transition-colors ${hoverClass} ${
+                  busy ? 'cursor-not-allowed opacity-50' : ''
+                } ${borderClass}`}
+              >
                 {entry.receiptImageUrl ? (
                   <button
                     type="button"
-                    onClick={() =>
-                      onPreviewReceipt(financeMediaUrl(entry.receiptImageUrl!))
-                    }
-                    className="relative h-14 w-14 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-border bg-page transition-opacity hover:opacity-90"
+                    disabled={busy}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onPreviewReceipt(financeMediaUrl(entry.receiptImageUrl!));
+                    }}
+                    className="relative h-14 w-14 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-border bg-page transition-opacity hover:opacity-90 disabled:opacity-50"
                     aria-label="Ver comprovante"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -964,46 +1031,37 @@ function EntryList({
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-foreground">
-                    {entry.title}
-                  </p>
-                  <p className="mt-0.5 text-sm font-medium tabular-nums text-foreground/90">
-                    {formatCrmEuroAmount(entry.amount)}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted">
-                    {formatCrmPaymentDateLabel(entry.paidAt) ?? entry.paidAt}
-                  </p>
-                  {entry.kind === 'INCOME' && entry.whatsappDigits ? (
-                    <p className="mt-1 text-xs text-foreground/80">
-                      {entry.clientName
-                        ? `${entry.clientName} · `
-                        : null}
-                      {formatWhatsappDisplay(entry.whatsappDigits)}
-                    </p>
-                  ) : null}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {entry.title}
+                      </p>
+                      {entry.kind === 'INCOME' ? (
+                        <p className="mt-0.5 truncate text-xs text-muted">
+                          {entry.whatsappDigits
+                            ? `${entry.clientName?.trim() ? `${entry.clientName.trim()} · ` : ''}${formatWhatsappDisplay(entry.whatsappDigits)}`
+                            : 'Sem cliente atribuído'}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p
+                        className={`text-base font-semibold tabular-nums tracking-tight sm:text-lg ${
+                          tone === 'income' ? 'text-emerald-800' : 'text-rose-800'
+                        }`}
+                      >
+                        {formatCrmEuroAmount(entry.amount)}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted">
+                        {formatCrmPaymentDateLabel(entry.paidAt) ?? entry.paidAt}
+                      </p>
+                    </div>
+                  </div>
                   {entry.comment?.trim() ? (
-                    <p className="mt-1 line-clamp-2 text-xs text-foreground/80">
+                    <p className="mt-2 line-clamp-2 text-xs text-foreground/75">
                       {entry.comment}
                     </p>
                   ) : null}
-                </div>
-                <div className="flex shrink-0 flex-col gap-1">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => onEdit(entry)}
-                    className="cursor-pointer rounded-lg border border-border px-2 py-1 text-[11px] font-medium text-foreground hover:bg-page disabled:opacity-50"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => onDelete(entry)}
-                    className="cursor-pointer rounded-lg border border-red-200 px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
-                  >
-                    Apagar
-                  </button>
                 </div>
               </div>
             </li>
@@ -1024,6 +1082,7 @@ function EntryFormModal({
   onClose,
   onSave,
   onPreviewReceipt,
+  onDelete,
 }: {
   form: EntryFormState;
   editingId: string | null;
@@ -1034,6 +1093,7 @@ function EntryFormModal({
   onClose: () => void;
   onSave: () => void;
   onPreviewReceipt: (url: string) => void;
+  onDelete?: () => void;
 }) {
   const isIncome = form.kind === 'INCOME';
   const title = editingId
@@ -1248,14 +1308,49 @@ function EntryFormModal({
                 <p className="mt-2 text-xs text-muted">A procurar cliente…</p>
               ) : null}
               {clientLookup.status === 'found' ? (
-                <p className="mt-2 text-xs font-medium text-emerald-800">
-                  {clientLookup.name || 'Cliente encontrado no CRM'}
-                </p>
+                <div className="mt-3 flex items-start gap-3 rounded-xl border border-emerald-300/80 bg-emerald-50 px-3.5 py-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-semibold text-white">
+                    {(clientLookup.name || 'C')
+                      .trim()
+                      .charAt(0)
+                      .toUpperCase()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
+                      Cliente no CRM
+                    </p>
+                    <p className="mt-0.5 truncate text-sm font-semibold text-emerald-950">
+                      {clientLookup.name || 'Cliente encontrado'}
+                    </p>
+                    {formatWhatsappDisplay(form.whatsapp) ? (
+                      <p className="mt-0.5 truncate text-xs text-emerald-800/80">
+                        {formatWhatsappDisplay(form.whatsapp)}
+                      </p>
+                    ) : null}
+                  </div>
+                  <svg
+                    className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                </div>
               ) : null}
               {clientLookup.status === 'not_found' ? (
-                <p className="mt-2 text-xs font-medium text-amber-800">
-                  Cliente não encontrado
-                </p>
+                <div className="mt-3 rounded-xl border border-amber-300/80 bg-amber-50 px-3.5 py-2.5">
+                  <p className="text-sm font-medium text-amber-900">
+                    Cliente não encontrado
+                  </p>
+                  <p className="mt-0.5 text-xs text-amber-800/80">
+                    A receita pode ser guardada sem vínculo no CRM.
+                  </p>
+                </div>
               ) : null}
               {clientLookup.status === 'idle' ? (
                 <p className="mt-2 text-xs text-muted">
@@ -1289,7 +1384,25 @@ function EntryFormModal({
             <p className="text-sm font-medium text-foreground">
               Comprovante (opcional)
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
+            <div className="mt-2 flex flex-wrap items-center gap-2.5">
+              {form.receiptUrl ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    onPreviewReceipt(financeMediaUrl(form.receiptUrl))
+                  }
+                  className="relative h-16 w-16 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-border bg-page transition-opacity hover:opacity-90 disabled:opacity-50"
+                  aria-label="Ampliar comprovante"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={financeMediaUrl(form.receiptUrl)}
+                    alt="Preview do comprovante"
+                    className="h-full w-full object-cover"
+                  />
+                </button>
+              ) : null}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -1310,33 +1423,21 @@ function EntryFormModal({
                 {form.receiptUrl ? 'Trocar imagem' : 'Carregar imagem'}
               </button>
               {form.receiptUrl ? (
-                <>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() =>
-                      onPreviewReceipt(financeMediaUrl(form.receiptUrl))
-                    }
-                    className="cursor-pointer text-xs font-medium text-brand-primary underline-offset-2 hover:underline disabled:opacity-50"
-                  >
-                    {form.receiptFileName || 'Ver comprovante'}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => {
-                      onChange({
-                        ...form,
-                        receiptUrl: '',
-                        receiptFileName: '',
-                      });
-                      if (fileInputRef.current) fileInputRef.current.value = '';
-                    }}
-                    className="text-xs font-medium text-muted underline-offset-2 hover:underline disabled:opacity-50"
-                  >
-                    Remover
-                  </button>
-                </>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    onChange({
+                      ...form,
+                      receiptUrl: '',
+                      receiptFileName: '',
+                    });
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                  className="text-xs font-medium text-muted underline-offset-2 hover:underline disabled:opacity-50"
+                >
+                  Remover
+                </button>
               ) : null}
             </div>
           </div>
@@ -1359,6 +1460,16 @@ function EntryFormModal({
           >
             Cancelar
           </button>
+          {editingId && onDelete ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={onDelete}
+              className="inline-flex min-h-10 w-full cursor-pointer items-center justify-center rounded-xl border border-red-200 px-4 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 sm:ml-auto sm:w-auto"
+            >
+              Apagar
+            </button>
+          ) : null}
         </div>
       </div>
     </div>
@@ -1407,6 +1518,95 @@ function ReceiptPreviewModal({
             alt="Comprovante"
             className="max-h-[min(86dvh,48rem)] w-full object-contain"
           />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeleteConfirmModal({
+  entry,
+  busy,
+  onConfirm,
+  onClose,
+}: {
+  entry: FinanceEntry;
+  busy: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  const kindLabel = entry.kind === 'INCOME' ? 'receita' : 'despesa';
+  const title =
+    entry.kind === 'INCOME' ? 'Apagar receita?' : 'Apagar despesa?';
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !busy) onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [busy, onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="finance-delete-confirm-title"
+      onClick={() => {
+        if (!busy) onClose();
+      }}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <h2
+          id="finance-delete-confirm-title"
+          className="text-base font-semibold text-foreground"
+        >
+          {title}
+        </h2>
+        <p className="mt-1 text-sm text-muted">
+          Esta ação não pode ser desfeita. O lançamento será removido do
+          financeiro
+          {entry.kind === 'INCOME' && entry.whatsappDigits
+            ? ' e do CRM do cliente'
+            : ''}
+          .
+        </p>
+
+        <div className="mt-4 rounded-xl border border-red-200 bg-red-50/80 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            {kindLabel}
+          </p>
+          <p className="mt-1 text-sm font-semibold text-foreground">
+            {entry.title}
+          </p>
+          <p className="mt-0.5 text-sm tabular-nums text-foreground/90">
+            {formatCrmEuroAmount(entry.amount)}
+            {' · '}
+            {formatCrmPaymentDateLabel(entry.paidAt) ?? entry.paidAt}
+          </p>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onConfirm}
+            className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-[14px] bg-red-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {busy ? 'A apagar…' : 'Confirmar exclusão'}
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onClose}
+            className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-[14px] border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-page disabled:opacity-50"
+          >
+            Cancelar
+          </button>
         </div>
       </div>
     </div>
