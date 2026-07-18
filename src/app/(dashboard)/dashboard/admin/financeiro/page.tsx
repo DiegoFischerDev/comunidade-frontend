@@ -174,6 +174,7 @@ export default function AdminFinanceiroPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<EntryFormState>(EMPTY_FORM);
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const activePeriod = useMemo(() => {
@@ -427,8 +428,8 @@ export default function AdminFinanceiroPage() {
   const isBusy = busy || loading;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
+    <div className="mx-auto max-w-6xl space-y-8 px-4 pt-8 pb-8 sm:px-6 sm:pt-12 md:pt-16 lg:pt-8">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Financeiro
@@ -438,44 +439,50 @@ export default function AdminFinanceiroPage() {
             com WhatsApp são atribuídas ao cliente no CRM.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowPeriodFilter((prev) => !prev)}
-          aria-expanded={showPeriodFilter}
-          aria-label={
-            showPeriodFilter ? 'Ocultar filtro de período' : 'Mostrar filtro de período'
-          }
-          className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
-            showPeriodFilter
-              ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
-              : 'border-border bg-card text-foreground hover:bg-page'
-          }`}
-        >
-          <FilterIcon className="h-4 w-4 shrink-0" />
-          <span className={periodMode === 'month' ? 'capitalize' : undefined}>
-            {periodSummaryLabel}
-          </span>
-        </button>
+        <div className="relative z-20 shrink-0 self-end">
+          <button
+            type="button"
+            onClick={() => setShowPeriodFilter((prev) => !prev)}
+            aria-expanded={showPeriodFilter}
+            aria-haspopup="dialog"
+            aria-label={
+              showPeriodFilter
+                ? 'Ocultar filtro de período'
+                : 'Mostrar filtro de período'
+            }
+            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
+              showPeriodFilter
+                ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
+                : 'border-border bg-card text-foreground hover:bg-page'
+            }`}
+          >
+            <FilterIcon className="h-4 w-4 shrink-0" />
+            <span className={periodMode === 'month' ? 'capitalize' : undefined}>
+              {periodSummaryLabel}
+            </span>
+          </button>
+
+          {showPeriodFilter ? (
+            <PeriodFilter
+              monthOptions={monthOptions}
+              periodMode={periodMode}
+              selectedMonthKey={selectedMonthKey}
+              customFrom={customFrom}
+              customTo={customTo}
+              onSelectAll={selectAllPeriod}
+              onSelectMonth={selectMonth}
+              onCustomFromChange={handleCustomFromChange}
+              onCustomToChange={handleCustomToChange}
+              onRequestClose={() => setShowPeriodFilter(false)}
+            />
+          ) : null}
+        </div>
       </header>
 
       {error ? (
         <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {error}
         </p>
-      ) : null}
-
-      {showPeriodFilter ? (
-        <PeriodFilter
-          monthOptions={monthOptions}
-          periodMode={periodMode}
-          selectedMonthKey={selectedMonthKey}
-          customFrom={customFrom}
-          customTo={customTo}
-          onSelectAll={selectAllPeriod}
-          onSelectMonth={selectMonth}
-          onCustomFromChange={handleCustomFromChange}
-          onCustomToChange={handleCustomToChange}
-        />
       ) : null}
 
       <section className="overflow-hidden rounded-[18px] border border-border/80 bg-card shadow-[0_1px_3px_rgba(12,58,51,0.05)]">
@@ -508,6 +515,7 @@ export default function AdminFinanceiroPage() {
           onAdd={() => startAdd('INCOME')}
           onEdit={startEdit}
           onDelete={(entry) => void handleDelete(entry)}
+          onPreviewReceipt={(url) => setReceiptPreviewUrl(url)}
         />
         <EntryList
           title="Despesas"
@@ -518,6 +526,7 @@ export default function AdminFinanceiroPage() {
           onAdd={() => startAdd('EXPENSE')}
           onEdit={startEdit}
           onDelete={(entry) => void handleDelete(entry)}
+          onPreviewReceipt={(url) => setReceiptPreviewUrl(url)}
         />
       </div>
 
@@ -536,6 +545,17 @@ export default function AdminFinanceiroPage() {
               onUpload={(file) => void handleUploadReceipt(file)}
               onClose={resetForm}
               onSave={() => void handleSave()}
+              onPreviewReceipt={(url) => setReceiptPreviewUrl(url)}
+            />,
+            document.body,
+          )
+        : null}
+
+      {receiptPreviewUrl
+        ? createPortal(
+            <ReceiptPreviewModal
+              url={receiptPreviewUrl}
+              onClose={() => setReceiptPreviewUrl(null)}
             />,
             document.body,
           )
@@ -554,6 +574,7 @@ function PeriodFilter({
   onSelectMonth,
   onCustomFromChange,
   onCustomToChange,
+  onRequestClose,
 }: {
   monthOptions: Array<{ key: string; label: string; from: string; to: string }>;
   periodMode: PeriodMode;
@@ -564,7 +585,32 @@ function PeriodFilter({
   onSelectMonth: (key: string) => void;
   onCustomFromChange: (value: string) => void;
   onCustomToChange: (value: string) => void;
+  onRequestClose: () => void;
 }) {
+  const panelRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onRequestClose();
+    };
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!target || !panelRef.current) return;
+      const root = panelRef.current.parentElement;
+      if (root && !root.contains(target)) {
+        onRequestClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('touchstart', onPointerDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('touchstart', onPointerDown);
+    };
+  }, [onRequestClose]);
+
   const chipClass = (active: boolean) =>
     `cursor-pointer rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
       active
@@ -573,8 +619,123 @@ function PeriodFilter({
     }`;
 
   return (
-    <section className="space-y-3.5 rounded-2xl border border-border bg-card/80 px-4 py-3.5 md:space-y-0">
-      <div className="flex flex-wrap items-center gap-2">
+    <section
+      ref={panelRef}
+      role="dialog"
+      aria-label="Filtro de período"
+      className="absolute top-[calc(100%+0.5rem)] right-0 z-30 w-[min(18.5rem,calc(100vw-2.5rem))] rounded-2xl border border-border bg-card px-3.5 py-3.5 shadow-[0_12px_40px_rgba(12,58,51,0.14)] sm:w-max sm:min-w-[40rem] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:px-4"
+    >
+      {/* Mobile: datas primeiro */}
+      <div className="space-y-3 sm:hidden">
+        <div className="grid grid-cols-2 gap-2.5">
+          <div>
+            <label
+              className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-muted"
+              htmlFor="finance-period-from-mobile"
+            >
+              De
+            </label>
+            <input
+              id="finance-period-from-mobile"
+              type="date"
+              value={customFrom}
+              onChange={(event) => onCustomFromChange(event.target.value)}
+              className={`w-full rounded-lg border bg-page px-2 py-1.5 text-sm outline-none transition-colors focus:border-brand-primary ${
+                periodMode === 'custom'
+                  ? 'border-brand-primary/60'
+                  : 'border-border'
+              }`}
+            />
+          </div>
+          <div>
+            <label
+              className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-muted"
+              htmlFor="finance-period-to-mobile"
+            >
+              Até
+            </label>
+            <input
+              id="finance-period-to-mobile"
+              type="date"
+              value={customTo}
+              onChange={(event) => onCustomToChange(event.target.value)}
+              className={`w-full rounded-lg border bg-page px-2 py-1.5 text-sm outline-none transition-colors focus:border-brand-primary ${
+                periodMode === 'custom'
+                  ? 'border-brand-primary/60'
+                  : 'border-border'
+              }`}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap justify-end gap-2 border-t border-border/70 pt-3">
+          {monthOptions.map((option) => {
+            const isActive =
+              periodMode === 'month' && selectedMonthKey === option.key;
+            return (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => onSelectMonth(option.key)}
+                className={`${chipClass(isActive)} capitalize`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={onSelectAll}
+            className={chipClass(periodMode === 'all')}
+          >
+            Todo o histórico
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop/tablet: datas à esquerda, quick filters à direita */}
+      <div className="hidden items-center justify-end gap-2 sm:flex">
+        <div className="flex items-end gap-2 border-r border-border/70 pr-3">
+          <div>
+            <label
+              className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted"
+              htmlFor="finance-period-from"
+            >
+              De
+            </label>
+            <input
+              id="finance-period-from"
+              type="date"
+              value={customFrom}
+              onChange={(event) => onCustomFromChange(event.target.value)}
+              className={`w-[9.75rem] rounded-lg border bg-page px-2.5 py-1.5 text-sm outline-none transition-colors focus:border-brand-primary ${
+                periodMode === 'custom'
+                  ? 'border-brand-primary/60'
+                  : 'border-border'
+              }`}
+            />
+          </div>
+          <div>
+            <label
+              className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted"
+              htmlFor="finance-period-to"
+            >
+              Até
+            </label>
+            <input
+              id="finance-period-to"
+              type="date"
+              value={customTo}
+              onChange={(event) => onCustomToChange(event.target.value)}
+              className={`w-[9.75rem] rounded-lg border bg-page px-2.5 py-1.5 text-sm outline-none transition-colors focus:border-brand-primary ${
+                periodMode === 'custom'
+                  ? 'border-brand-primary/60'
+                  : 'border-border'
+              }`}
+            />
+          </div>
+        </div>
+
         {monthOptions.map((option) => {
           const isActive =
             periodMode === 'month' && selectedMonthKey === option.key;
@@ -596,75 +757,6 @@ function PeriodFilter({
         >
           Todo o histórico
         </button>
-
-        <div className="hidden items-center gap-2 md:ml-1 md:flex md:border-l md:border-border/70 md:pl-3">
-          <label className="sr-only" htmlFor="finance-period-from">
-            De
-          </label>
-          <input
-            id="finance-period-from"
-            type="date"
-            value={customFrom}
-            onChange={(event) => onCustomFromChange(event.target.value)}
-            className={`w-[9.75rem] rounded-lg border bg-page px-2.5 py-1.5 text-sm outline-none transition-colors focus:border-brand-primary ${
-              periodMode === 'custom'
-                ? 'border-brand-primary/60'
-                : 'border-border'
-            }`}
-          />
-          <span className="text-xs text-muted">até</span>
-          <label className="sr-only" htmlFor="finance-period-to">
-            Até
-          </label>
-          <input
-            id="finance-period-to"
-            type="date"
-            value={customTo}
-            onChange={(event) => onCustomToChange(event.target.value)}
-            className={`w-[9.75rem] rounded-lg border bg-page px-2.5 py-1.5 text-sm outline-none transition-colors focus:border-brand-primary ${
-              periodMode === 'custom'
-                ? 'border-brand-primary/60'
-                : 'border-border'
-            }`}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-end gap-2.5 border-t border-border/70 pt-3.5 md:hidden">
-        <p className="w-full text-xs font-medium text-muted">Ou período livre</p>
-        <div>
-          <label className="sr-only" htmlFor="finance-period-from-mobile">
-            De
-          </label>
-          <input
-            id="finance-period-from-mobile"
-            type="date"
-            value={customFrom}
-            onChange={(event) => onCustomFromChange(event.target.value)}
-            className={`w-[9.75rem] rounded-lg border bg-page px-2.5 py-1.5 text-sm outline-none transition-colors focus:border-brand-primary ${
-              periodMode === 'custom'
-                ? 'border-brand-primary/60'
-                : 'border-border'
-            }`}
-          />
-        </div>
-        <span className="pb-1.5 text-xs text-muted">até</span>
-        <div>
-          <label className="sr-only" htmlFor="finance-period-to-mobile">
-            Até
-          </label>
-          <input
-            id="finance-period-to-mobile"
-            type="date"
-            value={customTo}
-            onChange={(event) => onCustomToChange(event.target.value)}
-            className={`w-[9.75rem] rounded-lg border bg-page px-2.5 py-1.5 text-sm outline-none transition-colors focus:border-brand-primary ${
-              periodMode === 'custom'
-                ? 'border-brand-primary/60'
-                : 'border-border'
-            }`}
-          />
-        </div>
       </div>
     </section>
   );
@@ -793,6 +885,7 @@ function EntryList({
   onAdd,
   onEdit,
   onDelete,
+  onPreviewReceipt,
 }: {
   title: string;
   emptyLabel: string;
@@ -802,6 +895,7 @@ function EntryList({
   onAdd: () => void;
   onEdit: (entry: FinanceEntry) => void;
   onDelete: (entry: FinanceEntry) => void;
+  onPreviewReceipt: (url: string) => void;
 }) {
   const titleClass =
     tone === 'income' ? 'text-emerald-950' : 'text-rose-950';
@@ -846,11 +940,13 @@ function EntryList({
             >
               <div className="flex items-start gap-3">
                 {entry.receiptImageUrl ? (
-                  <a
-                    href={financeMediaUrl(entry.receiptImageUrl)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border bg-page"
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onPreviewReceipt(financeMediaUrl(entry.receiptImageUrl!))
+                    }
+                    className="relative h-14 w-14 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-border bg-page transition-opacity hover:opacity-90"
+                    aria-label="Ver comprovante"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -858,7 +954,7 @@ function EntryList({
                       alt="Comprovante"
                       className="h-full w-full object-cover"
                     />
-                  </a>
+                  </button>
                 ) : (
                   <div
                     className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-dashed text-sm font-semibold ${placeholderClass}`}
@@ -927,6 +1023,7 @@ function EntryFormModal({
   onUpload,
   onClose,
   onSave,
+  onPreviewReceipt,
 }: {
   form: EntryFormState;
   editingId: string | null;
@@ -936,6 +1033,7 @@ function EntryFormModal({
   onUpload: (file: File | null) => void;
   onClose: () => void;
   onSave: () => void;
+  onPreviewReceipt: (url: string) => void;
 }) {
   const isIncome = form.kind === 'INCOME';
   const title = editingId
@@ -1213,14 +1311,16 @@ function EntryFormModal({
               </button>
               {form.receiptUrl ? (
                 <>
-                  <a
-                    href={financeMediaUrl(form.receiptUrl)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs font-medium text-brand-primary underline-offset-2 hover:underline"
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() =>
+                      onPreviewReceipt(financeMediaUrl(form.receiptUrl))
+                    }
+                    className="cursor-pointer text-xs font-medium text-brand-primary underline-offset-2 hover:underline disabled:opacity-50"
                   >
                     {form.receiptFileName || 'Ver comprovante'}
-                  </a>
+                  </button>
                   <button
                     type="button"
                     disabled={busy}
@@ -1259,6 +1359,54 @@ function EntryFormModal({
           >
             Cancelar
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReceiptPreviewModal({
+  url,
+  onClose,
+}: {
+  url: string;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/65 p-4 backdrop-blur-[2px]"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Comprovante"
+      onClick={onClose}
+    >
+      <div
+        className="relative max-h-[min(90dvh,52rem)] w-full max-w-3xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute -top-3 -right-3 z-10 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-sm text-muted shadow-md transition-colors hover:bg-page hover:text-foreground sm:-top-4 sm:-right-4"
+          aria-label="Fechar"
+        >
+          ✕
+        </button>
+        <div className="overflow-hidden rounded-[20px] border border-border bg-card shadow-2xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={url}
+            alt="Comprovante"
+            className="max-h-[min(86dvh,48rem)] w-full object-contain"
+          />
         </div>
       </div>
     </div>
