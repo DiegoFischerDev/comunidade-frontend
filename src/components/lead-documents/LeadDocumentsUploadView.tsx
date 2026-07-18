@@ -865,7 +865,7 @@ function FormPanel(props: {
             type="button"
             onClick={onSubmit}
             disabled={submitting}
-            className="w-full rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow hover:bg-brand-primary disabled:cursor-wait disabled:opacity-60"
+            className="w-full cursor-pointer rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow hover:bg-brand-primary disabled:cursor-wait disabled:opacity-60"
           >
             {submitting
               ? 'A enviar…'

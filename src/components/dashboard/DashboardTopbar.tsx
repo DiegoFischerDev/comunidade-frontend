@@ -122,7 +122,7 @@ export function DashboardTopbar({
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isImpersonating, stopImpersonation } = useAuth();
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
 
   const rawName = user?.name?.trim() ?? '';
@@ -224,6 +224,19 @@ export function DashboardTopbar({
             </nav>
 
             <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+              {isImpersonating ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await stopImpersonation();
+                  }}
+                  className="cursor-pointer rounded-full border border-brand-accent/45 bg-brand-accent/15 px-2.5 py-1.5 text-[11px] font-medium text-brand-accent transition hover:bg-brand-accent/25 sm:px-3 sm:text-xs"
+                >
+                  <span className="sm:hidden">Modo admin</span>
+                  <span className="hidden sm:inline">Voltar ao modo admin</span>
+                </button>
+              ) : null}
+
               {user ? (
                 <div className="hidden items-center gap-2 lg:flex">
                   {isActiveMember(user) ? (

@@ -8,35 +8,20 @@ export type MembershipAmounts = {
   pixCentavos: number;
 };
 
+/** Fallback só se a API falhar; preços reais vêm de `GET /stripe/membership-amounts`. */
 const DEFAULT_EUR_CENTS = 2300;
 const DEFAULT_PIX_CENTAVOS = 13800;
 
-function parsePositiveCents(raw: string | undefined, fallback: number): number {
-  const n = raw ? parseInt(String(raw).trim(), 10) : NaN;
-  return Number.isFinite(n) && n > 0 ? n : fallback;
-}
-
-/** Valores de fallback alinhados ao backend (`STRIPE_AMOUNT_EUR_CENTS` / `STRIPE_PIX_AMOUNT_BRL`). */
-export function getMembershipAmountsFromEnv(): MembershipAmounts {
-  const eurCents = parsePositiveCents(
-    process.env.STRIPE_AMOUNT_EUR_CENTS ??
-      process.env.NEXT_PUBLIC_STRIPE_AMOUNT_EUR_CENTS,
-    DEFAULT_EUR_CENTS,
-  );
-  const pixCentavos = parsePositiveCents(
-    process.env.STRIPE_PIX_AMOUNT_BRL ??
-      process.env.NEXT_PUBLIC_STRIPE_PIX_AMOUNT_BRL,
-    DEFAULT_PIX_CENTAVOS,
-  );
-  return { eurCents, pixCentavos };
+export function getDefaultMembershipAmounts(): MembershipAmounts {
+  return { eurCents: DEFAULT_EUR_CENTS, pixCentavos: DEFAULT_PIX_CENTAVOS };
 }
 
 export const DEFAULT_MEMBERSHIP_AMOUNTS: MembershipAmounts =
-  getMembershipAmountsFromEnv();
+  getDefaultMembershipAmounts();
 
 const MEMBERSHIP_AMOUNTS_API_PATH = '/stripe/membership-amounts';
 
-/** Obtém preços da anuidade no backend (fonte de verdade = env do servidor Stripe). */
+/** Obtém preços da anuidade no backend (fonte de verdade = env Stripe do servidor). */
 export async function fetchMembershipAmounts(): Promise<MembershipAmounts> {
   const base = (
     process.env.NEXT_PUBLIC_API_URL ||
@@ -49,7 +34,7 @@ export async function fetchMembershipAmounts(): Promise<MembershipAmounts> {
       cache: 'no-store',
     });
     if (!res.ok) {
-      return getMembershipAmountsFromEnv();
+      return getDefaultMembershipAmounts();
     }
     const data = (await res.json()) as Partial<MembershipAmounts>;
     const eurCents = Number(data.eurCents);
@@ -62,9 +47,9 @@ export async function fetchMembershipAmounts(): Promise<MembershipAmounts> {
     ) {
       return { eurCents, pixCentavos };
     }
-    return getMembershipAmountsFromEnv();
+    return getDefaultMembershipAmounts();
   } catch {
-    return getMembershipAmountsFromEnv();
+    return getDefaultMembershipAmounts();
   }
 }
 

@@ -58,21 +58,9 @@ function formatRafaSlotRangePt(
 
 const ROLES: UserRow['role'][] = ['USER', 'PARTNER', 'ADMIN'];
 
-type UsersAdminStats = Awaited<ReturnType<typeof api.admin.users.stats>>;
-
-function formatEuro(amount: number): string {
-  return new Intl.NumberFormat('pt-PT', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
-}
-
 export default function UsersPage() {
   const { user, impersonateAsUser } = useAuth();
   const [users, setUsers] = useState<UserRow[]>([]);
-  const [stats, setStats] = useState<UsersAdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
@@ -119,12 +107,8 @@ export default function UsersPage() {
       setLoading(true);
       setError('');
       try {
-        const [data, statsData] = await Promise.all([
-          api.admin.users.list(),
-          api.admin.users.stats(),
-        ]);
+        const data = await api.admin.users.list();
         setUsers(data);
-        setStats(statsData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar usuários.');
       } finally {
@@ -133,14 +117,10 @@ export default function UsersPage() {
     })();
   }, [user]);
 
-  async function refreshUsersAndStats() {
+  async function refreshUsers() {
     try {
-      const [data, statsData] = await Promise.all([
-        api.admin.users.list(),
-        api.admin.users.stats(),
-      ]);
+      const data = await api.admin.users.list();
       setUsers(data);
-      setStats(statsData);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'Erro ao atualizar dados.',
@@ -183,7 +163,7 @@ export default function UsersPage() {
         rafaCallSchedulingUnlocked: editRafaUnlocked,
         rafaCallSlotEndsAt: slotIso,
       });
-      await refreshUsersAndStats();
+      await refreshUsers();
       setEditingUser(null);
     } catch (err) {
       setError(
@@ -222,76 +202,11 @@ export default function UsersPage() {
 
       {loading ? (
         <p className="mt-4 text-sm text-muted">Carregando usuários…</p>
+      ) : users.length === 0 ? (
+        <p className="mt-4 text-sm text-muted">
+          Nenhum utilizador encontrado.
+        </p>
       ) : (
-        <>
-          {stats && (
-            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              <div className="rounded-xl border border-brand-accent/30 bg-brand-accent/10 px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-semibold tracking-wide text-brand-primary/70 uppercase">
-                  Total de utilizadores
-                </p>
-                <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-brand-primary">
-                  {stats.totalUsers}
-                </p>
-              </div>
-              <div className="rounded-xl border border-violet-200/80 bg-violet-50/90 px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-semibold tracking-wide text-violet-900/70 uppercase">
-                  Parceiros
-                </p>
-                <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-violet-950">
-                  {stats.partners}
-                </p>
-              </div>
-              <div className="rounded-xl border border-teal-200/80 bg-teal-50/90 px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-semibold tracking-wide text-teal-900/70 uppercase">
-                  Visitantes
-                </p>
-                <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-teal-950">
-                  {stats.visitors}
-                </p>
-              </div>
-              <div className="rounded-xl border border-brand-accent/30 bg-brand-accent/10 px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-semibold tracking-wide text-brand-primary/70 uppercase">
-                  Membros
-                </p>
-                <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-brand-primary">
-                  {stats.members}
-                </p>
-              </div>
-              <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-semibold tracking-wide text-emerald-900/70 uppercase">
-                  Total inscrições (EUR)
-                </p>
-                <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-emerald-950">
-                  {formatEuro(stats.totalMembershipRevenueEur)}
-                </p>
-                <p className="mt-1 text-[10px] leading-tight text-emerald-900/65">
-                  Soma de {stats.membershipPaymentsCount} pagamento(s) registados — preço
-                  atual da anuidade: {formatEuro(stats.membershipPriceEurUsed)} (PIX BRL
-                  contabilizado ao valor EUR em tempo de pagamento)
-                </p>
-              </div>
-              <div className="rounded-xl border border-sky-200/80 bg-sky-50/90 px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-semibold tracking-wide text-sky-900/70 uppercase">
-                  Total videochamadas (EUR)
-                </p>
-                <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-sky-950">
-                  {formatEuro(stats.totalRafacallUnlockRevenueEur)}
-                </p>
-                <p className="mt-1 text-[10px] leading-tight text-sky-900/65">
-                  Soma de {stats.rafaUnlockPaymentsCount} pagamento(s) da taxa de agendamento
-                  (Stripe) — preço atual da taxa EUR: {formatEuro(stats.rafacallFeeEurUsed)}. Não
-                  inclui quando o admin libera o agendamento manualmente sem pagamento.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {users.length === 0 ? (
-            <p className="mt-4 text-sm text-muted">
-              Nenhum utilizador encontrado.
-            </p>
-          ) : (
         <>
           <div className="mt-6">
             <label className="block text-xs font-medium text-foreground/90">
@@ -346,7 +261,7 @@ export default function UsersPage() {
                             u.id,
                             newRole as 'USER' | 'PARTNER' | 'ADMIN',
                           );
-                          await refreshUsersAndStats();
+                          await refreshUsers();
                         } catch (err) {
                           setError(
                             err instanceof Error
@@ -451,7 +366,7 @@ export default function UsersPage() {
                         }
                         try {
                           await api.admin.users.delete(u.id);
-                          await refreshUsersAndStats();
+                          await refreshUsers();
                         } catch (err) {
                           setError(
                             err instanceof Error
@@ -471,8 +386,6 @@ export default function UsersPage() {
               </tbody>
             </table>
           </div>
-        </>
-          )}
         </>
       )}
 

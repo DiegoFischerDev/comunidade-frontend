@@ -1052,6 +1052,13 @@ function toPropertyTypologyDraft(
   return value ?? '';
 }
 
+/** null/undefined = «Por definir»; só true/false são respostas explícitas. */
+function toHasPetDraft(value: boolean | null | undefined): boolean | null {
+  if (value === true) return true;
+  if (value === false) return false;
+  return null;
+}
+
 function CrmDeleteConfirmModal({
   item,
   saving,
@@ -1864,7 +1871,7 @@ function CrmClientModal({
   const hasPreferredCityChanges =
     normalizePreferredCityDraft(preferredCityDraft) !==
     normalizePreferredCityDraft(item.crmPreferredCity ?? '');
-  const hasPetChanges = hasPetDraft !== item.crmHasPet;
+  const hasPetChanges = hasPetDraft !== toHasPetDraft(item.crmHasPet);
   const hasChanges =
     hasCommentsChanges ||
     hasImmigrationDateChanges ||
@@ -2172,6 +2179,18 @@ function CrmClientModal({
                   <button
                     type="button"
                     disabled={saving}
+                    onClick={() => onHasPetChange(null)}
+                    className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                      hasPetDraft == null
+                        ? 'border-violet-300 bg-violet-100 text-violet-950'
+                        : 'border-border bg-card text-foreground hover:bg-page'
+                    }`}
+                  >
+                    Por definir
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
                     onClick={() => onHasPetChange(true)}
                     className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                       hasPetDraft === true
@@ -2192,18 +2211,6 @@ function CrmClientModal({
                     }`}
                   >
                     Não
-                  </button>
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => onHasPetChange(null)}
-                    className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                      hasPetDraft === null
-                        ? 'border-violet-300 bg-violet-100 text-violet-950'
-                        : 'border-border bg-card text-foreground hover:bg-page'
-                    }`}
-                  >
-                    Por definir
                   </button>
                 </div>
               </div>
@@ -2439,7 +2446,7 @@ export default function CrmPage() {
     setVideoCallTimeDraft(toVideoCallTimeDraft(item));
     setPropertyTypologyDraft(toPropertyTypologyDraft(item.crmPropertyTypology));
     setPreferredCityDraft(item.crmPreferredCity ?? '');
-    setHasPetDraft(item.crmHasPet);
+    setHasPetDraft(toHasPetDraft(item.crmHasPet));
   }, []);
 
   const handleModalStatusChange = useCallback(
@@ -2465,7 +2472,7 @@ export default function CrmPage() {
         setVideoCallTimeDraft(toVideoCallTimeDraft(updated));
         setPropertyTypologyDraft(toPropertyTypologyDraft(updated.crmPropertyTypology));
         setPreferredCityDraft(updated.crmPreferredCity ?? '');
-        setHasPetDraft(updated.crmHasPet);
+        setHasPetDraft(toHasPetDraft(updated.crmHasPet));
         setColumns((prev) =>
           moveItemBetweenColumns(prev, selectedItem.id, status, updated),
         );
@@ -2501,7 +2508,7 @@ export default function CrmPage() {
     const preferredCityChanged =
       normalizePreferredCityDraft(preferredCityDraft) !==
       normalizePreferredCityDraft(selectedItem.crmPreferredCity ?? '');
-    const hasPetChanged = hasPetDraft !== selectedItem.crmHasPet;
+    const hasPetChanged = hasPetDraft !== toHasPetDraft(selectedItem.crmHasPet);
 
     if (
       !commentsChanged &&
@@ -2564,7 +2571,7 @@ export default function CrmPage() {
       setVideoCallTimeDraft(toVideoCallTimeDraft(updated));
       setPropertyTypologyDraft(toPropertyTypologyDraft(updated.crmPropertyTypology));
       setPreferredCityDraft(updated.crmPreferredCity ?? '');
-      setHasPetDraft(updated.crmHasPet);
+      setHasPetDraft(toHasPetDraft(updated.crmHasPet));
       setColumns((prev) =>
         sortCrmBoardColumns(
           moveItemBetweenColumns(prev, updated.id, updated.crmStatus, updated),

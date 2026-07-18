@@ -491,11 +491,15 @@ export default function AdminFinanceiroPage() {
           label="Receitas"
           value={formatCrmEuroAmount(incomesTotal)}
           tone="income"
+          caption={periodSummaryLabel}
+          captionCapitalize={periodMode === 'month'}
         />
         <SummaryStat
           label="Despesas"
           value={formatCrmEuroAmount(expensesTotal)}
           tone="expense"
+          caption={periodSummaryLabel}
+          captionCapitalize={periodMode === 'month'}
         />
         <SummaryStat
           label="Saldo"
@@ -892,7 +896,7 @@ function SummaryStat({
           >
             {value}
           </p>
-          {emphasized && caption ? (
+          {caption ? (
             <span
               className={`mt-3 inline-flex max-w-full items-center gap-1.5 rounded-full border border-brand-accent/35 bg-brand-accent/15 px-2.5 py-1 text-xs font-semibold text-brand-primary ${
                 captionCapitalize ? 'capitalize' : ''

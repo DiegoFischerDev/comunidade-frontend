@@ -68,17 +68,17 @@ export function ServicesSpecialistsImage({
           />
         </div>
         <div className="dashboard-services-specialists-fade" aria-hidden />
-
-        {floatingCta || showFloatingCta ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-4 md:bottom-5">
-            {floatingCta ? (
-              <div className="pointer-events-auto">{floatingCta}</div>
-            ) : (
-              <ServicesLearnMoreButton className="pointer-events-auto w-[min(100%,18rem)] shadow-sm md:w-[min(100%,16rem)]" />
-            )}
-          </div>
-        ) : null}
       </div>
+
+      {floatingCta || showFloatingCta ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-1 z-20 flex justify-center px-4 md:bottom-4 md:translate-y-0 lg:bottom-0 lg:translate-y-1">
+          {floatingCta ? (
+            <div className="pointer-events-auto">{floatingCta}</div>
+          ) : (
+            <ServicesLearnMoreButton className="pointer-events-auto w-[min(100%,18rem)] shadow-sm md:w-[min(100%,16rem)]" />
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

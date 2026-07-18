@@ -1,7 +1,7 @@
 import {
   formatMembershipBrl,
   formatMembershipEur,
-  getMembershipAmountsFromEnv,
+  getDefaultMembershipAmounts,
   type MembershipAmounts,
   type MembershipPaymentMethod,
   validateMembershipSignupFields,
@@ -31,7 +31,7 @@ export async function fetchRafacallAmounts(): Promise<RafacallAmounts> {
       cache: 'no-store',
     });
     if (!res.ok) {
-      return getMembershipAmountsFromEnv();
+      return getDefaultMembershipAmounts();
     }
     const data = (await res.json()) as Partial<RafacallAmounts>;
     const eurCents = Number(data.eurCents);
@@ -44,9 +44,9 @@ export async function fetchRafacallAmounts(): Promise<RafacallAmounts> {
     ) {
       return { eurCents, pixCentavos };
     }
-    return getMembershipAmountsFromEnv();
+    return getDefaultMembershipAmounts();
   } catch {
-    return getMembershipAmountsFromEnv();
+    return getDefaultMembershipAmounts();
   }
 }
 
