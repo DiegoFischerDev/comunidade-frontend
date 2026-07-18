@@ -1425,7 +1425,7 @@ function CrmPaymentsSection({
     setPaidAt(payment.paidAt);
     setAmount(String(payment.amount).replace('.', ','));
     setComment(payment.comment ?? '');
-    setReceiptUrl(payment.receiptImageUrl);
+    setReceiptUrl(payment.receiptImageUrl ?? '');
     setReceiptFileName('');
   };
 
@@ -1463,10 +1463,8 @@ function CrmPaymentsSection({
       toast.error('Indica um valor válido (mín. 0,01 €).');
       return;
     }
-    if (!receiptUrl.trim()) {
-      toast.error('Carrega o comprovante do pagamento.');
-      return;
-    }
+
+    const receiptImageUrl = receiptUrl.trim() || null;
 
     setBusy(true);
     try {
@@ -1477,7 +1475,7 @@ function CrmPaymentsSection({
           {
             paidAt: paidAt.trim(),
             amount: amountValue,
-            receiptImageUrl: receiptUrl.trim(),
+            receiptImageUrl,
             comment: comment.trim() || null,
           },
         );
@@ -1491,7 +1489,7 @@ function CrmPaymentsSection({
         const created = await api.admin.rafacall.createCrmPayment(bookingId, {
           paidAt: paidAt.trim(),
           amount: amountValue,
-          receiptImageUrl: receiptUrl.trim(),
+          receiptImageUrl,
           comment: comment.trim() || null,
         });
         onPaymentsChange([created, ...payments]);
@@ -1571,21 +1569,33 @@ function CrmPaymentsSection({
                   className="rounded-xl border border-emerald-200/80 bg-card px-3 py-2.5"
                 >
                   <div className="flex items-start gap-3">
-                    <a
-                      href={crmMediaUrl(payment.receiptImageUrl)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border bg-page"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={crmMediaUrl(payment.receiptImageUrl)}
-                        alt="Comprovante"
-                        className="h-full w-full object-cover"
-                      />
-                    </a>
+                    {payment.receiptImageUrl ? (
+                      <a
+                        href={crmMediaUrl(payment.receiptImageUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border bg-page"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={crmMediaUrl(payment.receiptImageUrl)}
+                          alt="Comprovante"
+                          className="h-full w-full object-cover"
+                        />
+                      </a>
+                    ) : (
+                      <div
+                        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-dashed border-emerald-200/80 bg-emerald-50/50 text-emerald-800/50"
+                        aria-hidden
+                      >
+                        <EuroIcon className="h-5 w-5" />
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-foreground">
+                        {payment.title || 'Pagamento Relocation'}
+                      </p>
+                      <p className="mt-0.5 text-sm font-medium tabular-nums text-foreground/90">
                         {formatCrmEuroAmount(payment.amount)}
                       </p>
                       <p className="mt-0.5 text-xs text-muted">
@@ -1682,7 +1692,9 @@ function CrmPaymentsSection({
                 />
               </div>
               <div>
-                <p className="text-xs font-medium text-foreground">Comprovante</p>
+                <p className="text-xs font-medium text-foreground">
+                  Comprovante (opcional)
+                </p>
                 <div className="mt-1.5 flex flex-wrap items-center gap-2">
                   <input
                     ref={fileInputRef}
@@ -1704,17 +1716,29 @@ function CrmPaymentsSection({
                     {receiptUrl ? 'Trocar imagem' : 'Carregar imagem'}
                   </button>
                   {receiptUrl ? (
-                    <a
-                      href={crmMediaUrl(receiptUrl)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-medium text-brand-primary underline-offset-2 hover:underline"
-                    >
-                      {receiptFileName || 'Ver comprovante'}
-                    </a>
-                  ) : (
-                    <span className="text-xs text-muted">Obrigatório</span>
-                  )}
+                    <>
+                      <a
+                        href={crmMediaUrl(receiptUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-medium text-brand-primary underline-offset-2 hover:underline"
+                      >
+                        {receiptFileName || 'Ver comprovante'}
+                      </a>
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => {
+                          setReceiptUrl('');
+                          setReceiptFileName('');
+                          if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                        className="text-xs font-medium text-muted underline-offset-2 hover:underline disabled:opacity-50"
+                      >
+                        Remover
+                      </button>
+                    </>
+                  ) : null}
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">

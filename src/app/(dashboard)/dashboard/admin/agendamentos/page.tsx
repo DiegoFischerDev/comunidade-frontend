@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { api, getUserFacingApiError } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
+import { AdminVideoCallSlotPicker } from '@/components/rafacall/AdminVideoCallSlotPicker';
 import { showRafacallAdminBookingErrorToast } from '@/lib/rafacall-admin-booking-errors';
 import { toast } from '@/lib/toast';
 import {
@@ -172,150 +173,9 @@ function previewSlotRangeFromManual(
   return { startsAt, endsAt };
 }
 
-function AdminManualSlotFields({
-  idPrefix,
-  date,
-  time,
-  timeZone,
-  disabled,
-  onDateChange,
-  onTimeChange,
-}: {
-  idPrefix: string;
-  date: string;
-  time: string;
-  timeZone: string;
-  disabled?: boolean;
-  onDateChange: (value: string) => void;
-  onTimeChange: (value: string) => void;
-}) {
-  return (
-    <div className="space-y-3 rounded-xl border border-dashed border-border bg-page/40 p-4">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Ou dia e hora manual
-        </p>
-        <p className="mt-1 text-xs text-muted">
-          Fora da grelha habitual — qualquer dia ou horário ({timeZone}).
-        </p>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <label className="block text-sm font-medium text-foreground" htmlFor={`${idPrefix}-date`}>
-            Data
-          </label>
-          <input
-            id={`${idPrefix}-date`}
-            type="date"
-            value={date}
-            disabled={disabled}
-            onChange={(e) => onDateChange(e.target.value)}
-            className="mt-2 w-full rounded-xl border border-border bg-page px-4 py-2.5 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-foreground" htmlFor={`${idPrefix}-time`}>
-            Hora
-          </label>
-          <input
-            id={`${idPrefix}-time`}
-            type="time"
-            value={time}
-            disabled={disabled}
-            onChange={(e) => onTimeChange(e.target.value)}
-            className="mt-2 w-full rounded-xl border border-border bg-page px-4 py-2.5 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 type RafacallAvailabilityPayload = Awaited<
   ReturnType<typeof api.rafacall.guestAvailability>
 >;
-
-function AvailabilityQuickPickSection({
-  tz,
-  availability,
-  selectedDate,
-  manualDate,
-  manualTime,
-  isBusy,
-  onDateChange,
-  onSlotSelect,
-}: {
-  tz: string;
-  availability: RafacallAvailabilityPayload | null;
-  selectedDate: string;
-  manualDate: string;
-  manualTime: string;
-  isBusy: boolean;
-  onDateChange: (date: string) => void;
-  onSlotSelect: (slot: { startsAt: string; endsAt: string }) => void;
-}) {
-  const daySlots = availability?.days.find((d) => d.date === selectedDate)?.slots ?? [];
-
-  if (!availability) return null;
-
-  return (
-    <div className="space-y-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-        Escolhe na grelha
-      </p>
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Dia</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {availability.days
-            .filter((d) => d.slots.length > 0)
-            .map((d) => (
-              <button
-                key={d.date}
-                type="button"
-                disabled={isBusy}
-                onClick={() => onDateChange(d.date)}
-                className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                  selectedDate === d.date
-                    ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
-                    : 'border-border bg-card text-foreground hover:bg-page'
-                }`}
-              >
-                {prettyYmdPt(d.date, tz)}
-              </button>
-            ))}
-        </div>
-      </div>
-
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Horário</p>
-        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {daySlots.map((slot) => {
-            const slotTime = hmInTz(slot.startsAt, tz);
-            const isSelected = manualDate === selectedDate && manualTime === slotTime;
-            return (
-              <button
-                key={slot.startsAt}
-                type="button"
-                disabled={isBusy}
-                onClick={() => onSlotSelect(slot)}
-                className={`cursor-pointer rounded-xl border px-3 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                  isSelected
-                    ? 'border-emerald-400 bg-emerald-50 text-emerald-900'
-                    : 'border-border bg-card text-foreground hover:bg-page'
-                }`}
-              >
-                {formatSlotTimeInTz(slot.startsAt, tz)}
-              </button>
-            );
-          })}
-        </div>
-        {daySlots.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">Sem horários neste dia.</p>
-        ) : null}
-      </div>
-    </div>
-  );
-}
 
 function WhatsAppTextLink({
   href,
@@ -1014,31 +874,19 @@ function FreeSlotBookModal({
         </div>
 
         <div className="mt-4">
-          {isLoadingAvailability ? (
-            <p className="text-sm text-muted">A carregar horários…</p>
-          ) : (
-            <AvailabilityQuickPickSection
-              tz={tz}
-              availability={availability}
-              selectedDate={selectedDate}
-              manualDate={manualDate}
-              manualTime={manualTime}
-              isBusy={isBusy}
-              onDateChange={onDateChange}
-              onSlotSelect={onSlotSelect}
-            />
-          )}
-        </div>
-
-        <div className="mt-4">
-          <AdminManualSlotFields
+          <AdminVideoCallSlotPicker
             idPrefix="quick-book"
-            date={manualDate}
-            time={manualTime}
-            timeZone={tz}
+            tz={tz}
+            availability={availability}
+            isLoadingAvailability={isLoadingAvailability}
+            selectedDate={selectedDate}
+            manualDate={manualDate}
+            manualTime={manualTime}
             disabled={isBusy}
-            onDateChange={onManualDateChange}
-            onTimeChange={onManualTimeChange}
+            onDateChange={onDateChange}
+            onSlotSelect={onSlotSelect}
+            onManualDateChange={onManualDateChange}
+            onManualTimeChange={onManualTimeChange}
           />
         </div>
 
@@ -1158,31 +1006,20 @@ function RescheduleBookingModal({
         ) : null}
 
         <div className="mt-4">
-          {isLoadingAvailability ? (
-            <p className="text-sm text-muted">A carregar horários…</p>
-          ) : availability ? (
-            <AvailabilityQuickPickSection
-              tz={leadTz}
-              availability={availability}
-              selectedDate={selectedDate}
-              manualDate={manualDate}
-              manualTime={manualTime}
-              isBusy={isBusy}
-              onDateChange={onDateChange}
-              onSlotSelect={onSlotSelect}
-            />
-          ) : null}
-        </div>
-
-        <div className="mt-4">
-          <AdminManualSlotFields
+          <AdminVideoCallSlotPicker
+            key={target.id}
             idPrefix="reschedule"
-            date={manualDate}
-            time={manualTime}
-            timeZone={leadTz}
+            tz={leadTz}
+            availability={availability}
+            isLoadingAvailability={isLoadingAvailability}
+            selectedDate={selectedDate}
+            manualDate={manualDate}
+            manualTime={manualTime}
             disabled={isBusy}
-            onDateChange={onManualDateChange}
-            onTimeChange={onManualTimeChange}
+            onDateChange={onDateChange}
+            onSlotSelect={onSlotSelect}
+            onManualDateChange={onManualDateChange}
+            onManualTimeChange={onManualTimeChange}
           />
         </div>
 

@@ -77,10 +77,33 @@ export type RafacallCrmPropertyTypology =
 
 export type RafacallCrmPayment = {
   id: string;
+  title: string;
   paidAt: string;
   amount: number;
-  receiptImageUrl: string;
+  receiptImageUrl: string | null;
   comment: string | null;
+};
+
+export type FinanceEntryKind = 'INCOME' | 'EXPENSE';
+
+export type FinanceEntry = {
+  id: string;
+  kind: FinanceEntryKind;
+  title: string;
+  paidAt: string;
+  amount: number;
+  receiptImageUrl: string | null;
+  comment: string | null;
+  whatsappDigits: string | null;
+  clientName: string | null;
+};
+
+export type FinanceBoard = {
+  incomes: FinanceEntry[];
+  expenses: FinanceEntry[];
+  incomesTotal: number;
+  expensesTotal: number;
+  balance: number;
 };
 
 export type RafacallCrmItem = {
@@ -1056,7 +1079,7 @@ export const api = {
         body: {
           paidAt: string;
           amount: number;
-          receiptImageUrl: string;
+          receiptImageUrl?: string | null;
           comment?: string | null;
         },
       ) =>
@@ -1070,7 +1093,7 @@ export const api = {
         body: {
           paidAt?: string;
           amount?: number;
-          receiptImageUrl?: string;
+          receiptImageUrl?: string | null;
           comment?: string | null;
         },
       ) =>
@@ -1086,6 +1109,42 @@ export const api = {
           `/admin/rafacall/crm/${bookingId}/payments/${paymentId}`,
           { method: 'DELETE' },
         ),
+    },
+    finance: {
+      list: () => request<FinanceBoard>('/admin/finance'),
+      create: (body: {
+        kind: FinanceEntryKind;
+        title: string;
+        paidAt: string;
+        amount: number;
+        receiptImageUrl?: string | null;
+        comment?: string | null;
+        whatsapp?: string | null;
+      }) =>
+        request<FinanceEntry>('/admin/finance', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
+      update: (
+        id: string,
+        body: {
+          kind?: FinanceEntryKind;
+          title?: string;
+          paidAt?: string;
+          amount?: number;
+          receiptImageUrl?: string | null;
+          comment?: string | null;
+          whatsapp?: string | null;
+        },
+      ) =>
+        request<FinanceEntry>(`/admin/finance/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        }),
+      delete: (id: string) =>
+        request<{ ok: true }>(`/admin/finance/${id}`, {
+          method: 'DELETE',
+        }),
     },
     grupoTeste: {
       list: () =>
