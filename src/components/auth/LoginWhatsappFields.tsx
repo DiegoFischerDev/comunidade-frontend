@@ -29,6 +29,16 @@ type Props = {
   rememberInStorage?: boolean;
 };
 
+function buildFullDigits(
+  dial: string,
+  localRaw: string,
+  rememberInStorage: boolean,
+): string {
+  const localDigits = loginPhoneDigitsOnly(localRaw);
+  if (!rememberInStorage && !localDigits) return "";
+  return `${loginPhoneDigitsOnly(dial)}${localDigits}`;
+}
+
 /**
  * País (dropdown) + número local. Lembra país e dígitos em localStorage (sem senha).
  */
@@ -47,14 +57,40 @@ export function LoginWhatsappFields({
   const [dial, setDial] = useState(LOGIN_COUNTRY_DIALS[0]!.dial);
   const [local, setLocal] = useState("");
   const [ready, setReady] = useState(false);
+
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  /** Evita que o sync de `value` sobrescreva o estado logo após um emit interno. */
+  const ignoreNextValueSyncRef = useRef(false);
+  const rememberInStorageRef = useRef(rememberInStorage);
+  rememberInStorageRef.current = rememberInStorage;
   const dialRef = useRef(dial);
   dialRef.current = dial;
+  const valueRef = useRef(value);
+  valueRef.current = value;
 
   const persistPhoneParts = (nextDial: string, nextLocal: string) => {
-    if (!rememberInStorage) return;
+    if (!rememberInStorageRef.current) return;
     persistLoginPhonePartsToStorage(nextDial, nextLocal);
   };
 
+  const emitToParent = (nextDial: string, nextLocal: string) => {
+    const nextFull = buildFullDigits(
+      nextDial,
+      nextLocal,
+      rememberInStorageRef.current,
+    );
+    if (loginPhoneDigitsOnly(nextFull) === loginPhoneDigitsOnly(valueRef.current)) {
+      return;
+    }
+    ignoreNextValueSyncRef.current = true;
+    valueRef.current = nextFull;
+    onChangeRef.current(nextFull);
+    persistPhoneParts(nextDial, nextLocal);
+  };
+
+  // Hidratação inicial (uma vez).
   useEffect(() => {
     const { dial: d, local: l } = rememberInStorage
       ? readDialAndLocalFromStorageAndValue(value)
@@ -62,7 +98,7 @@ export function LoginWhatsappFields({
           const sv = loginPhoneDigitsOnly(value);
           const defaultDial = LOGIN_COUNTRY_DIALS[0]!.dial;
           if (sv) return parseFullDigitsToDialLocal(sv, defaultDial, defaultDial);
-          return { dial: defaultDial, local: '' };
+          return { dial: defaultDial, local: "" };
         })();
     setDial(d);
     setLocal(l);
@@ -70,33 +106,33 @@ export function LoginWhatsappFields({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Sync externo (ex.: reset do formulário). Não corre após emit interno.
   useEffect(() => {
     if (!ready) return;
-    if (!isPresetCountryDial(dialRef.current)) {
+    if (ignoreNextValueSyncRef.current) {
+      ignoreNextValueSyncRef.current = false;
       return;
     }
+    const currentDial = dialRef.current;
+    if (!isPresetCountryDial(currentDial) && loginPhoneDigitsOnly(currentDial)) {
+      // DDI manual: não re-parsear pelo value (perderíamos o DDI custom).
+      return;
+    }
+
     const v = loginPhoneDigitsOnly(value);
-    if (!v) return;
+    if (!v) {
+      setLocal((prev) => (prev === "" ? prev : ""));
+      return;
+    }
+
     const p = parseFullDigitsToDialLocal(
       v,
       LOGIN_COUNTRY_DIALS[0]!.dial,
-      dialRef.current,
+      currentDial,
     );
-    setDial(p.dial);
-    setLocal(p.local);
+    setDial((prev) => (prev === p.dial ? prev : p.dial));
+    setLocal((prev) => (loginPhoneDigitsOnly(prev) === p.local ? prev : p.local));
   }, [value, ready]);
-
-  useEffect(() => {
-    if (!ready) return;
-    const localDigits = loginPhoneDigitsOnly(local);
-    const full = dial + localDigits;
-    if (!rememberInStorage && !localDigits) {
-      onChange('');
-      return;
-    }
-    onChange(full);
-    persistPhoneParts(dial, local);
-  }, [ready, dial, local, onChange, rememberInStorage]);
 
   const selectId = `${idPrefix}-country`;
   const localId = `${idPrefix}-whatsapp-local`;
@@ -108,18 +144,16 @@ export function LoginWhatsappFields({
     : (LOGIN_COUNTRY_DIALS.find((c) => c.dial === dial) ??
       LOGIN_COUNTRY_DIALS[0]!);
 
-  const selectValue = isCustom
-    ? LOGIN_COUNTRY_CUSTOM_SELECT
-    : dial;
+  const selectValue = isCustom ? LOGIN_COUNTRY_CUSTOM_SELECT : dial;
 
   function handleCountrySelect(next: string) {
     if (next === LOGIN_COUNTRY_CUSTOM_SELECT) {
       setDial("");
-      persistPhoneParts("", local);
+      emitToParent("", local);
       return;
     }
     setDial(next);
-    persistPhoneParts(next, local);
+    emitToParent(next, local);
   }
 
   const chevronBg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`;
@@ -149,8 +183,8 @@ export function LoginWhatsappFields({
           aria-invalid={hasError || undefined}
           className={`box-border h-full min-h-[2.5rem] w-full min-w-0 max-w-full cursor-pointer appearance-none rounded-lg border bg-card py-1.5 pl-1 pr-5 text-center text-lg leading-none sm:min-h-0 sm:py-2 sm:pl-1.5 sm:pr-7 sm:text-2xl ${
             hasError
-              ? 'border-red-700 focus:border-red-700 focus:outline-none focus:ring-1 focus:ring-red-700'
-              : 'border-border focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25'
+              ? "border-red-700 focus:border-red-700 focus:outline-none focus:ring-1 focus:ring-red-700"
+              : "border-border focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
           }`}
           style={{
             backgroundImage: chevronBg,
@@ -175,8 +209,8 @@ export function LoginWhatsappFields({
         <div
           className={`relative flex min-w-0 flex-1 overflow-hidden rounded-lg border ${
             hasError
-              ? 'border-red-700 focus-within:border-red-700 focus-within:ring-1 focus-within:ring-red-700'
-              : 'border-border focus-within:border-brand-primary focus-within:ring-2 focus-within:ring-brand-primary/25'
+              ? "border-red-700 focus-within:border-red-700 focus-within:ring-1 focus-within:ring-red-700"
+              : "border-border focus-within:border-brand-primary focus-within:ring-2 focus-within:ring-brand-primary/25"
           }`}
         >
           {isCustom ? (
@@ -197,7 +231,7 @@ export function LoginWhatsappFields({
                 onChange={(e) => {
                   const next = loginPhoneDigitsOnly(e.target.value).slice(0, 5);
                   setDial(next);
-                  persistPhoneParts(next, local);
+                  emitToParent(next, local);
                 }}
                 placeholder="DDI"
                 maxLength={5}
@@ -226,7 +260,7 @@ export function LoginWhatsappFields({
             onChange={(e) => {
               const next = e.target.value;
               setLocal(next);
-              persistPhoneParts(dial, next);
+              emitToParent(dial, next);
             }}
             placeholder={
               dial === "351"
@@ -240,7 +274,7 @@ export function LoginWhatsappFields({
             aria-invalid={hasError || undefined}
             aria-describedby={hasError ? `${idPrefix}-phone-error` : undefined}
             className={`min-w-0 flex-1 border-0 bg-card px-3 py-2 text-sm outline-none placeholder:text-muted/80 ${
-              hasError ? 'text-red-900' : 'text-foreground'
+              hasError ? "text-red-900" : "text-foreground"
             }`}
           />
           {hasError ? (

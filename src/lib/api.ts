@@ -59,7 +59,7 @@ export type ApiHttpError = HttpErrorLike;
 export { getUserFacingApiError } from './api-error-message';
 
 export type RafacallCrmStatus =
-  | 'ENVIOU_MENSAGEM'
+  | 'IMIGRACAO_NULL'
   | 'IMIGRACAO_LONGE'
   | 'IMIGRACAO_PERTO'
   | 'VIDEO_CHAMADA_AGENDADA'
@@ -75,6 +75,14 @@ export type RafacallCrmPropertyTypology =
   | 'T4'
   | 'T5';
 
+export type RafacallCrmPayment = {
+  id: string;
+  paidAt: string;
+  amount: number;
+  receiptImageUrl: string;
+  comment: string | null;
+};
+
 export type RafacallCrmItem = {
   id: string;
   bookingStatus: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
@@ -85,6 +93,8 @@ export type RafacallCrmItem = {
   crmPropertyTypology: RafacallCrmPropertyTypology | null;
   crmPreferredCity: string | null;
   crmHasPet: boolean | null;
+  payments: RafacallCrmPayment[];
+  paymentsTotal: number;
   startsAt: string;
   endsAt: string;
   bookingTimezone: string;
@@ -1041,6 +1051,41 @@ export const api = {
         request<{ ok: true }>(`/admin/rafacall/crm/${bookingId}`, {
           method: 'DELETE',
         }),
+      createCrmPayment: (
+        bookingId: string,
+        body: {
+          paidAt: string;
+          amount: number;
+          receiptImageUrl: string;
+          comment?: string | null;
+        },
+      ) =>
+        request<RafacallCrmPayment>(`/admin/rafacall/crm/${bookingId}/payments`, {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
+      updateCrmPayment: (
+        bookingId: string,
+        paymentId: string,
+        body: {
+          paidAt?: string;
+          amount?: number;
+          receiptImageUrl?: string;
+          comment?: string | null;
+        },
+      ) =>
+        request<RafacallCrmPayment>(
+          `/admin/rafacall/crm/${bookingId}/payments/${paymentId}`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify(body),
+          },
+        ),
+      deleteCrmPayment: (bookingId: string, paymentId: string) =>
+        request<{ ok: true }>(
+          `/admin/rafacall/crm/${bookingId}/payments/${paymentId}`,
+          { method: 'DELETE' },
+        ),
     },
     grupoTeste: {
       list: () =>

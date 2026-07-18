@@ -42,10 +42,31 @@ export function formatCrmPetLabel(value: boolean | null | undefined): string {
   return 'Por definir';
 }
 
+export function formatCrmEuroAmount(amount: number): string {
+  return new Intl.NumberFormat('pt-PT', {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(amount);
+}
+
+export function formatCrmPaymentDateLabel(ymd: string | null | undefined): string | null {
+  if (!ymd?.trim()) return null;
+  const match = ymd.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return ymd;
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12));
+  if (Number.isNaN(date.getTime())) return ymd;
+  return date.toLocaleDateString('pt-PT', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
 export const CRM_IMMIGRATION_IMMEDIATE_VALUE = 'IMEDIATO';
 
 export const RAFA_CALL_CRM_STATUS_ORDER: RafacallCrmStatus[] = [
-  'ENVIOU_MENSAGEM',
+  'IMIGRACAO_NULL',
   'IMIGRACAO_LONGE',
   'IMIGRACAO_PERTO',
   'VIDEO_CHAMADA_AGENDADA',
@@ -55,7 +76,7 @@ export const RAFA_CALL_CRM_STATUS_ORDER: RafacallCrmStatus[] = [
 ];
 
 export const RAFA_CALL_CRM_STATUS_LABELS: Record<RafacallCrmStatus, string> = {
-  ENVIOU_MENSAGEM: 'Sem data para imigar',
+  IMIGRACAO_NULL: 'Sem data para imigar',
   IMIGRACAO_LONGE: 'Data para imigrar longe',
   IMIGRACAO_PERTO: 'Data para imigrar perto',
   VIDEO_CHAMADA_AGENDADA: 'Vídeo chamada agendada',
@@ -74,7 +95,7 @@ export type RafacallCrmColumnTone = {
 };
 
 export const RAFA_CALL_CRM_STATUS_TONES: Record<RafacallCrmStatus, RafacallCrmColumnTone> = {
-  ENVIOU_MENSAGEM: {
+  IMIGRACAO_NULL: {
     column: 'bg-slate-500/[0.06]',
     header: 'bg-slate-500/10',
     border: 'border-slate-200/80',
@@ -133,17 +154,18 @@ export const RAFA_CALL_CRM_STATUS_TONES: Record<RafacallCrmStatus, RafacallCrmCo
 };
 
 const CRM_STATUS_ALIASES: Partial<Record<string, RafacallCrmStatus>> = {
+  ENVIOU_MENSAGEM: 'IMIGRACAO_NULL',
   IMIGRACAO_MUITO_LONGE: 'IMIGRACAO_LONGE',
 };
 
-const FALLBACK_CRM_COLUMN_TONE = RAFA_CALL_CRM_STATUS_TONES.ENVIOU_MENSAGEM;
+const FALLBACK_CRM_COLUMN_TONE = RAFA_CALL_CRM_STATUS_TONES.IMIGRACAO_NULL;
 
 export function normalizeCrmStatus(status: string): RafacallCrmStatus {
   const aliased = CRM_STATUS_ALIASES[status] ?? status;
   if (RAFA_CALL_CRM_STATUS_ORDER.includes(aliased as RafacallCrmStatus)) {
     return aliased as RafacallCrmStatus;
   }
-  return 'ENVIOU_MENSAGEM';
+  return 'IMIGRACAO_NULL';
 }
 
 export function getCrmColumnTone(status: string | RafacallCrmStatus): RafacallCrmColumnTone {

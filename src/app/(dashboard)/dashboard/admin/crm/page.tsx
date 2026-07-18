@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { api, getUserFacingApiError, type RafacallCrmItem, type RafacallCrmStatus } from '@/lib/api';
+import { api, getUserFacingApiError, type RafacallCrmItem, type RafacallCrmPayment, type RafacallCrmStatus } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { AdminVideoCallSlotPicker } from '@/components/rafacall/AdminVideoCallSlotPicker';
 import { showRafacallAdminBookingErrorToast } from '@/lib/rafacall-admin-booking-errors';
 import { toast } from '@/lib/toast';
-import { CRM_IMMIGRATION_IMMEDIATE_VALUE, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER, RAFA_CALL_CRM_STATUS_LABELS, RAFA_CALL_CRM_STATUS_ORDER, formatCrmPetLabel, formatCrmPropertyTypologyLabel, getCrmColumnTone, formatImmigrationDateLabel, formatImmigrationMonthYear, isCrmImmigrationImmediate, normalizeCrmBoardColumns, sortCrmBoardColumns, toImmigrationDateInputValue } from '@/lib/rafacall-crm';
+import { CRM_IMMIGRATION_IMMEDIATE_VALUE, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER, RAFA_CALL_CRM_STATUS_LABELS, RAFA_CALL_CRM_STATUS_ORDER, formatCrmEuroAmount, formatCrmPaymentDateLabel, formatCrmPetLabel, formatCrmPropertyTypologyLabel, getCrmColumnTone, formatImmigrationDateLabel, formatImmigrationMonthYear, isCrmImmigrationImmediate, normalizeCrmBoardColumns, sortCrmBoardColumns, toImmigrationDateInputValue } from '@/lib/rafacall-crm';
 import type { RafacallCrmPropertyTypology } from '@/lib/rafacall-crm';
 import {
   CENTERED_PEEK_CAROUSEL_ITEM,
@@ -233,7 +233,7 @@ function formatVideoCallDetail(
   if (!item.hasVideoCall) {
     return {
       title: 'Vídeo chamada',
-      detail: 'Sem agendamento',
+      detail: 'Indefinido',
       tone: 'none',
     };
   }
@@ -335,7 +335,7 @@ function VideoIcon({ className }: { className?: string }) {
   );
 }
 
-function CalendarIcon({ className }: { className?: string }) {
+function PlaneIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -347,7 +347,7 @@ function CalendarIcon({ className }: { className?: string }) {
       strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" />
+      <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
     </svg>
   );
 }
@@ -370,6 +370,36 @@ function InfoIcon({ className }: { className?: string }) {
   );
 }
 
+function EuroIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M4 10h12M4 14h10" />
+      <path d="M19 6a7.5 7.5 0 1 0 0 12" />
+    </svg>
+  );
+}
+
+function crmMediaUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+  const base = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+  return `${base}${trimmed.startsWith('/') ? trimmed : `/${trimmed}`}`;
+}
+
+function sumCrmPayments(payments: RafacallCrmPayment[]): number {
+  return Math.round(payments.reduce((sum, payment) => sum + payment.amount, 0) * 100) / 100;
+}
+
 function normalizeCrmComments(value: string | null | undefined): string {
   return (value ?? '').trim();
 }
@@ -380,7 +410,7 @@ const CRM_COMMENT_POPUP_GAP_PX = 6;
 
 function CrmCommentInfoBadge({ comments }: { comments: string }) {
   const anchorRef = useRef<HTMLSpanElement>(null);
-  const hideTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout>>();
+  const hideTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | undefined>(undefined);
   const [open, setOpen] = useState(false);
   const [popupStyle, setPopupStyle] = useState<{
     top: number;
@@ -730,6 +760,23 @@ function removeItemFromColumns(columns: CrmColumn[], itemId: string): CrmColumn[
   }));
 }
 
+function applyPaymentsToWhatsappColumns(
+  columns: CrmColumn[],
+  whatsappDigits: string,
+  payments: RafacallCrmPayment[],
+): CrmColumn[] {
+  const digits = whatsappDigits.replace(/\D/g, '');
+  const paymentsTotal = sumCrmPayments(payments);
+  return columns.map((column) => ({
+    ...column,
+    items: column.items.map((item) =>
+      item.whatsappDigits.replace(/\D/g, '') === digits
+        ? { ...item, payments, paymentsTotal }
+        : item,
+    ),
+  }));
+}
+
 function insertItemIntoColumns(columns: CrmColumn[], item: RafacallCrmItem): CrmColumn[] {
   return sortCrmBoardColumns(
     columns.map((column) =>
@@ -792,6 +839,8 @@ function CrmClientCard({
   const hasPet = item.crmHasPet === true;
   const hasPreferences = Boolean(propertyTypologyLabel || preferredCityLabel || hasPet);
   const crmComments = normalizeCrmComments(item.crmComments);
+  const paymentsTotal = item.paymentsTotal ?? sumCrmPayments(item.payments ?? []);
+  const hasPayments = paymentsTotal > 0;
 
   return (
     <article
@@ -812,6 +861,12 @@ function CrmClientCard({
           <p className="min-w-0 truncate text-sm font-semibold text-foreground">{name}</p>
         </div>
         <p className="mt-0.5 truncate text-[10px] text-muted/60">{wa}</p>
+        {hasPayments ? (
+          <p className="mt-1.5 inline-flex max-w-full items-center gap-1 rounded-md border border-emerald-200/90 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-semibold text-emerald-900">
+            <EuroIcon className="h-3.5 w-3.5 shrink-0 text-emerald-700" />
+            <span className="truncate">{formatCrmEuroAmount(paymentsTotal)}</span>
+          </p>
+        ) : null}
       </div>
 
       {immigrationDateLabel || videoCallBadge ? (
@@ -824,7 +879,7 @@ function CrmClientCard({
                   : 'border-amber-200/90 bg-amber-50/90 text-amber-950'
               }`}
             >
-              <CalendarIcon
+              <PlaneIcon
                 className={`h-3.5 w-3.5 shrink-0 ${
                   isImmediateImmigration ? 'text-orange-700' : 'text-amber-700'
                 }`}
@@ -1097,7 +1152,6 @@ function CrmNewClientModal({
   whatsapp,
   whatsappError,
   saving,
-  error,
   onNameChange,
   onWhatsappChange,
   onConfirm,
@@ -1107,7 +1161,6 @@ function CrmNewClientModal({
   whatsapp: string;
   whatsappError: string;
   saving: boolean;
-  error: string;
   onNameChange: (value: string) => void;
   onWhatsappChange: (value: string) => void;
   onConfirm: () => void;
@@ -1134,7 +1187,7 @@ function CrmNewClientModal({
               Novo cliente
             </h2>
             <p className="mt-1 text-sm text-muted">
-              Adiciona um lead ao CRM com nome e WhatsApp. Entra na coluna «Sem data para imigar».
+              Adiciona um lead ao CRM com nome e WhatsApp.
             </p>
           </div>
           <button
@@ -1174,12 +1227,6 @@ function CrmNewClientModal({
           />
         </div>
 
-        {error ? (
-          <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-            {error}
-          </p>
-        ) : null}
-
         <div className="mt-5 flex flex-wrap justify-end gap-2">
           <button
             type="button"
@@ -1212,35 +1259,486 @@ function CrmStatusSelect({
   disabled: boolean;
   onChange: (status: RafacallCrmStatus) => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const tone = getCrmColumnTone(value);
+  const labelId = 'crm-status-label';
+  const listboxId = 'crm-status-listbox';
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onPointerDown = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const selected = listRef.current?.querySelector<HTMLElement>(
+      '[aria-selected="true"]',
+    );
+    selected?.focus();
+  }, [open]);
 
   return (
-    <div className="mt-4">
-      <label htmlFor="crm-status" className="text-xs font-medium uppercase tracking-wide text-muted">
+    <div className="relative mt-4" ref={rootRef}>
+      <p id={labelId} className="text-xs font-medium uppercase tracking-wide text-muted">
         Status
-      </label>
-      <div
-        className={`relative mt-2 overflow-hidden rounded-xl border shadow-sm ${tone.column} ${tone.border}`}
+      </p>
+      <button
+        type="button"
+        id="crm-status"
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={listboxId}
+        aria-labelledby={labelId}
+        onClick={() => setOpen((prev) => !prev)}
+        className={`relative mt-2 flex w-full cursor-pointer items-center gap-2.5 rounded-xl border py-3 pl-3.5 pr-10 text-left text-sm font-semibold text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30 disabled:cursor-not-allowed disabled:opacity-50 ${tone.column} ${tone.border} ${
+          open ? 'ring-2 ring-brand-accent/25' : ''
+        }`}
       >
-        <span
-          className={`pointer-events-none absolute left-3.5 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full ${tone.dot}`}
-          aria-hidden
+        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${tone.dot}`} aria-hidden />
+        <span className="min-w-0 flex-1 truncate">{RAFA_CALL_CRM_STATUS_LABELS[value]}</span>
+        <ChevronDownIcon
+          className={`pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted transition-transform ${
+            open ? 'rotate-180' : ''
+          }`}
         />
-        <select
-          id="crm-status"
-          value={value}
-          disabled={disabled}
-          onChange={(event) => onChange(event.target.value as RafacallCrmStatus)}
-          className="w-full cursor-pointer appearance-none bg-transparent py-3 pl-9 pr-10 text-sm font-semibold text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
+      </button>
+
+      {open ? (
+        <div
+          ref={listRef}
+          id={listboxId}
+          role="listbox"
+          aria-labelledby={labelId}
+          className="absolute left-0 right-0 z-40 mt-1.5 space-y-1 rounded-xl border border-border bg-card p-1.5 shadow-lg"
         >
-          {RAFA_CALL_CRM_STATUS_ORDER.map((status) => (
-            <option key={status} value={status}>
-              {RAFA_CALL_CRM_STATUS_LABELS[status]}
-            </option>
-          ))}
-        </select>
-        <ChevronDownIcon className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-      </div>
+          {RAFA_CALL_CRM_STATUS_ORDER.map((status) => {
+            const optionTone = getCrmColumnTone(status);
+            const isSelected = status === value;
+            return (
+              <button
+                key={status}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                tabIndex={isSelected ? 0 : -1}
+                disabled={disabled}
+                onClick={() => {
+                  setOpen(false);
+                  if (status !== value) onChange(status);
+                }}
+                className={`flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30 disabled:cursor-not-allowed disabled:opacity-50 ${
+                  isSelected
+                    ? `${optionTone.column} ${optionTone.border}`
+                    : 'border-transparent bg-transparent hover:bg-page'
+                }`}
+              >
+                <span
+                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${optionTone.dot}`}
+                  aria-hidden
+                />
+                <span className="min-w-0 flex-1 truncate text-foreground">
+                  {RAFA_CALL_CRM_STATUS_LABELS[status]}
+                </span>
+                {isSelected ? (
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                    Atual
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function CrmPaymentsSection({
+  bookingId,
+  payments,
+  disabled,
+  onPaymentsChange,
+}: {
+  bookingId: string;
+  payments: RafacallCrmPayment[];
+  disabled?: boolean;
+  onPaymentsChange: (payments: RafacallCrmPayment[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [paidAt, setPaidAt] = useState('');
+  const [amount, setAmount] = useState('');
+  const [comment, setComment] = useState('');
+  const [receiptUrl, setReceiptUrl] = useState('');
+  const [receiptFileName, setReceiptFileName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const total = sumCrmPayments(payments);
+  const isFormOpen = isAdding || Boolean(editingId);
+
+  const resetForm = () => {
+    setEditingId(null);
+    setIsAdding(false);
+    setPaidAt('');
+    setAmount('');
+    setComment('');
+    setReceiptUrl('');
+    setReceiptFileName('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const startAdd = () => {
+    setOpen(true);
+    setEditingId(null);
+    setIsAdding(true);
+    setPaidAt(new Date().toISOString().slice(0, 10));
+    setAmount('');
+    setComment('');
+    setReceiptUrl('');
+    setReceiptFileName('');
+  };
+
+  const startEdit = (payment: RafacallCrmPayment) => {
+    setOpen(true);
+    setIsAdding(false);
+    setEditingId(payment.id);
+    setPaidAt(payment.paidAt);
+    setAmount(String(payment.amount).replace('.', ','));
+    setComment(payment.comment ?? '');
+    setReceiptUrl(payment.receiptImageUrl);
+    setReceiptFileName('');
+  };
+
+  const parseAmountInput = (raw: string): number | null => {
+    const normalized = raw.trim().replace(/\s/g, '').replace(',', '.');
+    const value = Number(normalized);
+    if (!Number.isFinite(value) || value < 0.01) return null;
+    return Math.round(value * 100) / 100;
+  };
+
+  const handleUploadReceipt = async (file: File | null) => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const uploaded = await api.uploads.post(file);
+      setReceiptUrl(uploaded.url);
+      setReceiptFileName(file.name);
+      toast.success('Comprovante carregado.');
+    } catch (err) {
+      toast.error(
+        getUserFacingApiError(err, { context: 'Ao enviar o comprovante' }),
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSave = async () => {
+    const amountValue = parseAmountInput(amount);
+    if (!paidAt.trim()) {
+      toast.error('Indica a data do pagamento.');
+      return;
+    }
+    if (amountValue == null) {
+      toast.error('Indica um valor válido (mín. 0,01 €).');
+      return;
+    }
+    if (!receiptUrl.trim()) {
+      toast.error('Carrega o comprovante do pagamento.');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      if (editingId) {
+        const updated = await api.admin.rafacall.updateCrmPayment(
+          bookingId,
+          editingId,
+          {
+            paidAt: paidAt.trim(),
+            amount: amountValue,
+            receiptImageUrl: receiptUrl.trim(),
+            comment: comment.trim() || null,
+          },
+        );
+        onPaymentsChange(
+          payments.map((payment) =>
+            payment.id === updated.id ? updated : payment,
+          ),
+        );
+        toast.success('Pagamento atualizado.');
+      } else {
+        const created = await api.admin.rafacall.createCrmPayment(bookingId, {
+          paidAt: paidAt.trim(),
+          amount: amountValue,
+          receiptImageUrl: receiptUrl.trim(),
+          comment: comment.trim() || null,
+        });
+        onPaymentsChange([created, ...payments]);
+        toast.success('Pagamento adicionado.');
+      }
+      resetForm();
+    } catch (err) {
+      toast.error(
+        getUserFacingApiError(err, {
+          context: editingId ? 'Ao atualizar pagamento' : 'Ao adicionar pagamento',
+        }),
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDelete = async (paymentId: string) => {
+    setBusy(true);
+    try {
+      await api.admin.rafacall.deleteCrmPayment(bookingId, paymentId);
+      onPaymentsChange(payments.filter((payment) => payment.id !== paymentId));
+      if (editingId === paymentId) resetForm();
+      toast.success('Pagamento removido.');
+    } catch (err) {
+      toast.error(
+        getUserFacingApiError(err, { context: 'Ao remover pagamento' }),
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const isBusy = Boolean(disabled || busy);
+
+  return (
+    <div className="mt-3 space-y-2">
+      <button
+        type="button"
+        disabled={isBusy}
+        onClick={() => setOpen((prev) => !prev)}
+        className={`flex w-full cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+          total > 0
+            ? 'border-emerald-200/90 bg-emerald-50/90 text-emerald-950 hover:border-emerald-300 hover:bg-emerald-50'
+            : 'border-dashed border-emerald-200/70 bg-emerald-50/40 text-emerald-900/80 hover:border-emerald-300 hover:bg-emerald-50/70'
+        }`}
+        aria-expanded={open}
+        aria-label="Pagamentos realizados"
+      >
+        <EuroIcon className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800/80">
+            Pagamentos realizados
+          </p>
+          <p
+            className={`mt-0.5 text-sm font-medium leading-snug ${
+              total > 0 ? 'text-emerald-950' : 'italic text-emerald-900/70'
+            }`}
+          >
+            {total > 0
+              ? `${formatCrmEuroAmount(total)} · ${payments.length} pagamento${payments.length === 1 ? '' : 's'}`
+              : 'Nenhum pagamento — clica para registar'}
+          </p>
+        </div>
+        <span className="shrink-0 text-xs font-medium text-emerald-800/70">
+          {open ? 'Fechar' : 'Editar'}
+        </span>
+      </button>
+
+      {open ? (
+        <div className="space-y-3 rounded-xl border border-emerald-200/70 bg-emerald-50/30 px-3.5 py-3">
+          {payments.length > 0 ? (
+            <ul className="space-y-2">
+              {payments.map((payment) => (
+                <li
+                  key={payment.id}
+                  className="rounded-xl border border-emerald-200/80 bg-card px-3 py-2.5"
+                >
+                  <div className="flex items-start gap-3">
+                    <a
+                      href={crmMediaUrl(payment.receiptImageUrl)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border bg-page"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={crmMediaUrl(payment.receiptImageUrl)}
+                        alt="Comprovante"
+                        className="h-full w-full object-cover"
+                      />
+                    </a>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-foreground">
+                        {formatCrmEuroAmount(payment.amount)}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted">
+                        {formatCrmPaymentDateLabel(payment.paidAt) ?? payment.paidAt}
+                      </p>
+                      {payment.comment?.trim() ? (
+                        <p className="mt-1 line-clamp-2 text-xs text-foreground/80">
+                          {payment.comment}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex shrink-0 flex-col gap-1">
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => startEdit(payment)}
+                        className="cursor-pointer rounded-lg border border-border px-2 py-1 text-[11px] font-medium text-foreground hover:bg-page disabled:opacity-50"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => void handleDelete(payment.id)}
+                        className="cursor-pointer rounded-lg border border-red-200 px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        Apagar
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-muted">Ainda não há pagamentos neste cliente.</p>
+          )}
+
+          {!isFormOpen ? (
+            <button
+              type="button"
+              disabled={isBusy}
+              onClick={startAdd}
+              className="inline-flex min-h-9 cursor-pointer items-center rounded-lg border border-emerald-300 bg-emerald-100/80 px-3 text-xs font-semibold text-emerald-950 transition-colors hover:bg-emerald-100 disabled:opacity-50"
+            >
+              + Adicionar pagamento
+            </button>
+          ) : (
+            <div className="space-y-3 rounded-xl border border-border bg-card p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                {editingId ? 'Editar pagamento' : 'Novo pagamento'}
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-foreground" htmlFor="crm-payment-date">
+                    Data
+                  </label>
+                  <input
+                    id="crm-payment-date"
+                    type="date"
+                    value={paidAt}
+                    disabled={isBusy}
+                    onChange={(event) => setPaidAt(event.target.value)}
+                    className="mt-1.5 w-full rounded-xl border border-border bg-page px-3 py-2 text-sm outline-none focus:border-brand-primary disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-foreground" htmlFor="crm-payment-amount">
+                    Valor (€)
+                  </label>
+                  <input
+                    id="crm-payment-amount"
+                    type="text"
+                    inputMode="decimal"
+                    value={amount}
+                    disabled={isBusy}
+                    onChange={(event) => setAmount(event.target.value)}
+                    placeholder="0,00"
+                    className="mt-1.5 w-full rounded-xl border border-border bg-page px-3 py-2 text-sm outline-none focus:border-brand-primary disabled:opacity-50"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-foreground" htmlFor="crm-payment-comment">
+                  Comentário (opcional)
+                </label>
+                <textarea
+                  id="crm-payment-comment"
+                  value={comment}
+                  disabled={isBusy}
+                  onChange={(event) => setComment(event.target.value)}
+                  rows={2}
+                  placeholder="Nota sobre este pagamento…"
+                  className="mt-1.5 w-full resize-y rounded-xl border border-border bg-page px-3 py-2 text-sm outline-none focus:border-brand-primary disabled:opacity-50"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-foreground">Comprovante</p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={isBusy}
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null;
+                      void handleUploadReceipt(file);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex min-h-9 cursor-pointer items-center rounded-lg border border-border bg-page px-3 text-xs font-medium text-foreground hover:bg-card disabled:opacity-50"
+                  >
+                    {receiptUrl ? 'Trocar imagem' : 'Carregar imagem'}
+                  </button>
+                  {receiptUrl ? (
+                    <a
+                      href={crmMediaUrl(receiptUrl)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-brand-primary underline-offset-2 hover:underline"
+                    >
+                      {receiptFileName || 'Ver comprovante'}
+                    </a>
+                  ) : (
+                    <span className="text-xs text-muted">Obrigatório</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => void handleSave()}
+                  className="inline-flex min-h-9 cursor-pointer items-center rounded-lg bg-brand-primary px-3 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  {busy ? 'A guardar…' : editingId ? 'Guardar pagamento' : 'Adicionar'}
+                </button>
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={resetForm}
+                  className="inline-flex min-h-9 cursor-pointer items-center rounded-lg border border-border px-3 text-xs font-medium text-foreground hover:bg-page disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1267,6 +1765,7 @@ function CrmClientModal({
   onPropertyTypologyChange,
   onPreferredCityChange,
   onHasPetChange,
+  onPaymentsChange,
   onStatusChange,
   onSave,
   onClose,
@@ -1292,12 +1791,14 @@ function CrmClientModal({
   onPropertyTypologyChange: (value: RafacallCrmPropertyTypology | '') => void;
   onPreferredCityChange: (value: string) => void;
   onHasPetChange: (value: boolean | null) => void;
+  onPaymentsChange: (payments: RafacallCrmPayment[]) => void;
   onStatusChange: (status: RafacallCrmStatus) => void;
   onSave: () => void;
   onClose: () => void;
 }) {
   const immigrationDateInputRef = useRef<HTMLInputElement>(null);
   const [immigrationOptionsOpen, setImmigrationOptionsOpen] = useState(false);
+  const [videoCallOptionsOpen, setVideoCallOptionsOpen] = useState(false);
   const name = item.userName?.trim() || 'Sem nome';
   const bookingTimezone = item.bookingTimezone?.trim() || 'Europe/Lisbon';
   const isImmediateImmigration = isCrmImmigrationImmediate(immigrationDateDraft);
@@ -1317,12 +1818,15 @@ function CrmClientModal({
   const hasScheduledVideoCallDraft = Boolean(
     videoCallDateDraft.trim() && videoCallTimeDraft.trim(),
   );
+  const videoCallSummaryLabel = isCompletedVideoCall
+    ? videoCall.detail
+    : videoCallDraftLabel ?? videoCall.detail;
   const videoToneClass =
     isCompletedVideoCall
-      ? 'border-emerald-200/80 bg-emerald-50/70 text-emerald-900'
+      ? 'border-emerald-200/80 bg-emerald-50/70 text-emerald-900 hover:border-emerald-300 hover:bg-emerald-50'
       : hasScheduledVideoCallDraft || item.hasVideoCall
-        ? 'border-sky-200/80 bg-sky-50/70 text-sky-900'
-        : 'border-dashed border-border/80 bg-page/80 text-muted';
+        ? 'border-sky-200/90 bg-sky-50/90 text-sky-950 hover:border-sky-300 hover:bg-sky-50'
+        : 'border-dashed border-sky-200/70 bg-sky-50/40 text-sky-900/80 hover:border-sky-300 hover:bg-sky-50/70';
   const hasCommentsChanges =
     normalizeCrmComments(commentsDraft) !== normalizeCrmComments(item.crmComments);
   const hasImmigrationDateChanges =
@@ -1411,7 +1915,7 @@ function CrmClientModal({
               aria-expanded={immigrationOptionsOpen}
               aria-label="Imigração prevista — escolher opção"
             >
-              <CalendarIcon
+              <PlaneIcon
                 className={`mt-0.5 h-4 w-4 shrink-0 ${
                   isImmediateImmigration ? 'text-orange-700' : 'text-amber-700'
                 }`}
@@ -1501,28 +2005,54 @@ function CrmClientModal({
             ) : null}
           </div>
 
-          <div className={`mt-3 rounded-xl border px-3.5 py-3 ${videoToneClass}`}>
-            <div className="flex items-start gap-3">
-              <VideoIcon className="mt-0.5 h-4 w-4 shrink-0 opacity-80" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
-                  Vídeo chamada
-                </p>
-                <p className="mt-0.5 text-sm font-medium leading-snug">
-                  {isCompletedVideoCall
-                    ? videoCall.detail
-                    : videoCallDraftLabel ?? videoCall.detail}
-                </p>
-                {!isCompletedVideoCall ? (
-                  <p className="mt-1 text-xs opacity-80">
-                    Horário de {bookingTimezone}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-
+          <div className="mt-3 space-y-2">
             {canEditVideoCall ? (
-              <div className="mt-3">
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => setVideoCallOptionsOpen((open) => !open)}
+                className={`flex w-full cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${videoToneClass}`}
+                aria-expanded={videoCallOptionsOpen}
+                aria-label="Vídeo chamada — escolher horário"
+              >
+                <VideoIcon className="mt-0.5 h-4 w-4 shrink-0 opacity-80" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
+                    Vídeo chamada
+                  </p>
+                  <p
+                    className={`mt-0.5 text-sm font-medium leading-snug ${
+                      hasScheduledVideoCallDraft || item.hasVideoCall
+                        ? ''
+                        : 'italic opacity-80'
+                    }`}
+                  >
+                    {hasScheduledVideoCallDraft || item.hasVideoCall
+                      ? videoCallSummaryLabel
+                      : 'Indefinido — clica para definir'}
+                  </p>
+                  <p className="mt-1 text-xs opacity-80">Horário de {bookingTimezone}</p>
+                </div>
+                <span className="shrink-0 text-xs font-medium opacity-70">
+                  {videoCallOptionsOpen ? 'Fechar' : 'Editar'}
+                </span>
+              </button>
+            ) : (
+              <div className={`flex w-full items-start gap-3 rounded-xl border px-3.5 py-3 ${videoToneClass}`}>
+                <VideoIcon className="mt-0.5 h-4 w-4 shrink-0 opacity-80" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
+                    Vídeo chamada
+                  </p>
+                  <p className="mt-0.5 text-sm font-medium leading-snug">
+                    {videoCallSummaryLabel}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {canEditVideoCall && videoCallOptionsOpen ? (
+              <div className="space-y-3 rounded-xl border border-sky-200/70 bg-sky-50/40 px-3.5 py-3">
                 <AdminVideoCallSlotPicker
                   key={item.id}
                   idPrefix="crm-video-call"
@@ -1534,22 +2064,21 @@ function CrmClientModal({
                   manualTime={videoCallTimeDraft}
                   disabled={saving}
                   onDateChange={onVideoCallSelectedDateChange}
-                  onSlotSelect={onVideoCallSlotSelect}
+                  onSlotSelect={(slot) => {
+                    onVideoCallSlotSelect(slot);
+                    setVideoCallOptionsOpen(false);
+                  }}
                   onManualDateChange={onVideoCallDateChange}
                   onManualTimeChange={onVideoCallTimeChange}
                 />
-              </div>
-            ) : null}
-
-            {canEditVideoCall ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {(hasScheduledVideoCallDraft || item.hasVideoCall) ? (
+                {hasScheduledVideoCallDraft || item.hasVideoCall ? (
                   <button
                     type="button"
                     disabled={saving}
                     onClick={() => {
                       onVideoCallDateChange('');
                       onVideoCallTimeChange('');
+                      setVideoCallOptionsOpen(false);
                     }}
                     className="inline-flex min-h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted transition-colors hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
                   >
@@ -1657,6 +2186,13 @@ function CrmClientModal({
             </div>
           </div>
 
+          <CrmPaymentsSection
+            bookingId={item.id}
+            payments={item.payments ?? []}
+            disabled={saving}
+            onPaymentsChange={onPaymentsChange}
+          />
+
           <div className="mt-4 border-t border-border pt-4">
             <label
               className="text-xs font-medium uppercase tracking-wide text-muted"
@@ -1733,7 +2269,6 @@ export default function CrmPage() {
   const [newClientName, setNewClientName] = useState('');
   const [newClientWhatsapp, setNewClientWhatsapp] = useState('');
   const [newClientWhatsappError, setNewClientWhatsappError] = useState('');
-  const [newClientError, setNewClientError] = useState('');
   const [newClientSaving, setNewClientSaving] = useState(false);
 
   const filteredColumns = useMemo(
@@ -2057,12 +2592,32 @@ export default function CrmPage() {
     setDeleteError('');
   }, []);
 
+  const handlePaymentsChange = useCallback(
+    (payments: RafacallCrmPayment[]) => {
+      if (!selectedItem) return;
+      const paymentsTotal = sumCrmPayments(payments);
+      setSelectedItem({ ...selectedItem, payments, paymentsTotal });
+      setColumns((columns) =>
+        applyPaymentsToWhatsappColumns(
+          columns,
+          selectedItem.whatsappDigits,
+          payments,
+        ),
+      );
+    },
+    [selectedItem],
+  );
+
   const handleOpenNewClient = useCallback(() => {
     setNewClientOpen(true);
     setNewClientName('');
     setNewClientWhatsapp('');
     setNewClientWhatsappError('');
-    setNewClientError('');
+  }, []);
+
+  const handleNewClientWhatsappChange = useCallback((value: string) => {
+    setNewClientWhatsapp(value);
+    setNewClientWhatsappError((prev) => (prev ? '' : prev));
   }, []);
 
   const handleCreateClient = useCallback(async () => {
@@ -2070,16 +2625,17 @@ export default function CrmPage() {
     const whatsappDigits = newClientWhatsapp.replace(/\D/g, '');
 
     if (trimmedName.length < 2) {
-      setNewClientError('Indica o nome do cliente.');
+      toast.error('Indica o nome do cliente.');
       return;
     }
     if (whatsappDigits.length < 8) {
-      setNewClientWhatsappError('Indica um WhatsApp válido com indicativo do país.');
+      const message = 'Indica um WhatsApp válido com indicativo do país.';
+      setNewClientWhatsappError(message);
+      toast.error(message);
       return;
     }
 
     setNewClientSaving(true);
-    setNewClientError('');
     setNewClientWhatsappError('');
 
     try {
@@ -2091,15 +2647,18 @@ export default function CrmPage() {
       setNewClientOpen(false);
       setNewClientName('');
       setNewClientWhatsapp('');
+      toast.success('Cliente adicionado ao CRM.');
       handleOpenDetails(created);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Não foi possível adicionar o cliente.';
-      if (message.toLowerCase().includes('whatsapp')) {
+      const message = getUserFacingApiError(err, {
+        context: 'Ao adicionar cliente',
+      });
+      const isWhatsappRelated =
+        /whatsapp|cliente.*crm|já está no crm/i.test(message);
+      if (isWhatsappRelated) {
         setNewClientWhatsappError(message);
-      } else {
-        setNewClientError(message);
       }
+      toast.error(message);
     } finally {
       setNewClientSaving(false);
     }
@@ -2262,16 +2821,8 @@ export default function CrmPage() {
           whatsapp={newClientWhatsapp}
           whatsappError={newClientWhatsappError}
           saving={newClientSaving}
-          error={newClientError}
-          onNameChange={(value) => {
-            setNewClientName(value);
-            if (newClientError) setNewClientError('');
-          }}
-          onWhatsappChange={(value) => {
-            setNewClientWhatsapp(value);
-            if (newClientWhatsappError) setNewClientWhatsappError('');
-            if (newClientError) setNewClientError('');
-          }}
+          onNameChange={setNewClientName}
+          onWhatsappChange={handleNewClientWhatsappChange}
           onConfirm={() => void handleCreateClient()}
           onClose={() => {
             if (!newClientSaving) {
@@ -2279,7 +2830,6 @@ export default function CrmPage() {
               setNewClientName('');
               setNewClientWhatsapp('');
               setNewClientWhatsappError('');
-              setNewClientError('');
             }
           }}
         />
@@ -2331,6 +2881,7 @@ export default function CrmPage() {
           onPropertyTypologyChange={setPropertyTypologyDraft}
           onPreferredCityChange={setPreferredCityDraft}
           onHasPetChange={setHasPetDraft}
+          onPaymentsChange={handlePaymentsChange}
           onStatusChange={(status) => void handleModalStatusChange(status)}
           onSave={() => void handleSave()}
           onClose={() => {
