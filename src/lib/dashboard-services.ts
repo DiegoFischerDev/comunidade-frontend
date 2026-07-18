@@ -47,5 +47,5 @@ export const DASHBOARD_EXTRA_SERVICES: DashboardServiceItem[] = [
   { name: "Recebimento e guarda de compras online", priceEur: 30 },
   { name: "Apoio para solicitação de NIF / NISS", priceEur: 70 },
   { name: "Primeiras compras e estoque", priceEur: 80, priceSuffix: "*" },
-  { name: "Transfer", priceEur: 150, priceSuffix: "**" },
+  { name: "Transfer Aeroporto de Chegada", priceEur: 150, priceSuffix: "**" },
 ];

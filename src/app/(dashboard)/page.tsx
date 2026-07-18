@@ -121,12 +121,17 @@ export default function DashboardPage() {
       <DashboardHomeHero />
 
       <section
-        className="mx-auto w-full max-w-3xl px-4 py-8 md:px-0 md:py-10"
+        className="mx-auto w-full max-w-3xl px-4 pb-8 pt-12 md:px-0 md:pb-10 md:pt-16"
         aria-label="Vídeo de boas-vindas"
       >
-        <h2 className="mb-4 text-center text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:mb-6">
-          Sejam bem vindos
-        </h2>
+        <div className="mb-4 text-center md:mb-6">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-accent">
+            Comece por aqui
+          </p>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            Bem vindos à Move Casa
+          </h2>
+        </div>
         <DashboardWelcomeVideoPlayer className="shadow-sm ring-1 ring-border md:rounded-xl" />
       </section>
 

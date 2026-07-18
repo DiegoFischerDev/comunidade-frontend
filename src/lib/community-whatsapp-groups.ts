@@ -84,7 +84,7 @@ export const COMMUNITY_WHATSAPP_NAV_GROUPS: CommunityWhatsAppNavGroup[] = [
   },
   {
     id: "imoveis-venda",
-    label: "Imóveis a venda",
+    label: "Grupão de compra de imóveis",
     href: WHATSAPP_GROUP_IMOVEIS_VENDA_URL,
   },
 ];
@@ -115,7 +115,7 @@ export const COMMUNITY_WHATSAPP_INVITE_GROUPS: CommunityWhatsappInviteGroup[] = 
   },
   {
     id: "imoveis-venda",
-    label: "Imóveis a venda",
+    label: "Grupão de compra de imóveis",
     href: WHATSAPP_GROUP_IMOVEIS_VENDA_URL,
   },
 ];

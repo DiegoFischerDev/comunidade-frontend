@@ -42,7 +42,7 @@ const FAQ_ITEMS: FaqItem[] = [
         Para saber exatamente o tipo de visto que se enquadra melhor para
         você, temos parceria com a Clara, que faz toda a assessoria
         migratória. A reunião estratégica dela custa{" "}
-        <strong className="font-semibold text-foreground">R$ 100</strong> e
+        <strong className="font-semibold text-foreground">R$ 180</strong> e
         serve para mapear seu caso, esclarecer dúvidas e definir o melhor
         caminho antes de dar os próximos passos.
       </>

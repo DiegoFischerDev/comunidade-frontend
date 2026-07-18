@@ -1,4 +1,12 @@
-const PLACEHOLDER_COUNT = 3;
+import {
+  DASHBOARD_TESTIMONIAL_VIDEOS,
+  dashboardTestimonialTitle,
+  dashboardTestimonialYoutubeEmbedSrc,
+  type DashboardTestimonialVideo,
+} from '@/lib/dashboard-testimonials';
+import { formatEurAmount } from '@/lib/dashboard-services';
+
+const PLACEHOLDER_SLOTS = 3;
 
 function QuoteIcon() {
   return (
@@ -13,10 +21,62 @@ function QuoteIcon() {
   );
 }
 
+function TestimonialMetaRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border-b border-border/70 py-1.5 last:border-b-0">
+      <dt className="shrink-0 text-xs font-medium uppercase tracking-wide text-muted">
+        {label}
+      </dt>
+      <dd className="min-w-0 text-right text-sm font-medium text-foreground">
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function TestimonialVideoCard({ video }: { video: DashboardTestimonialVideo }) {
+  const title = dashboardTestimonialTitle(video);
+
+  return (
+    <figure className="mx-auto flex w-full max-w-[280px] flex-col">
+      <div className="relative aspect-[9/16] w-full overflow-hidden rounded-[18px] border border-border bg-black shadow-sm">
+        <iframe
+          src={dashboardTestimonialYoutubeEmbedSrc(video.youtubeId)}
+          title={title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerPolicy="strict-origin-when-cross-origin"
+          allowFullScreen
+          className="absolute inset-0 h-full w-full border-0"
+        />
+      </div>
+      <figcaption className="mt-3 px-0.5">
+        <p className="text-base font-semibold tracking-tight text-foreground">
+          {video.names}
+        </p>
+        <dl className="mt-2">
+          <TestimonialMetaRow label="Origem" value={video.origin} />
+          <TestimonialMetaRow label="Destino" value={video.destination} />
+          <TestimonialMetaRow label="Tipologia" value={video.typology} />
+          <TestimonialMetaRow
+            label="Arrendamento"
+            value={`€${formatEurAmount(video.rentEur)} / mês`}
+          />
+        </dl>
+      </figcaption>
+    </figure>
+  );
+}
+
 function TestimonialPlaceholderCard({ index }: { index: number }) {
   return (
     <figure
-      className="flex h-full min-h-[220px] flex-col items-center justify-center rounded-[18px] border border-dashed border-border bg-card p-6 text-center shadow-sm sm:min-h-[240px] sm:p-8"
+      className="mx-auto flex aspect-[9/16] w-full max-w-[280px] flex-col items-center justify-center rounded-[18px] border border-dashed border-border bg-card p-6 text-center shadow-sm"
       aria-label={`Depoimento ${index + 1} — em breve`}
     >
       <QuoteIcon />
@@ -24,7 +84,7 @@ function TestimonialPlaceholderCard({ index }: { index: number }) {
         Em breve
       </p>
       <p className="mt-2 max-w-[24ch] text-sm leading-relaxed text-muted">
-        Estamos reunindo as primeiras histórias de quem imigrou com a Move Casa.
+        Mais histórias de quem imigrou com a Move Casa.
       </p>
     </figure>
   );
@@ -35,6 +95,9 @@ type Props = {
 };
 
 export function DashboardTestimonialsSection({ className = "" }: Props) {
+  const videos = DASHBOARD_TESTIMONIAL_VIDEOS;
+  const placeholderCount = Math.max(0, PLACEHOLDER_SLOTS - videos.length);
+
   return (
     <section
       className={`relative mx-auto w-full max-w-5xl px-4 py-10 md:px-2 md:py-14 ${className}`.trim()}
@@ -48,14 +111,20 @@ export function DashboardTestimonialsSection({ className = "" }: Props) {
           Depoimentos
         </h2>
         <p className="mx-auto mt-3 max-w-[48ch] text-sm leading-relaxed text-muted sm:text-base">
-          Em breve, histórias de brasileiros que imigraram e se instalaram em
-          Viseu ou São Pedro do Sul com a Move Casa.
+          Histórias de brasileiros que imigraram e se instalaram em Viseu ou São
+          Pedro do Sul com a Move Casa.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
-        {Array.from({ length: PLACEHOLDER_COUNT }, (_, index) => (
-          <TestimonialPlaceholderCard key={index} index={index} />
+      <div className="grid justify-items-center gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+        {videos.map((video) => (
+          <TestimonialVideoCard key={video.youtubeId} video={video} />
+        ))}
+        {Array.from({ length: placeholderCount }, (_, index) => (
+          <TestimonialPlaceholderCard
+            key={`placeholder-${index}`}
+            index={videos.length + index}
+          />
         ))}
       </div>
     </section>
