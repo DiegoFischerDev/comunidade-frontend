@@ -1,7 +1,10 @@
 "use client";
 
+import Image from "next/image";
+
 import type { JobOfferContact } from "@/components/job-offers/JobOfferDetailView";
 import { CardButton } from "@/components/ui/CardButton";
+import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 
 type JobOfferListItem = {
   id: string;
@@ -12,6 +15,7 @@ type JobOfferListItem = {
   summary?: string;
   advertiserContacts?: JobOfferContact[];
   publishedAt: string;
+  imageUrl?: string | null;
 };
 
 function PencilIcon({ className }: { className?: string }) {
@@ -144,6 +148,7 @@ export function JobOfferCard({
     c.value.trim(),
   );
   const publishedLabel = formatPublishedAtShort(offer.publishedAt);
+  const imageSrc = resolveUploadsUrl(offer.imageUrl);
 
   return (
     <article
@@ -178,6 +183,19 @@ export function JobOfferCard({
       ) : null}
 
       <div className="min-w-0 flex-1 space-y-2">
+        {imageSrc ? (
+          <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-border/80 bg-primary-1">
+            <Image
+              src={imageSrc}
+              alt={`Anúncio: ${jobFunction}`}
+              fill
+              className="object-contain object-top"
+              sizes="(max-width: 768px) 80vw, 320px"
+              unoptimized
+            />
+          </div>
+        ) : null}
+
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <p className="inline-flex min-h-[1.25rem] items-center gap-1.5 text-sm font-medium leading-snug text-foreground/90">
             <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-brand-primary" />
@@ -285,10 +303,10 @@ export function JobOfferCardSkeleton({
       aria-hidden
     >
       <div className="min-w-0 flex-1 space-y-2">
+        <div className="aspect-[16/10] w-full animate-pulse rounded-lg bg-primary-1" />
         <div className="h-4 w-2/5 animate-pulse rounded bg-primary-1" />
         <div className="h-5 w-4/5 animate-pulse rounded bg-zinc-200" />
         <div className="h-4 w-3/5 animate-pulse rounded bg-primary-1" />
-        <div className="h-10 w-full animate-pulse rounded-lg bg-emerald-50" />
       </div>
       <div className={isCarousel ? "mt-auto pt-3" : "mt-3"}>
         <div className="h-9 w-full animate-pulse rounded-lg bg-zinc-200" />

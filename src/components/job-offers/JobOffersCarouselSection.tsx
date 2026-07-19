@@ -29,6 +29,7 @@ export type JobOfferCarouselItem = {
     value: string;
   }>;
   publishedAt: string;
+  imageUrl?: string | null;
 };
 
 type Props<T extends JobOfferCarouselItem = JobOfferCarouselItem> = {
