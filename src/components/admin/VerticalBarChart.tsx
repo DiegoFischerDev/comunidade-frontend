@@ -14,6 +14,8 @@ type VerticalBarChartProps = {
   withLeading?: boolean;
   /** Controlos acima das barras (ex.: seletor de período). */
   toolbar?: ReactNode;
+  /** Barras mais estreitas (ex.: dias do mês) para caber sem scroll horizontal. */
+  compact?: boolean;
 };
 
 function VerticalLeading({
@@ -66,6 +68,7 @@ export function VerticalBarChart({
   emptyMessage = "Sem dados para este filtro.",
   withLeading = false,
   toolbar,
+  compact = false,
 }: VerticalBarChartProps) {
   const max = items.reduce((m, i) => Math.max(m, i.count), 0);
   const allZero = max === 0;
@@ -81,7 +84,13 @@ export function VerticalBarChart({
       {items.length === 0 ? (
         <p className="mt-6 text-sm text-muted">{emptyMessage}</p>
       ) : (
-        <div className="mt-5 flex items-end gap-1 overflow-x-auto pb-1 sm:gap-1.5">
+        <div
+          className={
+            compact
+              ? "mt-5 flex items-end gap-px"
+              : "mt-5 flex items-end gap-1 overflow-x-auto pb-1 sm:gap-1.5"
+          }
+        >
           {items.map((item) => {
             const heightPct = allZero
               ? 0
@@ -89,7 +98,11 @@ export function VerticalBarChart({
             return (
               <div
                 key={item.key}
-                className="flex min-w-[1.65rem] flex-1 flex-col items-center sm:min-w-[2.25rem]"
+                className={
+                  compact
+                    ? "flex min-w-0 flex-1 flex-col items-center"
+                    : "flex min-w-[1.65rem] flex-1 flex-col items-center sm:min-w-[2.25rem]"
+                }
                 title={`${item.label}${item.sublabel ? ` — ${item.sublabel}` : ""}: ${item.count}`}
               >
                 {withLeading ? (
@@ -99,19 +112,31 @@ export function VerticalBarChart({
                     label={item.label}
                   />
                 ) : null}
-                <span className="mb-1 text-[10px] font-semibold tabular-nums text-foreground sm:text-[11px]">
+                <span
+                  className={
+                    compact
+                      ? "mb-0.5 text-[8px] font-semibold tabular-nums leading-none text-foreground sm:text-[9px]"
+                      : "mb-1 text-[10px] font-semibold tabular-nums text-foreground sm:text-[11px]"
+                  }
+                >
                   {item.count}
                 </span>
                 <div className="flex h-36 w-full items-end justify-center">
                   <div
-                    className={`w-full max-w-[2.25rem] rounded-t-md transition-[height] duration-500 ease-out ${
-                      item.barClassName ?? "bg-brand-primary"
-                    }`}
+                    className={`w-full rounded-t-sm transition-[height] duration-500 ease-out ${
+                      compact ? "max-w-none" : "max-w-[2.25rem] rounded-t-md"
+                    } ${item.barClassName ?? "bg-brand-primary"}`}
                     style={{ height: `${heightPct}%` }}
                     role="presentation"
                   />
                 </div>
-                <div className="mt-2 w-full truncate text-center text-[10px] leading-tight text-muted sm:text-xs">
+                <div
+                  className={
+                    compact
+                      ? "mt-1.5 w-full truncate text-center text-[8px] leading-none text-muted sm:text-[9px]"
+                      : "mt-2 w-full truncate text-center text-[10px] leading-tight text-muted sm:text-xs"
+                  }
+                >
                   {item.label}
                 </div>
               </div>

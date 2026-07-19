@@ -296,6 +296,7 @@ export default function AdminShareLinkClicksPage() {
                     : "Dias do mês selecionado (UTC). Respeita o filtro de tipo."
                 }
                 items={periodBars}
+                compact={periodGrain === "month"}
                 emptyMessage="Sem dados para este período."
                 toolbar={
                   <div className="space-y-3">
@@ -338,16 +339,22 @@ export default function AdminShareLinkClicksPage() {
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-2">
-                        {recentMonths.map((m) => (
-                          <button
-                            key={m.key}
-                            type="button"
-                            className={chipClass(m.key === resolvedPeriodKey)}
-                            onClick={() => setPeriodKey(m.key)}
-                          >
-                            {m.label}
-                          </button>
-                        ))}
+                        {recentMonths.length === 0 ? (
+                          <span className="text-xs text-muted">
+                            Ainda sem meses com registos nos últimos 12 meses.
+                          </span>
+                        ) : (
+                          recentMonths.map((m) => (
+                            <button
+                              key={m.key}
+                              type="button"
+                              className={chipClass(m.key === resolvedPeriodKey)}
+                              onClick={() => setPeriodKey(m.key)}
+                            >
+                              {m.label}
+                            </button>
+                          ))
+                        )}
                       </div>
                     )}
                   </div>
