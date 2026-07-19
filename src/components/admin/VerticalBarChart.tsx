@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { resolveUploadsUrl } from "@/lib/resolve-uploads-url";
 import type { BarItem } from "@/components/admin/HorizontalBarChart";
@@ -11,6 +12,8 @@ type VerticalBarChartProps = {
   emptyMessage?: string;
   /** Mostra thumbnail/emoji acima de cada barra. */
   withLeading?: boolean;
+  /** Controlos acima das barras (ex.: seletor de período). */
+  toolbar?: ReactNode;
 };
 
 function VerticalLeading({
@@ -62,6 +65,7 @@ export function VerticalBarChart({
   items,
   emptyMessage = "Sem dados para este filtro.",
   withLeading = false,
+  toolbar,
 }: VerticalBarChartProps) {
   const max = items.reduce((m, i) => Math.max(m, i.count), 0);
   const allZero = max === 0;
@@ -72,11 +76,12 @@ export function VerticalBarChart({
       {description ? (
         <p className="mt-1 text-xs text-muted">{description}</p>
       ) : null}
+      {toolbar ? <div className="mt-4">{toolbar}</div> : null}
 
       {items.length === 0 ? (
         <p className="mt-6 text-sm text-muted">{emptyMessage}</p>
       ) : (
-        <div className="mt-5 flex items-end gap-1.5 overflow-x-auto pb-1 sm:gap-2">
+        <div className="mt-5 flex items-end gap-1 overflow-x-auto pb-1 sm:gap-1.5">
           {items.map((item) => {
             const heightPct = allZero
               ? 0
@@ -84,7 +89,7 @@ export function VerticalBarChart({
             return (
               <div
                 key={item.key}
-                className="flex min-w-[2.75rem] flex-1 flex-col items-center"
+                className="flex min-w-[1.65rem] flex-1 flex-col items-center sm:min-w-[2.25rem]"
                 title={`${item.label}${item.sublabel ? ` — ${item.sublabel}` : ""}: ${item.count}`}
               >
                 {withLeading ? (
@@ -94,7 +99,7 @@ export function VerticalBarChart({
                     label={item.label}
                   />
                 ) : null}
-                <span className="mb-1 text-[11px] font-semibold tabular-nums text-foreground">
+                <span className="mb-1 text-[10px] font-semibold tabular-nums text-foreground sm:text-[11px]">
                   {item.count}
                 </span>
                 <div className="flex h-36 w-full items-end justify-center">

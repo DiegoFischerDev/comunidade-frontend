@@ -1493,6 +1493,9 @@ export const api = {
         partnerShareLinkId?: string;
         from?: string;
         to?: string;
+        periodGrain?: 'year' | 'month';
+        periodKey?: string;
+        country?: string;
       }) => {
         const q = new URLSearchParams();
         if (opts?.kind) q.set('kind', opts.kind);
@@ -1500,6 +1503,9 @@ export const api = {
           q.set('partnerShareLinkId', opts.partnerShareLinkId);
         if (opts?.from) q.set('from', opts.from);
         if (opts?.to) q.set('to', opts.to);
+        if (opts?.periodGrain) q.set('periodGrain', opts.periodGrain);
+        if (opts?.periodKey) q.set('periodKey', opts.periodKey);
+        if (opts?.country) q.set('country', opts.country);
         const qs = q.toString();
         return request<{
           total: number;
@@ -1521,11 +1527,17 @@ export const api = {
             imageUrl: string | null;
             count: number;
           }[];
-          byMonth: {
-            month: string;
-            label: string;
+          topCountries: {
+            countryCode: string;
             count: number;
           }[];
+          period: {
+            grain: 'year' | 'month';
+            key: string;
+            availableYears: number[];
+            recentMonths: { key: string; label: string }[];
+            series: { key: string; label: string; count: number }[];
+          };
         }>(`/redirect-links/admin/clicks/stats${qs ? `?${qs}` : ''}`, {
           method: 'GET',
         });

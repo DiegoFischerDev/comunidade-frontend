@@ -12,6 +12,7 @@ import { HorizontalBarChart } from "@/components/admin/HorizontalBarChart";
 import { VerticalBarChart } from "@/components/admin/VerticalBarChart";
 
 type Stats = Awaited<ReturnType<typeof api.admin.shareLinks.clickStats>>;
+type PeriodGrain = "year" | "month";
 
 function periodDateOpts(
   periodFrom: string,
@@ -26,13 +27,28 @@ function periodDateOpts(
   return { ok: true, from: pf, to: pt };
 }
 
+function chipClass(active: boolean): string {
+  return active
+    ? "cursor-pointer rounded-full bg-brand-primary px-3 py-1.5 text-xs font-medium text-brand-on-primary"
+    : "cursor-pointer rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-page";
+}
+
+function flagChipClass(active: boolean): string {
+  return active
+    ? "inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-brand-primary text-xl leading-none shadow-sm"
+    : "inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-xl leading-none hover:bg-page";
+}
+
 export default function AdminShareLinkClicksPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
 
   const [kind, setKind] = useState<"" | "CUSTOM_LINK" | "HOUSE">("");
+  const [country, setCountry] = useState("");
   const [periodFrom, setPeriodFrom] = useState("");
   const [periodTo, setPeriodTo] = useState("");
+  const [periodGrain, setPeriodGrain] = useState<PeriodGrain>("year");
+  const [periodKey, setPeriodKey] = useState("");
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -42,9 +58,12 @@ export default function AdminShareLinkClicksPage() {
     if (!dates.ok) return null;
     return {
       ...(kind ? { kind } : {}),
+      ...(country ? { country } : {}),
       ...(dates.from && dates.to ? { from: dates.from, to: dates.to } : {}),
+      periodGrain,
+      ...(periodKey ? { periodKey } : {}),
     };
-  }, [kind, periodFrom, periodTo]);
+  }, [kind, country, periodFrom, periodTo, periodGrain, periodKey]);
 
   useEffect(() => {
     if (!user || !isAdmin) {
@@ -65,7 +84,11 @@ export default function AdminShareLinkClicksPage() {
       setLoading(true);
       try {
         const nextStats = await api.admin.shareLinks.clickStats(opts);
-        if (!cancelled) setStats(nextStats);
+        if (cancelled) return;
+        setStats(nextStats);
+        if (nextStats.period?.key && nextStats.period.key !== periodKey) {
+          setPeriodKey(nextStats.period.key);
+        }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Erro ao carregar.");
@@ -116,18 +139,29 @@ export default function AdminShareLinkClicksPage() {
 
   const houseBars = (stats?.byHouse ?? []).map((d) => ({
     key: d.id,
-    label: d.label.length > 18 ? `${d.label.slice(0, 16)}…` : d.label,
+    label: d.label,
     sublabel: d.sublabel,
     count: d.count,
     leadingImageUrl: d.imageUrl,
     barClassName: "bg-sky-700",
   }));
 
-  const monthBars = (stats?.byMonth ?? []).map((m) => ({
-    key: m.month,
+  const periodBars = (stats?.period?.series ?? []).map((m) => ({
+    key: m.key,
     label: m.label,
     count: m.count,
   }));
+
+  const availableYears = stats?.period?.availableYears ?? [];
+  const recentMonths = stats?.period?.recentMonths ?? [];
+  const resolvedPeriodKey = stats?.period?.key || periodKey;
+  const topCountries = stats?.topCountries ?? [];
+
+  function selectGrain(next: PeriodGrain) {
+    if (next === periodGrain) return;
+    setPeriodGrain(next);
+    setPeriodKey("");
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-6">
@@ -135,8 +169,7 @@ export default function AdminShareLinkClicksPage() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Métricas</h1>
           <p className="mt-1 text-sm text-muted">
-            Resumo em gráficos. Intervalo de datas opcional (UTC, inclusive) para país,
-            links e imóveis; o gráfico mensal usa sempre os últimos 12 meses.
+            Acompanhe aqui como estão performando os nossos links compartilhados.
           </p>
         </div>
         <Link
@@ -185,33 +218,62 @@ export default function AdminShareLinkClicksPage() {
         ) : null}
       </section>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm text-foreground/90">
-          <span>Filtrar:</span>
-          <select
-            className="rounded-md border border-border bg-card px-3 py-2 text-sm"
-            value={kind}
-            onChange={(e) =>
-              setKind(e.target.value as "" | "CUSTOM_LINK" | "HOUSE")
-            }
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-sm text-foreground/90">
+            <span>Filtrar:</span>
+            <select
+              className="rounded-md border border-border bg-card px-3 py-2 text-sm"
+              value={kind}
+              onChange={(e) =>
+                setKind(e.target.value as "" | "CUSTOM_LINK" | "HOUSE")
+              }
+            >
+              <option value="">Todos</option>
+              <option value="CUSTOM_LINK">Link personalizado</option>
+              <option value="HOUSE">Imóvel</option>
+            </select>
+          </label>
+          {!loading && !periodInvalid ? (
+            <span className="text-sm text-muted">
+              {total === 0
+                ? "Nenhum evento no filtro"
+                : `${total} evento${total === 1 ? "" : "s"} no filtro`}
+              {dates.from && dates.to ? (
+                <span className="ml-1 text-muted/80">
+                  ({dates.from} — {dates.to})
+                </span>
+              ) : null}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-muted">País:</span>
+          <button
+            type="button"
+            className={chipClass(country === "")}
+            onClick={() => setCountry("")}
           >
-            <option value="">Todos</option>
-            <option value="CUSTOM_LINK">Link personalizado</option>
-            <option value="HOUSE">Imóvel</option>
-          </select>
-        </label>
-        {!loading && !periodInvalid ? (
-          <span className="text-sm text-muted">
-            {total === 0
-              ? "Nenhum evento no filtro"
-              : `${total} evento${total === 1 ? "" : "s"} no filtro`}
-            {dates.from && dates.to ? (
-              <span className="ml-1 text-muted/80">
-                ({dates.from} — {dates.to})
-              </span>
-            ) : null}
-          </span>
-        ) : null}
+            Todos
+          </button>
+          {topCountries.map((c) => {
+            const name = visitorCountryDisplayName(c.countryCode);
+            const flag = countryCodeToFlagEmoji(c.countryCode);
+            return (
+              <button
+                key={c.countryCode}
+                type="button"
+                className={flagChipClass(country === c.countryCode)}
+                onClick={() => setCountry(c.countryCode)}
+                title={`${name ?? c.countryCode} (${c.count})`}
+                aria-label={name ?? c.countryCode}
+              >
+                {flag ?? c.countryCode}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {error ? (
@@ -222,22 +284,74 @@ export default function AdminShareLinkClicksPage() {
 
       {!periodInvalid ? (
         <div className="space-y-4">
-          {loading ? (
+          {loading && !stats ? (
             <p className="text-sm text-muted">A carregar gráficos…</p>
           ) : (
             <>
               <VerticalBarChart
-                title="Cliques por mês"
-                description="Últimos 12 meses (UTC). Respeita o filtro de tipo; ignora o intervalo de datas da página."
-                items={monthBars}
-                emptyMessage="Sem cliques nos últimos 12 meses."
-              />
-              <VerticalBarChart
-                title="Cliques por imóvel"
-                description="Imóveis com mais cliques no período e filtro actuais."
-                items={houseBars}
-                withLeading
-                emptyMessage="Sem imóveis neste filtro."
+                title="Cliques por período"
+                description={
+                  periodGrain === "year"
+                    ? "12 meses do ano selecionado (UTC). Respeita o filtro de tipo."
+                    : "Dias do mês selecionado (UTC). Respeita o filtro de tipo."
+                }
+                items={periodBars}
+                emptyMessage="Sem dados para este período."
+                toolbar={
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        className={chipClass(periodGrain === "year")}
+                        onClick={() => selectGrain("year")}
+                      >
+                        Por ano
+                      </button>
+                      <button
+                        type="button"
+                        className={chipClass(periodGrain === "month")}
+                        onClick={() => selectGrain("month")}
+                      >
+                        Por mês
+                      </button>
+                    </div>
+                    {periodGrain === "year" ? (
+                      <div className="flex flex-wrap gap-2">
+                        {availableYears.length === 0 ? (
+                          <span className="text-xs text-muted">
+                            Ainda sem anos com registos.
+                          </span>
+                        ) : (
+                          availableYears.map((y) => (
+                            <button
+                              key={y}
+                              type="button"
+                              className={chipClass(
+                                String(y) === resolvedPeriodKey,
+                              )}
+                              onClick={() => setPeriodKey(String(y))}
+                            >
+                              {y}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {recentMonths.map((m) => (
+                          <button
+                            key={m.key}
+                            type="button"
+                            className={chipClass(m.key === resolvedPeriodKey)}
+                            onClick={() => setPeriodKey(m.key)}
+                          >
+                            {m.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                }
               />
               <div className="grid gap-4 lg:grid-cols-2">
                 <HorizontalBarChart
@@ -257,6 +371,14 @@ export default function AdminShareLinkClicksPage() {
                   emptyMessage="Sem links personalizados neste filtro."
                 />
               </div>
+              <HorizontalBarChart
+                title="Cliques por imóvel"
+                description="Imóveis com mais cliques no período e filtro actuais."
+                items={houseBars}
+                totalForPercent={stats?.total}
+                withLeading
+                emptyMessage="Sem imóveis neste filtro."
+              />
             </>
           )}
         </div>
