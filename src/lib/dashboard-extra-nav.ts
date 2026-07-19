@@ -35,7 +35,13 @@ export const ADMIN_NAV_ITEMS: DashboardExtraNavItem[] = [
     label: 'Links rastreados',
     isActive: (pathname) =>
       pathname === '/dashboard/admin/share-links' ||
-      pathname.startsWith('/dashboard/admin/share-links/'),
+      (pathname.startsWith('/dashboard/admin/share-links/') &&
+        pathname !== '/dashboard/admin/share-links/clicks'),
+  },
+  {
+    href: '/dashboard/admin/share-links/clicks',
+    label: 'Métricas',
+    isActive: (pathname) => pathname === '/dashboard/admin/share-links/clicks',
   },
   {
     href: '/dashboard/admin/leads-gestoras',

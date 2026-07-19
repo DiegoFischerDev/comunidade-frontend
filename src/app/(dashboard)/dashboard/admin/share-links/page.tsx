@@ -412,7 +412,7 @@ export default function AdminShareLinksPage() {
           href="/dashboard/admin/share-links/clicks"
           className="shrink-0 text-sm font-medium text-brand-primary hover:underline"
         >
-          Histórico de cliques →
+          Métricas →
         </Link>
       </div>
 

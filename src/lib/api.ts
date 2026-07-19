@@ -1507,11 +1507,23 @@ export const api = {
             countryCode: string | null;
             count: number;
           }[];
-          byDestination: {
-            kind: 'CUSTOM_LINK' | 'HOUSE';
+          byCustomLink: {
             id: string;
             label: string;
             sublabel: string | null;
+            imageUrl: string | null;
+            count: number;
+          }[];
+          byHouse: {
+            id: string;
+            label: string;
+            sublabel: string | null;
+            imageUrl: string | null;
+            count: number;
+          }[];
+          byMonth: {
+            month: string;
+            label: string;
             count: number;
           }[];
         }>(`/redirect-links/admin/clicks/stats${qs ? `?${qs}` : ''}`, {
