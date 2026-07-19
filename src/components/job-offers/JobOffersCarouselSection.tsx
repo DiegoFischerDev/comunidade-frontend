@@ -23,6 +23,11 @@ export type JobOfferCarouselItem = {
   jobFunction: string;
   city: string;
   company?: string;
+  summary?: string;
+  advertiserContacts?: Array<{
+    type: "email" | "phone" | "url";
+    value: string;
+  }>;
   publishedAt: string;
 };
 

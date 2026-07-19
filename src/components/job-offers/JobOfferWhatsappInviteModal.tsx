@@ -1,7 +1,7 @@
 "use client";
 
 import { ModalPortal } from "@/components/ui/ModalPortal";
-import { JOB_OFFER_WHATSAPP_INVITE_GROUPS } from "@/lib/community-whatsapp-groups";
+import { JOB_OFFER_WHATSAPP_INVITE_GROUP } from "@/lib/community-whatsapp-groups";
 
 function WhatsappBrandIcon({ className }: { className?: string }) {
   return (
@@ -27,6 +27,8 @@ type Props = {
 export function JobOfferWhatsappInviteModal({ open, onClose }: Props) {
   if (!open) return null;
 
+  const group = JOB_OFFER_WHATSAPP_INVITE_GROUP;
+
   return (
     <ModalPortal>
       <div
@@ -45,10 +47,10 @@ export function JobOfferWhatsappInviteModal({ open, onClose }: Props) {
                 id="job-offer-whatsapp-invite-title"
                 className="text-base font-semibold text-foreground"
               >
-                Grupos de ofertas de trabalho
+                Grupo de ofertas de trabalho
               </h2>
               <p className="mt-1 text-sm text-muted">
-                Escolhe a região do grupo WhatsApp que queres juntar-te.
+                Junta-te ao WhatsApp para receber vagas em tempo real.
               </p>
             </div>
             <button
@@ -61,32 +63,26 @@ export function JobOfferWhatsappInviteModal({ open, onClose }: Props) {
             </button>
           </div>
 
-          <ul className="mt-4 space-y-2">
-            {JOB_OFFER_WHATSAPP_INVITE_GROUPS.map((group) => (
-              <li key={group.region}>
-                <a
-                  href={group.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={onClose}
-                  className="flex items-center gap-3 rounded-xl border border-emerald-200/90 bg-emerald-50/40 px-4 py-3.5 text-sm font-semibold text-foreground transition hover:border-emerald-300 hover:bg-emerald-50"
-                >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-card shadow-sm ring-1 ring-[#25D366]/25">
-                    <WhatsappBrandIcon className="h-5 w-5 text-[#25D366]" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block">Região {group.label}</span>
-                    <span className="mt-0.5 block text-xs font-normal text-muted">
-                      Entrar no grupo WhatsApp
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-emerald-700" aria-hidden>
-                    →
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
+          <a
+            href={group.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onClose}
+            className="mt-4 flex items-center gap-3 rounded-xl border border-emerald-200/90 bg-emerald-50/40 px-4 py-3.5 text-sm font-semibold text-foreground transition hover:border-emerald-300 hover:bg-emerald-50"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-card shadow-sm ring-1 ring-[#25D366]/25">
+              <WhatsappBrandIcon className="h-5 w-5 text-[#25D366]" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block">{group.label}</span>
+              <span className="mt-0.5 block text-xs font-normal text-muted">
+                Entrar no grupo WhatsApp
+              </span>
+            </span>
+            <span className="shrink-0 text-emerald-700" aria-hidden>
+              →
+            </span>
+          </a>
         </div>
       </div>
     </ModalPortal>

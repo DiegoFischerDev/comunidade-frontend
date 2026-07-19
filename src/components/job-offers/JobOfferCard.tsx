@@ -1,5 +1,6 @@
 "use client";
 
+import type { JobOfferContact } from "@/components/job-offers/JobOfferDetailView";
 import { CardButton } from "@/components/ui/CardButton";
 
 type JobOfferListItem = {
@@ -8,6 +9,8 @@ type JobOfferListItem = {
   jobFunction: string;
   city: string;
   company?: string;
+  summary?: string;
+  advertiserContacts?: JobOfferContact[];
   publishedAt: string;
 };
 
@@ -64,8 +67,53 @@ function MapPinIcon({ className }: { className?: string }) {
   );
 }
 
+function BuildingIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />
+      <path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01" />
+    </svg>
+  );
+}
+
+function contactHref(c: JobOfferContact): string | null {
+  const value = c.value.trim();
+  if (!value) return null;
+  if (c.type === "email") return `mailto:${value}`;
+  if (c.type === "phone") {
+    const digits = value.replace(/[^\d+]/g, "");
+    return digits ? `tel:${digits}` : null;
+  }
+  if (/^https?:\/\//i.test(value)) return value;
+  return `https://${value}`;
+}
+
+function contactTypeLabel(type: JobOfferContact["type"]): string {
+  if (type === "email") return "Email";
+  if (type === "phone") return "Telefone";
+  return "Link";
+}
+
+function formatPublishedAtShort(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("pt-PT", {
+    day: "2-digit",
+    month: "short",
+  });
+}
+
 /** Altura mínima partilhada (carrossel e skeleton). */
-export const JOB_OFFER_CARD_MIN_HEIGHT_CLASS = "min-h-[10rem]";
+export const JOB_OFFER_CARD_MIN_HEIGHT_CLASS = "min-h-[16rem]";
 
 type Props = {
   offer: JobOfferListItem;
@@ -90,7 +138,12 @@ export function JobOfferCard({
   const isCarousel = variant === "carousel";
   const local = offer.city.trim() || "—";
   const jobFunction = offer.jobFunction.trim() || "—";
-  const company = offer.company?.trim() || "—";
+  const company = offer.company?.trim() || "";
+  const summary = offer.summary?.trim() || "";
+  const contacts = (offer.advertiserContacts ?? []).filter((c) =>
+    c.value.trim(),
+  );
+  const publishedLabel = formatPublishedAtShort(offer.publishedAt);
 
   return (
     <article
@@ -124,33 +177,95 @@ export function JobOfferCard({
         </div>
       ) : null}
 
-      <div className="min-w-0 flex-1 space-y-1.5">
-        <p className="inline-flex min-h-[1.25rem] items-center gap-1.5 text-sm font-medium leading-snug text-foreground/90">
-          <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-brand-primary" />
-          <span className="line-clamp-1">{local}</span>
-        </p>
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <p className="inline-flex min-h-[1.25rem] items-center gap-1.5 text-sm font-medium leading-snug text-foreground/90">
+            <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-brand-primary" />
+            <span className="line-clamp-1">{local}</span>
+          </p>
+          {publishedLabel ? (
+            <span className="text-[11px] text-muted">{publishedLabel}</span>
+          ) : null}
+        </div>
 
         <h2 className="line-clamp-2 text-base font-bold leading-snug text-foreground">
           {jobFunction}
         </h2>
 
-        <p className="line-clamp-2 min-h-[1.25rem] text-sm leading-snug text-muted">
-          {company}
-        </p>
+        {company ? (
+          <p className="inline-flex min-w-0 items-start gap-1.5 text-sm leading-snug text-muted">
+            <BuildingIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted/80" />
+            <span className="line-clamp-1">{company}</span>
+          </p>
+        ) : null}
+
+        {summary ? (
+          <p className="line-clamp-2 text-xs leading-relaxed text-muted">
+            {summary}
+          </p>
+        ) : null}
+
+        {contacts.length > 0 ? (
+          <div className="rounded-lg border border-emerald-200/70 bg-emerald-50/50 px-2.5 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-900/80">
+              Candidaturas
+            </p>
+            <ul className="mt-1 space-y-1">
+              {contacts.slice(0, 2).map((c, i) => {
+                const href = contactHref(c);
+                const label = c.value.trim();
+                return (
+                  <li key={`${c.type}-${label}-${i}`} className="min-w-0">
+                    {href ? (
+                      <a
+                        href={href}
+                        target={c.type === "url" ? "_blank" : undefined}
+                        rel={
+                          c.type === "url" ? "noopener noreferrer" : undefined
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                        className="block truncate text-xs font-medium text-emerald-900 underline-offset-2 hover:underline"
+                        title={`${contactTypeLabel(c.type)}: ${label}`}
+                      >
+                        <span className="text-emerald-800/70">
+                          {contactTypeLabel(c.type)}:{" "}
+                        </span>
+                        {label}
+                      </a>
+                    ) : (
+                      <span className="block truncate text-xs text-emerald-900">
+                        <span className="text-emerald-800/70">
+                          {contactTypeLabel(c.type)}:{" "}
+                        </span>
+                        {label}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+              {contacts.length > 2 ? (
+                <li className="text-[11px] text-emerald-800/70">
+                  +{contacts.length - 2} contacto
+                  {contacts.length - 2 === 1 ? "" : "s"}
+                </li>
+              ) : null}
+            </ul>
+          </div>
+        ) : null}
       </div>
 
-      <CardButton
-        type="button"
-        variant="secondary"
-        size="sm"
-        fullWidth
-        onClick={onOpenDetail}
-        className={`mt-3 !rounded-lg px-3 py-2.5 text-xs shadow-sm sm:text-sm ${
-          isCarousel ? "mt-auto" : ""
-        }`}
-      >
-        Saber mais
-      </CardButton>
+      <div className={isCarousel ? "mt-auto pt-3" : "mt-3"}>
+        <CardButton
+          type="button"
+          variant="secondary"
+          size="sm"
+          fullWidth
+          onClick={onOpenDetail}
+          className="!rounded-lg px-3 py-2.5 text-xs shadow-sm sm:text-sm"
+        >
+          Saber mais
+        </CardButton>
+      </div>
     </article>
   );
 }
@@ -173,12 +288,11 @@ export function JobOfferCardSkeleton({
         <div className="h-4 w-2/5 animate-pulse rounded bg-primary-1" />
         <div className="h-5 w-4/5 animate-pulse rounded bg-zinc-200" />
         <div className="h-4 w-3/5 animate-pulse rounded bg-primary-1" />
+        <div className="h-10 w-full animate-pulse rounded-lg bg-emerald-50" />
       </div>
-      <div
-        className={`h-9 w-full animate-pulse rounded-lg bg-zinc-200 ${
-          isCarousel ? "mt-auto" : "mt-3"
-        }`}
-      />
+      <div className={isCarousel ? "mt-auto pt-3" : "mt-3"}>
+        <div className="h-9 w-full animate-pulse rounded-lg bg-zinc-200" />
+      </div>
     </div>
   );
 }

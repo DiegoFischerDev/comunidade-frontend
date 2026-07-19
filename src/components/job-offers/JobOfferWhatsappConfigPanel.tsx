@@ -7,10 +7,6 @@ import { EvolutionGroupSelect } from '@/components/whatsapp-scan/EvolutionGroupS
 import { MonitoredUsersCell } from '@/components/whatsapp-scan/MonitoredUsersCell';
 import { WhatsappScanNumbersInput } from '@/components/whatsapp-scan/WhatsappScanNumbersInput';
 import { api } from '@/lib/api';
-import {
-  JOB_OFFER_REGION_LABELS,
-  type JobOfferRegion,
-} from '@/lib/job-offer-regions';
 import { jobOfferWhatsappStatusLabel } from '@/lib/job-offer-whatsapp-message-status';
 import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
 
@@ -20,6 +16,10 @@ type ScanRow = Awaited<
 
 type MessageLogRow = Awaited<
   ReturnType<typeof api.admin.jobOffers.whatsapp.listMessages>
+>['items'][number];
+
+type DestinationRow = Awaited<
+  ReturnType<typeof api.admin.jobOffers.whatsapp.listDestinations>
 >['items'][number];
 
 function formatDtPt(iso: string): string {
@@ -33,22 +33,16 @@ function formatDtPt(iso: string): string {
   });
 }
 
-type DestinationRow = Awaited<
-  ReturnType<typeof api.admin.jobOffers.whatsapp.listDestinations>
->['items'][number];
-
-const REGIONS: JobOfferRegion[] = ['NORTE', 'CENTRO', 'SUL'];
-
 export function JobOfferWhatsappConfigPanel() {
   const [scans, setScans] = useState<ScanRow[]>([]);
   const [destinations, setDestinations] = useState<DestinationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [creatingDest, setCreatingDest] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingDestId, setDeletingDestId] = useState<string | null>(null);
   const [togglingScanId, setTogglingScanId] = useState<string | null>(null);
-  const [savingDestRegion, setSavingDestRegion] = useState<JobOfferRegion | null>(
-    null,
-  );
+  const [togglingDestId, setTogglingDestId] = useState<string | null>(null);
   const [logsScan, setLogsScan] = useState<ScanRow | null>(null);
   const [logsAll, setLogsAll] = useState(false);
   const [logs, setLogs] = useState<MessageLogRow[]>([]);
@@ -60,16 +54,8 @@ export function JobOfferWhatsappConfigPanel() {
   const [formSourceTitle, setFormSourceTitle] = useState('');
   const [formNumbers, setFormNumbers] = useState<string[]>([]);
 
-  const [destJids, setDestJids] = useState<Record<JobOfferRegion, string>>({
-    NORTE: '',
-    CENTRO: '',
-    SUL: '',
-  });
-  const [destTitles, setDestTitles] = useState<Record<JobOfferRegion, string>>({
-    NORTE: '',
-    CENTRO: '',
-    SUL: '',
-  });
+  const [formDestJid, setFormDestJid] = useState('');
+  const [formDestTitle, setFormDestTitle] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -81,22 +67,6 @@ export function JobOfferWhatsappConfigPanel() {
       ]);
       setScans(scansRes.items);
       setDestinations(destRes.items);
-      const jids: Record<JobOfferRegion, string> = {
-        NORTE: '',
-        CENTRO: '',
-        SUL: '',
-      };
-      const titles: Record<JobOfferRegion, string> = {
-        NORTE: '',
-        CENTRO: '',
-        SUL: '',
-      };
-      for (const d of destRes.items) {
-        jids[d.region] = d.destGroupJid ?? '';
-        titles[d.region] = d.destTitle ?? '';
-      }
-      setDestJids(jids);
-      setDestTitles(titles);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar configuração.');
     } finally {
@@ -111,6 +81,11 @@ export function JobOfferWhatsappConfigPanel() {
   const activeScansCount = useMemo(
     () => scans.filter((s) => s.active).length,
     [scans],
+  );
+
+  const activeDestCount = useMemo(
+    () => destinations.filter((d) => d.active).length,
+    [destinations],
   );
 
   const handleCreateScan = useCallback(async () => {
@@ -139,6 +114,30 @@ export function JobOfferWhatsappConfigPanel() {
     }
   }, [formSourceJid, formSourceTitle, formNumbers, load]);
 
+  const handleCreateDestination = useCallback(async () => {
+    setError('');
+    setSuccess('');
+    if (!formDestJid.trim()) {
+      setError('Seleciona o grupo de destino.');
+      return;
+    }
+    setCreatingDest(true);
+    try {
+      await api.admin.jobOffers.whatsapp.createDestination({
+        destGroupJid: formDestJid.trim(),
+        destTitle: formDestTitle.trim() || undefined,
+      });
+      setFormDestJid('');
+      setFormDestTitle('');
+      setSuccess('Grupo de destino adicionado.');
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao adicionar destino.');
+    } finally {
+      setCreatingDest(false);
+    }
+  }, [formDestJid, formDestTitle, load]);
+
   const deleteScan = useCallback(
     async (id: string) => {
       if (!window.confirm('Remover este grupo de scan?')) return;
@@ -157,6 +156,24 @@ export function JobOfferWhatsappConfigPanel() {
     [load],
   );
 
+  const deleteDestination = useCallback(
+    async (id: string) => {
+      if (!window.confirm('Remover este grupo de destino?')) return;
+      setDeletingDestId(id);
+      setError('');
+      try {
+        await api.admin.jobOffers.whatsapp.deleteDestination(id);
+        setSuccess('Grupo de destino removido.');
+        await load();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Erro ao remover destino.');
+      } finally {
+        setDeletingDestId(null);
+      }
+    },
+    [load],
+  );
+
   const toggleScanActive = useCallback(
     async (row: ScanRow) => {
       setTogglingScanId(row.id);
@@ -170,6 +187,24 @@ export function JobOfferWhatsappConfigPanel() {
         setError(e instanceof Error ? e.message : 'Erro ao atualizar estado.');
       } finally {
         setTogglingScanId(null);
+      }
+    },
+    [load],
+  );
+
+  const toggleDestActive = useCallback(
+    async (row: DestinationRow) => {
+      setTogglingDestId(row.id);
+      setError('');
+      try {
+        await api.admin.jobOffers.whatsapp.updateDestination(row.id, {
+          active: !row.active,
+        });
+        await load();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Erro ao atualizar destino.');
+      } finally {
+        setTogglingDestId(null);
       }
     },
     [load],
@@ -195,33 +230,6 @@ export function JobOfferWhatsappConfigPanel() {
     }
   }, []);
 
-  const saveDestination = useCallback(
-    async (region: JobOfferRegion) => {
-      const jid = destJids[region].trim();
-      if (!jid) {
-        setError(`Seleciona o grupo WhatsApp para ${JOB_OFFER_REGION_LABELS[region]}.`);
-        return;
-      }
-      setSavingDestRegion(region);
-      setError('');
-      setSuccess('');
-      try {
-        await api.admin.jobOffers.whatsapp.updateDestination(region, {
-          destGroupJid: jid,
-          destTitle: destTitles[region].trim() || undefined,
-          active: true,
-        });
-        setSuccess(`Destino ${JOB_OFFER_REGION_LABELS[region]} guardado.`);
-        await load();
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Erro ao guardar destino.');
-      } finally {
-        setSavingDestRegion(null);
-      }
-    },
-    [destJids, destTitles, load],
-  );
-
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -230,16 +238,20 @@ export function JobOfferWhatsappConfigPanel() {
             Configuração WhatsApp
           </h2>
           <p className="mt-1 max-w-xl text-xs leading-relaxed text-muted">
-            Adiciona grupos de origem para scan. As vagas válidas entram no site e
-            são republicadas automaticamente no grupo fixo da região da cidade
-            (Norte, Centro ou Sul). Usa <strong className="font-medium">Logs</strong>{' '}
-            para ver o que a OpenAI extraiu e o motivo de rejeição.
+            Adiciona grupos de origem para scan e um ou mais grupos de destino.
+            Todas as vagas válidas entram no site e são republicadas em{' '}
+            <strong className="font-medium">todos</strong> os destinos ativos.
+            Usa <strong className="font-medium">Logs</strong> para ver o que a
+            OpenAI extraiu e o motivo de rejeição.
           </p>
           {!loading && scans.length > 0 ? (
             <p className="mt-2 text-xs text-muted">
               {activeScansCount === scans.length
                 ? `${scans.length} grupo(s) de scan ativo(s)`
                 : `${activeScansCount} de ${scans.length} grupo(s) de scan ativo(s)`}
+              {destinations.length > 0
+                ? ` · ${activeDestCount} de ${destinations.length} destino(s) ativo(s)`
+                : null}
             </p>
           ) : null}
         </div>
@@ -273,78 +285,103 @@ export function JobOfferWhatsappConfigPanel() {
         </p>
       ) : null}
 
-      <div className="mt-6">
+      <div className="mt-6 rounded-xl border border-dashed border-border bg-page/50 p-4">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Grupos de destino (fixos)
+          Adicionar grupo de destino
         </h3>
         <p className="mt-1 text-xs text-muted">
-          Três grupos — um por região. A distribuição é automática conforme a
-          cidade da oferta.
+          Todas as ofertas rastreadas são enviadas a todos os destinos ativos.
         </p>
-        {loading ? (
-          <p className="mt-3 text-sm text-muted">A carregar…</p>
-        ) : (
-          <div className="mt-3 grid gap-4 lg:grid-cols-3">
-            {REGIONS.map((region) => {
-              const saved = destinations.find((d) => d.region === region);
-              const saving = savingDestRegion === region;
-              return (
-                <div
-                  key={region}
-                  className="rounded-xl border border-border bg-page/40 p-4"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold text-foreground">
-                      {JOB_OFFER_REGION_LABELS[region]}
-                    </span>
-                    {saved?.configured ? (
-                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-800">
-                        Configurado
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-brand-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-brand-primary">
-                        Pendente
+        <div className="mt-3">
+          <label className="text-sm">
+            <span className="block text-xs font-semibold uppercase tracking-wide text-muted">
+              Grupo WhatsApp
+            </span>
+            <div className="mt-1">
+              <EvolutionGroupSelect
+                valueJid={formDestJid}
+                disabled={creatingDest}
+                listGroups={() =>
+                  api.admin.jobOffers.whatsapp.listEvolutionGroups()
+                }
+                onChange={(g) => {
+                  setFormDestJid(g.groupJid);
+                  setFormDestTitle(g.title);
+                }}
+              />
+            </div>
+          </label>
+        </div>
+        <button
+          type="button"
+          onClick={() => void handleCreateDestination()}
+          disabled={creatingDest}
+          className="mt-3 rounded-xl bg-zinc-800 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-900 disabled:opacity-60"
+        >
+          {creatingDest ? 'A adicionar…' : 'Adicionar destino'}
+        </button>
+      </div>
+
+      {loading ? (
+        <p className="mt-4 text-sm text-muted">A carregar destinos…</p>
+      ) : destinations.length === 0 ? (
+        <p className="mt-4 text-sm text-muted">
+          Ainda não há grupos de destino. Adiciona um acima.
+        </p>
+      ) : (
+        <div className="mt-4 overflow-x-auto rounded-lg border border-border">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-page text-xs font-semibold uppercase tracking-wide text-muted">
+              <tr>
+                <th className="px-4 py-3">Grupo de destino</th>
+                <th className="px-4 py-3">Estado</th>
+                <th className="px-4 py-3 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100 bg-card">
+              {destinations.map((row) => (
+                <tr key={row.id} className="hover:bg-page/60">
+                  <td className="px-4 py-3 text-foreground">
+                    {row.destTitle ?? (
+                      <span className="font-mono text-xs text-muted">
+                        {row.destGroupJid.replace(/@g\.us$/i, '')}
                       </span>
                     )}
-                  </div>
-                  <label className="mt-3 block text-sm">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-muted">
-                      Grupo WhatsApp
-                    </span>
-                    <div className="mt-1">
-                      <EvolutionGroupSelect
-                        valueJid={destJids[region]}
-                        disabled={saving}
-                        listGroups={() =>
-                          api.admin.jobOffers.whatsapp.listEvolutionGroups()
-                        }
-                        onChange={(g) => {
-                          setDestJids((prev) => ({
-                            ...prev,
-                            [region]: g.groupJid,
-                          }));
-                          setDestTitles((prev) => ({
-                            ...prev,
-                            [region]: g.title,
-                          }));
-                        }}
-                      />
-                    </div>
-                  </label>
-                  <button
-                    type="button"
-                    disabled={saving || !destJids[region].trim()}
-                    onClick={() => void saveDestination(region)}
-                    className="mt-3 w-full rounded-lg bg-zinc-800 px-3 py-2 text-xs font-semibold text-white hover:bg-zinc-900 disabled:opacity-50"
-                  >
-                    {saving ? 'A guardar…' : 'Guardar destino'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      disabled={togglingDestId === row.id}
+                      onClick={() => void toggleDestActive(row)}
+                      className={
+                        row.active
+                          ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60'
+                          : 'rounded-full bg-primary-1 px-2 py-1 text-xs font-semibold text-foreground/90 hover:bg-zinc-200 disabled:opacity-60'
+                      }
+                    >
+                      {togglingDestId === row.id
+                        ? '…'
+                        : row.active
+                          ? 'Ativo'
+                          : 'Inativo'}
+                    </button>
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => void deleteDestination(row.id)}
+                      disabled={deletingDestId === row.id}
+                      className="rounded-lg border border-red-200 bg-card px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+                    >
+                      {deletingDestId === row.id ? 'A remover…' : 'Excluir'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="mt-6 rounded-xl border border-dashed border-border bg-page/50 p-4">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">

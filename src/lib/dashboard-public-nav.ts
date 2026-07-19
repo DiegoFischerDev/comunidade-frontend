@@ -19,6 +19,13 @@ export const DASHBOARD_PUBLIC_NAV: DashboardPublicNavItem[] = [
     isActive: (pathname) => pathname === '/relocation/imoveis',
   },
   {
+    href: '/ofertas-trabalho',
+    label: 'Empregos',
+    isActive: (pathname) =>
+      pathname === '/ofertas-trabalho' ||
+      pathname.startsWith('/ofertas-trabalho/'),
+  },
+  {
     href: '/financiamento',
     label: 'Financiamento',
     isActive: (pathname) => pathname === '/financiamento',

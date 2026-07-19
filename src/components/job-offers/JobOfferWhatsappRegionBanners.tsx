@@ -1,8 +1,4 @@
-import { JOB_OFFER_WHATSAPP_INVITE_GROUPS } from "@/lib/community-whatsapp-groups";
-import {
-  formatJobOfferRegionExampleCities,
-  type JobOfferRegion,
-} from "@/lib/job-offer-regions";
+import { JOB_OFFER_WHATSAPP_INVITE_GROUP } from "@/lib/community-whatsapp-groups";
 
 function WhatsappBrandIcon({ className }: { className?: string }) {
   return (
@@ -20,46 +16,36 @@ function WhatsappBrandIcon({ className }: { className?: string }) {
   );
 }
 
-/** Três banners compactos com convites WhatsApp por região. */
+/** Convite único para o grupo WhatsApp de ofertas de emprego. */
 export function JobOfferWhatsappRegionBanners() {
+  const group = JOB_OFFER_WHATSAPP_INVITE_GROUP;
+
   return (
-    <section aria-labelledby="job-offers-whatsapp-groups-heading">
-      <h2
-        id="job-offers-whatsapp-groups-heading"
-        className="text-xs font-semibold uppercase tracking-wide text-muted"
+    <section aria-labelledby="job-offers-whatsapp-group-heading">
+      <a
+        href={group.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group flex items-center gap-3 rounded-xl border border-emerald-200/80 bg-gradient-to-br from-white to-emerald-50/50 px-3.5 py-3.5 shadow-sm ring-1 ring-emerald-100/60 transition hover:border-emerald-300 hover:shadow-md sm:px-4"
       >
-        Grupos WhatsApp por região
-      </h2>
-      <p className="mt-1 text-sm text-muted">
-        Junta-te ao grupo da tua zona para receber vagas em tempo real.
-      </p>
-      <div className="mt-3 grid gap-3 sm:grid-cols-3">
-        {JOB_OFFER_WHATSAPP_INVITE_GROUPS.map((group) => (
-          <a
-            key={group.region}
-            href={group.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center gap-3 rounded-xl border border-emerald-200/80 bg-gradient-to-br from-white to-emerald-50/50 px-3.5 py-3 shadow-sm ring-1 ring-emerald-100/60 transition hover:border-emerald-300 hover:shadow-md"
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-card shadow-sm ring-1 ring-[#25D366]/25">
+          <WhatsappBrandIcon className="h-5 w-5 text-[#25D366]" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span
+            id="job-offers-whatsapp-group-heading"
+            className="block text-sm font-semibold text-foreground"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-card shadow-sm ring-1 ring-[#25D366]/25">
-              <WhatsappBrandIcon className="h-5 w-5 text-[#25D366]" />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm font-semibold text-foreground">
-                {group.label}
-              </span>
-              <span className="mt-0.5 block text-xs leading-snug text-muted">
-                Ex.:{" "}
-                {formatJobOfferRegionExampleCities(group.region as JobOfferRegion)}
-              </span>
-              <span className="mt-1 block text-xs font-medium text-emerald-800/90 group-hover:text-emerald-900">
-                Entrar no grupo
-              </span>
-            </span>
-          </a>
-        ))}
-      </div>
+            {group.label}
+          </span>
+          <span className="mt-0.5 block text-xs leading-snug text-muted">
+            Recebe vagas em tempo real no WhatsApp
+          </span>
+          <span className="mt-1 block text-xs font-medium text-emerald-800/90 group-hover:text-emerald-900">
+            Entrar no grupo
+          </span>
+        </span>
+      </a>
     </section>
   );
 }

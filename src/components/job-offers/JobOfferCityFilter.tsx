@@ -1,20 +1,35 @@
 "use client";
 
-import {
-  JOB_OFFER_REGION_FILTER_OPTIONS,
-  type JobOfferRegion,
-} from "@/lib/job-offer-regions";
+import type { JobOfferCityOption } from "@/lib/job-offer-cities";
 
 type Props = {
-  value: JobOfferRegion | "";
-  onChange: (value: JobOfferRegion | "") => void;
+  cities: JobOfferCityOption[];
+  totalCount: number;
+  value: string;
+  onChange: (value: string) => void;
 };
 
-export function JobOfferRegionFilter({ value, onChange }: Props) {
+export function JobOfferCityFilter({
+  cities,
+  totalCount,
+  value,
+  onChange,
+}: Props) {
+  if (cities.length === 0) return null;
+
+  const options: Array<{ value: string; label: string; count: number }> = [
+    { value: "", label: "Todas", count: totalCount },
+    ...cities.map((c) => ({
+      value: c.city,
+      label: c.city,
+      count: c.count,
+    })),
+  ];
+
   return (
     <div>
       <p
-        id="job-offers-region-label"
+        id="job-offers-city-label"
         className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted"
       >
         <svg
@@ -30,28 +45,36 @@ export function JobOfferRegionFilter({ value, onChange }: Props) {
           <path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8Z" />
           <circle cx="12" cy="10" r="2.5" />
         </svg>
-        Região
+        Cidade
       </p>
       <div
         role="group"
-        aria-labelledby="job-offers-region-label"
+        aria-labelledby="job-offers-city-label"
         className="flex flex-wrap gap-2"
       >
-        {JOB_OFFER_REGION_FILTER_OPTIONS.map((opt) => {
+        {options.map((opt) => {
           const selected = value === opt.value;
           return (
             <button
               key={opt.value || "all"}
               type="button"
               aria-pressed={selected}
+              aria-label={`${opt.label}, ${opt.count} ${opt.count === 1 ? "vaga" : "vagas"}`}
               onClick={() => onChange(opt.value)}
-              className={`rounded-full border px-3.5 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/25/40 ${
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/25/40 ${
                 selected
                   ? "border-brand-primary bg-brand-primary text-white shadow-sm"
                   : "border-border bg-card text-foreground/90 hover:border-brand-accent/50 hover:bg-page"
               }`}
             >
-              {opt.label}
+              <span>{opt.label}</span>
+              <span
+                className={`text-[11px] font-semibold tabular-nums ${
+                  selected ? "text-white/80" : "text-muted"
+                }`}
+              >
+                {opt.count}
+              </span>
             </button>
           );
         })}

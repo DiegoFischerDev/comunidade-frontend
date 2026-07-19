@@ -17,46 +17,37 @@ export const WHATSAPP_GROUP_IMOVEIS_VENDA_URL =
   process.env.NEXT_PUBLIC_WHATSAPP_GROUP_IMOVEIS_VENDA_URL?.trim() ||
   "https://chat.whatsapp.com/EneiignxdnuHVy17rh5MTX";
 
-/** Convite WhatsApp — ofertas de trabalho por região. */
-export const WHATSAPP_GROUP_OFERTAS_NORTE_URL =
+/** Convite WhatsApp — ofertas de emprego (Portugal). */
+export const WHATSAPP_GROUP_OFERTAS_EMPREGO_URL =
+  process.env.NEXT_PUBLIC_WHATSAPP_GROUP_OFERTAS_EMPREGO_URL?.trim() ||
   process.env.NEXT_PUBLIC_WHATSAPP_GROUP_OFERTAS_NORTE_URL?.trim() ||
   process.env.NEXT_PUBLIC_WHATSAPP_GROUP_OFERTAS_TRABALHO_URL?.trim() ||
   "https://chat.whatsapp.com/EONaquXnkDx6NmdAdCIouM";
 
-export const WHATSAPP_GROUP_OFERTAS_CENTRO_URL =
-  process.env.NEXT_PUBLIC_WHATSAPP_GROUP_OFERTAS_CENTRO_URL?.trim() ||
-  "https://chat.whatsapp.com/LRTOsPySDTdAD5AEY7lvmP";
+/** @deprecated Use `WHATSAPP_GROUP_OFERTAS_EMPREGO_URL`. */
+export const WHATSAPP_GROUP_OFERTAS_NORTE_URL =
+  WHATSAPP_GROUP_OFERTAS_EMPREGO_URL;
 
-export const WHATSAPP_GROUP_OFERTAS_SUL_URL =
-  process.env.NEXT_PUBLIC_WHATSAPP_GROUP_OFERTAS_SUL_URL?.trim() ||
-  "https://chat.whatsapp.com/DLGVjkVEdlr7u44BwEHOeJ";
-
-/** @deprecated Use `WHATSAPP_GROUP_OFERTAS_NORTE_URL`. */
+/** @deprecated Use `WHATSAPP_GROUP_OFERTAS_EMPREGO_URL`. */
 export const WHATSAPP_GROUP_OFERTAS_TRABALHO_URL =
-  WHATSAPP_GROUP_OFERTAS_NORTE_URL;
+  WHATSAPP_GROUP_OFERTAS_EMPREGO_URL;
 
 export type JobOfferWhatsappInviteGroup = {
-  region: "NORTE" | "CENTRO" | "SUL";
+  id: string;
   label: string;
   href: string;
 };
 
+/** Convite público único para o grupo de ofertas. */
+export const JOB_OFFER_WHATSAPP_INVITE_GROUP: JobOfferWhatsappInviteGroup = {
+  id: "ofertas-emprego-portugal",
+  label: "Ofertas de emprego Portugal",
+  href: WHATSAPP_GROUP_OFERTAS_EMPREGO_URL,
+};
+
+/** @deprecated Use `JOB_OFFER_WHATSAPP_INVITE_GROUP`. */
 export const JOB_OFFER_WHATSAPP_INVITE_GROUPS: JobOfferWhatsappInviteGroup[] = [
-  {
-    region: "NORTE",
-    label: "Norte",
-    href: WHATSAPP_GROUP_OFERTAS_NORTE_URL,
-  },
-  {
-    region: "CENTRO",
-    label: "Centro",
-    href: WHATSAPP_GROUP_OFERTAS_CENTRO_URL,
-  },
-  {
-    region: "SUL",
-    label: "Sul",
-    href: WHATSAPP_GROUP_OFERTAS_SUL_URL,
-  },
+  JOB_OFFER_WHATSAPP_INVITE_GROUP,
 ];
 
 /** @deprecated Use `WHATSAPP_GROUP_DUVIDAS_GERAL_URL`. */

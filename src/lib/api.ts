@@ -1643,29 +1643,42 @@ export const api = {
         listDestinations: () =>
           request<{
             items: Array<{
-              region: 'NORTE' | 'CENTRO' | 'SUL';
-              regionLabel: string;
-              destGroupJid: string | null;
+              id: string;
+              destGroupJid: string;
               destTitle: string | null;
               active: boolean;
-              configured: boolean;
+              createdAt: string;
               updatedAt: string;
             }>;
           }>('/job-offers/whatsapp/destinations', { method: 'GET' }),
+        createDestination: (body: {
+          destGroupJid: string;
+          destTitle?: string;
+          active?: boolean;
+        }) =>
+          request('/job-offers/whatsapp/destinations', {
+            method: 'POST',
+            body: JSON.stringify(body),
+          }),
         updateDestination: (
-          region: 'NORTE' | 'CENTRO' | 'SUL',
+          id: string,
           body: {
-            destGroupJid?: string | null;
+            destGroupJid?: string;
             destTitle?: string | null;
             active?: boolean;
           },
         ) =>
           request(
-            `/job-offers/whatsapp/destinations/${encodeURIComponent(region)}`,
+            `/job-offers/whatsapp/destinations/${encodeURIComponent(id)}`,
             {
               method: 'PATCH',
               body: JSON.stringify(body),
             },
+          ),
+        deleteDestination: (id: string) =>
+          request<{ ok: true }>(
+            `/job-offers/whatsapp/destinations/${encodeURIComponent(id)}`,
+            { method: 'DELETE' },
           ),
         listEvolutionGroups: () =>
           request<{

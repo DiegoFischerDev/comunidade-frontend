@@ -3,19 +3,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { JobOfferCityFilter } from "@/components/job-offers/JobOfferCityFilter";
 import { JobOfferWhatsappRegionBanners } from "@/components/job-offers/JobOfferWhatsappRegionBanners";
-import { JobOfferRegionFilter } from "@/components/job-offers/JobOfferRegionFilter";
 import { JobOffersDateCarousels } from "@/components/job-offers/JobOffersDateCarousels";
 import { JobOfferWhatsappConfigPanel } from "@/components/job-offers/JobOfferWhatsappConfigPanel";
 import { JobOffersAdminModal } from "@/components/job-offers/JobOffersAdminModal";
 import { CardButton } from "@/components/ui/CardButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
-import { SITE_NAME_FULL } from "@/lib/site-branding";
 import {
-  JOB_OFFER_REGION_LABELS,
-  type JobOfferRegion,
-} from "@/lib/job-offer-regions";
+  cityMatchesFilter,
+  uniqueJobOfferCities,
+} from "@/lib/job-offer-cities";
+import { SITE_NAME_FULL } from "@/lib/site-branding";
+
 type OfferRow = Awaited<ReturnType<typeof api.jobOffers.list>>[number];
 
 function WarningIcon({ className }: { className?: string }) {
@@ -47,11 +48,13 @@ export default function JobOffersPage() {
   const [adminModalEditOffer, setAdminModalEditOffer] =
     useState<OfferRow | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [regionFilter, setRegionFilter] = useState<JobOfferRegion | "">("");
+  const [cityFilter, setCityFilter] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const hasActiveFilters =
-    searchQuery.trim().length > 0 || regionFilter !== "";
+    searchQuery.trim().length > 0 || cityFilter !== "";
+
+  const cityOptions = useMemo(() => uniqueJobOfferCities(rows), [rows]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,10 +75,19 @@ export default function JobOffersPage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (
+      cityFilter &&
+      !cityOptions.some((c) => cityMatchesFilter(c.city, cityFilter))
+    ) {
+      setCityFilter("");
+    }
+  }, [cityFilter, cityOptions]);
+
   const filteredRows = useMemo(() => {
     let list = rows;
-    if (regionFilter) {
-      list = list.filter((offer) => offer.region === regionFilter);
+    if (cityFilter) {
+      list = list.filter((offer) => cityMatchesFilter(offer.city, cityFilter));
     }
     const q = searchQuery.trim().toLowerCase();
     if (!q) return list;
@@ -92,7 +104,7 @@ export default function JobOffersPage() {
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [rows, searchQuery, regionFilter]);
+  }, [rows, searchQuery, cityFilter]);
 
   const handleDeleteOffer = useCallback(
     async (offer: OfferRow) => {
@@ -137,7 +149,7 @@ export default function JobOffersPage() {
 
   const clearFilters = useCallback(() => {
     setSearchQuery("");
-    setRegionFilter("");
+    setCityFilter("");
   }, []);
 
   return (
@@ -165,9 +177,11 @@ export default function JobOffersPage() {
 
       {!loading && !error && rows.length > 0 ? (
         <div className="space-y-5">
-          <JobOfferRegionFilter
-            value={regionFilter}
-            onChange={setRegionFilter}
+          <JobOfferCityFilter
+            cities={cityOptions}
+            totalCount={rows.length}
+            value={cityFilter}
+            onChange={setCityFilter}
           />
           <div>
           <label
@@ -191,7 +205,7 @@ export default function JobOffersPage() {
           <div className="relative">
             <input
               id="job-offers-search"
-              type="search"
+              type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Função, cidade, título…"
@@ -272,9 +286,9 @@ export default function JobOffersPage() {
         <div className="rounded-xl border border-border bg-card px-4 py-8 text-center text-sm text-muted">
           <p className="font-medium text-foreground">Nenhuma oferta encontrada</p>
           <p className="mt-1">
-            {regionFilter && !searchQuery.trim()
-              ? `Não há vagas na região ${JOB_OFFER_REGION_LABELS[regionFilter]} com os critérios atuais.`
-              : "Tenta outra região ou outras palavras (função, cidade ou empresa)."}
+            {cityFilter && !searchQuery.trim()
+              ? `Não há vagas em ${cityFilter} com os critérios atuais.`
+              : "Tenta outra cidade ou outras palavras (função, cidade ou empresa)."}
           </p>
           <button
             type="button"

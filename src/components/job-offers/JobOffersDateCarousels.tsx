@@ -11,12 +11,26 @@ import {
 import { HorizontalSnapCarousel } from "@/components/ui/horizontal-snap-carousel";
 import { partitionJobOffersByDate } from "@/lib/job-offer-date-buckets";
 
+function formatDayMonthPt(date: Date): string {
+  return date.toLocaleDateString("pt-PT", {
+    day: "numeric",
+    month: "long",
+  });
+}
+
 const SECTIONS: {
   key: "today" | "yesterday" | "older";
   title: string;
   carouselLabel: string;
+  /** Offset em dias civis relativos a hoje (só para «Hoje»). */
+  dateOffsetDays?: number;
 }[] = [
-  { key: "today", title: "Hoje", carouselLabel: "Vagas de hoje" },
+  {
+    key: "today",
+    title: "Hoje",
+    carouselLabel: "Vagas de hoje",
+    dateOffsetDays: 0,
+  },
   { key: "yesterday", title: "Ontem", carouselLabel: "Vagas de ontem" },
   {
     key: "older",
@@ -24,6 +38,14 @@ const SECTIONS: {
     carouselLabel: "Vagas anteriores a ontem",
   },
 ];
+
+function sectionHeading(s: (typeof SECTIONS)[number]): string {
+  if (s.dateOffsetDays === undefined) return s.title;
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() + s.dateOffsetDays);
+  return `${s.title} · ${formatDayMonthPt(d)}`;
+}
 
 type Props<T extends JobOfferCarouselItem = JobOfferCarouselItem> = {
   offers: T[];
@@ -72,7 +94,7 @@ export function JobOffersDateCarousels<T extends JobOfferCarouselItem>({
         {SECTIONS.map((s) => (
           <section key={s.key} aria-busy="true">
             <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-              {s.title}
+              {sectionHeading(s)}
             </h2>
             <div className="mt-3">
               <CarouselSkeleton />
@@ -103,7 +125,7 @@ export function JobOffersDateCarousels<T extends JobOfferCarouselItem>({
         <section key={s.key}>
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-              {s.title}
+              {sectionHeading(s)}
             </h2>
             <span className="text-xs font-medium text-muted">
               {buckets[s.key].length === 1
