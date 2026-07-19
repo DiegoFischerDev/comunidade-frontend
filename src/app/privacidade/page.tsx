@@ -118,7 +118,8 @@ export default function PrivacidadePage() {
           <p className="text-sm leading-relaxed text-foreground/90">
             A sessão na nossa aplicação web assenta principalmente em&nbsp;
             <strong className="font-medium text-foreground">localStorage</strong>, não em cookies HTTP próprios para
-            login. Recomendamos que reveja as definições do seu browser.
+            login. Não utilizamos cookies (nem armazenamento local) para identificar visitantes em links de
+            redirecionamento ou medição de cliques. Recomendamos que reveja as definições do seu browser.
           </p>
         </section>
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  getOrCreateStableRedirectVisitorId,
+  clearLegacyRedirectVisitorStorage,
   tryAcquireRedirectNavigationLock,
 } from "@/lib/redirect-visitor-client";
 
@@ -26,17 +26,14 @@ function resolveTarget(
   titulo: string,
   imovel: string,
   id: string,
-): ResolvedTarget | null {
+): ResolvedTarget {
   const api = apiBaseUrl();
-  const vid = getOrCreateStableRedirectVisitorId();
-  if (!vid) return null;
-  const q = `rd_vid=${encodeURIComponent(vid)}`;
 
   if (variant === "imovel") {
     if (!id) return { kind: "home" };
     return {
       kind: "track",
-      trackUrl: `${api}/redirect-links/public/by-house/${encodeURIComponent(id)}?${q}`,
+      trackUrl: `${api}/redirect-links/public/by-house/${encodeURIComponent(id)}`,
       exitFetchPath: `redirect-links/public/house-whatsapp-target/${encodeURIComponent(id)}`,
     };
   }
@@ -45,14 +42,14 @@ function resolveTarget(
   if (slug) {
     return {
       kind: "track",
-      trackUrl: `${api}/redirect-links/public/by-titulo/${encodeURIComponent(slug)}?${q}`,
+      trackUrl: `${api}/redirect-links/public/by-titulo/${encodeURIComponent(slug)}`,
       exitFetchPath: `redirect-links/public/custom-whatsapp-target/${encodeURIComponent(slug)}`,
     };
   }
   if (imovel) {
     return {
       kind: "track",
-      trackUrl: `${api}/redirect-links/public/by-house/${encodeURIComponent(imovel)}?${q}`,
+      trackUrl: `${api}/redirect-links/public/by-house/${encodeURIComponent(imovel)}`,
       exitFetchPath: `redirect-links/public/house-whatsapp-target/${encodeURIComponent(imovel)}`,
     };
   }
@@ -79,14 +76,13 @@ function RedirectInner({ variant }: { variant: "share" | "imovel" }) {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    clearLegacyRedirectVisitorStorage();
+
     if (!tryAcquireRedirectNavigationLock()) {
       return;
     }
 
     const target = resolveTarget(variant, t, titulo, imovel, id);
-    if (!target) {
-      return;
-    }
 
     if (target.kind === "home") {
       setManualHref("/");

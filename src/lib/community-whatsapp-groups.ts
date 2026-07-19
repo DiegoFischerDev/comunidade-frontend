@@ -109,4 +109,10 @@ export const COMMUNITY_WHATSAPP_INVITE_GROUPS: CommunityWhatsappInviteGroup[] = 
     label: "Grupão de compra de imóveis",
     href: WHATSAPP_GROUP_IMOVEIS_VENDA_URL,
   },
+  {
+    id: JOB_OFFER_WHATSAPP_INVITE_GROUP.id,
+    label: JOB_OFFER_WHATSAPP_INVITE_GROUP.label,
+    href: JOB_OFFER_WHATSAPP_INVITE_GROUP.href,
+    sublabel: "Vagas em tempo real",
+  },
 ];

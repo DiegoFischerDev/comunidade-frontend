@@ -5,10 +5,13 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { visitorCountryDisplayName } from "@/lib/visitor-country-display";
+import { HorizontalBarChart } from "@/components/admin/HorizontalBarChart";
 
 type Row = Awaited<
   ReturnType<typeof api.admin.shareLinks.clickHistory>
 >["items"][number];
+
+type Stats = Awaited<ReturnType<typeof api.admin.shareLinks.clickStats>>;
 
 const PAGE_SIZE = 50;
 
@@ -37,15 +40,25 @@ export default function AdminShareLinkClicksPage() {
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const filterOpts = useCallback(() => {
+    const dates = periodDateOpts(periodFrom, periodTo);
+    if (!dates.ok) return null;
+    return {
+      ...(kind ? { kind } : {}),
+      ...(dates.from && dates.to ? { from: dates.from, to: dates.to } : {}),
+    };
+  }, [kind, periodFrom, periodTo]);
 
   const fetchPage = useCallback(
     async (nextOffset: number, append: boolean) => {
-      const dates = periodDateOpts(periodFrom, periodTo);
-      if (!dates.ok) return;
+      const opts = filterOpts();
+      if (!opts) return;
       const data = await api.admin.shareLinks.clickHistory({
-        ...(kind ? { kind } : {}),
-        ...(dates.from && dates.to ? { from: dates.from, to: dates.to } : {}),
+        ...opts,
         limit: PAGE_SIZE,
         offset: nextOffset,
       });
@@ -58,22 +71,25 @@ export default function AdminShareLinkClicksPage() {
       }
       setOffset(nextOffset);
     },
-    [kind, periodFrom, periodTo],
+    [filterOpts],
   );
 
   useEffect(() => {
     if (!user || !isAdmin) {
       setLoading(false);
+      setStatsLoading(false);
       return;
     }
-    const dates = periodDateOpts(periodFrom, periodTo);
-    if (!dates.ok) {
+    const opts = filterOpts();
+    if (!opts) {
       setItems([]);
       setTotal(0);
       setHasMore(false);
       setOffset(0);
+      setStats(null);
       setError("");
       setLoading(false);
+      setStatsLoading(false);
       return;
     }
 
@@ -82,24 +98,31 @@ export default function AdminShareLinkClicksPage() {
     (async () => {
       setError("");
       setLoading(true);
+      setStatsLoading(true);
       try {
-        await fetchPage(0, false);
+        const [_, nextStats] = await Promise.all([
+          fetchPage(0, false),
+          api.admin.shareLinks.clickStats(opts),
+        ]);
+        if (!cancelled) setStats(nextStats);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Erro ao carregar.");
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setStatsLoading(false);
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [user, isAdmin, kind, periodFrom, periodTo, fetchPage]);
+  }, [user, isAdmin, filterOpts, fetchPage]);
 
   async function loadMore() {
-    const dates = periodDateOpts(periodFrom, periodTo);
-    if (!dates.ok) return;
+    if (!filterOpts()) return;
     setError("");
     try {
       await fetchPage(offset + PAGE_SIZE, true);
@@ -141,6 +164,27 @@ export default function AdminShareLinkClicksPage() {
     }
     return "";
   }
+
+  const countryBars =
+    stats?.byCountry.map((c) => {
+      const name = visitorCountryDisplayName(c.countryCode);
+      return {
+        key: c.countryCode ?? "unknown",
+        label: name ?? "País desconhecido",
+        sublabel: c.countryCode ? c.countryCode : null,
+        count: c.count,
+      };
+    }) ?? [];
+
+  const destinationBars =
+    stats?.byDestination.map((d) => ({
+      key: `${d.kind}:${d.id}`,
+      label: d.label,
+      sublabel: d.sublabel,
+      count: d.count,
+      barClassName:
+        d.kind === "HOUSE" ? "bg-sky-700" : "bg-brand-primary",
+    })) ?? [];
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-6">
@@ -231,6 +275,33 @@ export default function AdminShareLinkClicksPage() {
         </div>
       ) : null}
 
+      {!periodInvalid && (statsLoading || (stats && stats.total > 0)) ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {statsLoading ? (
+            <>
+              <p className="text-sm text-muted lg:col-span-2">A carregar gráficos…</p>
+            </>
+          ) : (
+            <>
+              <HorizontalBarChart
+                title="Cliques por país"
+                description="Top países no período e filtro actuais. Percentagem sobre o total filtrado."
+                items={countryBars}
+                totalForPercent={stats?.total}
+                emptyMessage="Sem cliques com país conhecido neste filtro."
+              />
+              <HorizontalBarChart
+                title="Cliques por destino"
+                description="Top links personalizados e imóveis. Verde = personalizado; azul = imóvel."
+                items={destinationBars}
+                totalForPercent={stats?.total}
+                emptyMessage="Sem destinos neste filtro."
+              />
+            </>
+          )}
+        </div>
+      ) : null}
+
       {loading && !periodInvalid ? (
         <p className="text-sm text-muted">A carregar…</p>
       ) : !periodInvalid ? (
@@ -240,7 +311,7 @@ export default function AdminShareLinkClicksPage() {
               <thead className="border-b border-border bg-page text-xs uppercase text-muted">
                 <tr>
                   <th className="px-4 py-3">Data / hora</th>
-                  <th className="px-4 py-3">Identificador (visitante)</th>
+                  <th className="px-4 py-3">Identificador (legado)</th>
                   <th className="px-4 py-3">Tipo</th>
                   <th className="px-4 py-3">Destino</th>
                 </tr>

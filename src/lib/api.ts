@@ -1488,6 +1488,36 @@ export const api = {
           method: 'GET',
         });
       },
+      clickStats: (opts?: {
+        kind?: 'CUSTOM_LINK' | 'HOUSE';
+        partnerShareLinkId?: string;
+        from?: string;
+        to?: string;
+      }) => {
+        const q = new URLSearchParams();
+        if (opts?.kind) q.set('kind', opts.kind);
+        if (opts?.partnerShareLinkId)
+          q.set('partnerShareLinkId', opts.partnerShareLinkId);
+        if (opts?.from) q.set('from', opts.from);
+        if (opts?.to) q.set('to', opts.to);
+        const qs = q.toString();
+        return request<{
+          total: number;
+          byCountry: {
+            countryCode: string | null;
+            count: number;
+          }[];
+          byDestination: {
+            kind: 'CUSTOM_LINK' | 'HOUSE';
+            id: string;
+            label: string;
+            sublabel: string | null;
+            count: number;
+          }[];
+        }>(`/redirect-links/admin/clicks/stats${qs ? `?${qs}` : ''}`, {
+          method: 'GET',
+        });
+      },
     },
     jobOffers: {
       list: () =>

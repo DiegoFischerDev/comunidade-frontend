@@ -153,7 +153,7 @@ export default function AdminShareLinkDetailClicksPage() {
 
   function formatVisitorLabel(key: string | null): string {
     if (key && key.length > 0) return key;
-    return "— (registo antigo)";
+    return "—";
   }
 
   if (!user) return null;
@@ -258,8 +258,8 @@ export default function AdminShareLinkDetailClicksPage() {
 
       {meta && !metaError && !periodInvalid ? (
         <p className="text-sm text-muted">
-          Cada linha corresponde a um dispositivo/browser que abriu o link (após a deduplicação
-          por cookie). Total: <strong className="font-semibold text-foreground">{total}</strong>
+          Cada linha corresponde a um hit registado ao abrir o link (sem deduplicação por
+          dispositivo). Total: <strong className="font-semibold text-foreground">{total}</strong>
           {dates.from && dates.to ? (
             <span className="text-muted">
               {" "}
@@ -286,7 +286,7 @@ export default function AdminShareLinkDetailClicksPage() {
               <thead className="border-b border-border bg-page text-xs uppercase text-muted">
                 <tr>
                   <th className="px-4 py-3">Data / hora</th>
-                  <th className="px-4 py-3">Identificador (visitante)</th>
+                  <th className="px-4 py-3">Identificador (legado)</th>
                 </tr>
               </thead>
               <tbody>

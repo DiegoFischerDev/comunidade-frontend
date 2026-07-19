@@ -17,7 +17,7 @@ export async function generateMetadata(
 
 /**
  * Entrada pública: /whatsapp?t=<slug> ou ?imovel= (legado).
- * Cliente envia `rd_vid` estável na query para deduplicação de cliques no API.
+ * O API regista o hit sem ID de visitante persistente.
  */
 export default function WhatsappRedirectEntryPage() {
   return <RedirectToApiWithVisitor variant="share" />;

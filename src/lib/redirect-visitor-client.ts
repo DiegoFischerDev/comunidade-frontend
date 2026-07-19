@@ -1,92 +1,26 @@
-/** Mesmo valor usado em todos os pontos de entrada (/whatsapp, /link, /imovel). */
-export const REDIRECT_VISITOR_STORAGE_KEY = "rpm_rd_vid";
-
-const UUID_V4 =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function isUuidV4Like(s: string): boolean {
-  return UUID_V4.test(s.trim());
-}
-
-function readFirstPartyVisitorCookie(): string | null {
-  if (typeof document === "undefined") return null;
-  const prefix = `${REDIRECT_VISITOR_STORAGE_KEY}=`;
-  const parts = document.cookie.split(";");
-  for (const part of parts) {
-    const p = part.trim();
-    if (!p.startsWith(prefix)) continue;
-    const raw = p.slice(prefix.length);
-    try {
-      const val = decodeURIComponent(raw);
-      if (isUuidV4Like(val)) return val.trim().toLowerCase();
-    } catch {
-      if (isUuidV4Like(raw)) return raw.trim().toLowerCase();
-    }
-  }
-  return null;
-}
-
-/** Cookie de 1.ª parte (não HttpOnly) + localStorage: partilhado por todas as abas do mesmo host. */
-function persistVisitorId(id: string): void {
-  const v = id.trim().toLowerCase();
-  try {
-    window.localStorage.setItem(REDIRECT_VISITOR_STORAGE_KEY, v);
-  } catch {
-    /* Safari / modo restrito pode bloquear LS; o cookie ainda ajuda noutras abas */
-  }
-  try {
-    const maxAge = 365 * 24 * 60 * 60;
-    const secure = window.location.protocol === "https:";
-    let c = `${REDIRECT_VISITOR_STORAGE_KEY}=${encodeURIComponent(v)}; path=/; max-age=${maxAge}; SameSite=Lax`;
-    if (secure) c += "; Secure";
-    document.cookie = c;
-  } catch {
-    /* ignorar */
-  }
-}
-
 /**
- * Identificador estável por browser no **domínio do site** (localStorage + cookie
- * legível por JS). Todas as abas do mesmo host reutilizam o mesmo UUID; o valor
- * segue na query `rd_vid` para o API deduplicar cliques.
+ * Limpa ID de visitante legado (`rpm_rd_vid`) deixado por versões antigas.
+ * Já não persistimos visitante para medição de cliques.
  */
-export function getOrCreateStableRedirectVisitorId(): string {
-  if (typeof window === "undefined") {
-    return "";
-  }
-
-  let fromLs: string | null = null;
+export function clearLegacyRedirectVisitorStorage(): void {
+  if (typeof window === "undefined") return;
   try {
-    const raw = window.localStorage.getItem(REDIRECT_VISITOR_STORAGE_KEY);
-    if (raw && isUuidV4Like(raw)) fromLs = raw.trim().toLowerCase();
+    window.localStorage.removeItem("rpm_rd_vid");
   } catch {
     /* ignorar */
   }
-
-  const fromCk = readFirstPartyVisitorCookie();
-
-  if (fromLs && fromCk && fromLs === fromCk) {
-    return fromLs;
+  try {
+    document.cookie =
+      "rpm_rd_vid=; path=/; max-age=0; SameSite=Lax" +
+      (window.location.protocol === "https:" ? "; Secure" : "");
+  } catch {
+    /* ignorar */
   }
-
-  if (fromLs) {
-    persistVisitorId(fromLs);
-    return fromLs;
-  }
-
-  if (fromCk) {
-    persistVisitorId(fromCk);
-    return fromCk;
-  }
-
-  const id = crypto.randomUUID();
-  persistVisitorId(id);
-  return id;
 }
 
 /**
  * Evita segundo redirect no mesmo carregamento (ex.: React Strict Mode em dev).
- * Chave por URL completa; TTL curto.
+ * Chave por URL completa; TTL curto. Usa só sessionStorage (efémero).
  */
 export function tryAcquireRedirectNavigationLock(): boolean {
   if (typeof window === "undefined") return true;
