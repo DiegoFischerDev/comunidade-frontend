@@ -82,7 +82,7 @@ function formatMonthChartAxisLabel(key: string): string {
   const match = key.match(/^(\d{4})-(\d{2})$/);
   if (!match) return key;
   const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
-  return date.toLocaleDateString('pt-PT', { month: 'short' }).replace(/\.$/, '');
+  return date.toLocaleDateString('pt-PT', { month: 'long' }).toLowerCase();
 }
 
 function monthFilterChipClass(active: boolean): string {
@@ -568,6 +568,9 @@ function FinanceMonthlyChart({
     0,
   );
 
+  const barPercent = (value: number) =>
+    maxValue > 0 ? Math.max((value / maxValue) * 100, value > 0 ? 4 : 0) : 0;
+
   return (
     <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -576,8 +579,7 @@ function FinanceMonthlyChart({
             Receitas vs despesas por mês
           </h2>
           <p className="mt-1 text-xs text-muted">
-            Cada mês mostra duas barras: receita e despesa. O saldo aparece acima do
-            grupo.
+            Cada mês mostra receita e despesa. O saldo aparece junto do nome do mês.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
@@ -593,23 +595,78 @@ function FinanceMonthlyChart({
       {items.length === 0 ? (
         <p className="mt-6 text-sm text-muted">Sem dados financeiros para mostrar.</p>
       ) : (
-        <div className="mt-5 overflow-x-auto pb-1">
-          <div className="flex min-w-max items-end gap-6" style={{ minHeight: 280 }}>
+        <>
+          {/* Mobile: barras horizontais */}
+          <div className="mt-5 space-y-4 sm:hidden">
             {items.map((item) => {
-                const incomeHeight =
-                  maxValue > 0
-                    ? Math.max((item.income / maxValue) * 100, item.income > 0 ? 4 : 0)
-                    : 0;
-                const expenseHeight =
-                  maxValue > 0
-                    ? Math.max((item.expense / maxValue) * 100, item.expense > 0 ? 4 : 0)
-                    : 0;
+              const incomeWidth = barPercent(item.income);
+              const expenseWidth = barPercent(item.expense);
+
+              return (
+                <div key={item.key} className="space-y-2.5">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-sm font-medium capitalize text-foreground">
+                      {item.label}
+                    </p>
+                    <p
+                      className={`shrink-0 text-sm font-semibold tabular-nums ${
+                        item.balance >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                      }`}
+                    >
+                      <span className="mr-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted">
+                        Saldo
+                      </span>
+                      {formatChartEuroAmount(item.balance)}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-page">
+                        <div
+                          className="h-full rounded-full bg-emerald-500"
+                          style={{ width: `${incomeWidth}%` }}
+                        />
+                      </div>
+                      <span className="w-16 shrink-0 text-right text-[11px] font-semibold tabular-nums text-foreground">
+                        {formatChartEuroAmount(item.income)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-page">
+                        <div
+                          className="h-full rounded-full bg-rose-500"
+                          style={{ width: `${expenseWidth}%` }}
+                        />
+                      </div>
+                      <span className="w-16 shrink-0 text-right text-[11px] font-semibold tabular-nums text-foreground">
+                        {formatChartEuroAmount(item.expense)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop: barras verticais */}
+          <div className="mt-5 hidden overflow-x-auto pb-1 sm:block">
+            <div className="flex min-w-max items-end gap-6" style={{ minHeight: 280 }}>
+              {items.map((item) => {
+                const incomeHeight = barPercent(item.income);
+                const expenseHeight = barPercent(item.expense);
 
                 return (
-                  <div key={item.key} className="flex min-w-[7rem] flex-col items-center">
+                  <div
+                    key={item.key}
+                    className="flex min-w-[7rem] flex-col items-center"
+                  >
                     <div className="mb-3 text-center">
+                      <p className="text-sm font-medium capitalize text-foreground">
+                        {item.label}
+                      </p>
                       <p
-                        className={`text-sm font-semibold tabular-nums ${
+                        className={`mt-1 text-sm font-semibold tabular-nums ${
                           item.balance >= 0 ? 'text-emerald-700' : 'text-rose-700'
                         }`}
                       >
@@ -646,24 +703,28 @@ function FinanceMonthlyChart({
                       </div>
                     </div>
 
-                    <div className="mt-3 text-center">
-                      <p className="text-sm font-medium text-foreground">{item.label}</p>
-                      <div className="mt-1 flex items-center justify-center gap-3 text-[11px] text-muted">
-                        <span className="inline-flex items-center gap-1">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
-                          Receita
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <span className="h-2 w-2 rounded-full bg-rose-500" aria-hidden />
-                          Despesa
-                        </span>
-                      </div>
+                    <div className="mt-3 flex items-center justify-center gap-3 text-[11px] text-muted">
+                      <span className="inline-flex items-center gap-1">
+                        <span
+                          className="h-2 w-2 rounded-full bg-emerald-500"
+                          aria-hidden
+                        />
+                        Receita
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <span
+                          className="h-2 w-2 rounded-full bg-rose-500"
+                          aria-hidden
+                        />
+                        Despesa
+                      </span>
                     </div>
                   </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </section>
   );
@@ -690,18 +751,10 @@ function EntryList({
   onEdit: (entry: FinanceEntry) => void;
   onPreviewReceipt: (url: string) => void;
 }) {
-  const borderClass =
-    tone === 'income' ? 'border-emerald-200/80' : 'border-rose-200/80';
-  const hoverClass =
-    tone === 'income' ? 'hover:bg-emerald-50' : 'hover:bg-rose-50';
   const buttonAccent =
     tone === 'income'
       ? 'border-emerald-300 bg-emerald-100/80 text-emerald-950 hover:bg-emerald-100'
       : 'border-rose-300 bg-rose-100/80 text-rose-950 hover:bg-rose-100';
-  const placeholderClass =
-    tone === 'income'
-      ? 'border-emerald-200/80 bg-emerald-50/50 text-emerald-800/60'
-      : 'border-rose-200/80 bg-rose-50/50 text-rose-800/60';
   const totalBadgeClass =
     tone === 'income'
       ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
@@ -730,91 +783,179 @@ function EntryList({
       {entries.length === 0 ? (
         <p className="text-sm italic text-muted">{emptyLabel}</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-3 sm:space-y-2">
           {entries.map((entry) => (
             <li key={entry.id}>
-              <div
-                role="button"
-                tabIndex={busy ? -1 : 0}
-                onClick={() => {
-                  if (!busy) onEdit(entry);
-                }}
-                onKeyDown={(event) => {
-                  if (busy) return;
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    onEdit(entry);
-                  }
-                }}
-                className={`flex w-full cursor-pointer items-start gap-3 rounded-xl border bg-card px-3.5 py-3 text-left transition-colors ${hoverClass} ${
-                  busy ? 'cursor-not-allowed opacity-50' : ''
-                } ${borderClass}`}
-              >
-                {entry.receiptImageUrl ? (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onPreviewReceipt(financeMediaUrl(entry.receiptImageUrl!));
-                    }}
-                    className="relative h-14 w-14 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-border bg-page transition-opacity hover:opacity-90 disabled:opacity-50"
-                    aria-label="Ver comprovante"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={financeMediaUrl(entry.receiptImageUrl)}
-                      alt="Comprovante"
-                      className="h-full w-full object-cover"
-                    />
-                  </button>
-                ) : (
-                  <div
-                    className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-dashed text-sm font-semibold ${placeholderClass}`}
-                    aria-hidden
-                  >
-                    €
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-foreground">
-                        {entry.title}
-                      </p>
-                      {entry.kind === 'INCOME' ? (
-                        <p className="mt-0.5 truncate text-xs text-muted">
-                          {entry.whatsappDigits
-                            ? `${entry.clientName?.trim() ? `${entry.clientName.trim()} · ` : ''}${formatWhatsappDisplay(entry.whatsappDigits)}`
-                            : 'Sem cliente atribuído'}
-                        </p>
-                      ) : null}
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p
-                        className={`text-base font-semibold tabular-nums tracking-tight sm:text-lg ${
-                          tone === 'income' ? 'text-emerald-800' : 'text-rose-800'
-                        }`}
-                      >
-                        {formatCrmEuroAmount(entry.amount)}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted">
-                        {formatCrmPaymentDateLabel(entry.paidAt) ?? entry.paidAt}
-                      </p>
-                    </div>
-                  </div>
-                  {entry.comment?.trim() ? (
-                    <p className="mt-2 line-clamp-2 text-xs text-foreground/75">
-                      {entry.comment}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
+              <EntryCard
+                entry={entry}
+                tone={tone}
+                busy={busy}
+                onEdit={onEdit}
+                onPreviewReceipt={onPreviewReceipt}
+              />
             </li>
           ))}
         </ul>
       )}
     </section>
+  );
+}
+
+function EntryCard({
+  entry,
+  tone,
+  busy,
+  onEdit,
+  onPreviewReceipt,
+}: {
+  entry: FinanceEntry;
+  tone: 'income' | 'expense';
+  busy: boolean;
+  onEdit: (entry: FinanceEntry) => void;
+  onPreviewReceipt: (url: string) => void;
+}) {
+  const borderClass =
+    tone === 'income' ? 'border-emerald-200/80' : 'border-rose-200/80';
+  const hoverClass =
+    tone === 'income' ? 'hover:bg-emerald-50' : 'hover:bg-rose-50';
+  const placeholderClass =
+    tone === 'income'
+      ? 'border-emerald-200/80 bg-emerald-50/50 text-emerald-800/60'
+      : 'border-rose-200/80 bg-rose-50/50 text-rose-800/60';
+  const amountClass =
+    tone === 'income' ? 'text-emerald-800' : 'text-rose-800';
+  const clientLine =
+    entry.kind === 'INCOME'
+      ? entry.whatsappDigits
+        ? `${entry.clientName?.trim() ? `${entry.clientName.trim()} · ` : ''}${formatWhatsappDisplay(entry.whatsappDigits)}`
+        : 'Sem cliente atribuído'
+      : null;
+  const dateLabel = formatCrmPaymentDateLabel(entry.paidAt) ?? entry.paidAt;
+  const comment = entry.comment?.trim() || null;
+
+  const openEdit = () => {
+    if (!busy) onEdit(entry);
+  };
+
+  return (
+    <div
+      role="button"
+      tabIndex={busy ? -1 : 0}
+      onClick={openEdit}
+      onKeyDown={(event) => {
+        if (busy) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onEdit(entry);
+        }
+      }}
+      className={`w-full cursor-pointer rounded-xl border bg-card text-left transition-colors ${hoverClass} ${
+        busy ? 'cursor-not-allowed opacity-50' : ''
+      } ${borderClass}`}
+    >
+      {/* Mobile: card vertical */}
+      <div className="flex flex-col gap-3 p-3.5 sm:hidden">
+        {entry.receiptImageUrl ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={(event) => {
+              event.stopPropagation();
+              onPreviewReceipt(financeMediaUrl(entry.receiptImageUrl!));
+            }}
+            className="relative h-36 w-full cursor-pointer overflow-hidden rounded-lg border border-border bg-page transition-opacity hover:opacity-90 disabled:opacity-50"
+            aria-label="Ver comprovante"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={financeMediaUrl(entry.receiptImageUrl)}
+              alt="Comprovante"
+              className="h-full w-full object-cover"
+            />
+          </button>
+        ) : (
+          <div
+            className={`flex h-20 w-full items-center justify-center rounded-lg border border-dashed text-base font-semibold ${placeholderClass}`}
+            aria-hidden
+          >
+            €
+          </div>
+        )}
+
+        <div className="min-w-0 space-y-1.5">
+          <p className="text-sm font-semibold leading-snug text-foreground">
+            {entry.title}
+          </p>
+          {clientLine ? (
+            <p className="text-xs leading-snug text-muted">{clientLine}</p>
+          ) : null}
+          <p
+            className={`pt-0.5 text-xl font-semibold tabular-nums tracking-tight ${amountClass}`}
+          >
+            {formatCrmEuroAmount(entry.amount)}
+          </p>
+          <p className="text-xs text-muted">{dateLabel}</p>
+          {comment ? (
+            <p className="line-clamp-3 text-xs leading-relaxed text-foreground/75">
+              {comment}
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Desktop: card horizontal */}
+      <div className="hidden items-start gap-3 px-3.5 py-3 sm:flex">
+        {entry.receiptImageUrl ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={(event) => {
+              event.stopPropagation();
+              onPreviewReceipt(financeMediaUrl(entry.receiptImageUrl!));
+            }}
+            className="relative h-14 w-14 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-border bg-page transition-opacity hover:opacity-90 disabled:opacity-50"
+            aria-label="Ver comprovante"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={financeMediaUrl(entry.receiptImageUrl)}
+              alt="Comprovante"
+              className="h-full w-full object-cover"
+            />
+          </button>
+        ) : (
+          <div
+            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-dashed text-sm font-semibold ${placeholderClass}`}
+            aria-hidden
+          >
+            €
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-foreground">
+                {entry.title}
+              </p>
+              {clientLine ? (
+                <p className="mt-0.5 truncate text-xs text-muted">{clientLine}</p>
+              ) : null}
+            </div>
+            <div className="shrink-0 text-right">
+              <p
+                className={`text-base font-semibold tabular-nums tracking-tight sm:text-lg ${amountClass}`}
+              >
+                {formatCrmEuroAmount(entry.amount)}
+              </p>
+              <p className="mt-0.5 text-xs text-muted">{dateLabel}</p>
+            </div>
+          </div>
+          {comment ? (
+            <p className="mt-2 line-clamp-2 text-xs text-foreground/75">{comment}</p>
+          ) : null}
+        </div>
+      </div>
+    </div>
   );
 }
 

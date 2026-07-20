@@ -58,6 +58,11 @@ export const ADMIN_NAV_ITEMS: DashboardExtraNavItem[] = [
     label: 'Whatsapp scan',
     isActive: (pathname) => pathname === '/dashboard/admin/whatsapp-scan',
   },
+  {
+    href: '/dashboard/admin/automacao',
+    label: 'Automação',
+    isActive: (pathname) => pathname === '/dashboard/admin/automacao',
+  },
 ];
 
 export const RELOCATION_PARTNER_NAV_ITEMS: DashboardExtraNavItem[] = [

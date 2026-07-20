@@ -22,6 +22,9 @@ export const SITE_DESCRIPTION =
 /** Prefixo `/brand/` — URLs novas para não reutilizar cache de assets antigos. */
 export const BRAND_ASSET_BASE = "/brand";
 
+/** Áudio de boas-vindas (nota de voz PTT) — runtime em `public/brand/audios/`. */
+export const BRAND_WELCOME_AUDIO = `${BRAND_ASSET_BASE}/audios/wellcome-carol.ogg`;
+
 /** Incrementar quando favicons/assets em `/brand/` forem substituídos (cache bust). */
 export const BRAND_ASSET_VERSION = "7";
 

@@ -106,6 +106,39 @@ export type FinanceBoard = {
   balance: number;
 };
 
+export type WhatsappClientAutomationStepType = 'TEXT' | 'AUDIO' | 'IMAGE';
+
+export type WhatsappClientAutomationStep = {
+  id: string;
+  sortOrder: number;
+  type: WhatsappClientAutomationStepType;
+  textContent: string | null;
+  mediaUrl: string | null;
+  mediaMimeType: string | null;
+  mediaFileName: string | null;
+  delayMsAfter: number;
+};
+
+export type WhatsappClientAutomation = {
+  id: string;
+  name: string;
+  triggerPhrase: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  steps: WhatsappClientAutomationStep[];
+};
+
+export type WhatsappClientAutomationStepInput = {
+  type: WhatsappClientAutomationStepType;
+  textContent?: string;
+  mediaUrl?: string;
+  mediaMimeType?: string;
+  mediaFileName?: string;
+  caption?: string;
+  delayMsAfter?: number;
+};
+
 export type RafacallCrmItem = {
   id: string;
   bookingStatus: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
@@ -2077,6 +2110,41 @@ export const api = {
           method: 'PATCH',
           body: JSON.stringify(body),
         }),
+    },
+    whatsappAutomations: {
+      list: () =>
+        request<{ items: WhatsappClientAutomation[] }>(
+          '/whatsapp-automations',
+          { method: 'GET' },
+        ),
+      create: (body: {
+        name: string;
+        triggerPhrase: string;
+        active?: boolean;
+        steps: WhatsappClientAutomationStepInput[];
+      }) =>
+        request<WhatsappClientAutomation>('/whatsapp-automations', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
+      update: (
+        id: string,
+        body: {
+          name?: string;
+          triggerPhrase?: string;
+          active?: boolean;
+          steps?: WhatsappClientAutomationStepInput[];
+        },
+      ) =>
+        request<WhatsappClientAutomation>(
+          `/whatsapp-automations/${encodeURIComponent(id)}`,
+          { method: 'PATCH', body: JSON.stringify(body) },
+        ),
+      remove: (id: string) =>
+        request<{ ok: true }>(
+          `/whatsapp-automations/${encodeURIComponent(id)}`,
+          { method: 'DELETE' },
+        ),
     },
   },
   uploads: {
