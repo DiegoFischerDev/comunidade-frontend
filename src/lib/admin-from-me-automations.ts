@@ -15,8 +15,8 @@ export const ADMIN_FROM_ME_AUTOMATIONS: AdminFromMeAutomation[] = [
     name: 'Link para agendar chamada',
     trigger: 'link para agendar chamada',
     action:
-      'Envia ao cliente o link /agendar com WhatsApp (e nome, se disponível) pré-preenchidos.',
+      'Envia ao cliente o link para agendar ou alterar agendamento de chamada de video.',
     notes:
-      'Só mensagens enviadas por ti na DM (fromMe). Frase configurável via RAFA_CALL_WHATSAPP_TRIGGER_PHRASE.',
+      '',
   },
 ];
