@@ -12,10 +12,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/lib/toast';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
-import {
-  formatCrmEuroAmount,
-  formatCrmPaymentDateLabel,
-} from '@/lib/rafacall-crm';
+import { formatCrmEuroAmount, formatCrmPaymentDateLabel } from '@/lib/rafacall-crm';
 
 function financeMediaUrl(url: string): string {
   const trimmed = url.trim();
@@ -48,68 +45,60 @@ function toYmd(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function startOfMonth(year: number, monthIndex: number): Date {
-  return new Date(year, monthIndex, 1);
+function startOfMonthFromKey(key: string): string | null {
+  const match = key.match(/^(\d{4})-(\d{2})$/);
+  if (!match) return null;
+  return `${match[1]}-${match[2]}-01`;
 }
 
-function endOfMonth(year: number, monthIndex: number): Date {
-  return new Date(year, monthIndex + 1, 0);
+function endOfMonthFromKey(key: string): string | null {
+  const match = key.match(/^(\d{4})-(\d{2})$/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  return toYmd(new Date(year, monthIndex + 1, 0));
 }
 
-function formatMonthQuickLabel(year: number, monthIndex: number, now = new Date()): string {
-  const date = new Date(year, monthIndex, 1);
-  const monthName = date
+function getMonthKeyFromYmd(ymd: string | null | undefined): string | null {
+  const value = ymd?.trim() ?? '';
+  if (!value) return null;
+  return value.slice(0, 7);
+}
+
+/** Rótulo dos chips de mês, ex.: julho/26 */
+function formatMonthQuickFilterLabel(key: string): string {
+  const match = key.match(/^(\d{4})-(\d{2})$/);
+  if (!match) return key;
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const monthName = new Date(year, monthIndex, 1)
     .toLocaleDateString('pt-PT', { month: 'long' })
     .toLowerCase();
-  if (year !== now.getFullYear()) {
-    return `${monthName} ${year}`;
-  }
-  return monthName;
+  const yy = String(year % 100).padStart(2, '0');
+  return `${monthName}/${yy}`;
 }
 
-function monthKey(year: number, monthIndex: number): string {
-  return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+function formatMonthChartAxisLabel(key: string): string {
+  const match = key.match(/^(\d{4})-(\d{2})$/);
+  if (!match) return key;
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
+  return date.toLocaleDateString('pt-PT', { month: 'short' }).replace(/\.$/, '');
 }
 
-function buildLastThreeMonthOptions(now = new Date()) {
-  return [2, 1, 0].map((offset) => {
-    const date = new Date(now.getFullYear(), now.getMonth() - offset, 1);
-    const year = date.getFullYear();
-    const monthIndex = date.getMonth();
-    return {
-      key: monthKey(year, monthIndex),
-      label: formatMonthQuickLabel(year, monthIndex, now),
-      from: toYmd(startOfMonth(year, monthIndex)),
-      to: toYmd(endOfMonth(year, monthIndex)),
-    };
-  });
+function monthFilterChipClass(active: boolean): string {
+  return active
+    ? 'cursor-pointer rounded-full bg-brand-primary px-3 py-1.5 text-xs font-medium text-brand-on-primary'
+    : 'cursor-pointer rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-page';
 }
 
-function formatYmdShort(ymd: string): string {
-  const match = ymd.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return ymd;
-  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-  return date.toLocaleDateString('pt-PT', {
-    day: '2-digit',
-    month: 'short',
-  }).replace(/\.$/, '');
-}
-
-function FilterIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" />
-    </svg>
-  );
+/** Valores sobre as barras do gráfico (sem cêntimos). */
+function formatChartEuroAmount(amount: number): string {
+  return new Intl.NumberFormat('pt-PT', {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  }).format(amount);
 }
 
 function sumEntryAmounts(entries: FinanceEntry[]): number {
@@ -127,8 +116,6 @@ function entryInPeriod(
   if (to && paidAt > to) return false;
   return true;
 }
-
-type PeriodMode = 'all' | 'month' | 'custom';
 
 type EntryFormState = {
   kind: FinanceEntryKind;
@@ -160,16 +147,7 @@ export default function AdminFinanceiroPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-
-  const monthOptions = useMemo(() => buildLastThreeMonthOptions(), []);
-  const currentMonthOption = monthOptions[monthOptions.length - 1];
-  const [periodMode, setPeriodMode] = useState<PeriodMode>('month');
-  const [selectedMonthKey, setSelectedMonthKey] = useState(
-    currentMonthOption?.key ?? '',
-  );
-  const [customFrom, setCustomFrom] = useState(currentMonthOption?.from ?? '');
-  const [customTo, setCustomTo] = useState(currentMonthOption?.to ?? '');
-  const [showPeriodFilter, setShowPeriodFilter] = useState(false);
+  const [selectedMonthFilter, setSelectedMonthFilter] = useState<'all' | string>('all');
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -178,24 +156,53 @@ export default function AdminFinanceiroPage() {
   const [deleteConfirmEntry, setDeleteConfirmEntry] = useState<FinanceEntry | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const availableMonthOptions = useMemo(() => {
+    const totals = new Map<string, { income: number; expense: number }>();
+
+    for (const entry of board?.incomes ?? []) {
+      const key = getMonthKeyFromYmd(entry.paidAt);
+      if (!key) continue;
+      const current = totals.get(key) ?? { income: 0, expense: 0 };
+      current.income += entry.amount;
+      totals.set(key, current);
+    }
+
+    for (const entry of board?.expenses ?? []) {
+      const key = getMonthKeyFromYmd(entry.paidAt);
+      if (!key) continue;
+      const current = totals.get(key) ?? { income: 0, expense: 0 };
+      current.expense += entry.amount;
+      totals.set(key, current);
+    }
+
+    return Array.from(totals.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, totalsByKind]) => ({
+        key,
+        label: formatMonthQuickFilterLabel(key),
+        shortLabel: formatMonthChartAxisLabel(key),
+        income: Math.round(totalsByKind.income * 100) / 100,
+        expense: Math.round(totalsByKind.expense * 100) / 100,
+      }));
+  }, [board?.expenses, board?.incomes]);
+
+  useEffect(() => {
+    if (selectedMonthFilter === 'all') return;
+    if (availableMonthOptions.some((option) => option.key === selectedMonthFilter)) {
+      return;
+    }
+    setSelectedMonthFilter('all');
+  }, [availableMonthOptions, selectedMonthFilter]);
+
   const activePeriod = useMemo(() => {
-    if (periodMode === 'all') {
+    if (selectedMonthFilter === 'all') {
       return { from: null as string | null, to: null as string | null };
     }
-    if (periodMode === 'month') {
-      const option = monthOptions.find((item) => item.key === selectedMonthKey);
-      return {
-        from: option?.from ?? null,
-        to: option?.to ?? null,
-      };
-    }
-    const from = customFrom.trim() || null;
-    const to = customTo.trim() || null;
-    if (from && to && from > to) {
-      return { from: to, to: from };
-    }
-    return { from, to };
-  }, [periodMode, selectedMonthKey, monthOptions, customFrom, customTo]);
+    return {
+      from: startOfMonthFromKey(selectedMonthFilter),
+      to: endOfMonthFromKey(selectedMonthFilter),
+    };
+  }, [selectedMonthFilter]);
 
   const filteredIncomes = useMemo(
     () =>
@@ -227,20 +234,28 @@ export default function AdminFinanceiroPage() {
   );
 
   const periodSummaryLabel = useMemo(() => {
-    if (periodMode === 'all') return 'Todo o histórico';
-    if (periodMode === 'month') {
-      return (
-        monthOptions.find((item) => item.key === selectedMonthKey)?.label ??
-        'Período'
-      );
-    }
-    const from = customFrom.trim();
-    const to = customTo.trim();
-    if (from && to) return `${formatYmdShort(from)} – ${formatYmdShort(to)}`;
-    if (from) return `Desde ${formatYmdShort(from)}`;
-    if (to) return `Até ${formatYmdShort(to)}`;
-    return 'Período livre';
-  }, [periodMode, selectedMonthKey, monthOptions, customFrom, customTo]);
+    if (selectedMonthFilter === 'all') return 'Todos os meses';
+    return (
+      availableMonthOptions.find((item) => item.key === selectedMonthFilter)?.label ??
+      'Mês selecionado'
+    );
+  }, [availableMonthOptions, selectedMonthFilter]);
+
+  const chartItems = useMemo(
+    () =>
+      availableMonthOptions
+        .filter((item) =>
+          selectedMonthFilter === 'all' ? true : item.key === selectedMonthFilter,
+        )
+        .map((item) => ({
+          key: item.key,
+          label: item.shortLabel,
+          income: item.income,
+          expense: item.expense,
+          balance: Math.round((item.income - item.expense) * 100) / 100,
+        })),
+    [availableMonthOptions, selectedMonthFilter],
+  );
 
   const load = useCallback(async () => {
     if (!canSee) return;
@@ -262,35 +277,6 @@ export default function AdminFinanceiroPage() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  const selectMonth = (key: string) => {
-    const option = monthOptions.find((item) => item.key === key);
-    setPeriodMode('month');
-    setSelectedMonthKey(key);
-    if (option) {
-      setCustomFrom(option.from);
-      setCustomTo(option.to);
-    }
-    setShowPeriodFilter(false);
-  };
-
-  const selectAllPeriod = () => {
-    setPeriodMode('all');
-    setShowPeriodFilter(false);
-  };
-
-  const handleCustomFromChange = (value: string) => {
-    setPeriodMode('custom');
-    setCustomFrom(value);
-  };
-
-  const handleCustomToChange = (value: string) => {
-    setPeriodMode('custom');
-    setCustomTo(value);
-    if (customFrom.trim() && value.trim()) {
-      setShowPeriodFilter(false);
-    }
-  };
 
   const resetForm = () => {
     setFormOpen(false);
@@ -430,7 +416,7 @@ export default function AdminFinanceiroPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-4 pt-8 pb-8 sm:px-6 sm:pt-12 md:pt-16 lg:pt-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <header className="space-y-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Financeiro
@@ -440,43 +426,27 @@ export default function AdminFinanceiroPage() {
             com WhatsApp são atribuídas ao cliente no CRM.
           </p>
         </div>
-        <div className="relative z-20 shrink-0 self-end">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
+            Ver:
+          </span>
           <button
             type="button"
-            onClick={() => setShowPeriodFilter((prev) => !prev)}
-            aria-expanded={showPeriodFilter}
-            aria-haspopup="dialog"
-            aria-label={
-              showPeriodFilter
-                ? 'Ocultar filtro de período'
-                : 'Mostrar filtro de período'
-            }
-            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
-              showPeriodFilter
-                ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
-                : 'border-border bg-card text-foreground hover:bg-page'
-            }`}
+            className={monthFilterChipClass(selectedMonthFilter === 'all')}
+            onClick={() => setSelectedMonthFilter('all')}
           >
-            <FilterIcon className="h-4 w-4 shrink-0" />
-            <span className={periodMode === 'month' ? 'capitalize' : undefined}>
-              {periodSummaryLabel}
-            </span>
+            Todos
           </button>
-
-          {showPeriodFilter ? (
-            <PeriodFilter
-              monthOptions={monthOptions}
-              periodMode={periodMode}
-              selectedMonthKey={selectedMonthKey}
-              customFrom={customFrom}
-              customTo={customTo}
-              onSelectAll={selectAllPeriod}
-              onSelectMonth={selectMonth}
-              onCustomFromChange={handleCustomFromChange}
-              onCustomToChange={handleCustomToChange}
-              onRequestClose={() => setShowPeriodFilter(false)}
-            />
-          ) : null}
+          {availableMonthOptions.map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              className={monthFilterChipClass(selectedMonthFilter === option.key)}
+              onClick={() => setSelectedMonthFilter(option.key)}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
       </header>
 
@@ -486,34 +456,16 @@ export default function AdminFinanceiroPage() {
         </p>
       ) : null}
 
-      <section className="grid gap-3 sm:grid-cols-3">
-        <SummaryStat
-          label="Receitas"
-          value={formatCrmEuroAmount(incomesTotal)}
-          tone="income"
-          caption={periodSummaryLabel}
-          captionCapitalize={periodMode === 'month'}
-        />
-        <SummaryStat
-          label="Despesas"
-          value={formatCrmEuroAmount(expensesTotal)}
-          tone="expense"
-          caption={periodSummaryLabel}
-          captionCapitalize={periodMode === 'month'}
-        />
-        <SummaryStat
-          label="Saldo"
-          value={formatCrmEuroAmount(balance)}
-          tone={balance >= 0 ? 'balance-positive' : 'balance-negative'}
-          emphasized
-          caption={periodSummaryLabel}
-          captionCapitalize={periodMode === 'month'}
-        />
-      </section>
+      <FinanceMonthlyChart
+        items={chartItems}
+        totalBalance={balance}
+        periodSummaryLabel={periodSummaryLabel}
+      />
 
       <div className="grid gap-8 lg:grid-cols-2">
         <EntryList
           title="Receitas"
+          totalAmount={incomesTotal}
           emptyLabel="Nenhuma receita neste período."
           entries={filteredIncomes}
           tone="income"
@@ -524,6 +476,7 @@ export default function AdminFinanceiroPage() {
         />
         <EntryList
           title="Despesas"
+          totalAmount={expensesTotal}
           emptyLabel="Nenhuma despesa neste período."
           entries={filteredExpenses}
           tone="expense"
@@ -595,345 +548,130 @@ export default function AdminFinanceiroPage() {
   );
 }
 
-function PeriodFilter({
-  monthOptions,
-  periodMode,
-  selectedMonthKey,
-  customFrom,
-  customTo,
-  onSelectAll,
-  onSelectMonth,
-  onCustomFromChange,
-  onCustomToChange,
-  onRequestClose,
+function FinanceMonthlyChart({
+  items,
+  totalBalance,
+  periodSummaryLabel,
 }: {
-  monthOptions: Array<{ key: string; label: string; from: string; to: string }>;
-  periodMode: PeriodMode;
-  selectedMonthKey: string;
-  customFrom: string;
-  customTo: string;
-  onSelectAll: () => void;
-  onSelectMonth: (key: string) => void;
-  onCustomFromChange: (value: string) => void;
-  onCustomToChange: (value: string) => void;
-  onRequestClose: () => void;
+  items: Array<{
+    key: string;
+    label: string;
+    income: number;
+    expense: number;
+    balance: number;
+  }>;
+  totalBalance: number;
+  periodSummaryLabel: string;
 }) {
-  const panelRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onRequestClose();
-    };
-    const onPointerDown = (event: MouseEvent | TouchEvent) => {
-      const target = event.target as Node | null;
-      if (!target || !panelRef.current) return;
-      const root = panelRef.current.parentElement;
-      if (root && !root.contains(target)) {
-        onRequestClose();
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('touchstart', onPointerDown);
-    return () => {
-      window.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('touchstart', onPointerDown);
-    };
-  }, [onRequestClose]);
-
-  const chipClass = (active: boolean) =>
-    `cursor-pointer rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
-      active
-        ? 'border-brand-primary bg-brand-primary text-white'
-        : 'border-border bg-page text-foreground hover:border-brand-primary/40 hover:bg-card'
-    }`;
-
-  return (
-    <section
-      ref={panelRef}
-      role="dialog"
-      aria-label="Filtro de período"
-      className="absolute top-[calc(100%+0.5rem)] right-0 z-30 w-[min(18.5rem,calc(100vw-2.5rem))] rounded-2xl border border-border bg-card px-3.5 py-3.5 shadow-[0_12px_40px_rgba(12,58,51,0.14)] sm:w-max sm:min-w-[40rem] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:px-4"
-    >
-      {/* Mobile: datas primeiro */}
-      <div className="space-y-3 sm:hidden">
-        <div className="grid grid-cols-2 gap-2.5">
-          <div>
-            <label
-              className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-muted"
-              htmlFor="finance-period-from-mobile"
-            >
-              De
-            </label>
-            <input
-              id="finance-period-from-mobile"
-              type="date"
-              value={customFrom}
-              onChange={(event) => onCustomFromChange(event.target.value)}
-              className={`w-full rounded-lg border bg-page px-2 py-1.5 text-sm outline-none transition-colors focus:border-brand-primary ${
-                periodMode === 'custom'
-                  ? 'border-brand-primary/60'
-                  : 'border-border'
-              }`}
-            />
-          </div>
-          <div>
-            <label
-              className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-muted"
-              htmlFor="finance-period-to-mobile"
-            >
-              Até
-            </label>
-            <input
-              id="finance-period-to-mobile"
-              type="date"
-              value={customTo}
-              onChange={(event) => onCustomToChange(event.target.value)}
-              className={`w-full rounded-lg border bg-page px-2 py-1.5 text-sm outline-none transition-colors focus:border-brand-primary ${
-                periodMode === 'custom'
-                  ? 'border-brand-primary/60'
-                  : 'border-border'
-              }`}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-wrap justify-end gap-2 border-t border-border/70 pt-3">
-          {monthOptions.map((option) => {
-            const isActive =
-              periodMode === 'month' && selectedMonthKey === option.key;
-            return (
-              <button
-                key={option.key}
-                type="button"
-                onClick={() => onSelectMonth(option.key)}
-                className={`${chipClass(isActive)} capitalize`}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            onClick={onSelectAll}
-            className={chipClass(periodMode === 'all')}
-          >
-            Todo o histórico
-          </button>
-        </div>
-      </div>
-
-      {/* Desktop/tablet: datas à esquerda, quick filters à direita */}
-      <div className="hidden items-center justify-end gap-2 sm:flex">
-        <div className="flex items-end gap-2 border-r border-border/70 pr-3">
-          <div>
-            <label
-              className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted"
-              htmlFor="finance-period-from"
-            >
-              De
-            </label>
-            <input
-              id="finance-period-from"
-              type="date"
-              value={customFrom}
-              onChange={(event) => onCustomFromChange(event.target.value)}
-              className={`w-[9.75rem] rounded-lg border bg-page px-2.5 py-1.5 text-sm outline-none transition-colors focus:border-brand-primary ${
-                periodMode === 'custom'
-                  ? 'border-brand-primary/60'
-                  : 'border-border'
-              }`}
-            />
-          </div>
-          <div>
-            <label
-              className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted"
-              htmlFor="finance-period-to"
-            >
-              Até
-            </label>
-            <input
-              id="finance-period-to"
-              type="date"
-              value={customTo}
-              onChange={(event) => onCustomToChange(event.target.value)}
-              className={`w-[9.75rem] rounded-lg border bg-page px-2.5 py-1.5 text-sm outline-none transition-colors focus:border-brand-primary ${
-                periodMode === 'custom'
-                  ? 'border-brand-primary/60'
-                  : 'border-border'
-              }`}
-            />
-          </div>
-        </div>
-
-        {monthOptions.map((option) => {
-          const isActive =
-            periodMode === 'month' && selectedMonthKey === option.key;
-          return (
-            <button
-              key={option.key}
-              type="button"
-              onClick={() => onSelectMonth(option.key)}
-              className={`${chipClass(isActive)} capitalize`}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-        <button
-          type="button"
-          onClick={onSelectAll}
-          className={chipClass(periodMode === 'all')}
-        >
-          Todo o histórico
-        </button>
-      </div>
-    </section>
+  const maxValue = items.reduce(
+    (max, item) => Math.max(max, item.income, item.expense),
+    0,
   );
-}
-
-function SummaryStat({
-  label,
-  value,
-  tone,
-  emphasized = false,
-  caption,
-  captionCapitalize = false,
-}: {
-  label: string;
-  value: string;
-  tone: 'income' | 'expense' | 'balance-positive' | 'balance-negative';
-  emphasized?: boolean;
-  caption?: string;
-  captionCapitalize?: boolean;
-}) {
-  const styles = {
-    income: {
-      shell: 'border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-emerald-50/40 to-card',
-      bar: 'bg-emerald-500',
-      label: 'text-emerald-800/80',
-      value: 'text-emerald-950',
-      iconWrap: 'bg-emerald-600/10 text-emerald-700 ring-1 ring-emerald-600/10',
-      icon: (
-        <path
-          d="M12 19V5M5 12l7-7 7 7"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ),
-    },
-    expense: {
-      shell: 'border-rose-200/70 bg-gradient-to-br from-rose-50 via-rose-50/40 to-card',
-      bar: 'bg-rose-500',
-      label: 'text-rose-800/80',
-      value: 'text-rose-950',
-      iconWrap: 'bg-rose-600/10 text-rose-700 ring-1 ring-rose-600/10',
-      icon: (
-        <path
-          d="M12 5v14M5 12l7 7 7-7"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ),
-    },
-    'balance-positive': {
-      shell:
-        'border-brand-primary/15 bg-gradient-to-br from-brand-primary/[0.08] via-brand-secondary/20 to-card',
-      bar: 'bg-brand-accent',
-      label: 'text-brand-primary/75',
-      value: 'text-brand-primary',
-      iconWrap: 'bg-brand-primary/10 text-brand-primary ring-1 ring-brand-primary/10',
-      icon: (
-        <path
-          d="M4 7h16M4 12h16M4 17h10"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      ),
-    },
-    'balance-negative': {
-      shell: 'border-rose-200/80 bg-gradient-to-br from-rose-100/80 via-rose-50/50 to-card',
-      bar: 'bg-rose-500',
-      label: 'text-rose-800/80',
-      value: 'text-rose-900',
-      iconWrap: 'bg-rose-600/10 text-rose-700 ring-1 ring-rose-600/10',
-      icon: (
-        <path
-          d="M4 7h16M4 12h16M4 17h10"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      ),
-    },
-  }[tone];
 
   return (
-    <div
-      className={`relative overflow-hidden rounded-[18px] border px-5 py-5 shadow-[0_1px_2px_rgba(12,58,51,0.04)] sm:px-6 sm:py-6 ${styles.shell} ${
-        emphasized ? 'sm:shadow-[0_4px_18px_rgba(12,58,51,0.07)]' : ''
-      }`}
-    >
-      <span
-        className={`absolute inset-y-0 left-0 w-1 ${styles.bar}`}
-        aria-hidden
-      />
-      <div className="flex items-start justify-between gap-4 pl-1">
-        <div className="min-w-0">
-          <p
-            className={`text-[11px] font-semibold uppercase tracking-[0.16em] ${styles.label}`}
-          >
-            {label}
+    <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">
+            Receitas vs despesas por mês
+          </h2>
+          <p className="mt-1 text-xs text-muted">
+            Cada mês mostra duas barras: receita e despesa. O saldo aparece acima do
+            grupo.
           </p>
-          <p
-            className={`mt-3 text-[1.65rem] font-semibold leading-none tracking-tight tabular-nums sm:text-[1.85rem] ${styles.value}`}
-          >
-            {value}
-          </p>
-          {caption ? (
-            <span
-              className={`mt-3 inline-flex max-w-full items-center gap-1.5 rounded-full border border-brand-accent/35 bg-brand-accent/15 px-2.5 py-1 text-xs font-semibold text-brand-primary ${
-                captionCapitalize ? 'capitalize' : ''
-              }`}
-            >
-              <svg
-                className="h-3.5 w-3.5 shrink-0 text-brand-accent-dark"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <path d="M16 2v4M8 2v4M3 10h18" />
-              </svg>
-              <span className="truncate">{caption}</span>
-            </span>
-          ) : null}
         </div>
-        <span
-          className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${styles.iconWrap}`}
-          aria-hidden
-        >
-          <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none">
-            {styles.icon}
-          </svg>
-        </span>
+        <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
+          <span className="rounded-full border border-border bg-page px-3 py-1">
+            {periodSummaryLabel}
+          </span>
+          <span className="tabular-nums text-foreground">
+            Saldo: {formatChartEuroAmount(totalBalance)}
+          </span>
+        </div>
       </div>
-    </div>
+
+      {items.length === 0 ? (
+        <p className="mt-6 text-sm text-muted">Sem dados financeiros para mostrar.</p>
+      ) : (
+        <div className="mt-5 overflow-x-auto pb-1">
+          <div className="flex min-w-max items-end gap-6" style={{ minHeight: 280 }}>
+            {items.map((item) => {
+                const incomeHeight =
+                  maxValue > 0
+                    ? Math.max((item.income / maxValue) * 100, item.income > 0 ? 4 : 0)
+                    : 0;
+                const expenseHeight =
+                  maxValue > 0
+                    ? Math.max((item.expense / maxValue) * 100, item.expense > 0 ? 4 : 0)
+                    : 0;
+
+                return (
+                  <div key={item.key} className="flex min-w-[7rem] flex-col items-center">
+                    <div className="mb-3 text-center">
+                      <p
+                        className={`text-sm font-semibold tabular-nums ${
+                          item.balance >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                        }`}
+                      >
+                        {formatChartEuroAmount(item.balance)}
+                      </p>
+                      <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-muted">
+                        Saldo
+                      </p>
+                    </div>
+
+                    <div className="flex h-44 items-end gap-2">
+                      <div className="flex w-10 flex-col items-center">
+                        <span className="mb-1 text-[11px] font-semibold tabular-nums text-foreground">
+                          {formatChartEuroAmount(item.income)}
+                        </span>
+                        <div className="flex h-36 w-full items-end">
+                          <div
+                            className="w-full rounded-t-md bg-emerald-500"
+                            style={{ height: `${incomeHeight}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex w-10 flex-col items-center">
+                        <span className="mb-1 text-[11px] font-semibold tabular-nums text-foreground">
+                          {formatChartEuroAmount(item.expense)}
+                        </span>
+                        <div className="flex h-36 w-full items-end">
+                          <div
+                            className="w-full rounded-t-md bg-rose-500"
+                            style={{ height: `${expenseHeight}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 text-center">
+                      <p className="text-sm font-medium text-foreground">{item.label}</p>
+                      <div className="mt-1 flex items-center justify-center gap-3 text-[11px] text-muted">
+                        <span className="inline-flex items-center gap-1">
+                          <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
+                          Receita
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <span className="h-2 w-2 rounded-full bg-rose-500" aria-hidden />
+                          Despesa
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
 function EntryList({
   title,
+  totalAmount,
   emptyLabel,
   entries,
   tone,
@@ -943,6 +681,7 @@ function EntryList({
   onPreviewReceipt,
 }: {
   title: string;
+  totalAmount: number;
   emptyLabel: string;
   entries: FinanceEntry[];
   tone: 'income' | 'expense';
@@ -951,8 +690,6 @@ function EntryList({
   onEdit: (entry: FinanceEntry) => void;
   onPreviewReceipt: (url: string) => void;
 }) {
-  const titleClass =
-    tone === 'income' ? 'text-emerald-950' : 'text-rose-950';
   const borderClass =
     tone === 'income' ? 'border-emerald-200/80' : 'border-rose-200/80';
   const hoverClass =
@@ -965,14 +702,19 @@ function EntryList({
     tone === 'income'
       ? 'border-emerald-200/80 bg-emerald-50/50 text-emerald-800/60'
       : 'border-rose-200/80 bg-rose-50/50 text-rose-800/60';
+  const totalBadgeClass =
+    tone === 'income'
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+      : 'border-rose-200 bg-rose-50 text-rose-800';
 
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h2 className={`text-lg font-semibold ${titleClass}`}>
-          {title}
-          <span className="ml-2 text-sm font-medium text-muted">
-            ({entries.length})
+        <h2 className="min-w-0">
+          <span
+            className={`inline-flex max-w-full items-center rounded-full border px-3 py-1 text-sm font-semibold tabular-nums ${totalBadgeClass}`}
+          >
+            {title} {formatChartEuroAmount(totalAmount)}
           </span>
         </h2>
         <button
@@ -1112,6 +854,11 @@ function EntryFormModal({
     status: 'idle' | 'loading' | 'found' | 'not_found';
     name: string | null;
   }>({ status: 'idle', name: null });
+  const whatsappDigits = isIncome ? form.whatsapp.replace(/\D/g, '') : '';
+  const effectiveClientLookup =
+    !isIncome || whatsappDigits.length < 8
+      ? { status: 'idle' as const, name: null }
+      : clientLookup;
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -1122,23 +869,16 @@ function EntryFormModal({
   }, [busy, onClose]);
 
   useEffect(() => {
-    if (!isIncome) {
-      setClientLookup({ status: 'idle', name: null });
-      return;
-    }
-
-    const digits = form.whatsapp.replace(/\D/g, '');
-    if (digits.length < 8) {
-      setClientLookup({ status: 'idle', name: null });
+    if (!isIncome || whatsappDigits.length < 8) {
       return;
     }
 
     let cancelled = false;
-    setClientLookup({ status: 'loading', name: null });
     const timer = window.setTimeout(() => {
       void (async () => {
+        setClientLookup({ status: 'loading', name: null });
         try {
-          const result = await api.admin.rafacall.lookupCrmClient(digits);
+          const result = await api.admin.rafacall.lookupCrmClient(whatsappDigits);
           if (cancelled) return;
           if (result.inCrm) {
             setClientLookup({
@@ -1159,7 +899,7 @@ function EntryFormModal({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [form.whatsapp, isIncome]);
+  }, [isIncome, whatsappDigits]);
 
   return (
     <div
@@ -1308,13 +1048,13 @@ function EntryFormModal({
                 disabled={busy}
                 rememberInStorage={false}
               />
-              {clientLookup.status === 'loading' ? (
+              {effectiveClientLookup.status === 'loading' ? (
                 <p className="mt-2 text-xs text-muted">A procurar cliente…</p>
               ) : null}
-              {clientLookup.status === 'found' ? (
+              {effectiveClientLookup.status === 'found' ? (
                 <div className="mt-3 flex items-start gap-3 rounded-xl border border-emerald-300/80 bg-emerald-50 px-3.5 py-3">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-semibold text-white">
-                    {(clientLookup.name || 'C')
+                    {(effectiveClientLookup.name || 'C')
                       .trim()
                       .charAt(0)
                       .toUpperCase()}
@@ -1324,7 +1064,7 @@ function EntryFormModal({
                       Cliente no CRM
                     </p>
                     <p className="mt-0.5 truncate text-sm font-semibold text-emerald-950">
-                      {clientLookup.name || 'Cliente encontrado'}
+                      {effectiveClientLookup.name || 'Cliente encontrado'}
                     </p>
                     {formatWhatsappDisplay(form.whatsapp) ? (
                       <p className="mt-0.5 truncate text-xs text-emerald-800/80">
@@ -1346,7 +1086,7 @@ function EntryFormModal({
                   </svg>
                 </div>
               ) : null}
-              {clientLookup.status === 'not_found' ? (
+              {effectiveClientLookup.status === 'not_found' ? (
                 <div className="mt-3 rounded-xl border border-amber-300/80 bg-amber-50 px-3.5 py-2.5">
                   <p className="text-sm font-medium text-amber-900">
                     Cliente não encontrado
@@ -1356,7 +1096,7 @@ function EntryFormModal({
                   </p>
                 </div>
               ) : null}
-              {clientLookup.status === 'idle' ? (
+              {effectiveClientLookup.status === 'idle' ? (
                 <p className="mt-2 text-xs text-muted">
                   Se preencheres, a receita fica atribuída a esse cliente no CRM.
                 </p>
