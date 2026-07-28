@@ -50,28 +50,11 @@ export function FinanciamentoQuizView() {
   const [introChecking, setIntroChecking] = useState(false);
   const [introError, setIntroError] = useState('');
 
-  const [managers, setManagers] = useState<
-    Array<{ id: string; name: string; logoUrl: string | null }>
-  >([]);
-
   const cardRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setCurrentStep(nextStep(answers));
   }, [answers]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await api.partner.publicFinancingManagers();
-        setManagers(
-          res.items.map((m) => ({ id: m.id, name: m.name, logoUrl: m.logoUrl })),
-        );
-      } catch {
-        setManagers([]);
-      }
-    })();
-  }, []);
 
   // Mantém o card do quiz visível ao mudar de pergunta; na intro não faz scroll
   // para a página abrir no topo (scrollY === 0).
@@ -310,8 +293,6 @@ export function FinanciamentoQuizView() {
         />
       ) : null}
 
-      {phase === 'intro' && managers.length ? <ManagersStrip items={managers} /> : null}
-
       {phase === 'intro' ? <StepsSection /> : null}
 
       {phase !== 'quiz' ? <CasosReaisSection /> : null}
@@ -373,50 +354,6 @@ function StepsSection() {
           </li>
         ))}
       </ol>
-    </section>
-  );
-}
-
-function ManagersStrip(props: {
-  items: Array<{ id: string; name: string; logoUrl: string | null }>;
-}) {
-  return (
-    <section className="px-1 py-2 sm:px-0">
-      <div className="rounded-2xl bg-gradient-to-b from-brand-accent/10 via-transparent to-transparent px-4 py-5 sm:px-6">
-        <header className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-wider text-brand-primary">
-            Gestoras de crédito
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-            Conhece quem vai acompanhar gratuitamente o teu processo do início ao fim.
-          </h2>
-        </header>
-
-        <ul className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {props.items.map((m) => (
-            <li
-              key={m.id}
-              className="rounded-2xl bg-card/70 px-4 py-5 text-center ring-1 ring-zinc-200/70 backdrop-blur-sm"
-            >
-              <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-card ring-1 ring-zinc-200 sm:h-40 sm:w-40">
-                {m.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={m.logoUrl}
-                    alt={m.name}
-                    className="h-28 w-28 rounded-full bg-card object-contain sm:h-36 sm:w-36"
-                  />
-                ) : (
-                  <span className="text-3xl font-semibold text-brand-primary">
-                    {(m.name?.trim()?.[0] ?? 'G').toUpperCase()}
-                  </span>
-                )}
-              </div>
-              <p className="mt-4 text-base font-semibold text-foreground">{m.name}</p>
-            </li>
-          ))}
-        </ul>
-      </div>
     </section>
   );
 }

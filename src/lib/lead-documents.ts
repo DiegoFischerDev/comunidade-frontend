@@ -45,6 +45,7 @@ export const DISPONIBILIDADES_FIADOR = [
 export type DisponibilidadeFiador = (typeof DISPONIBILIDADES_FIADOR)[number];
 
 export type DocFieldName =
+  | 'rgpd'
   | 'cartao_residencia_ou_passaporte'
   | 'recibo_vencimento_1'
   | 'recibo_vencimento_2'
@@ -61,8 +62,12 @@ export type DocFieldName =
   | 'declaracao_nao_divida_seguranca_social'
   | 'declaracao_predial';
 
+/** PDF público para o lead descarregar, assinar e reenviar. */
+export const RGPD_PDF_URL = '/RGPD/RGPD.pdf';
+
 /** Nome canónico (sem extensão) de cada documento. Igual ao backend. */
 export const DOC_STANDARD_NAMES: Record<DocFieldName, string> = {
+  rgpd: 'RGPD assinado',
   cartao_residencia_ou_passaporte: 'Cartão de residência ou passaporte',
   recibo_vencimento_1: 'Recibo de vencimento 1',
   recibo_vencimento_2: 'Recibo de vencimento 2',
@@ -83,6 +88,8 @@ export const DOC_STANDARD_NAMES: Record<DocFieldName, string> = {
 
 /** Descrição apresentada no card de cada documento (orienta o lead). */
 export const DOC_DESCRIPTIONS: Record<DocFieldName, string> = {
+  rgpd:
+    'Documento de Informação Prévia à Prestação de Serviços e Regulamento Geral sobre a Proteção de Dados (RGPD), devidamente lido e assinado.',
   cartao_residencia_ou_passaporte:
     'Documento de identificação válido: cartão de residência (titular de autorização de residência) ou passaporte. Deve estar dentro do prazo de validade.',
   recibo_vencimento_1:

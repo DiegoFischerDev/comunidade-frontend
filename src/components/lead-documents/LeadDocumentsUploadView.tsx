@@ -21,6 +21,7 @@ import {
   labelForMode,
   type LeadDocumentSubmissionMode,
   MAX_FILE_BYTES,
+  RGPD_PDF_URL,
 } from '@/lib/lead-documents';
 import {
   clearLeadStorage,
@@ -260,6 +261,9 @@ export function LeadDocumentsUploadView() {
   }, []);
 
   const validate = useCallback((): string | null => {
+    if (!files.rgpd && mode === 'main' && !docsSentAt) {
+      return 'Descarrega, assina e anexa o documento RGPD para continuares.';
+    }
     if (!form.nome.trim()) return 'Indica o teu nome.';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
       return 'Indica um email válido.';
@@ -278,6 +282,9 @@ export function LeadDocumentsUploadView() {
     }
     return null;
   }, [
+    files,
+    mode,
+    docsSentAt,
     form.nome,
     form.email,
     form.vinculoLaboral,
@@ -286,7 +293,6 @@ export function LeadDocumentsUploadView() {
     form.disponibilidadeFiador,
     showFiadorQuestion,
     requiredFields,
-    files,
   ]);
 
   const handleSubmit = useCallback(async () => {
@@ -317,6 +323,9 @@ export function LeadDocumentsUploadView() {
       if (form.semDocsLabels.length) {
         fd.append('sem_docs_labels', form.semDocsLabels.join(','));
       }
+      if (files.rgpd) {
+        fd.append('rgpd', files.rgpd, files.rgpd.name);
+      }
       for (const field of requiredFields) {
         const f = files[field];
         if (f) fd.append(field, f, f.name);
@@ -334,6 +343,7 @@ export function LeadDocumentsUploadView() {
         mensagem: '',
         consent: false,
       }));
+      setDocsSentAt((prev) => prev ?? new Date().toISOString());
       setPhase('sent');
     } catch (err) {
       setSubmitError(
@@ -511,7 +521,7 @@ function PartnerCard({ partner }: { partner: PartnerInfo }) {
   return (
     <section className="px-2 py-4 text-center sm:px-6 sm:py-6">
       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-primary">
-        A tua gestora de crédito
+        A tua intermediária de crédito
       </p>
       <div className="mt-4">
         {partner.logoUrl ? (
@@ -532,6 +542,97 @@ function PartnerCard({ partner }: { partner: PartnerInfo }) {
       </h3>
       {partner.shortDescription ? (
         <MultilineDescription text={partner.shortDescription} />
+      ) : null}
+    </section>
+  );
+}
+
+const RGPD_EXPLANATION = [
+  'Antes de iniciarmos a análise do seu pedido de crédito, pedimos que leia e assine o Documento de Informação Prévia à Prestação de Serviços e o RGPD.',
+  'Estes documentos permitem ao intermediário de crédito analisar o seu processo, solicitar propostas aos bancos e tratar os seus dados de forma segura e em conformidade com a lei.',
+] as const;
+
+function RgpdSection(props: {
+  file: File | null;
+  error: string | null;
+  uploading: boolean;
+  onPick: (file: File) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <section className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <header>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-primary">
+          Passo obrigatório
+        </p>
+        <h2 className="mt-1 text-lg font-semibold text-foreground">
+          Documento RGPD
+        </h2>
+      </header>
+
+      <div className="space-y-3 text-sm leading-relaxed text-muted">
+        {RGPD_EXPLANATION.map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
+      </div>
+
+      <ol className="space-y-2 rounded-xl border border-border bg-page/60 p-4 text-sm text-foreground">
+        <li className="flex gap-2">
+          <span className="font-semibold text-brand-primary">1.</span>
+          <span>Descarrega o documento PDF.</span>
+        </li>
+        <li className="flex gap-2">
+          <span className="font-semibold text-brand-primary">2.</span>
+          <span>Lê com atenção e assina (digitalmente ou em papel, com foto/scan).</span>
+        </li>
+        <li className="flex gap-2">
+          <span className="font-semibold text-brand-primary">3.</span>
+          <span>Anexa o ficheiro assinado abaixo para continuares.</span>
+        </li>
+      </ol>
+
+      <a
+        href={RGPD_PDF_URL}
+        download="RGPD.pdf"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="brand-cta-primary inline-flex w-full min-h-[52px] items-center justify-center gap-3 rounded-xl px-6 py-3.5 text-base font-semibold shadow-md transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-5 w-5 shrink-0"
+          aria-hidden
+        >
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        Descarregar documento RGPD (PDF)
+      </a>
+
+      <DocumentBlock
+        index={1}
+        fieldName="rgpd"
+        label="RGPD assinado"
+        description={DOC_DESCRIPTIONS.rgpd}
+        file={props.file}
+        onPick={props.onPick}
+        onRemove={props.onRemove}
+        uploading={props.uploading}
+        error={props.error}
+      />
+
+      {!props.file ? (
+        <p className="text-xs text-muted">
+          As restantes secções do formulário ficam disponíveis após anexares o RGPD
+          assinado.
+        </p>
       ) : null}
     </section>
   );
@@ -586,6 +687,10 @@ function FormPanel(props: {
     [requiredFields, files],
   );
 
+  /** No primeiro envio principal, o RGPD assinado desbloqueia o resto do formulário. */
+  const isRgpdUnlocked =
+    !!files.rgpd || !!docsSentAt || mode !== 'main';
+
   return (
     <div className="space-y-5">
       {docsSentAt ? (
@@ -599,6 +704,16 @@ function FormPanel(props: {
 
       <PartnerCard partner={partner} />
 
+      <RgpdSection
+        file={files.rgpd ?? null}
+        error={fileErrors.rgpd ?? null}
+        uploading={submitting}
+        onPick={(f) => onPick('rgpd', f)}
+        onRemove={() => onRemove('rgpd')}
+      />
+
+      {isRgpdUnlocked ? (
+        <>
       <section className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
         <header>
           <h2 className="text-lg font-semibold text-foreground">Os teus dados</h2>
@@ -872,6 +987,8 @@ function FormPanel(props: {
               : `Enviar ${attachedCount} ${attachedCount === 1 ? 'documento' : 'documentos'} para gestora`}
           </button>
         </section>
+      ) : null}
+        </>
       ) : null}
     </div>
   );
