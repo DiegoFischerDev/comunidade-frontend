@@ -12,7 +12,9 @@ import { SITE_NAME_FULL } from "@/lib/site-branding";
 import { OPEN_MEMBERSHIP_MODAL_EVENT } from "@/lib/auth-ui-events";
 import { DASHBOARD_HOME_PATH } from "@/lib/dashboard-home";
 import {
+  LOGIN_EMAIL_STORAGE_KEY,
   LOGIN_PASSWORD_STORAGE_KEY,
+  persistLoginEmailToStorage,
   persistLoginPasswordToStorage,
 } from "@/lib/login-phone-storage";
 
@@ -31,18 +33,22 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordHydrated, setPasswordHydrated] = useState(false);
+  const [emailHydrated, setEmailHydrated] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const saved = localStorage.getItem(LOGIN_PASSWORD_STORAGE_KEY);
-      if (saved) setPassword(saved);
+      const savedPassword = localStorage.getItem(LOGIN_PASSWORD_STORAGE_KEY);
+      if (savedPassword) setPassword(savedPassword);
+      const savedEmail = localStorage.getItem(LOGIN_EMAIL_STORAGE_KEY);
+      if (savedEmail) setEmail(savedEmail);
     } catch {
       // noop
     }
     setPasswordHydrated(true);
+    setEmailHydrated(true);
   }, []);
 
   useEffect(() => {
@@ -59,12 +65,20 @@ function LoginForm() {
   }, [passwordHydrated, password]);
 
   useEffect(() => {
+    if (typeof window === "undefined" || !emailHydrated) return;
+    persistLoginEmailToStorage(email);
+  }, [emailHydrated, email]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     const onStorage = (e: StorageEvent) => {
-      if (e.storageArea !== localStorage || e.key !== LOGIN_PASSWORD_STORAGE_KEY) {
-        return;
+      if (e.storageArea !== localStorage) return;
+      if (e.key === LOGIN_PASSWORD_STORAGE_KEY) {
+        setPassword(e.newValue ?? "");
       }
-      setPassword(e.newValue ?? "");
+      if (e.key === LOGIN_EMAIL_STORAGE_KEY) {
+        setEmail(e.newValue ?? "");
+      }
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
@@ -138,7 +152,11 @@ function LoginForm() {
               type="email"
               autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setEmail(v);
+                if (emailHydrated) persistLoginEmailToStorage(v);
+              }}
               required
               disabled={loading}
               className="w-full rounded-lg border border-border px-3 py-2 text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 disabled:opacity-50"

@@ -90,7 +90,7 @@ export function LoginWhatsappFields({
     persistPhoneParts(nextDial, nextLocal);
   };
 
-  // Hidratação inicial (uma vez).
+  // Hidratação inicial (uma vez). Propaga para o pai para o sync de `value` não apagar o local.
   useEffect(() => {
     const { dial: d, local: l } = rememberInStorage
       ? readDialAndLocalFromStorageAndValue(value)
@@ -102,6 +102,14 @@ export function LoginWhatsappFields({
         })();
     setDial(d);
     setLocal(l);
+    if (rememberInStorage) {
+      const nextFull = buildFullDigits(d, l, true);
+      if (nextFull && loginPhoneDigitsOnly(nextFull) !== loginPhoneDigitsOnly(value)) {
+        ignoreNextValueSyncRef.current = true;
+        valueRef.current = nextFull;
+        onChangeRef.current(nextFull);
+      }
+    }
     setReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

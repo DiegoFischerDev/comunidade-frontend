@@ -31,7 +31,9 @@ import {
 } from '@/components/auth/LoginMethodSwitchLink';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import {
+  LOGIN_EMAIL_STORAGE_KEY,
   LOGIN_PASSWORD_STORAGE_KEY,
+  persistLoginEmailToStorage,
   persistLoginPasswordToStorage,
 } from '@/lib/login-phone-storage';
 import { CardButton } from '@/components/ui/CardButton';
@@ -241,6 +243,7 @@ export default function DashboardLayout({
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginPasswordHydrated, setLoginPasswordHydrated] = useState(false);
+  const [loginEmailHydrated, setLoginEmailHydrated] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
@@ -268,12 +271,15 @@ export default function DashboardLayout({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      const saved = localStorage.getItem(LOGIN_PASSWORD_STORAGE_KEY);
-      if (saved) setLoginPassword(saved);
+      const savedPassword = localStorage.getItem(LOGIN_PASSWORD_STORAGE_KEY);
+      if (savedPassword) setLoginPassword(savedPassword);
+      const savedEmail = localStorage.getItem(LOGIN_EMAIL_STORAGE_KEY);
+      if (savedEmail) setLoginEmail(savedEmail);
     } catch {
       // noop
     }
     setLoginPasswordHydrated(true);
+    setLoginEmailHydrated(true);
   }, []);
 
   useEffect(() => {
@@ -290,12 +296,20 @@ export default function DashboardLayout({
   }, [loginPasswordHydrated, loginPassword]);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || !loginEmailHydrated) return;
+    persistLoginEmailToStorage(loginEmail);
+  }, [loginEmailHydrated, loginEmail]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     const onStorage = (e: StorageEvent) => {
-      if (e.storageArea !== localStorage || e.key !== LOGIN_PASSWORD_STORAGE_KEY) {
-        return;
+      if (e.storageArea !== localStorage) return;
+      if (e.key === LOGIN_PASSWORD_STORAGE_KEY) {
+        setLoginPassword(e.newValue ?? '');
       }
-      setLoginPassword(e.newValue ?? '');
+      if (e.key === LOGIN_EMAIL_STORAGE_KEY) {
+        setLoginEmail(e.newValue ?? '');
+      }
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -846,7 +860,11 @@ export default function DashboardLayout({
                       type="email"
                       autoComplete="email"
                       value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setLoginEmail(v);
+                        if (loginEmailHydrated) persistLoginEmailToStorage(v);
+                      }}
                       required
                       disabled={loginLoading}
                       className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25 disabled:opacity-50"

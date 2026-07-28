@@ -27,8 +27,8 @@ export function eurToBrl(eur: number): number {
 }
 
 export const DASHBOARD_RELOCATION_PACKAGES: RelocationPackage[] = [
-  { location: "Viseu", priceEur: 600 },
-  { location: "São Pedro do Sul", priceEur: 500 },
+  { location: "Viseu", priceEur: 750 },
+  { location: "São Pedro do Sul", priceEur: 650 },
 ];
 
 export const DASHBOARD_INCLUDED_SERVICES: DashboardServiceItem[] = [
@@ -39,11 +39,10 @@ export const DASHBOARD_INCLUDED_SERVICES: DashboardServiceItem[] = [
   { name: "Primeira limpeza e arrumação", included: true },
   { name: "Apoio para compra de passagem aérea", included: true },
   { name: "Facilitação de abertura de conta bancária", included: true },
-  { name: "Recebimento na chegada (rodoviária)", included: true },
 ];
 
 export const DASHBOARD_EXTRA_SERVICES: DashboardServiceItem[] = [
-  { name: "Reunião estratégica/assessoria para visto (40 minutos)", priceEur: 30 },
+  { name: "Reunião estratégica/assessoria para visto (40 minutos)", priceEur: 50 },
   { name: "Recebimento e guarda de compras online", priceEur: 30 },
   { name: "Apoio para solicitação de NIF / NISS", priceEur: 70 },
   { name: "Primeiras compras e estoque", priceEur: 80, priceSuffix: "*" },

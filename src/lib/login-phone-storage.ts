@@ -8,6 +8,9 @@ export const LOGIN_PHONE_STORAGE_LOCAL = 'comunidade_login_whatsapp_local';
  */
 export const LOGIN_PASSWORD_STORAGE_KEY = 'comunidade_login_password';
 
+/** Lembrar e-mail do formulário de login (mesmo padrão da senha / WhatsApp). */
+export const LOGIN_EMAIL_STORAGE_KEY = 'comunidade_login_email';
+
 /**
  * Valor do `<select>` para DDI manual (não colidir com códigos numéricos).
  */
@@ -70,6 +73,19 @@ export function persistLoginPasswordToStorage(password: string): void {
       localStorage.setItem(LOGIN_PASSWORD_STORAGE_KEY, password);
     } else {
       localStorage.removeItem(LOGIN_PASSWORD_STORAGE_KEY);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+export function persistLoginEmailToStorage(email: string): void {
+  try {
+    const trimmed = email.trim();
+    if (trimmed) {
+      localStorage.setItem(LOGIN_EMAIL_STORAGE_KEY, trimmed);
+    } else {
+      localStorage.removeItem(LOGIN_EMAIL_STORAGE_KEY);
     }
   } catch {
     /* ignore */
