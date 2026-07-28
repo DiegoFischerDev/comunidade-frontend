@@ -548,7 +548,7 @@ function PartnerCard({ partner }: { partner: PartnerInfo }) {
 }
 
 const RGPD_EXPLANATION = [
-  'Antes de iniciarmos a análise do seu pedido de crédito, pedimos que leia e assine o Documento de Informação Prévia à Prestação de Serviços e o RGPD.',
+  'Antes de iniciarmos a análise do seu pedido de crédito, pedimos que leia a Informação Prévia de Prestação de Serviços e assine o Documento de RGPD.',
   'Estes documentos permitem ao intermediário de crédito analisar o seu processo, solicitar propostas aos bancos e tratar os seus dados de forma segura e em conformidade com a lei.',
 ] as const;
 
@@ -566,7 +566,7 @@ function RgpdSection(props: {
           Passo obrigatório
         </p>
         <h2 className="mt-1 text-lg font-semibold text-foreground">
-          Documento RGPD
+          Informação Prévia de Prestação de Serviços e RGPD
         </h2>
       </header>
 
