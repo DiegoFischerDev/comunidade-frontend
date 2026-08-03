@@ -2166,6 +2166,7 @@ export const api = {
         backgroundImageUrl: string | null;
         catalogImageUrls: string[];
         catalogVideoUrl?: string | null;
+        rgpdDocumentUrl?: string | null;
         instagram: string | null;
         billingName?: string | null;
         billingNif?: string | null;
@@ -2216,6 +2217,7 @@ export const api = {
       backgroundImageUrl?: string;
       catalogImageUrls?: string[];
       catalogVideoUrl?: string;
+      rgpdDocumentUrl?: string;
       instagram?: string;
       billingName?: string | null;
       billingNif?: string | null;
@@ -2233,6 +2235,7 @@ export const api = {
         backgroundImageUrl: string | null;
         catalogImageUrls: string[];
         catalogVideoUrl?: string | null;
+        rgpdDocumentUrl?: string | null;
         instagram: string | null;
         billingName?: string | null;
         billingNif?: string | null;
@@ -2257,6 +2260,7 @@ export const api = {
         backgroundImageUrl: string | null;
         catalogImageUrls: string[];
         catalogVideoUrl?: string | null;
+        rgpdDocumentUrl?: string | null;
         instagram: string | null;
         billingName?: string | null;
         billingNif?: string | null;
@@ -2264,6 +2268,28 @@ export const api = {
         billingPostalCode?: string | null;
         categorySlug?: string | null;
       }>('/partners/me/catalog-video', fd, { method: 'POST' });
+    },
+    uploadRgpdDocument: (file: File) => {
+      const fd = new FormData();
+      fd.append('document', file);
+      return requestFormData<{
+        id: string;
+        name: string;
+        whatsapp: string;
+        logoUrl: string | null;
+        shortDescription: string | null;
+        fullDescription: string | null;
+        backgroundImageUrl: string | null;
+        catalogImageUrls: string[];
+        catalogVideoUrl?: string | null;
+        rgpdDocumentUrl?: string | null;
+        instagram: string | null;
+        billingName?: string | null;
+        billingNif?: string | null;
+        billingAddress?: string | null;
+        billingPostalCode?: string | null;
+        categorySlug?: string | null;
+      }>('/partners/me/rgpd-document', fd, { method: 'POST' });
     },
     services: {
       list: () =>
@@ -3012,6 +3038,7 @@ export const api = {
           logoUrl: string | null;
           shortDescription: string | null;
           email: string | null;
+          rgpdDocumentUrl: string | null;
         };
         docsSentAt: string | null;
         lastSubmissionAt: string | null;

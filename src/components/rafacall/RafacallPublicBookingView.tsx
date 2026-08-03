@@ -248,14 +248,16 @@ function HomeIcon({ className }: { className?: string }) {
 function AgendarBrandLogo() {
   return (
     <div className="mb-6 flex justify-center">
-      <Image
-        src={BRAND_LOGO_HORIZONTAL_COLORIDA}
-        alt={SITE_NAME_FULL}
-        width={480}
-        height={120}
-        className="h-auto w-[min(100%,14rem)] sm:w-52"
-        priority
-      />
+      <Link href="/" aria-label={`Ir para a página inicial — ${SITE_NAME_FULL}`}>
+        <Image
+          src={BRAND_LOGO_HORIZONTAL_COLORIDA}
+          alt={SITE_NAME_FULL}
+          width={480}
+          height={120}
+          className="h-auto w-[min(100%,14rem)] sm:w-52"
+          priority
+        />
+      </Link>
     </div>
   );
 }

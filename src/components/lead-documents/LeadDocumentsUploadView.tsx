@@ -21,8 +21,8 @@ import {
   labelForMode,
   type LeadDocumentSubmissionMode,
   MAX_FILE_BYTES,
-  RGPD_PDF_URL,
 } from '@/lib/lead-documents';
+import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
 import {
   clearLeadStorage,
   deleteFile,
@@ -41,6 +41,7 @@ type PartnerInfo = {
   logoUrl: string | null;
   shortDescription: string | null;
   email: string | null;
+  rgpdDocumentUrl: string | null;
 };
 
 type LeadInfo = { id: string; name: string; email: string };
@@ -261,7 +262,8 @@ export function LeadDocumentsUploadView() {
   }, []);
 
   const validate = useCallback((): string | null => {
-    if (!files.rgpd && mode === 'main' && !docsSentAt) {
+    const requiresRgpd = !!partner?.rgpdDocumentUrl;
+    if (requiresRgpd && !files.rgpd && mode === 'main' && !docsSentAt) {
       return 'Descarrega, assina e anexa o documento RGPD para continuares.';
     }
     if (!form.nome.trim()) return 'Indica o teu nome.';
@@ -282,6 +284,7 @@ export function LeadDocumentsUploadView() {
     }
     return null;
   }, [
+    partner?.rgpdDocumentUrl,
     files,
     mode,
     docsSentAt,
@@ -553,6 +556,7 @@ const RGPD_EXPLANATION = [
 ] as const;
 
 function RgpdSection(props: {
+  downloadUrl: string;
   file: File | null;
   error: string | null;
   uploading: boolean;
@@ -592,7 +596,7 @@ function RgpdSection(props: {
       </ol>
 
       <a
-        href={RGPD_PDF_URL}
+        href={props.downloadUrl}
         download="RGPD.pdf"
         target="_blank"
         rel="noopener noreferrer"
@@ -687,9 +691,14 @@ function FormPanel(props: {
     [requiredFields, files],
   );
 
-  /** No primeiro envio principal, o RGPD assinado desbloqueia o resto do formulário. */
+  /** No primeiro envio principal, o RGPD assinado desbloqueia o resto — só se a
+   * intermediária tiver documento RGPD configurado. */
+  const rgpdDownloadUrl = partner.rgpdDocumentUrl
+    ? resolveUploadsUrl(partner.rgpdDocumentUrl)
+    : '';
+  const requiresRgpd = !!rgpdDownloadUrl;
   const isRgpdUnlocked =
-    !!files.rgpd || !!docsSentAt || mode !== 'main';
+    !requiresRgpd || !!files.rgpd || !!docsSentAt || mode !== 'main';
 
   return (
     <div className="space-y-5">
@@ -704,13 +713,16 @@ function FormPanel(props: {
 
       <PartnerCard partner={partner} />
 
-      <RgpdSection
-        file={files.rgpd ?? null}
-        error={fileErrors.rgpd ?? null}
-        uploading={submitting}
-        onPick={(f) => onPick('rgpd', f)}
-        onRemove={() => onRemove('rgpd')}
-      />
+      {requiresRgpd ? (
+        <RgpdSection
+          downloadUrl={rgpdDownloadUrl}
+          file={files.rgpd ?? null}
+          error={fileErrors.rgpd ?? null}
+          uploading={submitting}
+          onPick={(f) => onPick('rgpd', f)}
+          onRemove={() => onRemove('rgpd')}
+        />
+      ) : null}
 
       {isRgpdUnlocked ? (
         <>

@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CardButton } from '@/components/ui/CardButton';
 import { PartnerServicesManager } from '@/components/partner/PartnerServicesManager';
 import { SITE_NAME_FULL } from '@/lib/site-branding';
+import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
 
 export default function BusinessPage() {
   const { user } = useAuth();
@@ -25,6 +26,8 @@ export default function BusinessPage() {
   const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
   const [catalogImageUrls, setCatalogImageUrls] = useState<string[]>([]);
   const [catalogVideoUrl, setCatalogVideoUrl] = useState('');
+  const [rgpdDocumentUrl, setRgpdDocumentUrl] = useState('');
+  const [categorySlug, setCategorySlug] = useState<string | null>(null);
   const [instagram, setInstagram] = useState('');
   const [billingName, setBillingName] = useState('');
   const [billingNif, setBillingNif] = useState('');
@@ -34,6 +37,7 @@ export default function BusinessPage() {
   const [uploadingBackground, setUploadingBackground] = useState(false);
   const [uploadingCatalogIdx, setUploadingCatalogIdx] = useState<number | null>(null);
   const [uploadingCatalogVideo, setUploadingCatalogVideo] = useState(false);
+  const [uploadingRgpd, setUploadingRgpd] = useState(false);
   const [pageLinks, setPageLinks] = useState<Awaited<
     ReturnType<typeof api.partner.contactLinks>
   > | null>(null);
@@ -113,6 +117,10 @@ export default function BusinessPage() {
         setCatalogVideoUrl(
           typeof data.catalogVideoUrl === 'string' ? data.catalogVideoUrl : '',
         );
+        setRgpdDocumentUrl(
+          typeof data.rgpdDocumentUrl === 'string' ? data.rgpdDocumentUrl : '',
+        );
+        setCategorySlug(data.categorySlug?.trim() || null);
         setInstagram(data.instagram ?? '');
         setBillingName(data.billingName ?? '');
         setBillingNif(data.billingNif ?? '');
@@ -185,6 +193,10 @@ export default function BusinessPage() {
       setCatalogVideoUrl(
         typeof updated.catalogVideoUrl === 'string' ? updated.catalogVideoUrl : '',
       );
+      setRgpdDocumentUrl(
+        typeof updated.rgpdDocumentUrl === 'string' ? updated.rgpdDocumentUrl : '',
+      );
+      setCategorySlug(updated.categorySlug?.trim() || null);
       setInstagram(updated.instagram ?? '');
       setBillingName(updated.billingName ?? '');
       setBillingNif(updated.billingNif ?? '');
@@ -352,6 +364,50 @@ export default function BusinessPage() {
       );
     } finally {
       setUploadingCatalogVideo(false);
+    }
+  }
+
+  async function handleRgpdUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError('');
+    setSuccess('');
+    setUploadingRgpd(true);
+    try {
+      const updated = await api.partner.uploadRgpdDocument(file);
+      setRgpdDocumentUrl(
+        typeof updated.rgpdDocumentUrl === 'string' ? updated.rgpdDocumentUrl : '',
+      );
+      setSuccess('Documento RGPD atualizado com sucesso.');
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Erro ao enviar o PDF RGPD. Tente novamente.',
+      );
+    } finally {
+      setUploadingRgpd(false);
+    }
+    e.target.value = '';
+  }
+
+  async function handleRemoveRgpd() {
+    setError('');
+    setUploadingRgpd(true);
+    try {
+      const updated = await api.partner.updateMe({ rgpdDocumentUrl: '' });
+      setRgpdDocumentUrl(
+        typeof updated.rgpdDocumentUrl === 'string' ? updated.rgpdDocumentUrl : '',
+      );
+      setSuccess('Documento RGPD removido.');
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Erro ao remover o PDF RGPD. Tente novamente.',
+      );
+    } finally {
+      setUploadingRgpd(false);
     }
   }
 
@@ -673,6 +729,54 @@ export default function BusinessPage() {
               </div>
             ) : null}
           </div>
+
+          {categorySlug === 'financiamento' ? (
+            <div className="space-y-2 rounded-lg border border-border bg-page/40 p-4">
+              <label className="block text-sm font-medium text-foreground/90">
+                Documento RGPD (PDF)
+              </label>
+              <p className="text-xs text-muted">
+                PDF de Informação Prévia de Prestação de Serviços e RGPD da tua intermediária.
+                Quando estiver carregado, os leads atribuídos a ti terão de o descarregar,
+                assinar e anexar em <span className="font-medium text-foreground">/financiamento/documentos</span>.
+                Sem este ficheiro, essa etapa não aparece nem é exigida.
+              </p>
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                disabled={uploadingRgpd}
+                onChange={handleRgpdUpload}
+                className="block w-full text-sm text-foreground file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-primary-1 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground/90 hover:file:bg-zinc-200 disabled:opacity-50"
+              />
+              <p className="text-xs text-muted">
+                {uploadingRgpd
+                  ? 'A enviar PDF…'
+                  : rgpdDocumentUrl
+                    ? 'Documento guardado. Podes substituir ou remover.'
+                    : 'Ainda não há documento RGPD.'}
+              </p>
+              {rgpdDocumentUrl ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <a
+                    href={resolveUploadsUrl(rgpdDocumentUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-page"
+                  >
+                    Ver PDF atual
+                  </a>
+                  <button
+                    type="button"
+                    disabled={uploadingRgpd}
+                    onClick={() => void handleRemoveRgpd()}
+                    className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-800 hover:bg-red-100 disabled:opacity-50"
+                  >
+                    Remover documento
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground/90">

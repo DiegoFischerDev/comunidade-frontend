@@ -405,7 +405,7 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
 
 /**
  * Container alternativo, mostrado abaixo do quiz, para utilizadores que querem ir direto
- * para o atendimento com a gestora de crédito. Pede o WhatsApp e:
+ * para o atendimento com a intermediária de crédito. Pede o WhatsApp e:
  *  - se já houver lead → encaminha para a página de upload (`/financiamento/documentos`).
  *  - se não houver → abre o quiz, mantendo o WhatsApp já preenchido para o final.
  */
@@ -437,7 +437,7 @@ function AtendimentoPanel({
         Atendimento gratuito
       </p>
       <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-        Quero iniciar o meu atendimento gratuito com uma gestora de crédito
+        Quero iniciar o meu atendimento gratuito com uma intermediária de crédito
       </h2>
 
 
@@ -633,7 +633,7 @@ function ResultPanel({
 
           <div className="px-6 py-7 sm:px-8 sm:py-8">
             <h3 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-              Quero iniciar o meu atendimento com a gestora de crédito
+              Quero iniciar o meu atendimento com a intermediária de crédito
             </h3>
 
             <div className="mt-6 space-y-3">

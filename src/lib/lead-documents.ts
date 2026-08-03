@@ -62,9 +62,6 @@ export type DocFieldName =
   | 'declaracao_nao_divida_seguranca_social'
   | 'declaracao_predial';
 
-/** PDF público para o lead descarregar, assinar e reenviar. */
-export const RGPD_PDF_URL = '/RGPD/RGPD.pdf';
-
 /** Nome canónico (sem extensão) de cada documento. Igual ao backend. */
 export const DOC_STANDARD_NAMES: Record<DocFieldName, string> = {
   rgpd: 'RGPD assinado',

@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useState } from 'react';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
@@ -63,14 +64,16 @@ export function RafacallPublicWhatsappGate({ namePrefill = '' }: Props) {
   return (
     <div className="mx-auto max-w-lg px-4 py-8">
       <div className="mb-6 flex justify-center">
-        <Image
-          src={BRAND_LOGO_HORIZONTAL_COLORIDA}
-          alt={SITE_NAME_FULL}
-          width={480}
-          height={120}
-          className="h-auto w-[min(100%,14rem)] sm:w-52"
-          priority
-        />
+        <Link href="/" aria-label={`Ir para a página inicial — ${SITE_NAME_FULL}`}>
+          <Image
+            src={BRAND_LOGO_HORIZONTAL_COLORIDA}
+            alt={SITE_NAME_FULL}
+            width={480}
+            height={120}
+            className="h-auto w-[min(100%,14rem)] sm:w-52"
+            priority
+          />
+        </Link>
       </div>
 
       <form
