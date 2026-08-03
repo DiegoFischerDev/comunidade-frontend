@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { Suspense } from 'react';
 import { RafacallPublicBookingView } from '@/components/rafacall/RafacallPublicBookingView';
+import { RafacallPublicWhatsappGate } from '@/components/rafacall/RafacallPublicWhatsappGate';
 import {
   AGENDAMENTO_PAGE_DESCRIPTION,
   AGENDAMENTO_PAGE_TITLE,
@@ -14,6 +15,8 @@ import {
 import { getPublicSiteUrlFromRequestHeaders } from '@/lib/site-url';
 
 type SearchParams = Promise<{ whatsapp?: string; name?: string }>;
+
+const MIN_WHATSAPP_DIGITS = 8;
 
 export async function generateMetadata(): Promise<Metadata> {
   const h = await headers();
@@ -62,6 +65,8 @@ export default async function AgendarPage({
   const params = await searchParams;
   const whatsapp = params.whatsapp?.trim() ?? '';
   const namePrefill = params.name?.trim() ?? '';
+  const whatsappDigits = whatsapp.replace(/\D/g, '');
+  const hasValidWhatsapp = whatsappDigits.length >= MIN_WHATSAPP_DIGITS;
 
   return (
     <Suspense
@@ -71,7 +76,14 @@ export default async function AgendarPage({
         </div>
       }
     >
-      <RafacallPublicBookingView whatsappFromUrl={whatsapp} namePrefill={namePrefill} />
+      {hasValidWhatsapp ? (
+        <RafacallPublicBookingView
+          whatsappFromUrl={whatsappDigits}
+          namePrefill={namePrefill}
+        />
+      ) : (
+        <RafacallPublicWhatsappGate namePrefill={namePrefill} />
+      )}
     </Suspense>
   );
 }

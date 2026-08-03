@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlagBr, FlagPt } from '@/components/CountryFlags';
-import { ServicesSpecialistsImage } from '@/components/brand/ServicesSpecialistsImage';
+import { AgendarHeroImage } from '@/components/rafacall/AgendarHeroImage';
 import { api } from '@/lib/api';
 import {
   LOGIN_COUNTRY_DIALS,
@@ -260,6 +260,42 @@ function AgendarBrandLogo() {
   );
 }
 
+function GuestIdentitySummary({
+  name,
+  whatsappDisplay,
+  className = 'mt-3 space-y-2',
+}: {
+  name: string;
+  whatsappDisplay: { dial: string; local: string; countryLabel: string } | null;
+  className?: string;
+}) {
+  const trimmedName = name.trim();
+  if (!trimmedName && !whatsappDisplay) return null;
+
+  return (
+    <div className={className}>
+      {trimmedName ? (
+        <div className="rounded-xl border border-border bg-page px-3 py-2.5">
+          <p className="text-xs text-muted">Nome</p>
+          <p className="text-sm font-semibold text-foreground">{trimmedName}</p>
+        </div>
+      ) : null}
+      {whatsappDisplay ? (
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-page px-3 py-2.5">
+          <WhatsappDialFlag dial={whatsappDisplay.dial} />
+          <div className="min-w-0">
+            <p className="text-xs text-muted">WhatsApp</p>
+            <p className="text-sm font-semibold tabular-nums text-foreground">
+              +{whatsappDisplay.dial} {whatsappDisplay.local}
+            </p>
+            <p className="text-xs text-muted">{whatsappDisplay.countryLabel}</p>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }: Props) {
   const tz = useMemo(() => resolvedUserTz(), []);
   const deviceId = useMemo(() => getOrCreateRafacallDeviceId(), []);
@@ -294,33 +330,6 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
     const saved = readRafacallLastName();
     if (saved) setName(saved);
   }, [namePrefill]);
-
-  const loadPublicState = useCallback(async () => {
-    const wa = whatsappFromUrl.replace(/\D/g, '');
-    if (wa.length < 8) {
-      setErrorMessage('Indica um número de WhatsApp válido com indicativo do país (ex.: 351999999999).');
-      setScreen('error');
-      return;
-    }
-    if (!deviceId) {
-      setErrorMessage('Não foi possível identificar este dispositivo. Tenta noutro browser.');
-      setScreen('error');
-      return;
-    }
-    setScreen('loading');
-    setErrorMessage('');
-    try {
-      const state = await api.rafacall.publicState({ whatsapp: wa, deviceId });
-      applyPublicState(state, setBooking, setScreen, setWhatsappDigits, setAuthMode);
-    } catch (e) {
-      setErrorMessage(e instanceof Error ? e.message : 'Não foi possível carregar o agendamento.');
-      setScreen('error');
-    }
-  }, [whatsappFromUrl, deviceId]);
-
-  useEffect(() => {
-    void loadPublicState();
-  }, [loadPublicState]);
 
   const loadAvailability = useCallback(
     async (excludeBookingId?: string, options?: { autoSelectDay?: boolean }) => {
@@ -366,6 +375,43 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
     setScreen('picker');
     void loadAvailability(undefined, { autoSelectDay: false });
   }, [name, loadAvailability]);
+
+  const loadPublicState = useCallback(async () => {
+    const wa = whatsappFromUrl.replace(/\D/g, '');
+    if (wa.length < 8) {
+      setErrorMessage('Indica um número de WhatsApp válido com indicativo do país (ex.: 351999999999).');
+      setScreen('error');
+      return;
+    }
+    if (!deviceId) {
+      setErrorMessage('Não foi possível identificar este dispositivo. Tenta noutro browser.');
+      setScreen('error');
+      return;
+    }
+    setScreen('loading');
+    setErrorMessage('');
+    try {
+      const state = await api.rafacall.publicState({ whatsapp: wa, deviceId });
+      applyPublicState(state, setBooking, setScreen, setWhatsappDigits, setAuthMode);
+      const trimmedName = namePrefill.trim();
+      if (state.mode === 'book' && trimmedName.length >= 2) {
+        saveRafacallLastName(trimmedName);
+        setName(trimmedName);
+        setActionError('');
+        setPickerDayStep('days');
+        setSelectedDate('');
+        setScreen('picker');
+        void loadAvailability(undefined, { autoSelectDay: false });
+      }
+    } catch (e) {
+      setErrorMessage(e instanceof Error ? e.message : 'Não foi possível carregar o agendamento.');
+      setScreen('error');
+    }
+  }, [whatsappFromUrl, deviceId, namePrefill, loadAvailability]);
+
+  useEffect(() => {
+    void loadPublicState();
+  }, [loadPublicState]);
 
   const doBook = useCallback(
     async (startsAtUtcIso: string) => {
@@ -614,7 +660,7 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
       <div className="mx-auto max-w-lg px-4 py-8">
         <AgendarBrandLogo />
         <div className="overflow-hidden rounded-2xl bg-card shadow-sm">
-          <ServicesSpecialistsImage layout="modal" />
+          <AgendarHeroImage />
           <div className="p-6">
             <h1 className="text-xl font-bold text-foreground">Video chamada com Rafa &amp; Carol</h1>
             {whatsappDisplay ? (
@@ -639,7 +685,7 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
               </p>
             </div>
             <p className="mt-4 inline-flex rounded-full bg-brand-primary/8 px-3 py-1 text-xs font-semibold text-brand-primary">
-              Duração: 40 minutos
+              Duração: 15 minutos
             </p>
             {actionError ? (
               <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -679,11 +725,19 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
         <div className="rounded-2xl bg-card p-6 shadow-sm">
           <h1 className="text-xl font-bold text-foreground">Escolhe data e hora</h1>
           <p className="mt-1 text-sm text-foreground/90">
-            Olá, <span className="font-semibold">{name.trim()}</span>.
-            {pickerDayStep === 'days'
-              ? ' Escolhe um dia para ver os horários disponíveis.'
-              : ` Horários no teu fuso horário (${prettyTimezoneCityLabel(tz)}).`}
+            {name.trim() ? (
+              <>
+                Olá <span className="font-semibold">{name.trim()}</span>, escolhe o melhor dia e
+                horário para a nossa chamada.
+              </>
+            ) : (
+              <>Escolhe o melhor dia e horário para a nossa chamada.</>
+            )}
+            {pickerDayStep === 'times' ? (
+              <> Horários no teu fuso horário ({prettyTimezoneCityLabel(tz)}).</>
+            ) : null}
           </p>
+          <GuestIdentitySummary name={name} whatsappDisplay={whatsappDisplay} />
           {actionError ? (
             <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
               {actionError}
@@ -773,6 +827,11 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
               {display.sub} · Fuso: {prettyTimezoneCityLabel(booking.timezone || tz)} ({booking.timezone || tz})
             </p>
           </div>
+
+          <GuestIdentitySummary
+            name={booking.name?.trim() || name}
+            whatsappDisplay={whatsappDisplay}
+          />
 
           {!isCancelled && screen !== 'manage_cancel' ? (
             <p className="mt-4 text-sm leading-relaxed text-foreground/90">

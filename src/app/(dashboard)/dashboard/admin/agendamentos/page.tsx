@@ -101,7 +101,7 @@ function waUrl(
 }
 
 /** Duração usada só para pré-visualização no admin (alinhada com RAFA_CALL_DURATION_MINUTES). */
-const ADMIN_SLOT_DURATION_MINUTES = 40;
+const ADMIN_SLOT_DURATION_MINUTES = 15;
 
 function tzOffsetMinutes(timeZone: string, at: Date): number {
   const dtf = new Intl.DateTimeFormat('en-US', {

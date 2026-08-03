@@ -26,7 +26,7 @@ export const BRAND_ASSET_BASE = "/brand";
 export const BRAND_WELCOME_AUDIO = `${BRAND_ASSET_BASE}/audios/wellcome-carol.ogg`;
 
 /** Incrementar quando favicons/assets em `/brand/` forem substituídos (cache bust). */
-export const BRAND_ASSET_VERSION = "7";
+export const BRAND_ASSET_VERSION = "8";
 
 function withBrandVersion(path: string): string {
   return `${path}?v=${BRAND_ASSET_VERSION}`;
@@ -75,15 +75,15 @@ export const BRAND_SERVICES_SPECIALISTS_IMAGE = `${BRAND_ASSET_BASE}/especialist
 export const BRAND_SERVICES_SPECIALISTS_IMAGE_WIDTH = 800;
 export const BRAND_SERVICES_SPECIALISTS_IMAGE_HEIGHT = 1000;
 
-/** OG da página pública `/agendar`. Fonte: `move-casa-brand/especialistas/og-image-agendamento.jpg` (1200×630). */
-export const BRAND_AGENDAMENTO_OG_IMAGE = `${BRAND_ASSET_BASE}/especialistas/og-image-agendamento.jpg`;
+/** OG da página pública `/agendar`. Fonte: `move-casa-brand/especialistas/og-image-agendar.png` (1200×630). */
+export const BRAND_AGENDAMENTO_OG_IMAGE = `${BRAND_ASSET_BASE}/especialistas/og-image-agendar.png`;
 export const BRAND_AGENDAMENTO_OG_IMAGE_WIDTH = 1200;
 export const BRAND_AGENDAMENTO_OG_IMAGE_HEIGHT = 630;
-export const BRAND_AGENDAMENTO_OG_IMAGE_TYPE = "image/jpeg";
+export const BRAND_AGENDAMENTO_OG_IMAGE_TYPE = "image/png";
 export const BRAND_AGENDAMENTO_OG_IMAGE_URL = withBrandVersion(BRAND_AGENDAMENTO_OG_IMAGE);
 
 export const AGENDAMENTO_PAGE_TITLE =
-  "Agende uma chamada de 40 minutos com Rafa & Carol";
+  "Agende uma chamada de 15 minutos com Rafa & Carol";
 export const AGENDAMENTO_PAGE_DESCRIPTION =
   "Marque sua videochamada gratuita com a Rafa e a Carol. Relocation para Portugal com acolhimento, confiança e economia — Viseu e São Pedro do Sul.";
 
