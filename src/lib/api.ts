@@ -150,6 +150,7 @@ export type RafacallCrmItem = {
   crmPropertyTypology: RafacallCrmPropertyTypology | null;
   crmPreferredCity: string | null;
   crmHasPet: boolean | null;
+  crmDesiredRent: number | null;
   payments: RafacallCrmPayment[];
   paymentsTotal: number;
   startsAt: string;
@@ -1098,6 +1099,7 @@ export const api = {
           crmPropertyTypology?: RafacallCrmPropertyTypology | null;
           crmPreferredCity?: string | null;
           crmHasPet?: boolean | null;
+          crmDesiredRent?: number | null;
         },
       ) =>
         request<RafacallCrmItem>(`/admin/rafacall/crm/${bookingId}`, {

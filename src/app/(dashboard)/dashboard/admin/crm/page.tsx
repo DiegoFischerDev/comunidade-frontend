@@ -668,6 +668,8 @@ function buildCrmItemSearchHaystack(item: RafacallCrmItem): string {
     item.crmPreferredCity,
     formatCrmPetLabel(item.crmHasPet),
     item.crmHasPet === true ? 'pet animal estimação' : '',
+    item.crmDesiredRent != null ? String(item.crmDesiredRent) : '',
+    item.crmDesiredRent != null ? 'aluguel aluguer renda' : '',
     formatVideoCallSummary(item),
     formatVideoCallBadgeLabel(item)?.label,
     item.bookingTimezone,
@@ -837,7 +839,11 @@ function CrmClientCard({
   const propertyTypologyLabel = formatCrmPropertyTypologyLabel(item.crmPropertyTypology);
   const preferredCityLabel = item.crmPreferredCity?.trim() || null;
   const hasPet = item.crmHasPet === true;
-  const hasPreferences = Boolean(propertyTypologyLabel || preferredCityLabel || hasPet);
+  const desiredRentLabel =
+    item.crmDesiredRent != null ? formatCrmEuroAmount(item.crmDesiredRent) : null;
+  const hasPreferences = Boolean(
+    propertyTypologyLabel || preferredCityLabel || hasPet || desiredRentLabel,
+  );
   const crmComments = normalizeCrmComments(item.crmComments);
   const paymentsTotal = item.paymentsTotal ?? sumCrmPayments(item.payments ?? []);
   const hasPayments = paymentsTotal > 0;
@@ -916,6 +922,11 @@ function CrmClientCard({
           {preferredCityLabel ? (
             <span className="inline-flex max-w-full items-center rounded-md border border-sky-200/90 bg-sky-50/90 px-2 py-1 text-[10px] font-medium text-sky-900">
               {preferredCityLabel}
+            </span>
+          ) : null}
+          {desiredRentLabel ? (
+            <span className="inline-flex max-w-full items-center rounded-md border border-amber-200/90 bg-amber-50/90 px-2 py-1 text-[10px] font-medium text-amber-950">
+              Aluguel {desiredRentLabel}
             </span>
           ) : null}
           {hasPet ? (
@@ -1057,6 +1068,19 @@ function toHasPetDraft(value: boolean | null | undefined): boolean | null {
   if (value === true) return true;
   if (value === false) return false;
   return null;
+}
+
+function toDesiredRentDraft(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '';
+  return String(Math.round(value));
+}
+
+function normalizeDesiredRentDraft(raw: string): number | null {
+  const trimmed = raw.trim().replace(',', '.');
+  if (!trimmed) return null;
+  const amount = Number(trimmed);
+  if (!Number.isFinite(amount) || amount < 0) return null;
+  return Math.min(100_000, Math.round(amount));
 }
 
 function CrmDeleteConfirmModal({
@@ -1785,6 +1809,7 @@ function CrmClientModal({
   videoCallSelectedDate,
   propertyTypologyDraft,
   preferredCityDraft,
+  desiredRentDraft,
   hasPetDraft,
   saving,
   onCommentsChange,
@@ -1795,6 +1820,7 @@ function CrmClientModal({
   onVideoCallSlotSelect,
   onPropertyTypologyChange,
   onPreferredCityChange,
+  onDesiredRentChange,
   onHasPetChange,
   onPaymentsChange,
   onStatusChange,
@@ -1811,6 +1837,7 @@ function CrmClientModal({
   videoCallSelectedDate: string;
   propertyTypologyDraft: RafacallCrmPropertyTypology | '';
   preferredCityDraft: string;
+  desiredRentDraft: string;
   hasPetDraft: boolean | null;
   saving: boolean;
   onCommentsChange: (value: string) => void;
@@ -1821,6 +1848,7 @@ function CrmClientModal({
   onVideoCallSlotSelect: (slot: { startsAt: string; endsAt: string }) => void;
   onPropertyTypologyChange: (value: RafacallCrmPropertyTypology | '') => void;
   onPreferredCityChange: (value: string) => void;
+  onDesiredRentChange: (value: string) => void;
   onHasPetChange: (value: boolean | null) => void;
   onPaymentsChange: (payments: RafacallCrmPayment[]) => void;
   onStatusChange: (status: RafacallCrmStatus) => void;
@@ -1871,6 +1899,8 @@ function CrmClientModal({
   const hasPreferredCityChanges =
     normalizePreferredCityDraft(preferredCityDraft) !==
     normalizePreferredCityDraft(item.crmPreferredCity ?? '');
+  const hasDesiredRentChanges =
+    normalizeDesiredRentDraft(desiredRentDraft) !== (item.crmDesiredRent ?? null);
   const hasPetChanges = hasPetDraft !== toHasPetDraft(item.crmHasPet);
   const hasChanges =
     hasCommentsChanges ||
@@ -1878,6 +1908,7 @@ function CrmClientModal({
     hasVideoCallChanges ||
     hasPropertyTypologyChanges ||
     hasPreferredCityChanges ||
+    hasDesiredRentChanges ||
     hasPetChanges;
 
   return (
@@ -2172,6 +2203,28 @@ function CrmClientModal({
               </div>
 
               <div>
+                <label
+                  className="block text-xs font-medium uppercase tracking-wide text-violet-900/70"
+                  htmlFor="crm-desired-rent"
+                >
+                  Valor do aluguel pretendido
+                </label>
+                <input
+                  id="crm-desired-rent"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={100000}
+                  step={1}
+                  value={desiredRentDraft}
+                  disabled={saving}
+                  onChange={(event) => onDesiredRentChange(event.target.value)}
+                  placeholder="Ex.: 800"
+                  className="mt-2 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
+                />
+              </div>
+
+              <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-violet-900/70">
                   Tem PET?
                 </p>
@@ -2290,6 +2343,7 @@ export default function CrmPage() {
     RafacallCrmPropertyTypology | ''
   >('');
   const [preferredCityDraft, setPreferredCityDraft] = useState('');
+  const [desiredRentDraft, setDesiredRentDraft] = useState('');
   const [hasPetDraft, setHasPetDraft] = useState<boolean | null>(null);
   const [modalSaving, setModalSaving] = useState(false);
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<RafacallCrmItem | null>(null);
@@ -2446,6 +2500,7 @@ export default function CrmPage() {
     setVideoCallTimeDraft(toVideoCallTimeDraft(item));
     setPropertyTypologyDraft(toPropertyTypologyDraft(item.crmPropertyTypology));
     setPreferredCityDraft(item.crmPreferredCity ?? '');
+    setDesiredRentDraft(toDesiredRentDraft(item.crmDesiredRent));
     setHasPetDraft(toHasPetDraft(item.crmHasPet));
   }, []);
 
@@ -2472,6 +2527,7 @@ export default function CrmPage() {
         setVideoCallTimeDraft(toVideoCallTimeDraft(updated));
         setPropertyTypologyDraft(toPropertyTypologyDraft(updated.crmPropertyTypology));
         setPreferredCityDraft(updated.crmPreferredCity ?? '');
+        setDesiredRentDraft(toDesiredRentDraft(updated.crmDesiredRent));
         setHasPetDraft(toHasPetDraft(updated.crmHasPet));
         setColumns((prev) =>
           moveItemBetweenColumns(prev, selectedItem.id, status, updated),
@@ -2509,6 +2565,8 @@ export default function CrmPage() {
       normalizePreferredCityDraft(preferredCityDraft) !==
       normalizePreferredCityDraft(selectedItem.crmPreferredCity ?? '');
     const hasPetChanged = hasPetDraft !== toHasPetDraft(selectedItem.crmHasPet);
+    const desiredRentChanged =
+      normalizeDesiredRentDraft(desiredRentDraft) !== (selectedItem.crmDesiredRent ?? null);
 
     if (
       !commentsChanged &&
@@ -2516,6 +2574,7 @@ export default function CrmPage() {
       !videoCallChanged &&
       !propertyTypologyChanged &&
       !preferredCityChanged &&
+      !desiredRentChanged &&
       !hasPetChanged
     ) {
       return;
@@ -2562,6 +2621,9 @@ export default function CrmPage() {
         ...(preferredCityChanged
           ? { crmPreferredCity: normalizePreferredCityDraft(preferredCityDraft) }
           : {}),
+        ...(desiredRentChanged
+          ? { crmDesiredRent: normalizeDesiredRentDraft(desiredRentDraft) }
+          : {}),
         ...(hasPetChanged ? { crmHasPet: hasPetDraft } : {}),
       });
       setSelectedItem(updated);
@@ -2571,6 +2633,7 @@ export default function CrmPage() {
       setVideoCallTimeDraft(toVideoCallTimeDraft(updated));
       setPropertyTypologyDraft(toPropertyTypologyDraft(updated.crmPropertyTypology));
       setPreferredCityDraft(updated.crmPreferredCity ?? '');
+      setDesiredRentDraft(toDesiredRentDraft(updated.crmDesiredRent));
       setHasPetDraft(toHasPetDraft(updated.crmHasPet));
       setColumns((prev) =>
         sortCrmBoardColumns(
@@ -2584,6 +2647,7 @@ export default function CrmPage() {
       setVideoCallTimeDraft('');
       setPropertyTypologyDraft('');
       setPreferredCityDraft('');
+      setDesiredRentDraft('');
       setHasPetDraft(null);
       toast.success('Alterações guardadas com sucesso.');
     } catch (err) {
@@ -2714,6 +2778,7 @@ export default function CrmPage() {
         setVideoCallTimeDraft('');
         setPropertyTypologyDraft('');
         setPreferredCityDraft('');
+        setDesiredRentDraft('');
         setHasPetDraft(null);
       }
       setDeleteConfirmItem(null);
@@ -2893,6 +2958,7 @@ export default function CrmPage() {
           videoCallSelectedDate={videoCallSelectedDate}
           propertyTypologyDraft={propertyTypologyDraft}
           preferredCityDraft={preferredCityDraft}
+          desiredRentDraft={desiredRentDraft}
           hasPetDraft={hasPetDraft}
           saving={modalSaving}
           onCommentsChange={setCommentsDraft}
@@ -2911,6 +2977,7 @@ export default function CrmPage() {
           }}
           onPropertyTypologyChange={setPropertyTypologyDraft}
           onPreferredCityChange={setPreferredCityDraft}
+          onDesiredRentChange={setDesiredRentDraft}
           onHasPetChange={setHasPetDraft}
           onPaymentsChange={handlePaymentsChange}
           onStatusChange={(status) => void handleModalStatusChange(status)}
@@ -2927,6 +2994,7 @@ export default function CrmPage() {
               setVideoCallSelectedDate('');
               setPropertyTypologyDraft('');
               setPreferredCityDraft('');
+              setDesiredRentDraft('');
               setHasPetDraft(null);
             }
           }}
