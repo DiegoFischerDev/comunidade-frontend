@@ -2002,6 +2002,10 @@ function isPdfFile(file: File): boolean {
   );
 }
 
+function isCrmImageFileName(fileName: string): boolean {
+  return /\.(jpe?g|png|webp|gif)$/i.test(fileName);
+}
+
 function CrmDocumentsSection({
   bookingId,
   documents,
@@ -2106,8 +2110,8 @@ function CrmDocumentsSection({
             }`}
           >
             {count > 0
-              ? `${count} PDF${count === 1 ? '' : 's'}`
-              : 'Nenhum PDF — clica para anexar'}
+              ? `${count} ficheiro${count === 1 ? '' : 's'}`
+              : 'Nenhum ficheiro — clica para anexar'}
           </p>
         </div>
         <span className="shrink-0 text-xs font-medium text-muted">
@@ -2119,18 +2123,30 @@ function CrmDocumentsSection({
         <div className="space-y-3 rounded-xl border border-border bg-page/60 px-3.5 py-3">
           {documents.length > 0 ? (
             <ul className="space-y-2">
-              {documents.map((document) => (
+              {documents.map((document) => {
+                const href = crmMediaUrl(document.fileUrl);
+                const isImage = isCrmImageFileName(document.fileName);
+                return (
                 <li
                   key={document.id}
                   className="rounded-xl border border-border bg-card px-3 py-2.5"
                 >
                   <div className="flex items-start gap-3">
-                    <div
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-page text-brand-primary"
-                      aria-hidden
-                    >
-                      <FileIcon className="h-5 w-5" />
-                    </div>
+                    {isImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={href}
+                        alt=""
+                        className="h-11 w-11 shrink-0 rounded-lg border border-border object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-page text-brand-primary"
+                        aria-hidden
+                      >
+                        <FileIcon className="h-5 w-5" />
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-foreground">
                         {document.fileName}
@@ -2146,7 +2162,7 @@ function CrmDocumentsSection({
                     </div>
                     <div className="flex shrink-0 flex-col gap-1">
                       <a
-                        href={crmMediaUrl(document.fileUrl)}
+                        href={href}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex min-h-8 cursor-pointer items-center justify-center rounded-lg border border-border px-2 py-1 text-[11px] font-medium text-foreground hover:bg-page"
@@ -2164,10 +2180,11 @@ function CrmDocumentsSection({
                     </div>
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           ) : (
-            <p className="text-xs text-muted">Ainda não há PDFs neste cliente.</p>
+            <p className="text-xs text-muted">Ainda não há ficheiros neste cliente.</p>
           )}
 
           <input
@@ -2190,7 +2207,8 @@ function CrmDocumentsSection({
             {busy ? 'A enviar…' : '+ Anexar PDF'}
           </button>
           <p className="text-[11px] leading-relaxed text-muted">
-            Só PDF, até 15 MB por ficheiro.
+            Upload manual: só PDF, até 15 MB. Imagens e ficheiros enviados pelo
+            cliente no WhatsApp da Joana também aparecem aqui.
           </p>
         </div>
       ) : null}
