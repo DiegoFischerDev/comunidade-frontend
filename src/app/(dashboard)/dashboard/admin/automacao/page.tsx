@@ -348,7 +348,7 @@ export default function AdminAutomacaoPage() {
         <h2 className="text-sm font-semibold text-foreground">Joana</h2>
         <p className="mt-1 max-w-2xl text-sm text-muted">
           Contexto que a Joana usa para responder no WhatsApp da instância comunidade MEO.
-          Ela espera 30 segundos, junta as mensagens e só então responde.
+          Ela espera 15 segundos, junta as mensagens e só então responde.
           Uma mensagem igual a um gatilho ativo fica com essa automação.
         </p>
         <label htmlFor="joana-context" className="mt-4 block text-sm font-medium text-foreground">
