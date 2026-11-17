@@ -106,16 +106,24 @@ function IncludedServiceItem({ name }: { name: string }) {
 function ExtraServiceRow({
   name,
   priceEur,
+  priceOnRequest,
   priceSuffix,
 }: {
   name: string;
-  priceEur: number;
+  priceEur?: number;
+  priceOnRequest?: boolean;
   priceSuffix?: string;
 }) {
   return (
     <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border/70 py-2.5 last:border-b-0">
       <span className="text-sm leading-snug text-foreground">{name}</span>
-      <DualPrice priceEur={priceEur} suffix={priceSuffix} />
+      {priceOnRequest || priceEur == null ? (
+        <span className="shrink-0 text-sm font-medium italic text-muted">
+          a consultar
+        </span>
+      ) : (
+        <DualPrice priceEur={priceEur} suffix={priceSuffix} />
+      )}
     </li>
   );
 }
@@ -205,18 +213,12 @@ export function ServicesPricingCard({
                 <ExtraServiceRow
                   key={service.name}
                   name={service.name}
-                  priceEur={service.priceEur!}
+                  priceEur={service.priceEur}
+                  priceOnRequest={service.priceOnRequest}
                   priceSuffix={service.priceSuffix}
                 />
               ))}
             </ul>
-          </div>
-        ) : null}
-
-        {showExtraServices ? (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border pt-3 text-[0.7rem] leading-relaxed text-muted">
-            <p>* Mais o valor dos produtos.</p>
-            <p>** Valor do transfer varia conforme aeroporto de chegada.</p>
           </div>
         ) : null}
 

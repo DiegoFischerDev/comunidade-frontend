@@ -161,6 +161,7 @@ export type RafacallCrmItem = {
   crmHasVisa: boolean | null;
   crmDesiredRent: number | null;
   crmJoanaEnabled: boolean;
+  crmProfileImageUrl: string | null;
   payments: RafacallCrmPayment[];
   paymentsTotal: number;
   documents: RafacallCrmDocument[];
@@ -2213,6 +2214,19 @@ export const api = {
           method: 'PATCH',
           body: JSON.stringify({ contextText }),
         }),
+      welcome: () =>
+        request<{ steps: WhatsappClientAutomationStepInput[] }>(
+          '/joana/welcome',
+          { method: 'GET' },
+        ),
+      updateWelcome: (steps: WhatsappClientAutomationStepInput[]) =>
+        request<{ steps: WhatsappClientAutomationStepInput[] }>(
+          '/joana/welcome',
+          {
+            method: 'PATCH',
+            body: JSON.stringify({ steps }),
+          },
+        ),
     },
   },
   uploads: {

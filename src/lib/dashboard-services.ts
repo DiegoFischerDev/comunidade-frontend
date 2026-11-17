@@ -9,7 +9,9 @@ export type DashboardServiceItem = {
   name: string;
   priceEur?: number;
   included?: boolean;
-  /** Sufixo no valor (ex.: `**` no transfer). */
+  /** Quando true, mostra “a consultar” em vez de um valor fixo. */
+  priceOnRequest?: boolean;
+  /** Sufixo no valor (ex.: `*` em notas de rodapé). */
   priceSuffix?: string;
 };
 
@@ -27,8 +29,11 @@ export function eurToBrl(eur: number): number {
 }
 
 export const DASHBOARD_RELOCATION_PACKAGES: RelocationPackage[] = [
-  { location: "Viseu", priceEur: 750 },
-  { location: "São Pedro do Sul", priceEur: 650 },
+  { location: "São Pedro do Sul", priceEur: 550 },
+  { location: "Viseu", priceEur: 650 },
+  { location: "Porto", priceEur: 850 },
+  { location: "Aveiro", priceEur: 850 },
+  { location: "Braga", priceEur: 950 },
 ];
 
 export const DASHBOARD_INCLUDED_SERVICES: DashboardServiceItem[] = [
@@ -42,9 +47,14 @@ export const DASHBOARD_INCLUDED_SERVICES: DashboardServiceItem[] = [
 ];
 
 export const DASHBOARD_EXTRA_SERVICES: DashboardServiceItem[] = [
-  { name: "Reunião estratégica/assessoria para visto (40 minutos)", priceEur: 50 },
-  { name: "Recebimento e guarda de compras online", priceEur: 30 },
-  { name: "Apoio para solicitação de NIF / NISS", priceEur: 70 },
-  { name: "Primeiras compras e estoque", priceEur: 80, priceSuffix: "*" },
-  { name: "Transfer Aeroporto de Chegada", priceEur: 150, priceSuffix: "**" },
+  { name: "Recebimento de compras online", priceEur: 80 },
+  { name: "Primeiras compras de supermercado", priceEur: 80 },
+  {
+    name: "Transfer com as malas do aeroporto até a nova casa",
+    priceOnRequest: true,
+  },
+  {
+    name: "Assessoria para a compra do primeiro carro",
+    priceOnRequest: true,
+  },
 ];

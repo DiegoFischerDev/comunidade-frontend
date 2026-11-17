@@ -50,8 +50,8 @@ export default function ServicosPage() {
           </p>
 
           <p className="font-medium text-foreground">
-            Atendemos presencialmente em Viseu e São Pedro do Sul, com planos a
-            partir de 500€.
+            Atendemos em São Pedro do Sul, Viseu, Porto, Aveiro e Braga, com
+            planos a partir de 550€.
           </p>
 
           <div className="space-y-3 pt-2">

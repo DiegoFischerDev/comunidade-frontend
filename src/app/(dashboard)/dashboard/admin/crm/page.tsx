@@ -16,6 +16,7 @@ import {
   HORIZONTAL_CAROUSEL_TRACK,
   HorizontalSnapCarousel,
 } from '@/components/ui/horizontal-snap-carousel';
+import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
 
 type CrmBoardPayload = Awaited<ReturnType<typeof api.admin.rafacall.crmBoard>>;
 type CrmColumn = CrmBoardPayload['columns'][number];
@@ -315,6 +316,41 @@ function getLeadInitials(name: string): string {
   if (parts.length === 0) return '?';
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function CrmLeadAvatar({
+  name,
+  imageUrl,
+  size = 'sm',
+}: {
+  name: string;
+  imageUrl?: string | null;
+  size?: 'sm' | 'lg';
+}) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const src = !imgFailed && imageUrl ? resolveUploadsUrl(imageUrl) : '';
+  const sizeClass = size === 'lg' ? 'h-12 w-12 text-sm' : 'h-6 w-6 text-[10px]';
+
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt=""
+        className={`${sizeClass} shrink-0 rounded-full border border-border object-cover bg-page`}
+        onError={() => setImgFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`flex ${sizeClass} shrink-0 items-center justify-center rounded-full bg-brand-primary font-semibold text-white shadow-sm`}
+      aria-hidden
+    >
+      {getLeadInitials(name)}
+    </div>
+  );
 }
 
 function VideoIcon({ className }: { className?: string }) {
@@ -1001,6 +1037,7 @@ function CrmClientCard({
     >
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-1.5">
+          <CrmLeadAvatar name={name} imageUrl={item.crmProfileImageUrl} />
           {crmComments ? <CrmCommentInfoBadge comments={crmComments} /> : null}
           <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{name}</p>
           {item.crmJoanaEnabled === false ? (
@@ -2353,12 +2390,7 @@ function CrmClientModal({
       >
         <div className="shrink-0 border-b border-border bg-page px-5 pb-4 pt-5">
           <div className="flex items-start gap-3">
-            <div
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-primary text-sm font-semibold text-white shadow-sm"
-              aria-hidden
-            >
-              {getLeadInitials(name)}
-            </div>
+            <CrmLeadAvatar name={name} imageUrl={item.crmProfileImageUrl} size="lg" />
 
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">
