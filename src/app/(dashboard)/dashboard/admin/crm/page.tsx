@@ -934,6 +934,20 @@ function TrashIcon({ className }: { className?: string }) {
   );
 }
 
+function formatCrmUpdatedAtLabel(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat('pt-PT', {
+    timeZone: 'Europe/Lisbon',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
 function CrmClientCard({
   item,
   isDragging,
@@ -970,6 +984,7 @@ function CrmClientCard({
   const paymentsTotal = item.paymentsTotal ?? sumCrmPayments(item.payments ?? []);
   const hasPayments = paymentsTotal > 0;
   const documentCount = item.documents?.length ?? 0;
+  const updatedAtLabel = formatCrmUpdatedAtLabel(item.updatedAt);
 
   return (
     <article
@@ -1087,6 +1102,10 @@ function CrmClientCard({
             </span>
           ) : null}
         </div>
+      ) : null}
+
+      {updatedAtLabel ? (
+        <p className="mt-2 text-[10px] leading-tight text-muted">Atualizado {updatedAtLabel}</p>
       ) : null}
 
       <div className="-mx-3 -mb-3 mt-2.5 flex items-center gap-1 border-t border-border bg-card px-1.5 py-1">

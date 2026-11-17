@@ -171,6 +171,7 @@ export type RafacallCrmItem = {
   userId: string | null;
   userName: string | null;
   whatsappDigits: string;
+  updatedAt: string;
 };
 
 function enrichApiHttpError(
