@@ -45,6 +45,10 @@ export function formatCrmPetLabel(value: boolean | null | undefined): string {
   return 'Por definir';
 }
 
+export function formatCrmVisaLabel(value: boolean | null | undefined): string {
+  return formatCrmPetLabel(value);
+}
+
 export function formatCrmEuroAmount(amount: number): string {
   return new Intl.NumberFormat('pt-PT', {
     style: 'currency',

@@ -85,6 +85,14 @@ export type RafacallCrmPayment = {
   comment: string | null;
 };
 
+export type RafacallCrmDocument = {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  sizeBytes: number;
+  createdAt: string;
+};
+
 export type FinanceEntryKind = 'INCOME' | 'EXPENSE';
 
 export type FinanceEntry = {
@@ -150,9 +158,11 @@ export type RafacallCrmItem = {
   crmPropertyTypology: RafacallCrmPropertyTypology | null;
   crmPreferredCity: string | null;
   crmHasPet: boolean | null;
+  crmHasVisa: boolean | null;
   crmDesiredRent: number | null;
   payments: RafacallCrmPayment[];
   paymentsTotal: number;
+  documents: RafacallCrmDocument[];
   startsAt: string;
   endsAt: string;
   bookingTimezone: string;
@@ -1099,6 +1109,7 @@ export const api = {
           crmPropertyTypology?: RafacallCrmPropertyTypology | null;
           crmPreferredCity?: string | null;
           crmHasPet?: boolean | null;
+          crmHasVisa?: boolean | null;
           crmDesiredRent?: number | null;
         },
       ) =>
@@ -1143,6 +1154,20 @@ export const api = {
       deleteCrmPayment: (bookingId: string, paymentId: string) =>
         request<{ ok: true }>(
           `/admin/rafacall/crm/${bookingId}/payments/${paymentId}`,
+          { method: 'DELETE' },
+        ),
+      uploadCrmDocument: (bookingId: string, file: File) => {
+        const fd = new FormData();
+        fd.append('file', file);
+        return requestFormData<RafacallCrmDocument>(
+          `/admin/rafacall/crm/${bookingId}/documents`,
+          fd,
+          { method: 'POST' },
+        );
+      },
+      deleteCrmDocument: (bookingId: string, documentId: string) =>
+        request<{ ok: true }>(
+          `/admin/rafacall/crm/${bookingId}/documents/${documentId}`,
           { method: 'DELETE' },
         ),
     },

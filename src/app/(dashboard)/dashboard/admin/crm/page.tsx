@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { api, getUserFacingApiError, type RafacallCrmItem, type RafacallCrmPayment, type RafacallCrmStatus } from '@/lib/api';
+import { api, getUserFacingApiError, type RafacallCrmDocument, type RafacallCrmItem, type RafacallCrmPayment, type RafacallCrmStatus } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { AdminVideoCallSlotPicker } from '@/components/rafacall/AdminVideoCallSlotPicker';
 import { showRafacallAdminBookingErrorToast } from '@/lib/rafacall-admin-booking-errors';
 import { toast } from '@/lib/toast';
-import { CRM_IMMIGRATION_IMMEDIATE_VALUE, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER, RAFA_CALL_CRM_STATUS_LABELS, RAFA_CALL_CRM_STATUS_ORDER, formatCrmEuroAmount, formatCrmPaymentDateLabel, formatCrmPetLabel, formatCrmPropertyTypologyLabel, getCrmColumnTone, formatImmigrationDateLabel, formatImmigrationMonthYear, isCrmImmigrationImmediate, normalizeCrmBoardColumns, sortCrmBoardColumns, toImmigrationDateInputValue } from '@/lib/rafacall-crm';
+import { CRM_IMMIGRATION_IMMEDIATE_VALUE, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER, RAFA_CALL_CRM_STATUS_LABELS, RAFA_CALL_CRM_STATUS_ORDER, formatCrmEuroAmount, formatCrmPaymentDateLabel, formatCrmPetLabel, formatCrmPropertyTypologyLabel, formatCrmVisaLabel, getCrmColumnTone, formatImmigrationDateLabel, formatImmigrationMonthYear, isCrmImmigrationImmediate, normalizeCrmBoardColumns, sortCrmBoardColumns, toImmigrationDateInputValue } from '@/lib/rafacall-crm';
 import type { RafacallCrmPropertyTypology } from '@/lib/rafacall-crm';
 import {
   CENTERED_PEEK_CAROUSEL_ITEM,
@@ -370,6 +370,25 @@ function InfoIcon({ className }: { className?: string }) {
   );
 }
 
+function FileIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M8 13h8M8 17h5" />
+    </svg>
+  );
+}
+
 function EuroIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -668,6 +687,8 @@ function buildCrmItemSearchHaystack(item: RafacallCrmItem): string {
     item.crmPreferredCity,
     formatCrmPetLabel(item.crmHasPet),
     item.crmHasPet === true ? 'pet animal estimação' : '',
+    formatCrmVisaLabel(item.crmHasVisa),
+    item.crmHasVisa === true ? 'tem visto' : item.crmHasVisa === false ? 'sem visto' : 'visto',
     item.crmDesiredRent != null ? String(item.crmDesiredRent) : '',
     item.crmDesiredRent != null ? 'aluguel aluguer renda' : '',
     formatVideoCallSummary(item),
@@ -675,6 +696,8 @@ function buildCrmItemSearchHaystack(item: RafacallCrmItem): string {
     item.bookingTimezone,
     item.bookingOrigin === 'USER_PAID' ? 'pago paga' : 'publico gratuito',
     item.id,
+    ...(item.documents ?? []).map((document) => document.fileName),
+    (item.documents?.length ?? 0) > 0 ? 'pdf documento anexo ficheiro' : '',
   ];
 
   return normalizeCrmSearchText(parts.filter(Boolean).join(' '));
@@ -762,6 +785,22 @@ function removeItemFromColumns(columns: CrmColumn[], itemId: string): CrmColumn[
   }));
 }
 
+function applyDocumentsToWhatsappColumns(
+  columns: CrmColumn[],
+  whatsappDigits: string,
+  documents: RafacallCrmDocument[],
+): CrmColumn[] {
+  const digits = whatsappDigits.replace(/\D/g, '');
+  return columns.map((column) => ({
+    ...column,
+    items: column.items.map((item) =>
+      item.whatsappDigits.replace(/\D/g, '') === digits
+        ? { ...item, documents }
+        : item,
+    ),
+  }));
+}
+
 function applyPaymentsToWhatsappColumns(
   columns: CrmColumn[],
   whatsappDigits: string,
@@ -839,14 +878,17 @@ function CrmClientCard({
   const propertyTypologyLabel = formatCrmPropertyTypologyLabel(item.crmPropertyTypology);
   const preferredCityLabel = item.crmPreferredCity?.trim() || null;
   const hasPet = item.crmHasPet === true;
+  const visaLabel =
+    item.crmHasVisa === true ? 'Tem visto' : item.crmHasVisa === false ? 'Sem visto' : null;
   const desiredRentLabel =
     item.crmDesiredRent != null ? formatCrmEuroAmount(item.crmDesiredRent) : null;
   const hasPreferences = Boolean(
-    propertyTypologyLabel || preferredCityLabel || hasPet || desiredRentLabel,
+    propertyTypologyLabel || preferredCityLabel || hasPet || desiredRentLabel || visaLabel,
   );
   const crmComments = normalizeCrmComments(item.crmComments);
   const paymentsTotal = item.paymentsTotal ?? sumCrmPayments(item.payments ?? []);
   const hasPayments = paymentsTotal > 0;
+  const documentCount = item.documents?.length ?? 0;
 
   return (
     <article
@@ -867,11 +909,23 @@ function CrmClientCard({
           <p className="min-w-0 truncate text-sm font-semibold text-foreground">{name}</p>
         </div>
         <p className="mt-0.5 truncate text-[10px] text-muted/60">{wa}</p>
-        {hasPayments ? (
-          <p className="mt-1.5 inline-flex max-w-full items-center gap-1 rounded-md border border-emerald-200/90 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-semibold text-emerald-900">
-            <EuroIcon className="h-3.5 w-3.5 shrink-0 text-emerald-700" />
-            <span className="truncate">{formatCrmEuroAmount(paymentsTotal)}</span>
-          </p>
+        {hasPayments || documentCount > 0 ? (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            {hasPayments ? (
+              <p className="inline-flex max-w-full items-center gap-1 rounded-md border border-emerald-200/90 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-semibold text-emerald-900">
+                <EuroIcon className="h-3.5 w-3.5 shrink-0 text-emerald-700" />
+                <span className="truncate">{formatCrmEuroAmount(paymentsTotal)}</span>
+              </p>
+            ) : null}
+            {documentCount > 0 ? (
+              <p className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-0.5 text-[11px] font-semibold text-foreground">
+                <FileIcon className="h-3.5 w-3.5 shrink-0 text-brand-primary" />
+                <span>
+                  {documentCount} PDF{documentCount === 1 ? '' : 's'}
+                </span>
+              </p>
+            ) : null}
+          </div>
         ) : null}
       </div>
 
@@ -927,6 +981,11 @@ function CrmClientCard({
           {desiredRentLabel ? (
             <span className="inline-flex max-w-full items-center rounded-md border border-amber-200/90 bg-amber-50/90 px-2 py-1 text-[10px] font-medium text-amber-950">
               Aluguel {desiredRentLabel}
+            </span>
+          ) : null}
+          {visaLabel ? (
+            <span className="inline-flex max-w-full items-center rounded-md border border-sky-200/90 bg-sky-50/90 px-2 py-1 text-[10px] font-medium text-sky-900">
+              {visaLabel}
             </span>
           ) : null}
           {hasPet ? (
@@ -1068,6 +1127,10 @@ function toHasPetDraft(value: boolean | null | undefined): boolean | null {
   if (value === true) return true;
   if (value === false) return false;
   return null;
+}
+
+function toHasVisaDraft(value: boolean | null | undefined): boolean | null {
+  return toHasPetDraft(value);
 }
 
 function toDesiredRentDraft(value: number | null | undefined): string {
@@ -1798,6 +1861,231 @@ function CrmPaymentsSection({
   );
 }
 
+const CRM_DOCUMENT_MAX_BYTES = 15 * 1024 * 1024;
+
+function formatCrmDocumentSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  const megabytes = bytes / (1024 * 1024);
+  return `${megabytes.toFixed(1).replace('.', ',')} MB`;
+}
+
+function formatCrmDocumentDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('pt-PT', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+}
+
+function isPdfFile(file: File): boolean {
+  const name = file.name.toLowerCase();
+  return (
+    file.type === 'application/pdf' ||
+    file.type === 'application/x-pdf' ||
+    name.endsWith('.pdf')
+  );
+}
+
+function CrmDocumentsSection({
+  bookingId,
+  documents,
+  disabled,
+  onDocumentsChange,
+}: {
+  bookingId: string;
+  documents: RafacallCrmDocument[];
+  disabled?: boolean;
+  onDocumentsChange: (documents: RafacallCrmDocument[]) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const isBusy = Boolean(disabled || busy);
+  const count = documents.length;
+
+  const handleFiles = async (fileList: FileList | null) => {
+    const files = fileList ? Array.from(fileList) : [];
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (files.length === 0) return;
+
+    setBusy(true);
+    let next = documents;
+    let attached = 0;
+    try {
+      for (const file of files) {
+        if (!isPdfFile(file)) {
+          toast.error(`${file.name} não é um PDF.`);
+          continue;
+        }
+        if (file.size === 0) {
+          toast.error(`${file.name} está vazio.`);
+          continue;
+        }
+        if (file.size > CRM_DOCUMENT_MAX_BYTES) {
+          toast.error(`${file.name} passa de 15 MB.`);
+          continue;
+        }
+        try {
+          const created = await api.admin.rafacall.uploadCrmDocument(bookingId, file);
+          next = [created, ...next.filter((document) => document.id !== created.id)];
+          onDocumentsChange(next);
+          attached += 1;
+        } catch (err) {
+          toast.error(
+            getUserFacingApiError(err, { context: `Ao anexar ${file.name}` }),
+          );
+        }
+      }
+      if (attached === 1) toast.success('PDF anexado.');
+      if (attached > 1) toast.success(`${attached} PDFs anexados.`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDelete = async (documentId: string) => {
+    if (pendingDeleteId !== documentId) {
+      setPendingDeleteId(documentId);
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.admin.rafacall.deleteCrmDocument(bookingId, documentId);
+      onDocumentsChange(documents.filter((document) => document.id !== documentId));
+      setPendingDeleteId(null);
+      toast.success('PDF removido.');
+    } catch (err) {
+      toast.error(getUserFacingApiError(err, { context: 'Ao remover o PDF' }));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 space-y-2">
+      <button
+        type="button"
+        disabled={isBusy}
+        onClick={() => {
+          setOpen((prev) => !prev);
+          setPendingDeleteId(null);
+        }}
+        className={`flex w-full cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+          count > 0
+            ? 'border-border bg-page text-foreground hover:border-brand-primary/30'
+            : 'border-dashed border-border bg-card text-muted hover:border-brand-primary/40 hover:bg-page'
+        }`}
+        aria-expanded={open}
+        aria-label="Documentos do cliente"
+      >
+        <FileIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary" />
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Documentos
+          </p>
+          <p
+            className={`mt-0.5 text-sm font-medium leading-snug ${
+              count > 0 ? 'text-foreground' : 'italic text-muted'
+            }`}
+          >
+            {count > 0
+              ? `${count} PDF${count === 1 ? '' : 's'}`
+              : 'Nenhum PDF — clica para anexar'}
+          </p>
+        </div>
+        <span className="shrink-0 text-xs font-medium text-muted">
+          {open ? 'Fechar' : 'Editar'}
+        </span>
+      </button>
+
+      {open ? (
+        <div className="space-y-3 rounded-xl border border-border bg-page/60 px-3.5 py-3">
+          {documents.length > 0 ? (
+            <ul className="space-y-2">
+              {documents.map((document) => (
+                <li
+                  key={document.id}
+                  className="rounded-xl border border-border bg-card px-3 py-2.5"
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-page text-brand-primary"
+                      aria-hidden
+                    >
+                      <FileIcon className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {document.fileName}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted">
+                        {[
+                          formatCrmDocumentSize(document.sizeBytes),
+                          formatCrmDocumentDate(document.createdAt),
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col gap-1">
+                      <a
+                        href={crmMediaUrl(document.fileUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex min-h-8 cursor-pointer items-center justify-center rounded-lg border border-border px-2 py-1 text-[11px] font-medium text-foreground hover:bg-page"
+                      >
+                        Abrir
+                      </a>
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => void handleDelete(document.id)}
+                        className="cursor-pointer rounded-lg border border-red-200 px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        {pendingDeleteId === document.id ? 'Confirmar' : 'Apagar'}
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-muted">Ainda não há PDFs neste cliente.</p>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            multiple
+            aria-label="Anexar PDF"
+            className="sr-only"
+            tabIndex={-1}
+            disabled={isBusy}
+            onChange={(event) => void handleFiles(event.target.files)}
+          />
+          <button
+            type="button"
+            disabled={isBusy}
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex min-h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground transition-colors hover:bg-page disabled:opacity-50"
+          >
+            {busy ? 'A enviar…' : '+ Anexar PDF'}
+          </button>
+          <p className="text-[11px] leading-relaxed text-muted">
+            Só PDF, até 15 MB por ficheiro.
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function CrmClientModal({
   item,
   commentsDraft,
@@ -1810,6 +2098,7 @@ function CrmClientModal({
   propertyTypologyDraft,
   preferredCityDraft,
   desiredRentDraft,
+  hasVisaDraft,
   hasPetDraft,
   saving,
   onCommentsChange,
@@ -1821,8 +2110,10 @@ function CrmClientModal({
   onPropertyTypologyChange,
   onPreferredCityChange,
   onDesiredRentChange,
+  onHasVisaChange,
   onHasPetChange,
   onPaymentsChange,
+  onDocumentsChange,
   onStatusChange,
   onSave,
   onClose,
@@ -1838,6 +2129,7 @@ function CrmClientModal({
   propertyTypologyDraft: RafacallCrmPropertyTypology | '';
   preferredCityDraft: string;
   desiredRentDraft: string;
+  hasVisaDraft: boolean | null;
   hasPetDraft: boolean | null;
   saving: boolean;
   onCommentsChange: (value: string) => void;
@@ -1849,8 +2141,10 @@ function CrmClientModal({
   onPropertyTypologyChange: (value: RafacallCrmPropertyTypology | '') => void;
   onPreferredCityChange: (value: string) => void;
   onDesiredRentChange: (value: string) => void;
+  onHasVisaChange: (value: boolean | null) => void;
   onHasPetChange: (value: boolean | null) => void;
   onPaymentsChange: (payments: RafacallCrmPayment[]) => void;
+  onDocumentsChange: (documents: RafacallCrmDocument[]) => void;
   onStatusChange: (status: RafacallCrmStatus) => void;
   onSave: () => void;
   onClose: () => void;
@@ -1901,6 +2195,7 @@ function CrmClientModal({
     normalizePreferredCityDraft(item.crmPreferredCity ?? '');
   const hasDesiredRentChanges =
     normalizeDesiredRentDraft(desiredRentDraft) !== (item.crmDesiredRent ?? null);
+  const hasVisaChanges = hasVisaDraft !== toHasVisaDraft(item.crmHasVisa);
   const hasPetChanges = hasPetDraft !== toHasPetDraft(item.crmHasPet);
   const hasChanges =
     hasCommentsChanges ||
@@ -1909,6 +2204,7 @@ function CrmClientModal({
     hasPropertyTypologyChanges ||
     hasPreferredCityChanges ||
     hasDesiredRentChanges ||
+    hasVisaChanges ||
     hasPetChanges;
 
   return (
@@ -2226,6 +2522,50 @@ function CrmClientModal({
 
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-violet-900/70">
+                  Tem visto
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => onHasVisaChange(null)}
+                    className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                      hasVisaDraft == null
+                        ? 'border-violet-300 bg-violet-100 text-violet-950'
+                        : 'border-border bg-card text-foreground hover:bg-page'
+                    }`}
+                  >
+                    Por definir
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => onHasVisaChange(true)}
+                    className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                      hasVisaDraft === true
+                        ? 'border-emerald-300 bg-emerald-100 text-emerald-950'
+                        : 'border-border bg-card text-foreground hover:bg-page'
+                    }`}
+                  >
+                    Sim
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => onHasVisaChange(false)}
+                    className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                      hasVisaDraft === false
+                        ? 'border-emerald-300 bg-emerald-100 text-emerald-950'
+                        : 'border-border bg-card text-foreground hover:bg-page'
+                    }`}
+                  >
+                    Não
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-violet-900/70">
                   Tem PET?
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -2275,6 +2615,13 @@ function CrmClientModal({
             payments={item.payments ?? []}
             disabled={saving}
             onPaymentsChange={onPaymentsChange}
+          />
+
+          <CrmDocumentsSection
+            bookingId={item.id}
+            documents={item.documents ?? []}
+            disabled={saving}
+            onDocumentsChange={onDocumentsChange}
           />
 
           <div className="mt-4 border-t border-border pt-4">
@@ -2344,6 +2691,7 @@ export default function CrmPage() {
   >('');
   const [preferredCityDraft, setPreferredCityDraft] = useState('');
   const [desiredRentDraft, setDesiredRentDraft] = useState('');
+  const [hasVisaDraft, setHasVisaDraft] = useState<boolean | null>(null);
   const [hasPetDraft, setHasPetDraft] = useState<boolean | null>(null);
   const [modalSaving, setModalSaving] = useState(false);
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<RafacallCrmItem | null>(null);
@@ -2501,6 +2849,7 @@ export default function CrmPage() {
     setPropertyTypologyDraft(toPropertyTypologyDraft(item.crmPropertyTypology));
     setPreferredCityDraft(item.crmPreferredCity ?? '');
     setDesiredRentDraft(toDesiredRentDraft(item.crmDesiredRent));
+    setHasVisaDraft(toHasVisaDraft(item.crmHasVisa));
     setHasPetDraft(toHasPetDraft(item.crmHasPet));
   }, []);
 
@@ -2528,6 +2877,7 @@ export default function CrmPage() {
         setPropertyTypologyDraft(toPropertyTypologyDraft(updated.crmPropertyTypology));
         setPreferredCityDraft(updated.crmPreferredCity ?? '');
         setDesiredRentDraft(toDesiredRentDraft(updated.crmDesiredRent));
+        setHasVisaDraft(toHasVisaDraft(updated.crmHasVisa));
         setHasPetDraft(toHasPetDraft(updated.crmHasPet));
         setColumns((prev) =>
           moveItemBetweenColumns(prev, selectedItem.id, status, updated),
@@ -2564,6 +2914,7 @@ export default function CrmPage() {
     const preferredCityChanged =
       normalizePreferredCityDraft(preferredCityDraft) !==
       normalizePreferredCityDraft(selectedItem.crmPreferredCity ?? '');
+    const hasVisaChanged = hasVisaDraft !== toHasVisaDraft(selectedItem.crmHasVisa);
     const hasPetChanged = hasPetDraft !== toHasPetDraft(selectedItem.crmHasPet);
     const desiredRentChanged =
       normalizeDesiredRentDraft(desiredRentDraft) !== (selectedItem.crmDesiredRent ?? null);
@@ -2575,6 +2926,7 @@ export default function CrmPage() {
       !propertyTypologyChanged &&
       !preferredCityChanged &&
       !desiredRentChanged &&
+      !hasVisaChanged &&
       !hasPetChanged
     ) {
       return;
@@ -2624,6 +2976,7 @@ export default function CrmPage() {
         ...(desiredRentChanged
           ? { crmDesiredRent: normalizeDesiredRentDraft(desiredRentDraft) }
           : {}),
+        ...(hasVisaChanged ? { crmHasVisa: hasVisaDraft } : {}),
         ...(hasPetChanged ? { crmHasPet: hasPetDraft } : {}),
       });
       setSelectedItem(updated);
@@ -2634,6 +2987,7 @@ export default function CrmPage() {
       setPropertyTypologyDraft(toPropertyTypologyDraft(updated.crmPropertyTypology));
       setPreferredCityDraft(updated.crmPreferredCity ?? '');
       setDesiredRentDraft(toDesiredRentDraft(updated.crmDesiredRent));
+      setHasVisaDraft(toHasVisaDraft(updated.crmHasVisa));
       setHasPetDraft(toHasPetDraft(updated.crmHasPet));
       setColumns((prev) =>
         sortCrmBoardColumns(
@@ -2648,6 +3002,7 @@ export default function CrmPage() {
       setPropertyTypologyDraft('');
       setPreferredCityDraft('');
       setDesiredRentDraft('');
+      setHasVisaDraft(null);
       setHasPetDraft(null);
       toast.success('Alterações guardadas com sucesso.');
     } catch (err) {
@@ -2673,7 +3028,9 @@ export default function CrmPage() {
     }
   }, [
     commentsDraft,
+    desiredRentDraft,
     hasPetDraft,
+    hasVisaDraft,
     immigrationDateDraft,
     preferredCityDraft,
     propertyTypologyDraft,
@@ -2697,6 +3054,21 @@ export default function CrmPage() {
           columns,
           selectedItem.whatsappDigits,
           payments,
+        ),
+      );
+    },
+    [selectedItem],
+  );
+
+  const handleDocumentsChange = useCallback(
+    (documents: RafacallCrmDocument[]) => {
+      if (!selectedItem) return;
+      setSelectedItem({ ...selectedItem, documents });
+      setColumns((columns) =>
+        applyDocumentsToWhatsappColumns(
+          columns,
+          selectedItem.whatsappDigits,
+          documents,
         ),
       );
     },
@@ -2779,6 +3151,7 @@ export default function CrmPage() {
         setPropertyTypologyDraft('');
         setPreferredCityDraft('');
         setDesiredRentDraft('');
+        setHasVisaDraft(null);
         setHasPetDraft(null);
       }
       setDeleteConfirmItem(null);
@@ -2959,6 +3332,7 @@ export default function CrmPage() {
           propertyTypologyDraft={propertyTypologyDraft}
           preferredCityDraft={preferredCityDraft}
           desiredRentDraft={desiredRentDraft}
+          hasVisaDraft={hasVisaDraft}
           hasPetDraft={hasPetDraft}
           saving={modalSaving}
           onCommentsChange={setCommentsDraft}
@@ -2978,8 +3352,10 @@ export default function CrmPage() {
           onPropertyTypologyChange={setPropertyTypologyDraft}
           onPreferredCityChange={setPreferredCityDraft}
           onDesiredRentChange={setDesiredRentDraft}
+          onHasVisaChange={setHasVisaDraft}
           onHasPetChange={setHasPetDraft}
           onPaymentsChange={handlePaymentsChange}
+          onDocumentsChange={handleDocumentsChange}
           onStatusChange={(status) => void handleModalStatusChange(status)}
           onSave={() => void handleSave()}
           onClose={() => {
@@ -2995,6 +3371,7 @@ export default function CrmPage() {
               setPropertyTypologyDraft('');
               setPreferredCityDraft('');
               setDesiredRentDraft('');
+              setHasVisaDraft(null);
               setHasPetDraft(null);
             }
           }}
