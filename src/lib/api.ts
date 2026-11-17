@@ -119,6 +119,20 @@ export type WhatsappClientAutomationStep = {
   delayMsAfter: number;
 };
 
+export type WhatsappDailyContactReply = 'PENDING' | 'SIM' | 'NAO';
+
+export type WhatsappDailyContact = {
+  id: string;
+  whatsappDigits: string;
+  displayName: string | null;
+  instance: string | null;
+  firstMessageAt: string;
+  greetedAt: string | null;
+  reply: WhatsappDailyContactReply;
+  repliedAt: string | null;
+  crmAddedAt: string | null;
+};
+
 export type WhatsappClientAutomation = {
   id: string;
   name: string;
@@ -2144,6 +2158,13 @@ export const api = {
         request<{ ok: true }>(
           `/whatsapp-automations/${encodeURIComponent(id)}`,
           { method: 'DELETE' },
+        ),
+      dailyContacts: (day?: string) =>
+        request<{ dayKey: string; items: WhatsappDailyContact[] }>(
+          day
+            ? `/whatsapp-automations/daily-contacts?day=${encodeURIComponent(day)}`
+            : '/whatsapp-automations/daily-contacts',
+          { method: 'GET' },
         ),
     },
   },

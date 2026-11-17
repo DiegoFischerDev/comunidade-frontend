@@ -7,6 +7,7 @@ import {
   type WhatsappClientAutomation,
   type WhatsappClientAutomationStepInput,
   type WhatsappClientAutomationStepType,
+  type WhatsappDailyContact,
 } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CardButton } from '@/components/ui/CardButton';
@@ -93,11 +94,36 @@ function mediaHref(url: string): string {
   return resolveUploadsUrl(url);
 }
 
+function formatDailyPhone(digits: string): string {
+  if (digits.startsWith('351') && digits.length === 12) {
+    return `+351 ${digits.slice(3, 6)} ${digits.slice(6, 9)} ${digits.slice(9)}`;
+  }
+  return `+${digits}`;
+}
+
+function formatDailyTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('pt-PT', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Lisbon',
+  });
+}
+
+function dailyReplyLabel(contact: WhatsappDailyContact): string {
+  if (contact.reply === 'SIM' && contact.crmAddedAt) return 'Sim — no CRM';
+  if (contact.reply === 'SIM') return 'Sim';
+  if (contact.reply === 'NAO') return 'Não';
+  if (contact.greetedAt) return 'Aguardando';
+  return 'Por saudar';
+}
+
 export default function AdminAutomacaoPage() {
   const { user } = useAuth();
   const canSee = user?.role === 'ADMIN';
 
   const [items, setItems] = useState<WhatsappClientAutomation[]>([]);
+  const [dailyContacts, setDailyContacts] = useState<WhatsappDailyContact[]>([]);
+  const [dailyDay, setDailyDay] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -116,8 +142,13 @@ export default function AdminAutomacaoPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await api.admin.whatsappAutomations.list();
+      const [res, daily] = await Promise.all([
+        api.admin.whatsappAutomations.list(),
+        api.admin.whatsappAutomations.dailyContacts(),
+      ]);
       setItems(res.items);
+      setDailyContacts(daily.items);
+      setDailyDay(daily.dayKey);
     } catch (err) {
       setError(getUserFacingApiError(err, { context: 'Ao carregar automações' }));
     } finally {
@@ -320,6 +351,75 @@ export default function AdminAutomacaoPage() {
           {success}
         </div>
       ) : null}
+
+      <div className="mt-6">
+        <h2 className="text-sm font-semibold text-foreground">
+          Contactos de hoje
+        </h2>
+        <p className="mt-1 max-w-2xl text-sm text-muted">
+          Números que escreveram hoje na instância comunidade MEO
+          {dailyDay ? ` (${dailyDay})` : ''}. No primeiro contacto do dia enviamos
+          bom dia e a pergunta do relocation. A resposta 1 entra na coluna «Sem
+          data para imigrar».
+        </p>
+
+        {loading ? (
+          <p className="mt-3 text-sm text-muted">Carregando…</p>
+        ) : dailyContacts.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">Nenhum contacto hoje.</p>
+        ) : (
+          <>
+            <div className="mt-3 space-y-3 md:hidden">
+              {dailyContacts.map((contact) => (
+                <article
+                  key={contact.id}
+                  className="rounded-xl border border-border bg-card p-4 shadow-sm"
+                >
+                  <p className="text-sm font-semibold text-foreground">
+                    {contact.displayName || 'Sem nome'}
+                  </p>
+                  <p className="mt-1 text-sm text-foreground/90">
+                    {formatDailyPhone(contact.whatsappDigits)}
+                  </p>
+                  <p className="mt-2 text-xs text-muted">
+                    {formatDailyTime(contact.firstMessageAt)} · {dailyReplyLabel(contact)}
+                  </p>
+                </article>
+              ))}
+            </div>
+            <div className="mt-3 hidden overflow-x-auto rounded-lg border border-border bg-card md:block">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-page text-xs font-semibold uppercase tracking-wide text-muted">
+                  <tr>
+                    <th className="px-4 py-3">Hora</th>
+                    <th className="px-4 py-3">Nome</th>
+                    <th className="px-4 py-3">Número</th>
+                    <th className="px-4 py-3">Resposta</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {dailyContacts.map((contact) => (
+                    <tr key={contact.id} className="hover:bg-page/60">
+                      <td className="px-4 py-3 text-foreground/90">
+                        {formatDailyTime(contact.firstMessageAt)}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {contact.displayName || 'Sem nome'}
+                      </td>
+                      <td className="px-4 py-3 text-foreground/90">
+                        {formatDailyPhone(contact.whatsappDigits)}
+                      </td>
+                      <td className="px-4 py-3 text-foreground/90">
+                        {dailyReplyLabel(contact)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Automações fixas */}
       <div className="mt-6">

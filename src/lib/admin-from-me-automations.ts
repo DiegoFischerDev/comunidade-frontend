@@ -19,4 +19,11 @@ export const ADMIN_FROM_ME_AUTOMATIONS: AdminFromMeAutomation[] = [
     notes:
       '',
   },
+  {
+    name: 'Primeiro contacto do dia',
+    trigger: 'Primeira mensagem do dia (DM)',
+    action:
+      'Dá bom dia e pergunta se quer fazer o relocation com o Rafa (1 sim / 2 não). Se responder 1, entra na coluna «Sem data para imigrar».',
+    notes: 'Instância comunidade MEO. A lista dos números do dia aparece nesta página.',
+  },
 ];
