@@ -5,6 +5,7 @@ import { api, getUserFacingApiError } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { AdminVideoCallSlotPicker } from '@/components/rafacall/AdminVideoCallSlotPicker';
+import { AdminWorkingHoursDialog } from '@/components/rafacall/AdminWorkingHoursDialog';
 import { showRafacallAdminBookingErrorToast } from '@/lib/rafacall-admin-booking-errors';
 import { toast } from '@/lib/toast';
 import {
@@ -1190,6 +1191,7 @@ export default function AdminRafaCallHojePage() {
     row: ScheduleItem;
     slot: string;
   } | null>(null);
+  const [hoursOpen, setHoursOpen] = useState(false);
   const [quickBookOpen, setQuickBookOpen] = useState(false);
   const [quickBookSelectedDate, setQuickBookSelectedDate] = useState('');
   const [quickBookManualDate, setQuickBookManualDate] = useState('');
@@ -1664,14 +1666,23 @@ export default function AdminRafaCallHojePage() {
             Agrupado por dia em <span className="font-medium">{tz}</span>.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={openNewQuickBook}
-          disabled={quickBooking}
-          className="inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center rounded-[14px] bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Novo agendamento
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setHoursOpen(true)}
+            className="inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center rounded-[14px] border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-page"
+          >
+            Horários
+          </button>
+          <button
+            type="button"
+            onClick={openNewQuickBook}
+            disabled={quickBooking}
+            className="inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center rounded-[14px] bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Novo agendamento
+          </button>
+        </div>
       </div>
 
       {error ? (
@@ -1798,6 +1809,14 @@ export default function AdminRafaCallHojePage() {
         </div>
       ) : null}
 
+
+      <AdminWorkingHoursDialog
+        open={hoursOpen}
+        onClose={() => setHoursOpen(false)}
+        onSaved={() => {
+          void load();
+        }}
+      />
 
       {rescheduleTarget ? (
         <RescheduleBookingModal

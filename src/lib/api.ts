@@ -987,6 +987,34 @@ export const api = {
       },
     },
     rafacall: {
+      workingHours: () =>
+        request<{
+          timezone: string;
+          durationMinutes: number;
+          bufferMinutes: number;
+          days: Record<
+            'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun',
+            { start: string; end: string }[]
+          >;
+        }>('/admin/rafacall/working-hours', { method: 'GET' }),
+      updateWorkingHours: (days: {
+        mon: { start: string; end: string }[];
+        tue: { start: string; end: string }[];
+        wed: { start: string; end: string }[];
+        thu: { start: string; end: string }[];
+        fri: { start: string; end: string }[];
+        sat: { start: string; end: string }[];
+        sun: { start: string; end: string }[];
+      }) =>
+        request<{
+          timezone: string;
+          durationMinutes: number;
+          bufferMinutes: number;
+          days: typeof days;
+        }>('/admin/rafacall/working-hours', {
+          method: 'PUT',
+          body: JSON.stringify({ days }),
+        }),
       schedule: (tz?: string) => {
         const q = tz ? `?tz=${encodeURIComponent(tz)}` : '';
         return request<{
