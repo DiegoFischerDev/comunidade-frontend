@@ -7,7 +7,6 @@ import {
   type WhatsappClientAutomation,
   type WhatsappClientAutomationStepInput,
   type WhatsappClientAutomationStepType,
-  type WhatsappDailyContact,
 } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CardButton } from '@/components/ui/CardButton';
@@ -94,36 +93,13 @@ function mediaHref(url: string): string {
   return resolveUploadsUrl(url);
 }
 
-function formatDailyPhone(digits: string): string {
-  if (digits.startsWith('351') && digits.length === 12) {
-    return `+351 ${digits.slice(3, 6)} ${digits.slice(6, 9)} ${digits.slice(9)}`;
-  }
-  return `+${digits}`;
-}
-
-function formatDailyTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('pt-PT', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Europe/Lisbon',
-  });
-}
-
-function dailyReplyLabel(contact: WhatsappDailyContact): string {
-  if (contact.reply === 'SIM' && contact.crmAddedAt) return 'Sim — no CRM';
-  if (contact.reply === 'SIM') return 'Sim';
-  if (contact.reply === 'NAO') return 'Não';
-  if (contact.greetedAt) return 'Aguardando';
-  return 'Por saudar';
-}
-
 export default function AdminAutomacaoPage() {
   const { user } = useAuth();
   const canSee = user?.role === 'ADMIN';
 
   const [items, setItems] = useState<WhatsappClientAutomation[]>([]);
-  const [dailyContacts, setDailyContacts] = useState<WhatsappDailyContact[]>([]);
-  const [dailyDay, setDailyDay] = useState('');
+  const [contextText, setContextText] = useState('');
+  const [contextSaving, setContextSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -142,13 +118,14 @@ export default function AdminAutomacaoPage() {
     setLoading(true);
     setError('');
     try {
-      const [res, daily] = await Promise.all([
-        api.admin.whatsappAutomations.list(),
-        api.admin.whatsappAutomations.dailyContacts(),
-      ]);
+      const res = await api.admin.whatsappAutomations.list();
       setItems(res.items);
-      setDailyContacts(daily.items);
-      setDailyDay(daily.dayKey);
+      try {
+        const context = await api.admin.joana.context();
+        setContextText(context.contextText);
+      } catch (err) {
+        setError(getUserFacingApiError(err, { context: 'Ao carregar o contexto da Joana' }));
+      }
     } catch (err) {
       setError(getUserFacingApiError(err, { context: 'Ao carregar automações' }));
     } finally {
@@ -159,6 +136,21 @@ export default function AdminAutomacaoPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function saveContext() {
+    setContextSaving(true);
+    setError('');
+    setSuccess('');
+    try {
+      const saved = await api.admin.joana.updateContext(contextText);
+      setContextText(saved.contextText);
+      setSuccess('Contexto da Joana guardado.');
+    } catch (err) {
+      setError(getUserFacingApiError(err, { context: 'Ao guardar o contexto da Joana' }));
+    } finally {
+      setContextSaving(false);
+    }
+  }
 
   function openCreate() {
     setError('');
@@ -352,74 +344,34 @@ export default function AdminAutomacaoPage() {
         </div>
       ) : null}
 
-      <div className="mt-6">
-        <h2 className="text-sm font-semibold text-foreground">
-          Contactos de hoje
-        </h2>
+      <section className="mt-6 rounded-xl border border-border bg-card p-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-foreground">Joana</h2>
         <p className="mt-1 max-w-2xl text-sm text-muted">
-          Números que escreveram hoje na instância comunidade MEO
-          {dailyDay ? ` (${dailyDay})` : ''}. No primeiro contacto do dia enviamos
-          bom dia e a pergunta do relocation. A resposta 1 entra na coluna «Sem
-          data para imigrar».
+          Contexto que a Joana usa para responder no WhatsApp da instância comunidade MEO.
+          Ela espera 30 segundos, junta as mensagens e só então responde.
+          Uma mensagem igual a um gatilho ativo fica com essa automação.
         </p>
-
-        {loading ? (
-          <p className="mt-3 text-sm text-muted">Carregando…</p>
-        ) : dailyContacts.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">Nenhum contacto hoje.</p>
-        ) : (
-          <>
-            <div className="mt-3 space-y-3 md:hidden">
-              {dailyContacts.map((contact) => (
-                <article
-                  key={contact.id}
-                  className="rounded-xl border border-border bg-card p-4 shadow-sm"
-                >
-                  <p className="text-sm font-semibold text-foreground">
-                    {contact.displayName || 'Sem nome'}
-                  </p>
-                  <p className="mt-1 text-sm text-foreground/90">
-                    {formatDailyPhone(contact.whatsappDigits)}
-                  </p>
-                  <p className="mt-2 text-xs text-muted">
-                    {formatDailyTime(contact.firstMessageAt)} · {dailyReplyLabel(contact)}
-                  </p>
-                </article>
-              ))}
-            </div>
-            <div className="mt-3 hidden overflow-x-auto rounded-lg border border-border bg-card md:block">
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-page text-xs font-semibold uppercase tracking-wide text-muted">
-                  <tr>
-                    <th className="px-4 py-3">Hora</th>
-                    <th className="px-4 py-3">Nome</th>
-                    <th className="px-4 py-3">Número</th>
-                    <th className="px-4 py-3">Resposta</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100">
-                  {dailyContacts.map((contact) => (
-                    <tr key={contact.id} className="hover:bg-page/60">
-                      <td className="px-4 py-3 text-foreground/90">
-                        {formatDailyTime(contact.firstMessageAt)}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        {contact.displayName || 'Sem nome'}
-                      </td>
-                      <td className="px-4 py-3 text-foreground/90">
-                        {formatDailyPhone(contact.whatsappDigits)}
-                      </td>
-                      <td className="px-4 py-3 text-foreground/90">
-                        {dailyReplyLabel(contact)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </div>
+        <label htmlFor="joana-context" className="mt-4 block text-sm font-medium text-foreground">
+          Contexto do negócio
+        </label>
+        <textarea
+          id="joana-context"
+          value={contextText}
+          onChange={(event) => setContextText(event.target.value)}
+          rows={12}
+          className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
+        />
+        <div className="mt-3">
+          <CardButton
+            type="button"
+            size="sm"
+            disabled={contextSaving || contextText.trim().length < 20}
+            onClick={() => void saveContext()}
+          >
+            {contextSaving ? 'A guardar…' : 'Guardar contexto'}
+          </CardButton>
+        </div>
+      </section>
 
       {/* Automações fixas */}
       <div className="mt-6">

@@ -4,6 +4,7 @@ export type RafacallCrmPropertyTypology =
   | 'QUARTO'
   | 'T0'
   | 'T1'
+  | 'T2'
   | 'T3'
   | 'T4'
   | 'T5';
@@ -12,6 +13,7 @@ export const RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER: RafacallCrmPropertyTypology[
   'QUARTO',
   'T0',
   'T1',
+  'T2',
   'T3',
   'T4',
   'T5',
@@ -24,6 +26,7 @@ export const RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS: Record<
   QUARTO: 'Apenas quarto',
   T0: 'T0',
   T1: 'T1',
+  T2: 'T2',
   T3: 'T3',
   T4: 'T4',
   T5: 'T5',

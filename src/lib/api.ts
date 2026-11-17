@@ -71,6 +71,7 @@ export type RafacallCrmPropertyTypology =
   | 'QUARTO'
   | 'T0'
   | 'T1'
+  | 'T2'
   | 'T3'
   | 'T4'
   | 'T5';
@@ -117,20 +118,6 @@ export type WhatsappClientAutomationStep = {
   mediaMimeType: string | null;
   mediaFileName: string | null;
   delayMsAfter: number;
-};
-
-export type WhatsappDailyContactReply = 'PENDING' | 'SIM' | 'NAO';
-
-export type WhatsappDailyContact = {
-  id: string;
-  whatsappDigits: string;
-  displayName: string | null;
-  instance: string | null;
-  firstMessageAt: string;
-  greetedAt: string | null;
-  reply: WhatsappDailyContactReply;
-  repliedAt: string | null;
-  crmAddedAt: string | null;
 };
 
 export type WhatsappClientAutomation = {
@@ -2159,13 +2146,15 @@ export const api = {
           `/whatsapp-automations/${encodeURIComponent(id)}`,
           { method: 'DELETE' },
         ),
-      dailyContacts: (day?: string) =>
-        request<{ dayKey: string; items: WhatsappDailyContact[] }>(
-          day
-            ? `/whatsapp-automations/daily-contacts?day=${encodeURIComponent(day)}`
-            : '/whatsapp-automations/daily-contacts',
-          { method: 'GET' },
-        ),
+    },
+    joana: {
+      context: () =>
+        request<{ contextText: string }>('/joana/context', { method: 'GET' }),
+      updateContext: (contextText: string) =>
+        request<{ contextText: string }>('/joana/context', {
+          method: 'PATCH',
+          body: JSON.stringify({ contextText }),
+        }),
     },
   },
   uploads: {
