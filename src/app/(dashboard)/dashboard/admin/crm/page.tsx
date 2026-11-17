@@ -8,7 +8,7 @@ import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { AdminVideoCallSlotPicker } from '@/components/rafacall/AdminVideoCallSlotPicker';
 import { showRafacallAdminBookingErrorToast } from '@/lib/rafacall-admin-booking-errors';
 import { toast } from '@/lib/toast';
-import { CRM_IMMIGRATION_IMMEDIATE_VALUE, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER, RAFA_CALL_CRM_STATUS_LABELS, RAFA_CALL_CRM_STATUS_ORDER, formatCrmEuroAmount, formatCrmPaymentDateLabel, formatCrmPetLabel, formatCrmPropertyTypologyLabel, formatCrmVisaLabel, getCrmColumnTone, formatImmigrationDateLabel, formatImmigrationMonthYear, isCrmImmigrationImmediate, normalizeCrmBoardColumns, sortCrmBoardColumns, toImmigrationDateInputValue } from '@/lib/rafacall-crm';
+import { CRM_IMMIGRATION_IMMEDIATE_VALUE, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER, RAFA_CALL_CRM_STATUS_LABELS, RAFA_CALL_CRM_STATUS_ORDER, formatCrmEuroAmount, formatCrmPaymentDateLabel, formatCrmPetLabel, formatCrmPropertyTypologyLabel, formatCrmVisaLabel, getCrmColumnTone, formatImmigrationDateLabel, formatImmigrationMonthYear, isCrmImmigrationImmediate, isJoanaOffCrmStatus, normalizeCrmBoardColumns, sortCrmBoardColumns, toImmigrationDateInputValue } from '@/lib/rafacall-crm';
 import type { RafacallCrmPropertyTypology } from '@/lib/rafacall-crm';
 import {
   CENTERED_PEEK_CAROUSEL_ITEM,
@@ -767,6 +767,7 @@ function moveItemBetweenColumns(
     ...movingItem,
     ...(updatedItem ?? {}),
     crmStatus: toStatus,
+    ...(!updatedItem && isJoanaOffCrmStatus(toStatus) ? { crmJoanaEnabled: false } : {}),
   };
 
   return sortCrmBoardColumns(
@@ -836,6 +837,27 @@ function insertItemIntoColumns(columns: CrmColumn[], item: RafacallCrmItem): Crm
   );
 }
 
+function JoanaOffIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 8V5" />
+      <circle cx="12" cy="4" r="1" />
+      <rect x="5" y="8" width="14" height="11" rx="2" />
+      <path d="M9 13h.01M15 13h.01" />
+      <path d="M4 4l16 16" />
+    </svg>
+  );
+}
+
 function TrashIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -883,7 +905,7 @@ function CrmClientCard({
   const desiredRentLabel =
     item.crmDesiredRent != null ? formatCrmEuroAmount(item.crmDesiredRent) : null;
   const hasPreferences = Boolean(
-    propertyTypologyLabel || preferredCityLabel || hasPet || desiredRentLabel || visaLabel,
+    propertyTypologyLabel || preferredCityLabel || hasPet || desiredRentLabel,
   );
   const crmComments = normalizeCrmComments(item.crmComments);
   const paymentsTotal = item.paymentsTotal ?? sumCrmPayments(item.payments ?? []);
@@ -906,7 +928,16 @@ function CrmClientCard({
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-1.5">
           {crmComments ? <CrmCommentInfoBadge comments={crmComments} /> : null}
-          <p className="min-w-0 truncate text-sm font-semibold text-foreground">{name}</p>
+          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{name}</p>
+          {item.crmJoanaEnabled === false ? (
+            <span
+              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-rose-200 bg-rose-50 text-rose-800"
+              title="Chatbot Joana desativado"
+            >
+              <JoanaOffIcon className="h-3.5 w-3.5" />
+              <span className="sr-only">Chatbot Joana desativado</span>
+            </span>
+          ) : null}
         </div>
         <p className="mt-0.5 truncate text-[10px] text-muted/60">{wa}</p>
         {hasPayments || documentCount > 0 ? (
@@ -966,6 +997,14 @@ function CrmClientCard({
         </div>
       ) : null}
 
+      {visaLabel ? (
+        <div className="mt-2">
+          <span className="inline-flex max-w-full items-center rounded-md border border-border bg-card px-2 py-1 text-[10px] font-medium text-foreground">
+            {visaLabel}
+          </span>
+        </div>
+      ) : null}
+
       {hasPreferences ? (
         <div className="mt-2.5 flex flex-wrap gap-1.5">
           {propertyTypologyLabel ? (
@@ -981,11 +1020,6 @@ function CrmClientCard({
           {desiredRentLabel ? (
             <span className="inline-flex max-w-full items-center rounded-md border border-amber-200/90 bg-amber-50/90 px-2 py-1 text-[10px] font-medium text-amber-950">
               Aluguel {desiredRentLabel}
-            </span>
-          ) : null}
-          {visaLabel ? (
-            <span className="inline-flex max-w-full items-center rounded-md border border-sky-200/90 bg-sky-50/90 px-2 py-1 text-[10px] font-medium text-sky-900">
-              {visaLabel}
             </span>
           ) : null}
           {hasPet ? (
@@ -2115,6 +2149,7 @@ function CrmClientModal({
   onPaymentsChange,
   onDocumentsChange,
   onStatusChange,
+  onJoanaEnabledChange,
   onSave,
   onClose,
 }: {
@@ -2146,6 +2181,7 @@ function CrmClientModal({
   onPaymentsChange: (payments: RafacallCrmPayment[]) => void;
   onDocumentsChange: (documents: RafacallCrmDocument[]) => void;
   onStatusChange: (status: RafacallCrmStatus) => void;
+  onJoanaEnabledChange: (enabled: boolean) => void;
   onSave: () => void;
   onClose: () => void;
 }) {
@@ -2255,6 +2291,48 @@ function CrmClientModal({
             disabled={saving}
             onChange={onStatusChange}
           />
+
+          <div className="mt-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">
+              Chatbot Joana
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Chatbot Joana">
+              <button
+                type="button"
+                disabled={saving || item.crmJoanaEnabled}
+                aria-pressed={item.crmJoanaEnabled}
+                onClick={() => onJoanaEnabledChange(true)}
+                className={`inline-flex min-h-11 cursor-pointer items-center rounded-lg border px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed ${
+                  item.crmJoanaEnabled
+                    ? 'border-emerald-300 bg-emerald-100 text-emerald-950'
+                    : 'border-border bg-card text-foreground hover:bg-page disabled:opacity-50'
+                }`}
+              >
+                On
+              </button>
+              <button
+                type="button"
+                disabled={saving || item.crmJoanaEnabled === false}
+                aria-pressed={item.crmJoanaEnabled === false}
+                onClick={() => onJoanaEnabledChange(false)}
+                className={`inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed ${
+                  item.crmJoanaEnabled === false
+                    ? 'border-rose-300 bg-rose-100 text-rose-950'
+                    : 'border-border bg-card text-foreground hover:bg-page disabled:opacity-50'
+                }`}
+              >
+                {item.crmJoanaEnabled === false ? (
+                  <JoanaOffIcon className="h-4 w-4" />
+                ) : null}
+                Off
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-muted">
+              {item.crmJoanaEnabled
+                ? 'A Joana responde a este WhatsApp.'
+                : 'A Joana não responde a este WhatsApp.'}
+            </p>
+          </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
@@ -2447,6 +2525,50 @@ function CrmClientModal({
             ) : null}
           </div>
 
+          <div className="mt-3 rounded-xl border border-border bg-page px-3.5 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">
+              Tem visto
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => onHasVisaChange(null)}
+                className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                  hasVisaDraft == null
+                    ? 'border-foreground/30 bg-card text-foreground'
+                    : 'border-border bg-card text-foreground hover:bg-page'
+                }`}
+              >
+                Por definir
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => onHasVisaChange(true)}
+                className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                  hasVisaDraft === true
+                    ? 'border-emerald-300 bg-emerald-100 text-emerald-950'
+                    : 'border-border bg-card text-foreground hover:bg-page'
+                }`}
+              >
+                Sim
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => onHasVisaChange(false)}
+                className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                  hasVisaDraft === false
+                    ? 'border-emerald-300 bg-emerald-100 text-emerald-950'
+                    : 'border-border bg-card text-foreground hover:bg-page'
+                }`}
+              >
+                Não
+              </button>
+            </div>
+          </div>
+
           <div className="mt-3 rounded-xl border border-violet-200/80 bg-violet-50/50 px-3.5 py-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-violet-900/80">
               Preferências de imóvel
@@ -2518,50 +2640,6 @@ function CrmClientModal({
                   placeholder="Ex.: 800"
                   className="mt-2 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-brand-primary disabled:opacity-50"
                 />
-              </div>
-
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-violet-900/70">
-                  Tem visto
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => onHasVisaChange(null)}
-                    className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                      hasVisaDraft == null
-                        ? 'border-violet-300 bg-violet-100 text-violet-950'
-                        : 'border-border bg-card text-foreground hover:bg-page'
-                    }`}
-                  >
-                    Por definir
-                  </button>
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => onHasVisaChange(true)}
-                    className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                      hasVisaDraft === true
-                        ? 'border-emerald-300 bg-emerald-100 text-emerald-950'
-                        : 'border-border bg-card text-foreground hover:bg-page'
-                    }`}
-                  >
-                    Sim
-                  </button>
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => onHasVisaChange(false)}
-                    className={`inline-flex min-h-9 cursor-pointer items-center rounded-lg border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                      hasVisaDraft === false
-                        ? 'border-emerald-300 bg-emerald-100 text-emerald-950'
-                        : 'border-border bg-card text-foreground hover:bg-page'
-                    }`}
-                  >
-                    Não
-                  </button>
-                </div>
               </div>
 
               <div>
@@ -2894,6 +2972,31 @@ export default function CrmPage() {
       }
     },
     [columns, selectedItem],
+  );
+
+  const handleJoanaEnabledChange = useCallback(
+    async (enabled: boolean) => {
+      if (!selectedItem || selectedItem.crmJoanaEnabled === enabled) return;
+
+      setModalSaving(true);
+      try {
+        const updated = await api.admin.rafacall.updateCrm(selectedItem.id, {
+          crmJoanaEnabled: enabled,
+        });
+        setSelectedItem(updated);
+        setColumns((prev) =>
+          moveItemBetweenColumns(prev, updated.id, updated.crmStatus, updated),
+        );
+      } catch (err) {
+        showRafacallAdminBookingErrorToast(
+          getUserFacingApiError(err, { context: 'Ao atualizar o chatbot' }),
+          'Não foi possível atualizar o chatbot.',
+        );
+      } finally {
+        setModalSaving(false);
+      }
+    },
+    [selectedItem],
   );
 
   const handleSave = useCallback(async () => {
@@ -3357,6 +3460,7 @@ export default function CrmPage() {
           onPaymentsChange={handlePaymentsChange}
           onDocumentsChange={handleDocumentsChange}
           onStatusChange={(status) => void handleModalStatusChange(status)}
+          onJoanaEnabledChange={(enabled) => void handleJoanaEnabledChange(enabled)}
           onSave={() => void handleSave()}
           onClose={() => {
             if (!modalSaving) {

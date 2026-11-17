@@ -82,6 +82,17 @@ export const RAFA_CALL_CRM_STATUS_ORDER: RafacallCrmStatus[] = [
   'CONTRATO_ASSINADO',
 ];
 
+const JOANA_OFF_CRM_STATUSES: RafacallCrmStatus[] = [
+  'REALIZOU_VIDEO_CHAMADA',
+  'AGUARDANDO_ASSINATURA',
+  'CONTRATO_ASSINADO',
+];
+
+/** Ao entrar nestas colunas o chatbot Joana fica Off. */
+export function isJoanaOffCrmStatus(status: RafacallCrmStatus): boolean {
+  return JOANA_OFF_CRM_STATUSES.includes(status);
+}
+
 export const RAFA_CALL_CRM_STATUS_LABELS: Record<RafacallCrmStatus, string> = {
   IMIGRACAO_NULL: 'Sem data para imigar',
   IMIGRACAO_LONGE: 'Data para imigrar longe',

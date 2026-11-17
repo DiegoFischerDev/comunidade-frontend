@@ -160,6 +160,7 @@ export type RafacallCrmItem = {
   crmHasPet: boolean | null;
   crmHasVisa: boolean | null;
   crmDesiredRent: number | null;
+  crmJoanaEnabled: boolean;
   payments: RafacallCrmPayment[];
   paymentsTotal: number;
   documents: RafacallCrmDocument[];
@@ -1111,6 +1112,7 @@ export const api = {
           crmHasPet?: boolean | null;
           crmHasVisa?: boolean | null;
           crmDesiredRent?: number | null;
+          crmJoanaEnabled?: boolean;
         },
       ) =>
         request<RafacallCrmItem>(`/admin/rafacall/crm/${bookingId}`, {
