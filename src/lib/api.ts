@@ -117,6 +117,11 @@ export type FinanceBoard = {
 
 export type WhatsappClientAutomationStepType = 'TEXT' | 'AUDIO' | 'IMAGE';
 
+/** Passos das boas-vindas da Joana (inclui PDF). */
+export type JoanaWelcomeStepType =
+  | WhatsappClientAutomationStepType
+  | 'DOCUMENT';
+
 export type WhatsappClientAutomationStep = {
   id: string;
   sortOrder: number;
@@ -140,6 +145,16 @@ export type WhatsappClientAutomation = {
 
 export type WhatsappClientAutomationStepInput = {
   type: WhatsappClientAutomationStepType;
+  textContent?: string;
+  mediaUrl?: string;
+  mediaMimeType?: string;
+  mediaFileName?: string;
+  caption?: string;
+  delayMsAfter?: number;
+};
+
+export type JoanaWelcomeStepInput = {
+  type: JoanaWelcomeStepType;
   textContent?: string;
   mediaUrl?: string;
   mediaMimeType?: string;
@@ -2215,18 +2230,14 @@ export const api = {
           body: JSON.stringify({ contextText }),
         }),
       welcome: () =>
-        request<{ steps: WhatsappClientAutomationStepInput[] }>(
-          '/joana/welcome',
-          { method: 'GET' },
-        ),
-      updateWelcome: (steps: WhatsappClientAutomationStepInput[]) =>
-        request<{ steps: WhatsappClientAutomationStepInput[] }>(
-          '/joana/welcome',
-          {
-            method: 'PATCH',
-            body: JSON.stringify({ steps }),
-          },
-        ),
+        request<{ steps: JoanaWelcomeStepInput[] }>('/joana/welcome', {
+          method: 'GET',
+        }),
+      updateWelcome: (steps: JoanaWelcomeStepInput[]) =>
+        request<{ steps: JoanaWelcomeStepInput[] }>('/joana/welcome', {
+          method: 'PATCH',
+          body: JSON.stringify({ steps }),
+        }),
     },
   },
   uploads: {

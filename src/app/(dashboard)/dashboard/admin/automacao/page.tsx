@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   api,
   getUserFacingApiError,
+  type JoanaWelcomeStepInput,
   type WhatsappClientAutomation,
   type WhatsappClientAutomationStepInput,
 } from '@/lib/api';
@@ -19,6 +20,13 @@ import {
 
 const inputClass =
   'mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25';
+
+const WELCOME_STEP_TYPES = [
+  'TEXT',
+  'AUDIO',
+  'IMAGE',
+  'DOCUMENT',
+] as const;
 
 function stepsFromApi(
   steps: Array<{
@@ -42,9 +50,38 @@ function stepsFromApi(
   }));
 }
 
-function draftToPayload(
+function draftToAutomationPayload(
   steps: AutomationDraftStep[],
 ): WhatsappClientAutomationStepInput[] {
+  return steps.map((s) => {
+    const delayMsAfter = Math.max(
+      0,
+      Math.min(30_000, Math.round(s.delaySeconds * 1000)),
+    );
+    if (s.type === 'TEXT') {
+      return {
+        type: 'TEXT',
+        textContent: s.textContent.trim(),
+        delayMsAfter,
+      };
+    }
+    if (s.type === 'DOCUMENT') {
+      throw new Error('PDF só está disponível nas boas-vindas da Joana.');
+    }
+    return {
+      type: s.type,
+      mediaUrl: s.mediaUrl.trim(),
+      mediaMimeType: s.mediaMimeType || undefined,
+      mediaFileName: s.mediaFileName || undefined,
+      caption: s.type === 'IMAGE' ? s.textContent.trim() || undefined : undefined,
+      delayMsAfter,
+    };
+  });
+}
+
+function draftToWelcomePayload(
+  steps: AutomationDraftStep[],
+): JoanaWelcomeStepInput[] {
   return steps.map((s) => {
     const delayMsAfter = Math.max(
       0,
@@ -60,17 +97,33 @@ function draftToPayload(
     return {
       type: s.type,
       mediaUrl: s.mediaUrl.trim(),
-      mediaMimeType: s.mediaMimeType || undefined,
+      mediaMimeType:
+        s.type === 'DOCUMENT'
+          ? s.mediaMimeType || 'application/pdf'
+          : s.mediaMimeType || undefined,
       mediaFileName: s.mediaFileName || undefined,
-      caption: s.type === 'IMAGE' ? s.textContent.trim() || undefined : undefined,
+      caption:
+        s.type === 'IMAGE' || s.type === 'DOCUMENT'
+          ? s.textContent.trim() || undefined
+          : undefined,
       delayMsAfter,
     };
   });
 }
 
+function looksLikePdf(step: AutomationDraftStep): boolean {
+  const mime = step.mediaMimeType.trim().toLowerCase();
+  if (mime === 'application/pdf' || mime.includes('pdf')) return true;
+  const name = `${step.mediaFileName} ${step.mediaUrl}`
+    .trim()
+    .toLowerCase()
+    .split('?')[0]!;
+  return name.endsWith('.pdf');
+}
+
 function validateDraftSteps(
   steps: AutomationDraftStep[],
-  opts?: { allowEmpty?: boolean },
+  opts?: { allowEmpty?: boolean; allowDocument?: boolean },
 ): string | null {
   if (!opts?.allowEmpty && steps.length === 0) {
     return 'Indica pelo menos um passo.';
@@ -79,8 +132,19 @@ function validateDraftSteps(
     if (s.type === 'TEXT' && !s.textContent.trim()) {
       return `Passo ${i + 1}: escreve o texto.`;
     }
-    if ((s.type === 'AUDIO' || s.type === 'IMAGE') && !s.mediaUrl.trim()) {
+    if (
+      (s.type === 'AUDIO' || s.type === 'IMAGE' || s.type === 'DOCUMENT') &&
+      !s.mediaUrl.trim()
+    ) {
       return `Passo ${i + 1}: faz upload do ficheiro ou indica a URL.`;
+    }
+    if (s.type === 'DOCUMENT') {
+      if (!opts?.allowDocument) {
+        return `Passo ${i + 1}: PDF só nas boas-vindas da Joana.`;
+      }
+      if (!looksLikePdf(s)) {
+        return `Passo ${i + 1}: o documento tem de ser um PDF.`;
+      }
     }
   }
   return null;
@@ -160,6 +224,7 @@ export default function AdminAutomacaoPage() {
   async function saveWelcome() {
     const validationError = validateDraftSteps(welcomeSteps, {
       allowEmpty: true,
+      allowDocument: true,
     });
     if (validationError) {
       setError(validationError);
@@ -170,7 +235,7 @@ export default function AdminAutomacaoPage() {
     setSuccess('');
     try {
       const saved = await api.admin.joana.updateWelcome(
-        draftToPayload(welcomeSteps),
+        draftToWelcomePayload(welcomeSteps),
       );
       setWelcomeSteps(stepsFromApi(saved.steps));
       setSuccess(
@@ -299,7 +364,7 @@ export default function AdminAutomacaoPage() {
         name: trimmedName,
         triggerPhrase: trimmedTrigger,
         active,
-        steps: draftToPayload(steps),
+        steps: draftToAutomationPayload(steps),
       };
       if (editingId) {
         await api.admin.whatsappAutomations.update(editingId, body);
@@ -430,15 +495,15 @@ export default function AdminAutomacaoPage() {
           </h3>
           <p className="mt-1 max-w-2xl text-sm text-muted">
             Sequência enviada na primeira resposta a um número novo (ainda sem
-            ficha no CRM). Podes misturar texto, áudio e imagem, como numa
-            automação. Se ficares sem passos, a Joana usa a apresentação por
-            omissão.
+            ficha no CRM). Podes misturar texto, áudio, imagem e PDF. Se
+            ficares sem passos, a Joana usa a apresentação por omissão.
           </p>
           <div className="mt-4">
             <AutomationStepsEditor
               steps={welcomeSteps}
               disabled={welcomeSaving || loading}
               requireAtLeastOne={false}
+              allowedTypes={[...WELCOME_STEP_TYPES]}
               onChange={setWelcomeSteps}
               onUpload={uploadWelcomeStep}
             />

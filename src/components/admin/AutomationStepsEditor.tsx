@@ -1,11 +1,11 @@
 'use client';
 
-import type { WhatsappClientAutomationStepType } from '@/lib/api';
+import type { JoanaWelcomeStepType } from '@/lib/api';
 import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
 
 export type AutomationDraftStep = {
   key: string;
-  type: WhatsappClientAutomationStepType;
+  type: JoanaWelcomeStepType;
   textContent: string;
   mediaUrl: string;
   mediaMimeType: string;
@@ -15,6 +15,8 @@ export type AutomationDraftStep = {
   uploading?: boolean;
 };
 
+const DEFAULT_STEP_TYPES: JoanaWelcomeStepType[] = ['TEXT', 'AUDIO', 'IMAGE'];
+
 const inputClass =
   'mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25';
 
@@ -23,7 +25,7 @@ export function newAutomationStepKey() {
 }
 
 export function emptyAutomationDraftStep(
-  type: WhatsappClientAutomationStepType = 'TEXT',
+  type: JoanaWelcomeStepType = 'TEXT',
 ): AutomationDraftStep {
   return {
     key: newAutomationStepKey(),
@@ -36,11 +38,10 @@ export function emptyAutomationDraftStep(
   };
 }
 
-export function automationStepTypeLabel(
-  type: WhatsappClientAutomationStepType,
-): string {
+export function automationStepTypeLabel(type: JoanaWelcomeStepType): string {
   if (type === 'AUDIO') return 'Áudio';
   if (type === 'IMAGE') return 'Imagem';
+  if (type === 'DOCUMENT') return 'PDF';
   return 'Texto';
 }
 
@@ -49,11 +50,21 @@ function mediaHref(url: string): string {
   return resolveUploadsUrl(url);
 }
 
+function fileAccept(type: JoanaWelcomeStepType): string {
+  if (type === 'AUDIO') {
+    return 'audio/ogg,audio/opus,audio/mpeg,audio/mp4,audio/*';
+  }
+  if (type === 'DOCUMENT') return 'application/pdf,.pdf';
+  return 'image/jpeg,image/png,image/webp,image/*';
+}
+
 type Props = {
   steps: AutomationDraftStep[];
   disabled?: boolean;
   /** Se false, permite lista vazia (ex.: boas-vindas com fallback). Default true. */
   requireAtLeastOne?: boolean;
+  /** Tipos disponíveis nos botões «+». Default: texto, áudio, imagem. */
+  allowedTypes?: JoanaWelcomeStepType[];
   onChange: (steps: AutomationDraftStep[]) => void;
   onUpload: (key: string, file: File) => void | Promise<void>;
 };
@@ -62,6 +73,7 @@ export function AutomationStepsEditor({
   steps,
   disabled = false,
   requireAtLeastOne = true,
+  allowedTypes = DEFAULT_STEP_TYPES,
   onChange,
   onUpload,
 }: Props) {
@@ -86,6 +98,10 @@ export function AutomationStepsEditor({
     onChange(steps.filter((s) => s.key !== key));
   }
 
+  const emptyHint = allowedTypes.includes('DOCUMENT')
+    ? 'Sem passos. Adiciona texto, áudio, imagem ou PDF.'
+    : 'Sem passos. Adiciona texto, áudio ou imagem.';
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -93,7 +109,7 @@ export function AutomationStepsEditor({
           Sequência de resposta
         </span>
         <div className="flex flex-wrap gap-1.5">
-          {(['TEXT', 'AUDIO', 'IMAGE'] as const).map((t) => (
+          {allowedTypes.map((t) => (
             <button
               key={t}
               type="button"
@@ -110,7 +126,7 @@ export function AutomationStepsEditor({
       <div className="mt-3 space-y-3">
         {steps.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border bg-page px-3 py-4 text-sm text-muted">
-            Sem passos. Adiciona texto, áudio ou imagem.
+            {emptyHint}
           </p>
         ) : null}
 
@@ -168,11 +184,7 @@ export function AutomationStepsEditor({
               <div className="mt-2 space-y-2">
                 <input
                   type="file"
-                  accept={
-                    s.type === 'AUDIO'
-                      ? 'audio/ogg,audio/opus,audio/mpeg,audio/mp4,audio/*'
-                      : 'image/jpeg,image/png,image/webp,image/*'
-                  }
+                  accept={fileAccept(s.type)}
                   disabled={disabled || s.uploading}
                   onChange={(e) => {
                     const file = e.target.files?.[0];
@@ -199,6 +211,15 @@ export function AutomationStepsEditor({
                       >
                         O teu browser não reproduz este áudio.
                       </audio>
+                    ) : s.type === 'DOCUMENT' ? (
+                      <a
+                        href={mediaHref(s.mediaUrl)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex text-sm font-semibold text-brand-primary underline-offset-2 hover:underline"
+                      >
+                        Abrir PDF
+                      </a>
                     ) : (
                       // eslint-disable-next-line @next/next/no-img-element -- preview admin de URL dinâmica (/uploads ou /brand)
                       <img
@@ -225,7 +246,7 @@ export function AutomationStepsEditor({
                   placeholder="/uploads/… ou https://…"
                   disabled={disabled}
                 />
-                {s.type === 'IMAGE' ? (
+                {s.type === 'IMAGE' || s.type === 'DOCUMENT' ? (
                   <input
                     value={s.textContent}
                     onChange={(e) =>
