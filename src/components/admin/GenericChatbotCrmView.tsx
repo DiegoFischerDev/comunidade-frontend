@@ -19,13 +19,16 @@ import {
 import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
 import {
   formatCrmEuroAmount,
-  formatCrmPropertyTypologyLabel,
+  formatCrmPropertyTypologyLabels,
+  normalizeCrmPropertyTypologies,
   RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS,
   RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER,
   type RafacallCrmColumnTone,
   type RafacallCrmPropertyTypology,
 } from '@/lib/rafacall-crm';
 import { toast } from '@/lib/toast';
+import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
+import { InstagramIcon } from '@/components/icons/InstagramIcon';
 
 const CRM_DOCUMENT_MAX_BYTES = 15 * 1024 * 1024;
 
@@ -552,9 +555,9 @@ function GenericLeadCard({
   const preferredCities = isBruna
     ? lead.preferredCities?.trim() || null
     : null;
-  const propertyTypology = isBruna
-    ? formatCrmPropertyTypologyLabel(lead.propertyTypology)
-    : null;
+  const propertyTypologyLabels = isBruna
+    ? formatCrmPropertyTypologyLabels(lead.propertyTypology)
+    : [];
   const subject = isOutros
     ? lead.subjectSummary?.trim() || 'Assunto por explicar'
     : null;
@@ -564,7 +567,7 @@ function GenericLeadCard({
     isGabi && !campaignObjective && lead.instagramHandle !== null;
   const showHouseValuePending = isBruna && lead.desiredHouseValue == null;
   const showCitiesPending = isBruna && !preferredCities;
-  const showTypologyPending = isBruna && !propertyTypology;
+  const showTypologyPending = isBruna && propertyTypologyLabels.length === 0;
   const hasBadges = Boolean(
     companyBadge ||
       contactBadge ||
@@ -576,7 +579,7 @@ function GenericLeadCard({
       showHouseValuePending ||
       preferredCities ||
       showCitiesPending ||
-      propertyTypology ||
+      propertyTypologyLabels.length > 0 ||
       showTypologyPending ||
       subject ||
       (!isGabi && !isBruna && !isOutros && comments),
@@ -672,10 +675,15 @@ function GenericLeadCard({
               Cidades por preencher
             </span>
           ) : null}
-          {propertyTypology ? (
-            <span className="inline-flex max-w-full items-center rounded-md border border-violet-200/90 bg-violet-50/90 px-2 py-1 text-[10px] font-medium text-violet-900">
-              {propertyTypology}
-            </span>
+          {propertyTypologyLabels.length > 0 ? (
+            propertyTypologyLabels.map((label) => (
+              <span
+                key={label}
+                className="inline-flex max-w-full items-center rounded-md border border-violet-200/90 bg-violet-50/90 px-2 py-1 text-[10px] font-medium text-violet-900"
+              >
+                {label}
+              </span>
+            ))
           ) : showTypologyPending ? (
             <span className="inline-flex max-w-full items-center rounded-md border border-amber-200/90 bg-amber-50/90 px-2 py-1 text-[10px] font-medium text-amber-950">
               Tipologia por preencher
@@ -707,10 +715,26 @@ function GenericLeadCard({
             target="_blank"
             rel="noopener noreferrer"
             draggable={false}
-            className="inline-flex h-6 items-center rounded-md border border-border bg-page px-1.5 text-[11px] font-medium leading-none text-foreground transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-border bg-page text-[#25D366] transition-colors hover:border-[#25D366]/40 hover:bg-[#25D366]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
             onClick={(event) => event.stopPropagation()}
+            aria-label={`Abrir WhatsApp de ${name}`}
+            title="WhatsApp"
           >
-            WhatsApp
+            <WhatsappIcon className="h-3.5 w-3.5" />
+          </a>
+        ) : null}
+        {lead.instagramHandle && lead.instagramHandle.trim() !== '' ? (
+          <a
+            href={`https://instagram.com/${lead.instagramHandle.replace(/^@+/, '')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            draggable={false}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-border bg-page text-[#E1306C] transition-colors hover:border-[#E1306C]/40 hover:bg-[#E1306C]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
+            onClick={(event) => event.stopPropagation()}
+            aria-label={`Abrir Instagram ${lead.instagramHandle}`}
+            title={lead.instagramHandle}
+          >
+            <InstagramIcon className="h-3.5 w-3.5" />
           </a>
         ) : null}
         <button
@@ -852,8 +876,8 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
   const [houseValueDraft, setHouseValueDraft] = useState('');
   const [citiesDraft, setCitiesDraft] = useState('');
   const [typologyDraft, setTypologyDraft] = useState<
-    RafacallCrmPropertyTypology | ''
-  >('');
+    RafacallCrmPropertyTypology[]
+  >([]);
   const [subjectDraft, setSubjectDraft] = useState('');
   const [commentsDraft, setCommentsDraft] = useState('');
   const [draggingLeadId, setDraggingLeadId] = useState<string | null>(null);
@@ -901,7 +925,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
       lead.desiredHouseValue != null ? String(lead.desiredHouseValue) : '',
     );
     setCitiesDraft(lead.preferredCities ?? '');
-    setTypologyDraft(lead.propertyTypology ?? '');
+    setTypologyDraft(normalizeCrmPropertyTypologies(lead.propertyTypology));
     setSubjectDraft(lead.subjectSummary ?? '');
     setCommentsDraft(lead.crmComments ?? '');
   }
@@ -1022,7 +1046,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
           ? {
               desiredHouseValue: desiredHouseValue ?? null,
               preferredCities: citiesDraft.trim() || null,
-              propertyTypology: typologyDraft || null,
+              propertyTypology: typologyDraft,
             }
           : {}),
         ...(isOutros
@@ -1041,7 +1065,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
           : '',
       );
       setCitiesDraft(updated.preferredCities ?? '');
-      setTypologyDraft(updated.propertyTypology ?? '');
+      setTypologyDraft(normalizeCrmPropertyTypologies(updated.propertyTypology));
       setSubjectDraft(updated.subjectSummary ?? '');
       setCommentsDraft(updated.crmComments ?? '');
       setSuccess('Alterações guardadas.');
@@ -1293,26 +1317,43 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
                       placeholder="Ex.: Porto, Braga"
                     />
                   </label>
-                  <label className="block text-sm font-medium text-foreground">
-                    Tipologia do imóvel
-                    <select
-                      value={typologyDraft}
-                      onChange={(event) =>
-                        setTypologyDraft(
-                          event.target.value as RafacallCrmPropertyTypology | '',
-                        )
-                      }
-                      disabled={saving}
-                      className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
-                    >
-                      <option value="">Por preencher</option>
-                      {RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER.map((typology) => (
-                        <option key={typology} value={typology}>
-                          {RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS[typology]}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <div>
+                    <p className="block text-sm font-medium text-foreground">
+                      Tipologia do imóvel
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted">
+                      Pode escolher mais do que uma.
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER.map((typology) => {
+                        const isSelected = typologyDraft.includes(typology);
+                        return (
+                          <button
+                            key={typology}
+                            type="button"
+                            disabled={saving}
+                            aria-pressed={isSelected}
+                            onClick={() => {
+                              const next = isSelected
+                                ? typologyDraft.filter((item) => item !== typology)
+                                : normalizeCrmPropertyTypologies([
+                                    ...typologyDraft,
+                                    typology,
+                                  ]);
+                              setTypologyDraft(next);
+                            }}
+                            className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
+                              isSelected
+                                ? 'border-violet-400 bg-violet-100 text-violet-950'
+                                : 'border-border bg-card text-foreground hover:border-violet-300'
+                            }`}
+                          >
+                            {RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS[typology]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               ) : null}
 

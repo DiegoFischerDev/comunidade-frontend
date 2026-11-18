@@ -196,7 +196,9 @@ export type ChatbotCrmLead = {
   id: string;
   columnId: string;
   columnSlug: string;
-  whatsapp: string;
+  whatsapp: string | null;
+  /** IGSID quando o lead veio do Instagram Direct. */
+  instagramUserId?: string | null;
   guestName: string | null;
   companyName: string | null;
   /** null = por preencher; "" = sem Instagram; valor = @handle */
@@ -210,7 +212,7 @@ export type ChatbotCrmLead = {
   /** Cidades pretendidas (CRM Bruna). */
   preferredCities: string | null;
   /** Tipologia do imóvel (CRM Bruna). */
-  propertyTypology: RafacallCrmPropertyTypology | null;
+  propertyTypology: RafacallCrmPropertyTypology[];
   botEnabled: boolean;
   crmComments: string | null;
   crmProfileImageUrl: string | null;
@@ -236,7 +238,7 @@ export type RafacallCrmItem = {
   crmStatus: RafacallCrmStatus;
   crmComments: string | null;
   crmExpectedImmigrationAt: string | null;
-  crmPropertyTypology: RafacallCrmPropertyTypology | null;
+  crmPropertyTypology: RafacallCrmPropertyTypology[];
   crmPreferredCity: string | null;
   crmHasPet: boolean | null;
   crmHasVisa: boolean | null;
@@ -759,6 +761,7 @@ export const api = {
       deviceId: string;
       startsAtUtcIso: string;
       tz: string;
+      bookingId?: string | null;
     }) =>
       request<{
         id: string;
@@ -1207,7 +1210,7 @@ export const api = {
         name: string;
         whatsapp: string;
         crmExpectedImmigrationAt?: string | null;
-        crmPropertyTypology?: RafacallCrmPropertyTypology | null;
+        crmPropertyTypology?: RafacallCrmPropertyTypology[] | null;
         crmPreferredCity?: string | null;
       }) =>
         request<RafacallCrmItem>('/admin/rafacall/crm', {
@@ -1222,7 +1225,7 @@ export const api = {
           crmExpectedImmigrationAt?: string | null;
           videoCallStartsAtUtcIso?: string | null;
           videoCallTimezone?: string;
-          crmPropertyTypology?: RafacallCrmPropertyTypology | null;
+          crmPropertyTypology?: RafacallCrmPropertyTypology[] | null;
           crmPreferredCity?: string | null;
           crmHasPet?: boolean | null;
           crmHasVisa?: boolean | null;
@@ -2408,7 +2411,7 @@ export const api = {
             subjectSummary?: string | null;
             desiredHouseValue?: number | null;
             preferredCities?: string | null;
-            propertyTypology?: RafacallCrmPropertyTypology | null;
+            propertyTypology?: RafacallCrmPropertyTypology[] | null;
           },
         ) =>
           request<ChatbotCrmLead>(

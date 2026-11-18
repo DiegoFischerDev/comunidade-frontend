@@ -14,7 +14,12 @@ import {
 } from '@/lib/site-branding';
 import { getPublicSiteUrlFromRequestHeaders } from '@/lib/site-url';
 
-type SearchParams = Promise<{ whatsapp?: string; name?: string }>;
+type SearchParams = Promise<{
+  whatsapp?: string;
+  name?: string;
+  /** ID do RafaCallBooking / cartão CRM Joana. */
+  booking?: string;
+}>;
 
 const MIN_WHATSAPP_DIGITS = 8;
 
@@ -65,6 +70,7 @@ export default async function AgendarPage({
   const params = await searchParams;
   const whatsapp = params.whatsapp?.trim() ?? '';
   const namePrefill = params.name?.trim() ?? '';
+  const bookingId = params.booking?.trim() ?? '';
   const whatsappDigits = whatsapp.replace(/\D/g, '');
   const hasValidWhatsapp = whatsappDigits.length >= MIN_WHATSAPP_DIGITS;
 
@@ -80,9 +86,13 @@ export default async function AgendarPage({
         <RafacallPublicBookingView
           whatsappFromUrl={whatsappDigits}
           namePrefill={namePrefill}
+          bookingIdFromUrl={bookingId || undefined}
         />
       ) : (
-        <RafacallPublicWhatsappGate namePrefill={namePrefill} />
+        <RafacallPublicWhatsappGate
+          namePrefill={namePrefill}
+          bookingIdFromUrl={bookingId || undefined}
+        />
       )}
     </Suspense>
   );

@@ -32,11 +32,54 @@ export const RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS: Record<
   T5: 'T5',
 };
 
+export function normalizeCrmPropertyTypologies(
+  value:
+    | RafacallCrmPropertyTypology
+    | RafacallCrmPropertyTypology[]
+    | null
+    | undefined,
+): RafacallCrmPropertyTypology[] {
+  if (value == null) return [];
+  const list = Array.isArray(value) ? value : [value];
+  const set = new Set(list);
+  return RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER.filter((item) => set.has(item));
+}
+
+export function sameCrmPropertyTypologies(
+  left:
+    | RafacallCrmPropertyTypology
+    | RafacallCrmPropertyTypology[]
+    | null
+    | undefined,
+  right:
+    | RafacallCrmPropertyTypology
+    | RafacallCrmPropertyTypology[]
+    | null
+    | undefined,
+): boolean {
+  return (
+    normalizeCrmPropertyTypologies(left).join(',') ===
+    normalizeCrmPropertyTypologies(right).join(',')
+  );
+}
+
 export function formatCrmPropertyTypologyLabel(
   value: RafacallCrmPropertyTypology | null | undefined,
 ): string | null {
   if (!value) return null;
   return RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS[value] ?? value;
+}
+
+export function formatCrmPropertyTypologyLabels(
+  value:
+    | RafacallCrmPropertyTypology
+    | RafacallCrmPropertyTypology[]
+    | null
+    | undefined,
+): string[] {
+  return normalizeCrmPropertyTypologies(value).map(
+    (item) => RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS[item] ?? item,
+  );
 }
 
 export function formatCrmPetLabel(value: boolean | null | undefined): string {

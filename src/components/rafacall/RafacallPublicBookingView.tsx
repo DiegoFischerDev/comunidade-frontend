@@ -44,6 +44,8 @@ type Screen =
 type Props = {
   whatsappFromUrl: string;
   namePrefill?: string;
+  /** Cartão CRM Joana — agenda neste ID em vez de criar um booking novo. */
+  bookingIdFromUrl?: string;
 };
 
 function resolvedUserTz(): string {
@@ -298,7 +300,11 @@ function GuestIdentitySummary({
   );
 }
 
-export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }: Props) {
+export function RafacallPublicBookingView({
+  whatsappFromUrl,
+  namePrefill = '',
+  bookingIdFromUrl = '',
+}: Props) {
   const tz = useMemo(() => resolvedUserTz(), []);
   const deviceId = useMemo(() => getOrCreateRafacallDeviceId(), []);
 
@@ -429,6 +435,9 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
           deviceId,
           startsAtUtcIso,
           tz,
+          ...(bookingIdFromUrl.trim()
+            ? { bookingId: bookingIdFromUrl.trim() }
+            : {}),
         });
         setBooking(created);
         setAuthMode('device');
@@ -451,7 +460,7 @@ export function RafacallPublicBookingView({ whatsappFromUrl, namePrefill = '' }:
         setActionLoading(false);
       }
     },
-    [deviceId, name, whatsappDigits, tz],
+    [bookingIdFromUrl, deviceId, name, whatsappDigits, tz, loadAvailability],
   );
 
   const doReschedule = useCallback(

@@ -11,13 +11,18 @@ import { BRAND_LOGO_HORIZONTAL_COLORIDA, SITE_NAME_FULL } from '@/lib/site-brand
 
 type Props = {
   namePrefill?: string;
+  /** Cartão CRM Joana — preservado no redirect após pedir o WhatsApp. */
+  bookingIdFromUrl?: string;
 };
 
 /**
  * Entrada genérica em `/agendar` sem `?whatsapp=`.
  * Nome + WhatsApp → redireciona para a escolha de horários.
  */
-export function RafacallPublicWhatsappGate({ namePrefill = '' }: Props) {
+export function RafacallPublicWhatsappGate({
+  namePrefill = '',
+  bookingIdFromUrl = '',
+}: Props) {
   const router = useRouter();
   const [name, setName] = useState(namePrefill.trim());
   const [whatsapp, setWhatsapp] = useState('');
@@ -58,6 +63,9 @@ export function RafacallPublicWhatsappGate({ namePrefill = '' }: Props) {
       whatsapp: digits,
       name: trimmedName,
     });
+    if (bookingIdFromUrl.trim()) {
+      params.set('booking', bookingIdFromUrl.trim());
+    }
     router.push(`/agendar?${params.toString()}`);
   };
 
