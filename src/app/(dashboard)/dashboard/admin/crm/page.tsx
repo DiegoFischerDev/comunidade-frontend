@@ -24,6 +24,7 @@ import { ChatbotAvatar } from '@/components/admin/ChatbotAvatar';
 const CRM_BOT_TABS: Array<{ slug: AdminChatbotSlug; name: string; blurb: string }> = [
   { slug: 'joana', name: 'Joana', blurb: 'Relocation / aluguel' },
   { slug: 'bruna', name: 'Bruna', blurb: 'Crédito imobiliário' },
+  { slug: 'bianca', name: 'Bianca', blurb: 'Visto / preparação' },
   { slug: 'gabi', name: 'Gabi', blurb: 'Publicidade' },
   { slug: 'outros', name: 'Outros', blurb: 'Assuntos gerais / Rafa' },
 ];
@@ -31,6 +32,7 @@ const CRM_BOT_TABS: Array<{ slug: AdminChatbotSlug; name: string; blurb: string 
 function parseCrmBotSlug(value: string | null): AdminChatbotSlug {
   if (
     value === 'bruna' ||
+    value === 'bianca' ||
     value === 'gabi' ||
     value === 'joana' ||
     value === 'outros'

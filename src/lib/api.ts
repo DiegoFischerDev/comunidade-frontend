@@ -163,7 +163,12 @@ export type JoanaWelcomeStepInput = {
   delayMsAfter?: number;
 };
 
-export type AdminChatbotSlug = 'joana' | 'bruna' | 'gabi' | 'outros';
+export type AdminChatbotSlug =
+  | 'joana'
+  | 'bruna'
+  | 'bianca'
+  | 'gabi'
+  | 'outros';
 
 export type AdminChatbot = {
   id: string;
@@ -200,6 +205,12 @@ export type ChatbotCrmLead = {
   campaignObjective: string | null;
   /** Resumo curto do assunto (CRM Outros). */
   subjectSummary: string | null;
+  /** Valor da casa pretendida em euros (CRM Bruna). */
+  desiredHouseValue: number | null;
+  /** Cidades pretendidas (CRM Bruna). */
+  preferredCities: string | null;
+  /** Tipologia do imóvel (CRM Bruna). */
+  propertyTypology: RafacallCrmPropertyTypology | null;
   botEnabled: boolean;
   crmComments: string | null;
   crmProfileImageUrl: string | null;
@@ -2391,6 +2402,9 @@ export const api = {
             instagramHandle?: string | null;
             campaignObjective?: string | null;
             subjectSummary?: string | null;
+            desiredHouseValue?: number | null;
+            preferredCities?: string | null;
+            propertyTypology?: RafacallCrmPropertyTypology | null;
           },
         ) =>
           request<ChatbotCrmLead>(

@@ -17,7 +17,14 @@ import {
   HorizontalSnapCarousel,
 } from '@/components/ui/horizontal-snap-carousel';
 import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
-import type { RafacallCrmColumnTone } from '@/lib/rafacall-crm';
+import {
+  formatCrmEuroAmount,
+  formatCrmPropertyTypologyLabel,
+  RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS,
+  RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER,
+  type RafacallCrmColumnTone,
+  type RafacallCrmPropertyTypology,
+} from '@/lib/rafacall-crm';
 import { toast } from '@/lib/toast';
 
 const CRM_DOCUMENT_MAX_BYTES = 15 * 1024 * 1024;
@@ -521,6 +528,7 @@ function GenericLeadCard({
   onDragEnd: () => void;
 }) {
   const isGabi = slug === 'gabi';
+  const isBruna = slug === 'bruna';
   const isOutros = slug === 'outros';
   const name = leadDisplayName(lead, isGabi);
   const wa = formatWhatsappDigits(lead.whatsapp);
@@ -537,6 +545,16 @@ function GenericLeadCard({
   const campaignObjective = isGabi
     ? lead.campaignObjective?.trim() || null
     : null;
+  const houseValue =
+    isBruna && lead.desiredHouseValue != null
+      ? formatCrmEuroAmount(lead.desiredHouseValue)
+      : null;
+  const preferredCities = isBruna
+    ? lead.preferredCities?.trim() || null
+    : null;
+  const propertyTypology = isBruna
+    ? formatCrmPropertyTypologyLabel(lead.propertyTypology)
+    : null;
   const subject = isOutros
     ? lead.subjectSummary?.trim() || 'Assunto por explicar'
     : null;
@@ -544,6 +562,9 @@ function GenericLeadCard({
   const documentCount = lead.documents?.length ?? 0;
   const showObjectivePending =
     isGabi && !campaignObjective && lead.instagramHandle !== null;
+  const showHouseValuePending = isBruna && lead.desiredHouseValue == null;
+  const showCitiesPending = isBruna && !preferredCities;
+  const showTypologyPending = isBruna && !propertyTypology;
   const hasBadges = Boolean(
     companyBadge ||
       contactBadge ||
@@ -551,8 +572,14 @@ function GenericLeadCard({
       (isGabi && lead.instagramHandle === null) ||
       campaignObjective ||
       showObjectivePending ||
+      houseValue ||
+      showHouseValuePending ||
+      preferredCities ||
+      showCitiesPending ||
+      propertyTypology ||
+      showTypologyPending ||
       subject ||
-      (!isGabi && !isOutros && comments),
+      (!isGabi && !isBruna && !isOutros && comments),
   );
 
   return (
@@ -627,12 +654,39 @@ function GenericLeadCard({
               Objetivo por preencher
             </span>
           ) : null}
+          {houseValue ? (
+            <span className="inline-flex max-w-full items-center rounded-md border border-emerald-200/90 bg-emerald-50/90 px-2 py-1 text-[10px] font-semibold text-emerald-900">
+              {houseValue}
+            </span>
+          ) : showHouseValuePending ? (
+            <span className="inline-flex max-w-full items-center rounded-md border border-amber-200/90 bg-amber-50/90 px-2 py-1 text-[10px] font-medium text-amber-950">
+              Valor da casa por preencher
+            </span>
+          ) : null}
+          {preferredCities ? (
+            <span className="inline-flex max-w-full items-center rounded-md border border-sky-200/90 bg-sky-50/90 px-2 py-1 text-[10px] font-medium text-sky-900">
+              {preferredCities}
+            </span>
+          ) : showCitiesPending ? (
+            <span className="inline-flex max-w-full items-center rounded-md border border-amber-200/90 bg-amber-50/90 px-2 py-1 text-[10px] font-medium text-amber-950">
+              Cidades por preencher
+            </span>
+          ) : null}
+          {propertyTypology ? (
+            <span className="inline-flex max-w-full items-center rounded-md border border-violet-200/90 bg-violet-50/90 px-2 py-1 text-[10px] font-medium text-violet-900">
+              {propertyTypology}
+            </span>
+          ) : showTypologyPending ? (
+            <span className="inline-flex max-w-full items-center rounded-md border border-amber-200/90 bg-amber-50/90 px-2 py-1 text-[10px] font-medium text-amber-950">
+              Tipologia por preencher
+            </span>
+          ) : null}
           {subject ? (
             <span className="inline-flex max-w-full items-center rounded-md border border-amber-200/90 bg-amber-50/90 px-2 py-1 text-[10px] font-medium text-amber-950">
               {subject}
             </span>
           ) : null}
-          {!isGabi && !isOutros && comments ? (
+          {!isGabi && !isBruna && !isOutros && comments ? (
             <span className="inline-flex max-w-full items-center rounded-md border border-border bg-card px-2 py-1 text-[10px] font-medium text-foreground">
               {comments.length > 48 ? `${comments.slice(0, 48)}…` : comments}
             </span>
@@ -795,11 +849,17 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
   const [companyDraft, setCompanyDraft] = useState('');
   const [instagramDraft, setInstagramDraft] = useState('');
   const [campaignObjectiveDraft, setCampaignObjectiveDraft] = useState('');
+  const [houseValueDraft, setHouseValueDraft] = useState('');
+  const [citiesDraft, setCitiesDraft] = useState('');
+  const [typologyDraft, setTypologyDraft] = useState<
+    RafacallCrmPropertyTypology | ''
+  >('');
   const [subjectDraft, setSubjectDraft] = useState('');
   const [commentsDraft, setCommentsDraft] = useState('');
   const [draggingLeadId, setDraggingLeadId] = useState<string | null>(null);
   const [savingLeadId, setSavingLeadId] = useState<string | null>(null);
   const isGabi = slug === 'gabi';
+  const isBruna = slug === 'bruna';
   const isOutros = slug === 'outros';
 
   const load = useCallback(async () => {
@@ -837,6 +897,11 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
     setCompanyDraft(lead.companyName ?? '');
     setInstagramDraft(lead.instagramHandle === null ? '' : lead.instagramHandle);
     setCampaignObjectiveDraft(lead.campaignObjective ?? '');
+    setHouseValueDraft(
+      lead.desiredHouseValue != null ? String(lead.desiredHouseValue) : '',
+    );
+    setCitiesDraft(lead.preferredCities ?? '');
+    setTypologyDraft(lead.propertyTypology ?? '');
     setSubjectDraft(lead.subjectSummary ?? '');
     setCommentsDraft(lead.crmComments ?? '');
   }
@@ -927,6 +992,22 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
     setSaving(true);
     setError('');
     try {
+      let desiredHouseValue: number | null | undefined;
+      if (isBruna) {
+        const raw = houseValueDraft.trim().replace(/\s+/g, '');
+        if (!raw) {
+          desiredHouseValue = null;
+        } else {
+          const parsed = Number(raw.replace(/[^\d]/g, ''));
+          if (!Number.isInteger(parsed) || parsed < 0 || parsed > 5_000_000) {
+            setError('Valor da casa pretendida inválido.');
+            setSaving(false);
+            return;
+          }
+          desiredHouseValue = parsed;
+        }
+      }
+
       const updated = await api.admin.chatbots.crm.updateLead(slug, selected.id, {
         columnId: selected.columnId,
         crmComments: commentsDraft.trim() || null,
@@ -935,6 +1016,13 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
               companyName: companyDraft.trim() || null,
               instagramHandle: instagramDraft.trim(),
               campaignObjective: campaignObjectiveDraft.trim() || null,
+            }
+          : {}),
+        ...(isBruna
+          ? {
+              desiredHouseValue: desiredHouseValue ?? null,
+              preferredCities: citiesDraft.trim() || null,
+              propertyTypology: typologyDraft || null,
             }
           : {}),
         ...(isOutros
@@ -947,6 +1035,13 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
         updated.instagramHandle === null ? '' : updated.instagramHandle,
       );
       setCampaignObjectiveDraft(updated.campaignObjective ?? '');
+      setHouseValueDraft(
+        updated.desiredHouseValue != null
+          ? String(updated.desiredHouseValue)
+          : '',
+      );
+      setCitiesDraft(updated.preferredCities ?? '');
+      setTypologyDraft(updated.propertyTypology ?? '');
       setSubjectDraft(updated.subjectSummary ?? '');
       setCommentsDraft(updated.crmComments ?? '');
       setSuccess('Alterações guardadas.');
@@ -1171,6 +1266,52 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
                       className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                       placeholder="Ex.: Gerar leads de relocation no Instagram"
                     />
+                  </label>
+                </div>
+              ) : null}
+
+              {isBruna ? (
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-foreground">
+                    Valor da casa pretendida (€)
+                    <input
+                      value={houseValueDraft}
+                      onChange={(event) => setHouseValueDraft(event.target.value)}
+                      disabled={saving}
+                      inputMode="numeric"
+                      className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm font-semibold"
+                      placeholder="Ex.: 220000"
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-foreground">
+                    Cidades pretendidas
+                    <input
+                      value={citiesDraft}
+                      onChange={(event) => setCitiesDraft(event.target.value)}
+                      disabled={saving}
+                      className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
+                      placeholder="Ex.: Porto, Braga"
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-foreground">
+                    Tipologia do imóvel
+                    <select
+                      value={typologyDraft}
+                      onChange={(event) =>
+                        setTypologyDraft(
+                          event.target.value as RafacallCrmPropertyTypology | '',
+                        )
+                      }
+                      disabled={saving}
+                      className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
+                    >
+                      <option value="">Por preencher</option>
+                      {RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER.map((typology) => (
+                        <option key={typology} value={typology}>
+                          {RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS[typology]}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                 </div>
               ) : null}
