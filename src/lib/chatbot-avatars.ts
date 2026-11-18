@@ -4,7 +4,7 @@ import type { AdminChatbotSlug } from '@/lib/api';
 export const CHATBOT_AVATAR_SRC: Partial<Record<AdminChatbotSlug, string>> = {
   joana: '/joana.png',
   bruna: '/Bruna.png',
-  bianca: '/Bianca.png',
+  bianca: '/bianca2.png',
   gabi: '/Gabi.png',
   outros: '/Rafa.jpeg',
 };
