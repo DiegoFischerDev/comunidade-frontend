@@ -19,6 +19,7 @@ import {
   emptyAutomationDraftStep,
   type AutomationDraftStep,
 } from '@/components/admin/AutomationStepsEditor';
+import { ChatbotAvatar } from '@/components/admin/ChatbotAvatar';
 
 const inputClass =
   'mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25';
@@ -571,10 +572,16 @@ export default function AdminAutomacaoPage() {
                 onClick={() => selectBot(bot.slug)}
                 className={
                   selected
-                    ? 'rounded-lg bg-brand-primary px-3 py-2 text-sm font-medium text-white'
-                    : 'rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground/90 hover:bg-page'
+                    ? 'inline-flex items-center gap-2 rounded-lg bg-brand-primary px-3 py-2 text-sm font-medium text-white'
+                    : 'inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground/90 hover:bg-page'
                 }
               >
+                <ChatbotAvatar
+                  slug={bot.slug}
+                  name={bot.name}
+                  size="sm"
+                  onBrand={selected}
+                />
                 {bot.name}
               </button>
             );

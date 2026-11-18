@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/horizontal-snap-carousel';
 import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
 import { GenericChatbotCrmView } from '@/components/admin/GenericChatbotCrmView';
+import { ChatbotAvatar } from '@/components/admin/ChatbotAvatar';
 
 const CRM_BOT_TABS: Array<{ slug: AdminChatbotSlug; name: string; blurb: string }> = [
   { slug: 'joana', name: 'Joana', blurb: 'Relocation / aluguel' },
@@ -3447,11 +3448,19 @@ function JoanaCrmBoardPage() {
   return (
     <div className="mt-2">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm text-muted">
-            CRM da Joana (Relocation). Acompanhe o follow-up após o agendamento.
-            Arraste entre colunas para atualizar o estado.
-          </p>
+        <div className="flex min-w-0 items-start gap-3">
+          <ChatbotAvatar slug="joana" name="Joana" size="lg" className="mt-0.5" />
+          <div className="min-w-0">
+            <p className="text-sm text-muted">
+              CRM da Joana (Relocation). Acompanhe o follow-up após o agendamento.
+              Arraste entre colunas para atualizar o estado.
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              {isFiltering
+                ? `${filteredClients} de ${totalClients} cliente${totalClients === 1 ? '' : 's'} no pipeline`
+                : `${totalClients} cliente${totalClients === 1 ? '' : 's'} no pipeline`}
+            </p>
+          </div>
         </div>
         <button
           type="button"
@@ -3462,12 +3471,6 @@ function JoanaCrmBoardPage() {
           Novo cliente
         </button>
       </div>
-
-      <p className="mt-3 text-sm text-muted">
-        {isFiltering
-          ? `${filteredClients} de ${totalClients} cliente${totalClients === 1 ? '' : 's'} no pipeline`
-          : `${totalClients} cliente${totalClients === 1 ? '' : 's'} no pipeline`}
-      </p>
 
       {columns.length > 0 ? (
         <div className="relative mt-4 max-w-xl">
@@ -3660,17 +3663,25 @@ function CrmBotSelector({
             onClick={() => onSelect(bot.slug)}
             className={
               active
-                ? 'rounded-lg bg-brand-primary px-3 py-2 text-left text-sm font-medium text-white'
-                : 'rounded-lg border border-border bg-card px-3 py-2 text-left text-sm font-medium text-foreground/90 hover:bg-page'
+                ? 'inline-flex items-center gap-2.5 rounded-lg bg-brand-primary px-3 py-2 text-left text-sm font-medium text-white'
+                : 'inline-flex items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-2 text-left text-sm font-medium text-foreground/90 hover:bg-page'
             }
           >
-            <span className="block">{bot.name}</span>
-            <span
-              className={
-                active ? 'block text-xs text-white/80' : 'block text-xs text-muted'
-              }
-            >
-              {bot.blurb}
+            <ChatbotAvatar
+              slug={bot.slug}
+              name={bot.name}
+              size="md"
+              onBrand={active}
+            />
+            <span className="min-w-0">
+              <span className="block">{bot.name}</span>
+              <span
+                className={
+                  active ? 'block text-xs text-white/80' : 'block text-xs text-muted'
+                }
+              >
+                {bot.blurb}
+              </span>
             </span>
           </button>
         );

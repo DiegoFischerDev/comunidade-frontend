@@ -11,6 +11,7 @@ import {
 } from '@/lib/api';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { CardButton } from '@/components/ui/CardButton';
+import { ChatbotAvatar } from '@/components/admin/ChatbotAvatar';
 
 type Props = {
   slug: Exclude<AdminChatbotSlug, 'joana'>;
@@ -243,14 +244,17 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
   return (
     <div className="mt-2">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm text-muted">
-            CRM da {botName}. Leads deste assunto — arrasta entre colunas ou
-            muda no detalhe.
-          </p>
-          <p className="mt-1 text-sm text-muted">
-            {total} cliente{total === 1 ? '' : 's'} no pipeline
-          </p>
+        <div className="flex min-w-0 items-start gap-3">
+          <ChatbotAvatar slug={slug} name={botName} size="lg" className="mt-0.5" />
+          <div className="min-w-0">
+            <p className="text-sm text-muted">
+              CRM da {botName}. Leads deste assunto — arrasta entre colunas ou
+              muda no detalhe.
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              {total} cliente{total === 1 ? '' : 's'} no pipeline
+            </p>
+          </div>
         </div>
         <button
           type="button"
