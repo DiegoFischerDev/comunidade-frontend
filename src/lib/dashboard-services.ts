@@ -48,7 +48,11 @@ export const DASHBOARD_INCLUDED_SERVICES: DashboardServiceItem[] = [
 
 export const DASHBOARD_EXTRA_SERVICES: DashboardServiceItem[] = [
   { name: "Recebimento de compras online", priceEur: 80 },
-  { name: "Primeiras compras de supermercado", priceEur: 80 },
+  {
+    name: "Primeiras compras de supermercado",
+    priceEur: 80,
+    priceSuffix: "*",
+  },
   {
     name: "Transfer com as malas do aeroporto até a nova casa",
     priceOnRequest: true,

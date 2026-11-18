@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   api,
   getUserFacingApiError,
+  type AdminChatbot,
+  type AdminChatbotSlug,
   type JoanaWelcomeStepInput,
   type WhatsappClientAutomation,
   type WhatsappClientAutomationStepInput,
@@ -155,6 +157,10 @@ export default function AdminAutomacaoPage() {
   const canSee = user?.role === 'ADMIN';
 
   const [items, setItems] = useState<WhatsappClientAutomation[]>([]);
+  const [chatbots, setChatbots] = useState<AdminChatbot[]>([]);
+  const [selectedBotSlug, setSelectedBotSlug] =
+    useState<AdminChatbotSlug>('joana');
+  const [menuPreview, setMenuPreview] = useState('');
   const [contextText, setContextText] = useState('');
   const [welcomeSteps, setWelcomeSteps] = useState<AutomationDraftStep[]>([]);
   const [contextSaving, setContextSaving] = useState(false);
@@ -164,6 +170,8 @@ export default function AdminAutomacaoPage() {
   const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const selectedBot =
+    chatbots.find((bot) => bot.slug === selectedBotSlug) ?? chatbots[0] ?? null;
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -179,22 +187,27 @@ export default function AdminAutomacaoPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await api.admin.whatsappAutomations.list();
+      const [res, bots, menu] = await Promise.all([
+        api.admin.whatsappAutomations.list(),
+        api.admin.chatbots.list(),
+        api.admin.chatbots.menu(),
+      ]);
       setItems(res.items);
-      try {
-        const [context, welcome] = await Promise.all([
-          api.admin.joana.context(),
-          api.admin.joana.welcome(),
-        ]);
-        setContextText(context.contextText);
-        setWelcomeSteps(stepsFromApi(welcome.steps));
-      } catch (err) {
-        setError(
-          getUserFacingApiError(err, { context: 'Ao carregar a Joana' }),
-        );
-      }
+      setChatbots(bots);
+      setMenuPreview(menu.text);
+      setSelectedBotSlug((prev) => {
+        const current = bots.find((bot) => bot.slug === prev) ?? bots[0] ?? null;
+        if (current) {
+          setContextText(current.contextText);
+          setWelcomeSteps(stepsFromApi(current.welcomeSteps));
+          return current.slug;
+        }
+        return prev;
+      });
     } catch (err) {
-      setError(getUserFacingApiError(err, { context: 'Ao carregar automações' }));
+      setError(
+        getUserFacingApiError(err, { context: 'Ao carregar automações' }),
+      );
     } finally {
       setLoading(false);
     }
@@ -204,17 +217,40 @@ export default function AdminAutomacaoPage() {
     void load();
   }, [load]);
 
+  function selectBot(slug: AdminChatbotSlug) {
+    const bot = chatbots.find((item) => item.slug === slug);
+    if (!bot) return;
+    setSelectedBotSlug(slug);
+    setContextText(bot.contextText);
+    setWelcomeSteps(stepsFromApi(bot.welcomeSteps));
+    setSuccess('');
+    setError('');
+  }
+
   async function saveContext() {
+    if (!selectedBot) return;
     setContextSaving(true);
     setError('');
     setSuccess('');
     try {
-      const saved = await api.admin.joana.updateContext(contextText);
+      const saved = await api.admin.chatbots.updateContext(
+        selectedBot.slug,
+        contextText,
+      );
       setContextText(saved.contextText);
-      setSuccess('Contexto da Joana guardado.');
+      setChatbots((prev) =>
+        prev.map((bot) =>
+          bot.slug === saved.slug
+            ? { ...bot, contextText: saved.contextText }
+            : bot,
+        ),
+      );
+      setSuccess(`Contexto da ${saved.name} guardado.`);
     } catch (err) {
       setError(
-        getUserFacingApiError(err, { context: 'Ao guardar o contexto da Joana' }),
+        getUserFacingApiError(err, {
+          context: `Ao guardar o contexto da ${selectedBot.name}`,
+        }),
       );
     } finally {
       setContextSaving(false);
@@ -222,6 +258,7 @@ export default function AdminAutomacaoPage() {
   }
 
   async function saveWelcome() {
+    if (!selectedBot) return;
     const validationError = validateDraftSteps(welcomeSteps, {
       allowEmpty: true,
       allowDocument: true,
@@ -234,19 +271,27 @@ export default function AdminAutomacaoPage() {
     setError('');
     setSuccess('');
     try {
-      const saved = await api.admin.joana.updateWelcome(
+      const saved = await api.admin.chatbots.updateWelcome(
+        selectedBot.slug,
         draftToWelcomePayload(welcomeSteps),
       );
-      setWelcomeSteps(stepsFromApi(saved.steps));
+      setWelcomeSteps(stepsFromApi(saved.welcomeSteps));
+      setChatbots((prev) =>
+        prev.map((bot) =>
+          bot.slug === saved.slug
+            ? { ...bot, welcomeSteps: saved.welcomeSteps }
+            : bot,
+        ),
+      );
       setSuccess(
-        saved.steps.length
-          ? 'Boas-vindas da Joana guardadas.'
-          : 'Boas-vindas limpas. A Joana volta a usar a apresentação por omissão.',
+        saved.welcomeSteps.length
+          ? `Boas-vindas da ${saved.name} guardadas.`
+          : `Boas-vindas limpas. A ${saved.name} volta a usar a apresentação por omissão.`,
       );
     } catch (err) {
       setError(
         getUserFacingApiError(err, {
-          context: 'Ao guardar as boas-vindas da Joana',
+          context: `Ao guardar as boas-vindas da ${selectedBot.name}`,
         }),
       );
     } finally {
@@ -458,67 +503,111 @@ export default function AdminAutomacaoPage() {
       ) : null}
 
       <section className="mt-6 rounded-xl border border-border bg-card p-4 shadow-sm">
-        <h2 className="text-sm font-semibold text-foreground">Joana</h2>
+        <h2 className="text-sm font-semibold text-foreground">Chatbots</h2>
         <p className="mt-1 max-w-2xl text-sm text-muted">
-          Contexto que a Joana usa para responder no WhatsApp da instância
-          comunidade MEO. Ela espera 15 segundos, junta as mensagens e só então
-          responde. Uma mensagem igual a um gatilho ativo fica com essa
-          automação.
+          Joana, Bruna e Gabi partilham a instância WhatsApp comunidade MEO. O
+          contacto novo recebe um menu (1/2/3) e fica preso ao chatbot
+          escolhido. Cada uma espera 15 segundos, junta as mensagens e só então
+          responde.
         </p>
-        <label
-          htmlFor="joana-context"
-          className="mt-4 block text-sm font-medium text-foreground"
-        >
-          Contexto do negócio
-        </label>
-        <textarea
-          id="joana-context"
-          value={contextText}
-          onChange={(event) => setContextText(event.target.value)}
-          rows={12}
-          className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
-        />
-        <div className="mt-3">
-          <CardButton
-            type="button"
-            size="sm"
-            disabled={contextSaving || contextText.trim().length < 20}
-            onClick={() => void saveContext()}
-          >
-            {contextSaving ? 'A guardar…' : 'Guardar contexto'}
-          </CardButton>
+
+        {menuPreview ? (
+          <div className="mt-4 rounded-lg border border-border bg-page px-3 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">
+              Menu inicial (só leitura)
+            </p>
+            <pre className="mt-2 whitespace-pre-wrap font-sans text-sm text-foreground">
+              {menuPreview}
+            </pre>
+          </div>
+        ) : null}
+
+        <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Chatbots">
+          {chatbots.map((bot) => {
+            const selected = bot.slug === selectedBotSlug;
+            return (
+              <button
+                key={bot.id}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => selectBot(bot.slug)}
+                className={
+                  selected
+                    ? 'rounded-lg bg-brand-primary px-3 py-2 text-sm font-medium text-white'
+                    : 'rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground/90 hover:bg-page'
+                }
+              >
+                {bot.name}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="mt-8 border-t border-border pt-6">
-          <h3 className="text-sm font-semibold text-foreground">
-            Boas-vindas padrão
-          </h3>
-          <p className="mt-1 max-w-2xl text-sm text-muted">
-            Sequência enviada na primeira resposta a um número novo (ainda sem
-            ficha no CRM). Podes misturar texto, áudio, imagem e PDF. Se
-            ficares sem passos, a Joana usa a apresentação por omissão.
-          </p>
-          <div className="mt-4">
-            <AutomationStepsEditor
-              steps={welcomeSteps}
-              disabled={welcomeSaving || loading}
-              requireAtLeastOne={false}
-              allowedTypes={[...WELCOME_STEP_TYPES]}
-              onChange={setWelcomeSteps}
-              onUpload={uploadWelcomeStep}
-            />
-          </div>
-          <div className="mt-3">
-            <CardButton
-              type="button"
-              size="sm"
-              disabled={welcomeSaving || loading}
-              onClick={() => void saveWelcome()}
+        {selectedBot ? (
+          <>
+            <p className="mt-3 text-sm text-muted">
+              {selectedBot.engineKind === 'JOANA_QUALIFICATION'
+                ? 'Motor de qualificação Relocation (CRM Joana).'
+                : 'Motor genérico: responde só com o contexto abaixo.'}{' '}
+              Menu: {selectedBot.menuOrder} — {selectedBot.menuLabel}
+            </p>
+            <label
+              htmlFor="chatbot-context"
+              className="mt-4 block text-sm font-medium text-foreground"
             >
-              {welcomeSaving ? 'A guardar…' : 'Guardar boas-vindas'}
-            </CardButton>
-          </div>
-        </div>
+              Contexto do negócio
+            </label>
+            <textarea
+              id="chatbot-context"
+              value={contextText}
+              onChange={(event) => setContextText(event.target.value)}
+              rows={12}
+              className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
+            />
+            <div className="mt-3">
+              <CardButton
+                type="button"
+                size="sm"
+                disabled={contextSaving || contextText.trim().length < 20}
+                onClick={() => void saveContext()}
+              >
+                {contextSaving ? 'A guardar…' : 'Guardar contexto'}
+              </CardButton>
+            </div>
+
+            <div className="mt-8 border-t border-border pt-6">
+              <h3 className="text-sm font-semibold text-foreground">
+                Boas-vindas padrão
+              </h3>
+              <p className="mt-1 max-w-2xl text-sm text-muted">
+                Sequência enviada na primeira resposta depois da escolha do
+                menu. Podes misturar texto, áudio, imagem e PDF. Sem passos, usa
+                a apresentação por omissão.
+              </p>
+              <div className="mt-4">
+                <AutomationStepsEditor
+                  steps={welcomeSteps}
+                  disabled={welcomeSaving || loading}
+                  requireAtLeastOne={false}
+                  allowedTypes={[...WELCOME_STEP_TYPES]}
+                  onChange={setWelcomeSteps}
+                  onUpload={uploadWelcomeStep}
+                />
+              </div>
+              <div className="mt-3">
+                <CardButton
+                  type="button"
+                  size="sm"
+                  disabled={welcomeSaving || loading}
+                  onClick={() => void saveWelcome()}
+                >
+                  {welcomeSaving ? 'A guardar…' : 'Guardar boas-vindas'}
+                </CardButton>
+              </div>
+            </div>
+          </>
+        ) : null}
       </section>
 
       {/* Automações fixas */}

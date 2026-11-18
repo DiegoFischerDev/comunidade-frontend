@@ -163,6 +163,52 @@ export type JoanaWelcomeStepInput = {
   delayMsAfter?: number;
 };
 
+export type AdminChatbotSlug = 'joana' | 'bruna' | 'gabi';
+
+export type AdminChatbot = {
+  id: string;
+  slug: AdminChatbotSlug;
+  name: string;
+  menuLabel: string;
+  menuOrder: number;
+  engineKind: 'JOANA_QUALIFICATION' | 'GENERIC_CONTEXT';
+  enabled: boolean;
+  contextText: string;
+  welcomeSteps: JoanaWelcomeStepInput[];
+  introFallback: string | null;
+};
+
+export type ChatbotCrmColumn = {
+  id: string;
+  slug: string;
+  label: string;
+  sortOrder: number;
+  tone: string | null;
+  pausesBot: boolean;
+};
+
+export type ChatbotCrmLead = {
+  id: string;
+  columnId: string;
+  columnSlug: string;
+  whatsapp: string;
+  guestName: string | null;
+  botEnabled: boolean;
+  crmComments: string | null;
+  crmProfileImageUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ChatbotCrmBoard = {
+  chatbot: {
+    slug: string;
+    name: string;
+    engineKind: 'JOANA_QUALIFICATION' | 'GENERIC_CONTEXT';
+  };
+  columns: Array<ChatbotCrmColumn & { items: ChatbotCrmLead[] }>;
+};
+
 export type RafacallCrmItem = {
   id: string;
   bookingStatus: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
@@ -2238,6 +2284,104 @@ export const api = {
           method: 'PATCH',
           body: JSON.stringify({ steps }),
         }),
+    },
+    chatbots: {
+      list: () =>
+        request<AdminChatbot[]>('/chatbots', { method: 'GET' }),
+      menu: () =>
+        request<{ text: string; bots: Array<{ slug: string; menuLabel: string; menuOrder: number; name: string }> }>(
+          '/chatbots/menu',
+          { method: 'GET' },
+        ),
+      get: (slug: string) =>
+        request<AdminChatbot>(`/chatbots/${encodeURIComponent(slug)}`, {
+          method: 'GET',
+        }),
+      updateContext: (slug: string, contextText: string) =>
+        request<AdminChatbot>(
+          `/chatbots/${encodeURIComponent(slug)}/context`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify({ contextText }),
+          },
+        ),
+      updateWelcome: (slug: string, steps: JoanaWelcomeStepInput[]) =>
+        request<AdminChatbot>(
+          `/chatbots/${encodeURIComponent(slug)}/welcome`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify({ steps }),
+          },
+        ),
+      crm: {
+        board: (slug: string) =>
+          request<ChatbotCrmBoard>(
+            `/admin/crm/${encodeURIComponent(slug)}`,
+            { method: 'GET' },
+          ),
+        columns: (slug: string) =>
+          request<ChatbotCrmColumn[]>(
+            `/admin/crm/${encodeURIComponent(slug)}/columns`,
+            { method: 'GET' },
+          ),
+        createColumn: (
+          slug: string,
+          body: { label: string; tone?: string | null; pausesBot?: boolean },
+        ) =>
+          request<ChatbotCrmColumn>(
+            `/admin/crm/${encodeURIComponent(slug)}/columns`,
+            { method: 'POST', body: JSON.stringify(body) },
+          ),
+        updateColumn: (
+          slug: string,
+          columnId: string,
+          body: {
+            label?: string;
+            tone?: string | null;
+            pausesBot?: boolean;
+            sortOrder?: number;
+          },
+        ) =>
+          request<ChatbotCrmColumn>(
+            `/admin/crm/${encodeURIComponent(slug)}/columns/${encodeURIComponent(columnId)}`,
+            { method: 'PATCH', body: JSON.stringify(body) },
+          ),
+        reorderColumns: (slug: string, columnIds: string[]) =>
+          request<ChatbotCrmColumn[]>(
+            `/admin/crm/${encodeURIComponent(slug)}/columns/reorder`,
+            {
+              method: 'PATCH',
+              body: JSON.stringify({ columnIds }),
+            },
+          ),
+        createLead: (
+          slug: string,
+          body: { name: string; whatsapp: string; columnId?: string },
+        ) =>
+          request<ChatbotCrmLead>(
+            `/admin/crm/${encodeURIComponent(slug)}/leads`,
+            { method: 'POST', body: JSON.stringify(body) },
+          ),
+        updateLead: (
+          slug: string,
+          leadId: string,
+          body: {
+            guestName?: string;
+            columnId?: string;
+            botEnabled?: boolean;
+            crmComments?: string | null;
+          },
+        ) =>
+          request<ChatbotCrmLead>(
+            `/admin/crm/${encodeURIComponent(slug)}/leads/${encodeURIComponent(leadId)}`,
+            { method: 'PATCH', body: JSON.stringify(body) },
+          ),
+        removeLead: (slug: string, leadId: string) =>
+          request<{ ok: true }>(
+            `/admin/crm/${encodeURIComponent(slug)}/leads/${encodeURIComponent(leadId)}`,
+            { method: 'DELETE' },
+          ),
+      },
     },
   },
   uploads: {

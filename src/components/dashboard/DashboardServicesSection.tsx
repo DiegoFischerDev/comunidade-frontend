@@ -199,14 +199,9 @@ export function ServicesPricingCard({
 
         {showExtraServices ? (
           <div className="border-t border-border pt-4">
-            <div className="mb-2 flex items-baseline justify-between gap-3">
-              <h4 className="text-sm font-semibold text-foreground">
-                Serviços extra
-              </h4>
-              <span className="inline-flex -rotate-3 rounded-xl bg-page px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted">
-                A partir de
-              </span>
-            </div>
+            <h4 className="mb-2 text-sm font-semibold text-foreground">
+              Serviços extra
+            </h4>
 
             <ul>
               {DASHBOARD_EXTRA_SERVICES.map((service) => (
@@ -219,6 +214,11 @@ export function ServicesPricingCard({
                 />
               ))}
             </ul>
+
+            <p className="mt-3 text-xs leading-relaxed text-muted">
+              * Além da taxa de serviço de €80, é cobrado o valor final da
+              compra.
+            </p>
           </div>
         ) : null}
 

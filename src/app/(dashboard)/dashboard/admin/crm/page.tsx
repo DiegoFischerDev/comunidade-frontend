@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { api, getUserFacingApiError, type RafacallCrmDocument, type RafacallCrmItem, type RafacallCrmPayment, type RafacallCrmStatus } from '@/lib/api';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { api, getUserFacingApiError, type AdminChatbotSlug, type RafacallCrmDocument, type RafacallCrmItem, type RafacallCrmPayment, type RafacallCrmStatus } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { AdminVideoCallSlotPicker } from '@/components/rafacall/AdminVideoCallSlotPicker';
@@ -17,6 +18,18 @@ import {
   HorizontalSnapCarousel,
 } from '@/components/ui/horizontal-snap-carousel';
 import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
+import { GenericChatbotCrmView } from '@/components/admin/GenericChatbotCrmView';
+
+const CRM_BOT_TABS: Array<{ slug: AdminChatbotSlug; name: string; blurb: string }> = [
+  { slug: 'joana', name: 'Joana', blurb: 'Relocation / aluguel' },
+  { slug: 'bruna', name: 'Bruna', blurb: 'Crédito imobiliário' },
+  { slug: 'gabi', name: 'Gabi', blurb: 'Publicidade' },
+];
+
+function parseCrmBotSlug(value: string | null): AdminChatbotSlug {
+  if (value === 'bruna' || value === 'gabi' || value === 'joana') return value;
+  return 'joana';
+}
 
 type CrmBoardPayload = Awaited<ReturnType<typeof api.admin.rafacall.crmBoard>>;
 type CrmColumn = CrmBoardPayload['columns'][number];
@@ -2876,7 +2889,7 @@ function CrmClientModal({
   );
 }
 
-export default function CrmPage() {
+function JoanaCrmBoardPage() {
   const { user } = useAuth();
   const [columns, setColumns] = useState<CrmColumn[]>([]);
   const [loading, setLoading] = useState(true);
@@ -3424,13 +3437,12 @@ export default function CrmPage() {
   };
 
   return (
-    <div className="pt-6 md:pt-8">
+    <div className="mt-2">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">CRM</h1>
-          <p className="mt-1 text-sm text-muted">
-            Acompanhe o follow-up dos clientes após o agendamento. Arraste entre colunas
-            para atualizar o estado.
+          <p className="text-sm text-muted">
+            CRM da Joana (Relocation). Acompanhe o follow-up após o agendamento.
+            Arraste entre colunas para atualizar o estado.
           </p>
         </div>
         <button
@@ -3617,5 +3629,107 @@ export default function CrmPage() {
         </p>
       ) : null}
     </div>
+  );
+}
+
+function CrmBotSelector({
+  selected,
+  onSelect,
+}: {
+  selected: AdminChatbotSlug;
+  onSelect: (slug: AdminChatbotSlug) => void;
+}) {
+  return (
+    <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="CRM por chatbot">
+      {CRM_BOT_TABS.map((bot) => {
+        const active = bot.slug === selected;
+        return (
+          <button
+            key={bot.slug}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onSelect(bot.slug)}
+            className={
+              active
+                ? 'rounded-lg bg-brand-primary px-3 py-2 text-left text-sm font-medium text-white'
+                : 'rounded-lg border border-border bg-card px-3 py-2 text-left text-sm font-medium text-foreground/90 hover:bg-page'
+            }
+          >
+            <span className="block">{bot.name}</span>
+            <span
+              className={
+                active ? 'block text-xs text-white/80' : 'block text-xs text-muted'
+              }
+            >
+              {bot.blurb}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function CrmPageInner() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const selectedBot = parseCrmBotSlug(searchParams.get('bot'));
+
+  function selectBot(slug: AdminChatbotSlug) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (slug === 'joana') params.delete('bot');
+    else params.set('bot', slug);
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
+
+  if (!user) return null;
+
+  if (user.role !== 'ADMIN') {
+    return (
+      <div className="pt-6 md:pt-8">
+        <h1 className="text-2xl font-semibold text-foreground">CRM</h1>
+        <p className="mt-2 text-sm text-muted">Sem permissão para esta página.</p>
+      </div>
+    );
+  }
+
+  const tab = CRM_BOT_TABS.find((bot) => bot.slug === selectedBot) ?? CRM_BOT_TABS[0]!;
+
+  return (
+    <div className="pt-6 md:pt-8">
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">CRM</h1>
+        <p className="mt-1 text-sm text-muted">
+          Escolhe o CRM do chatbot. Cada um tem as suas colunas e leads.
+        </p>
+      </div>
+
+      <CrmBotSelector selected={selectedBot} onSelect={selectBot} />
+
+      {selectedBot === 'joana' ? (
+        <JoanaCrmBoardPage />
+      ) : (
+        <GenericChatbotCrmView slug={selectedBot} botName={tab.name} />
+      )}
+    </div>
+  );
+}
+
+export default function CrmPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="pt-6 md:pt-8">
+          <h1 className="text-2xl font-semibold text-foreground">CRM</h1>
+          <p className="mt-2 text-sm text-muted">A carregar…</p>
+        </div>
+      }
+    >
+      <CrmPageInner />
+    </Suspense>
   );
 }
