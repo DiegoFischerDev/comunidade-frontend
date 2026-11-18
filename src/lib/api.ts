@@ -203,6 +203,8 @@ export type ChatbotCrmLead = {
   botEnabled: boolean;
   crmComments: string | null;
   crmProfileImageUrl: string | null;
+  /** PDFs/imagens anexados (mesma chave WhatsApp que o CRM Joana). */
+  documents: RafacallCrmDocument[];
   createdAt: string;
   updatedAt: string;
 };
@@ -2398,6 +2400,20 @@ export const api = {
         removeLead: (slug: string, leadId: string) =>
           request<{ ok: true }>(
             `/admin/crm/${encodeURIComponent(slug)}/leads/${encodeURIComponent(leadId)}`,
+            { method: 'DELETE' },
+          ),
+        uploadDocument: (slug: string, leadId: string, file: File) => {
+          const fd = new FormData();
+          fd.append('file', file);
+          return requestFormData<RafacallCrmDocument>(
+            `/admin/crm/${encodeURIComponent(slug)}/leads/${encodeURIComponent(leadId)}/documents`,
+            fd,
+            { method: 'POST' },
+          );
+        },
+        deleteDocument: (slug: string, leadId: string, documentId: string) =>
+          request<{ ok: true }>(
+            `/admin/crm/${encodeURIComponent(slug)}/leads/${encodeURIComponent(leadId)}/documents/${encodeURIComponent(documentId)}`,
             { method: 'DELETE' },
           ),
       },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   api,
   getUserFacingApiError,
@@ -8,6 +8,7 @@ import {
   type ChatbotCrmBoard,
   type ChatbotCrmColumn,
   type ChatbotCrmLead,
+  type RafacallCrmDocument,
 } from '@/lib/api';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { ChatbotAvatar } from '@/components/admin/ChatbotAvatar';
@@ -17,6 +18,9 @@ import {
 } from '@/components/ui/horizontal-snap-carousel';
 import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
 import type { RafacallCrmColumnTone } from '@/lib/rafacall-crm';
+import { toast } from '@/lib/toast';
+
+const CRM_DOCUMENT_MAX_BYTES = 15 * 1024 * 1024;
 
 type Props = {
   slug: Exclude<AdminChatbotSlug, 'joana'>;
@@ -195,6 +199,271 @@ function BotIcon({ className }: { className?: string }) {
   );
 }
 
+function FileIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+      <path d="M14 2v6h6" />
+    </svg>
+  );
+}
+
+function formatCrmDocumentSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  const megabytes = bytes / (1024 * 1024);
+  return `${megabytes.toFixed(1).replace('.', ',')} MB`;
+}
+
+function formatCrmDocumentDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('pt-PT', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+}
+
+function isPdfFile(file: File): boolean {
+  const name = file.name.toLowerCase();
+  return (
+    file.type === 'application/pdf' ||
+    file.type === 'application/x-pdf' ||
+    name.endsWith('.pdf')
+  );
+}
+
+function isCrmImageFileName(fileName: string): boolean {
+  return /\.(jpe?g|png|webp|gif)$/i.test(fileName);
+}
+
+function GenericCrmDocumentsSection({
+  slug,
+  leadId,
+  documents,
+  disabled,
+  onDocumentsChange,
+}: {
+  slug: Exclude<AdminChatbotSlug, 'joana'>;
+  leadId: string;
+  documents: RafacallCrmDocument[];
+  disabled?: boolean;
+  onDocumentsChange: (documents: RafacallCrmDocument[]) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const isBusy = Boolean(disabled || busy);
+  const count = documents.length;
+
+  const handleFiles = async (fileList: FileList | null) => {
+    const files = fileList ? Array.from(fileList) : [];
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (files.length === 0) return;
+
+    setBusy(true);
+    let next = documents;
+    let attached = 0;
+    try {
+      for (const file of files) {
+        if (!isPdfFile(file)) {
+          toast.error(`${file.name} não é um PDF.`);
+          continue;
+        }
+        if (file.size === 0) {
+          toast.error(`${file.name} está vazio.`);
+          continue;
+        }
+        if (file.size > CRM_DOCUMENT_MAX_BYTES) {
+          toast.error(`${file.name} passa de 15 MB.`);
+          continue;
+        }
+        try {
+          const created = await api.admin.chatbots.crm.uploadDocument(
+            slug,
+            leadId,
+            file,
+          );
+          next = [created, ...next.filter((document) => document.id !== created.id)];
+          onDocumentsChange(next);
+          attached += 1;
+        } catch (err) {
+          toast.error(
+            getUserFacingApiError(err, { context: `Ao anexar ${file.name}` }),
+          );
+        }
+      }
+      if (attached === 1) toast.success('PDF anexado.');
+      if (attached > 1) toast.success(`${attached} PDFs anexados.`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDelete = async (documentId: string) => {
+    if (pendingDeleteId !== documentId) {
+      setPendingDeleteId(documentId);
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.admin.chatbots.crm.deleteDocument(slug, leadId, documentId);
+      onDocumentsChange(documents.filter((document) => document.id !== documentId));
+      setPendingDeleteId(null);
+      toast.success('PDF removido.');
+    } catch (err) {
+      toast.error(getUserFacingApiError(err, { context: 'Ao remover o PDF' }));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 space-y-2">
+      <button
+        type="button"
+        disabled={isBusy}
+        onClick={() => {
+          setOpen((prev) => !prev);
+          setPendingDeleteId(null);
+        }}
+        className={`flex w-full cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+          count > 0
+            ? 'border-border bg-page text-foreground hover:border-brand-primary/30'
+            : 'border-dashed border-border bg-card text-muted hover:border-brand-primary/40 hover:bg-page'
+        }`}
+        aria-expanded={open}
+        aria-label="Documentos do cliente"
+      >
+        <FileIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary" />
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Documentos
+          </p>
+          <p
+            className={`mt-0.5 text-sm font-medium leading-snug ${
+              count > 0 ? 'text-foreground' : 'italic text-muted'
+            }`}
+          >
+            {count > 0
+              ? `${count} ficheiro${count === 1 ? '' : 's'}`
+              : 'Nenhum ficheiro — clica para anexar'}
+          </p>
+        </div>
+        <span className="shrink-0 text-xs font-medium text-muted">
+          {open ? 'Fechar' : 'Editar'}
+        </span>
+      </button>
+
+      {open ? (
+        <div className="space-y-3 rounded-xl border border-border bg-page/60 px-3.5 py-3">
+          {documents.length > 0 ? (
+            <ul className="space-y-2">
+              {documents.map((document) => {
+                const href = resolveUploadsUrl(document.fileUrl);
+                const isImage = isCrmImageFileName(document.fileName);
+                return (
+                  <li
+                    key={document.id}
+                    className="rounded-xl border border-border bg-card px-3 py-2.5"
+                  >
+                    <div className="flex items-start gap-3">
+                      {isImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={href}
+                          alt=""
+                          className="h-11 w-11 shrink-0 rounded-lg border border-border object-cover"
+                        />
+                      ) : (
+                        <div
+                          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-page text-brand-primary"
+                          aria-hidden
+                        >
+                          <FileIcon className="h-5 w-5" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {document.fileName}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted">
+                          {[
+                            formatCrmDocumentSize(document.sizeBytes),
+                            formatCrmDocumentDate(document.createdAt),
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-col gap-1">
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex min-h-8 cursor-pointer items-center justify-center rounded-lg border border-border px-2 py-1 text-[11px] font-medium text-foreground hover:bg-page"
+                        >
+                          Abrir
+                        </a>
+                        <button
+                          type="button"
+                          disabled={isBusy}
+                          onClick={() => void handleDelete(document.id)}
+                          className="cursor-pointer rounded-lg border border-red-200 px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                        >
+                          {pendingDeleteId === document.id ? 'Confirmar' : 'Apagar'}
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-xs text-muted">Ainda não há ficheiros neste cliente.</p>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            multiple
+            aria-label="Anexar PDF"
+            className="sr-only"
+            tabIndex={-1}
+            disabled={isBusy}
+            onChange={(event) => void handleFiles(event.target.files)}
+          />
+          <button
+            type="button"
+            disabled={isBusy}
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex min-h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground transition-colors hover:bg-page disabled:opacity-50"
+          >
+            {busy ? 'A enviar…' : '+ Anexar PDF'}
+          </button>
+          <p className="text-[11px] leading-relaxed text-muted">
+            Upload manual: só PDF, até 15 MB. Imagens e ficheiros enviados pelo
+            cliente no WhatsApp dos chatbots também aparecem aqui.
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function LeadAvatar({
   name,
   imageUrl,
@@ -272,6 +541,7 @@ function GenericLeadCard({
     ? lead.subjectSummary?.trim() || 'Assunto por explicar'
     : null;
   const comments = lead.crmComments?.trim() || null;
+  const documentCount = lead.documents?.length ?? 0;
   const showObjectivePending =
     isGabi && !campaignObjective && lead.instagramHandle !== null;
   const hasBadges = Boolean(
@@ -315,6 +585,16 @@ function GenericLeadCard({
           ) : null}
         </div>
         <p className="mt-0.5 truncate text-[10px] text-muted/60">{wa}</p>
+        {documentCount > 0 ? (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            <p className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-0.5 text-[11px] font-semibold text-foreground">
+              <FileIcon className="h-3.5 w-3.5 shrink-0 text-brand-primary" />
+              <span>
+                {documentCount} ficheiro{documentCount === 1 ? '' : 's'}
+              </span>
+            </p>
+          </div>
+        ) : null}
       </div>
 
       {hasBadges ? (
@@ -937,6 +1217,30 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
                   className="mt-2 min-h-[120px] w-full resize-y rounded-xl border border-border bg-page px-3.5 py-3 text-sm leading-relaxed text-foreground outline-none transition-colors focus:border-brand-accent disabled:opacity-50"
                 />
               </label>
+
+              <GenericCrmDocumentsSection
+                slug={slug}
+                leadId={selected.id}
+                documents={selected.documents ?? []}
+                disabled={saving}
+                onDocumentsChange={(documents) => {
+                  setSelected({ ...selected, documents });
+                  setBoard((prev) => {
+                    if (!prev) return prev;
+                    return {
+                      ...prev,
+                      columns: prev.columns.map((column) => ({
+                        ...column,
+                        items: column.items.map((item) =>
+                          item.id === selected.id
+                            ? { ...item, documents }
+                            : item,
+                        ),
+                      })),
+                    };
+                  });
+                }}
+              />
             </div>
 
             <div className="shrink-0 border-t border-border bg-page/70 px-5 py-4">

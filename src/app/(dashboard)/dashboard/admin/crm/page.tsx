@@ -2267,7 +2267,7 @@ function CrmDocumentsSection({
           </button>
           <p className="text-[11px] leading-relaxed text-muted">
             Upload manual: só PDF, até 15 MB. Imagens e ficheiros enviados pelo
-            cliente no WhatsApp da Joana também aparecem aqui.
+            cliente no WhatsApp dos chatbots também aparecem aqui.
           </p>
         </div>
       ) : null}
