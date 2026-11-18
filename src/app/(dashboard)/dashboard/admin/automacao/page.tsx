@@ -160,7 +160,8 @@ export default function AdminAutomacaoPage() {
   const [chatbots, setChatbots] = useState<AdminChatbot[]>([]);
   const [selectedBotSlug, setSelectedBotSlug] =
     useState<AdminChatbotSlug>('joana');
-  const [menuPreview, setMenuPreview] = useState('');
+  const [menuText, setMenuText] = useState('');
+  const [menuSaving, setMenuSaving] = useState(false);
   const [contextText, setContextText] = useState('');
   const [welcomeSteps, setWelcomeSteps] = useState<AutomationDraftStep[]>([]);
   const [contextSaving, setContextSaving] = useState(false);
@@ -194,7 +195,7 @@ export default function AdminAutomacaoPage() {
       ]);
       setItems(res.items);
       setChatbots(bots);
-      setMenuPreview(menu.text);
+      setMenuText(menu.text);
       setSelectedBotSlug((prev) => {
         const current = bots.find((bot) => bot.slug === prev) ?? bots[0] ?? null;
         if (current) {
@@ -225,6 +226,23 @@ export default function AdminAutomacaoPage() {
     setWelcomeSteps(stepsFromApi(bot.welcomeSteps));
     setSuccess('');
     setError('');
+  }
+
+  async function saveMenu() {
+    setMenuSaving(true);
+    setError('');
+    setSuccess('');
+    try {
+      const saved = await api.admin.chatbots.updateMenu(menuText);
+      setMenuText(saved.text);
+      setSuccess('Texto do menu inicial guardado.');
+    } catch (err) {
+      setError(
+        getUserFacingApiError(err, { context: 'Ao guardar o menu inicial' }),
+      );
+    } finally {
+      setMenuSaving(false);
+    }
   }
 
   async function saveContext() {
@@ -511,16 +529,35 @@ export default function AdminAutomacaoPage() {
           responde.
         </p>
 
-        {menuPreview ? (
-          <div className="mt-4 rounded-lg border border-border bg-page px-3 py-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted">
-              Menu inicial (só leitura)
-            </p>
-            <pre className="mt-2 whitespace-pre-wrap font-sans text-sm text-foreground">
-              {menuPreview}
-            </pre>
+        <div className="mt-4 rounded-lg border border-border bg-page px-3 py-3">
+          <label
+            htmlFor="chatbot-menu-text"
+            className="block text-sm font-medium text-foreground"
+          >
+            Menu inicial
+          </label>
+          <p className="mt-1 text-sm text-muted">
+            Primeira mensagem a um número novo. O contacto pode responder com
+            1/2/3 ou texto livre — a OpenAI interpreta e encaminha.
+          </p>
+          <textarea
+            id="chatbot-menu-text"
+            value={menuText}
+            onChange={(event) => setMenuText(event.target.value)}
+            rows={10}
+            className="mt-3 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25"
+          />
+          <div className="mt-3">
+            <CardButton
+              type="button"
+              size="sm"
+              disabled={menuSaving || menuText.trim().length < 20}
+              onClick={() => void saveMenu()}
+            >
+              {menuSaving ? 'A guardar…' : 'Guardar menu'}
+            </CardButton>
           </div>
-        ) : null}
+        </div>
 
         <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Chatbots">
           {chatbots.map((bot) => {

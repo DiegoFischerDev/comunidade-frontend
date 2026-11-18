@@ -2293,6 +2293,14 @@ export const api = {
           '/chatbots/menu',
           { method: 'GET' },
         ),
+      updateMenu: (menuText: string) =>
+        request<{ text: string; bots: Array<{ slug: string; menuLabel: string; menuOrder: number; name: string }> }>(
+          '/chatbots/menu',
+          {
+            method: 'PATCH',
+            body: JSON.stringify({ menuText }),
+          },
+        ),
       get: (slug: string) =>
         request<AdminChatbot>(`/chatbots/${encodeURIComponent(slug)}`, {
           method: 'GET',
