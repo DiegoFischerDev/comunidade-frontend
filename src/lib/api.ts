@@ -253,6 +253,10 @@ export type RafacallCrmItem = {
   userId: string | null;
   userName: string | null;
   whatsappDigits: string;
+  /** @username do Instagram (lead que veio do Direct). */
+  instagramUsername?: string | null;
+  /** https://instagram.com/{username} */
+  instagramProfileUrl?: string | null;
   updatedAt: string;
 };
 

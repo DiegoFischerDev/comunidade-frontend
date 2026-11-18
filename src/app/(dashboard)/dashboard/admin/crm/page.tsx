@@ -1026,7 +1026,9 @@ function CrmClientCard({
   onDragEnd: () => void;
 }) {
   const name = item.userName?.trim() || 'Sem nome';
-  const wa = formatWhatsappDigits(item.whatsappDigits);
+  const wa = item.whatsappDigits
+    ? formatWhatsappDigits(item.whatsappDigits)
+    : item.instagramUsername?.trim() || null;
   const immigrationDateLabel = formatImmigrationDateLabel(item.crmExpectedImmigrationAt);
   const isImmediateImmigration = isCrmImmigrationImmediate(item.crmExpectedImmigrationAt);
   const videoCallBadge = formatVideoCallBadgeLabel(item);
@@ -1180,6 +1182,19 @@ function CrmClientCard({
             onClick={(event) => event.stopPropagation()}
           >
             WhatsApp
+          </a>
+        ) : null}
+        {item.instagramProfileUrl ? (
+          <a
+            href={item.instagramProfileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            draggable={false}
+            className="inline-flex h-6 items-center rounded-md border border-border bg-page px-1.5 text-[11px] font-medium leading-none text-foreground transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
+            onClick={(event) => event.stopPropagation()}
+            title={item.instagramUsername || 'Abrir Instagram'}
+          >
+            Instagram
           </a>
         ) : null}
         <button
@@ -2423,8 +2438,21 @@ function CrmClientModal({
                     {name}
                   </h2>
                   <p className="mt-0.5 text-sm text-muted">
-                    {formatWhatsappDigits(item.whatsappDigits)}
+                    {item.whatsappDigits
+                      ? formatWhatsappDigits(item.whatsappDigits)
+                      : item.instagramUsername || 'Sem WhatsApp'}
                   </p>
+                  {item.instagramProfileUrl ? (
+                    <a
+                      href={item.instagramProfileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 inline-flex text-sm font-medium text-brand-primary underline-offset-2 hover:underline"
+                    >
+                      Abrir perfil no Instagram
+                      {item.instagramUsername ? ` (${item.instagramUsername})` : ''}
+                    </a>
+                  ) : null}
                 </div>
                 <button
                   type="button"
