@@ -30,6 +30,15 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
   const [saving, setSaving] = useState(false);
   const [columnLabelDraft, setColumnLabelDraft] = useState('');
   const [columnSaving, setColumnSaving] = useState(false);
+  const [companyDraft, setCompanyDraft] = useState('');
+  const [instagramDraft, setInstagramDraft] = useState('');
+  const isGabi = slug === 'gabi';
+
+  function formatInstagramLabel(value: string | null): string {
+    if (value === null) return 'Instagram por preencher';
+    if (value === '') return 'Sem Instagram';
+    return value.startsWith('@') ? value : `@${value}`;
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -92,6 +101,14 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
     }
   }
 
+  function openLead(lead: ChatbotCrmLead) {
+    setSelected(lead);
+    setCompanyDraft(lead.companyName ?? '');
+    setInstagramDraft(
+      lead.instagramHandle === null ? '' : lead.instagramHandle,
+    );
+  }
+
   async function moveLead(lead: ChatbotCrmLead, columnId: string) {
     setSaving(true);
     setError('');
@@ -100,9 +117,35 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
         columnId,
       });
       setSelected(updated);
+      setCompanyDraft(updated.companyName ?? '');
+      setInstagramDraft(
+        updated.instagramHandle === null ? '' : updated.instagramHandle,
+      );
       await load();
     } catch (err) {
       setError(getUserFacingApiError(err, { context: 'Ao mover lead' }));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveGabiFields(lead: ChatbotCrmLead) {
+    setSaving(true);
+    setError('');
+    try {
+      const updated = await api.admin.chatbots.crm.updateLead(slug, lead.id, {
+        companyName: companyDraft.trim() || null,
+        instagramHandle: instagramDraft.trim(),
+      });
+      setSelected(updated);
+      setCompanyDraft(updated.companyName ?? '');
+      setInstagramDraft(
+        updated.instagramHandle === null ? '' : updated.instagramHandle,
+      );
+      setSuccess('Dados da empresa guardados.');
+      await load();
+    } catch (err) {
+      setError(getUserFacingApiError(err, { context: 'Ao guardar dados' }));
     } finally {
       setSaving(false);
     }
@@ -253,13 +296,20 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
                   <li key={lead.id}>
                     <button
                       type="button"
-                      onClick={() => setSelected(lead)}
+                      onClick={() => openLead(lead)}
                       className="w-full rounded-lg border border-border bg-page px-3 py-2 text-left hover:border-brand-primary/40"
                     >
                       <p className="text-sm font-medium text-foreground">
-                        {lead.guestName || `Lead ${lead.whatsapp.slice(-3)}`}
+                        {lead.companyName ||
+                          lead.guestName ||
+                          `Lead ${lead.whatsapp.slice(-3)}`}
                       </p>
                       <p className="mt-0.5 text-xs text-muted">{lead.whatsapp}</p>
+                      {isGabi ? (
+                        <p className="mt-1 text-xs text-muted">
+                          {formatInstagramLabel(lead.instagramHandle)}
+                        </p>
+                      ) : null}
                       {!lead.botEnabled ? (
                         <p className="mt-1 text-xs font-medium text-amber-700">
                           Chatbot Off
@@ -284,7 +334,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">
-                  {selected.guestName || 'Lead'}
+                  {selected.companyName || selected.guestName || 'Lead'}
                 </h2>
                 <p className="mt-1 text-sm text-muted">{selected.whatsapp}</p>
               </div>
@@ -296,6 +346,42 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
                 Fechar
               </button>
             </div>
+
+            {isGabi ? (
+              <div className="mt-4 space-y-3 rounded-lg border border-border p-3">
+                <label className="block text-sm font-medium text-foreground">
+                  Nome da empresa
+                  <input
+                    value={companyDraft}
+                    onChange={(event) => setCompanyDraft(event.target.value)}
+                    disabled={saving}
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
+                    placeholder="Ex.: Move Casa"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-foreground">
+                  Instagram
+                  <input
+                    value={instagramDraft}
+                    onChange={(event) => setInstagramDraft(event.target.value)}
+                    disabled={saving}
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
+                    placeholder="@empresa ou vazio se não tiver"
+                  />
+                </label>
+                <p className="text-xs text-muted">
+                  Deixa o Instagram vazio e guarda para marcar «Sem Instagram».
+                </p>
+                <CardButton
+                  type="button"
+                  size="sm"
+                  disabled={saving}
+                  onClick={() => void saveGabiFields(selected)}
+                >
+                  {saving ? 'A guardar…' : 'Guardar dados'}
+                </CardButton>
+              </div>
+            ) : null}
 
             <label className="mt-4 block text-sm font-medium text-foreground">
               Coluna

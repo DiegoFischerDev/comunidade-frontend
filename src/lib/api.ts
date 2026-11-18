@@ -193,6 +193,9 @@ export type ChatbotCrmLead = {
   columnSlug: string;
   whatsapp: string;
   guestName: string | null;
+  companyName: string | null;
+  /** null = por preencher; "" = sem Instagram; valor = @handle */
+  instagramHandle: string | null;
   botEnabled: boolean;
   crmComments: string | null;
   crmProfileImageUrl: string | null;
@@ -2378,6 +2381,8 @@ export const api = {
             columnId?: string;
             botEnabled?: boolean;
             crmComments?: string | null;
+            companyName?: string | null;
+            instagramHandle?: string | null;
           },
         ) =>
           request<ChatbotCrmLead>(
