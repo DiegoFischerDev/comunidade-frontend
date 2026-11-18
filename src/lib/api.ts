@@ -196,6 +196,8 @@ export type ChatbotCrmLead = {
   companyName: string | null;
   /** null = por preencher; "" = sem Instagram; valor = @handle */
   instagramHandle: string | null;
+  /** Objectivo da campanha (CRM Gabi). */
+  campaignObjective: string | null;
   /** Resumo curto do assunto (CRM Outros). */
   subjectSummary: string | null;
   botEnabled: boolean;
@@ -2385,6 +2387,7 @@ export const api = {
             crmComments?: string | null;
             companyName?: string | null;
             instagramHandle?: string | null;
+            campaignObjective?: string | null;
             subjectSummary?: string | null;
           },
         ) =>

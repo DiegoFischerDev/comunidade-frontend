@@ -265,15 +265,22 @@ function GenericLeadCard({
     isGabi && lead.guestName?.trim() && name !== lead.guestName.trim()
       ? lead.guestName.trim()
       : null;
+  const campaignObjective = isGabi
+    ? lead.campaignObjective?.trim() || null
+    : null;
   const subject = isOutros
     ? lead.subjectSummary?.trim() || 'Assunto por explicar'
     : null;
   const comments = lead.crmComments?.trim() || null;
+  const showObjectivePending =
+    isGabi && !campaignObjective && lead.instagramHandle !== null;
   const hasBadges = Boolean(
     companyBadge ||
       contactBadge ||
       instagram ||
       (isGabi && lead.instagramHandle === null) ||
+      campaignObjective ||
+      showObjectivePending ||
       subject ||
       (!isGabi && !isOutros && comments),
   );
@@ -329,6 +336,15 @@ function GenericLeadCard({
           ) : isGabi && lead.instagramHandle === null ? (
             <span className="inline-flex max-w-full items-center rounded-md border border-amber-200/90 bg-amber-50/90 px-2 py-1 text-[10px] font-medium text-amber-950">
               Instagram por preencher
+            </span>
+          ) : null}
+          {campaignObjective ? (
+            <span className="inline-flex max-w-full items-center rounded-md border border-emerald-200/90 bg-emerald-50/90 px-2 py-1 text-[10px] font-medium text-emerald-900">
+              {campaignObjective}
+            </span>
+          ) : showObjectivePending ? (
+            <span className="inline-flex max-w-full items-center rounded-md border border-amber-200/90 bg-amber-50/90 px-2 py-1 text-[10px] font-medium text-amber-950">
+              Objetivo por preencher
             </span>
           ) : null}
           {subject ? (
@@ -498,6 +514,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
   const [columnSaving, setColumnSaving] = useState(false);
   const [companyDraft, setCompanyDraft] = useState('');
   const [instagramDraft, setInstagramDraft] = useState('');
+  const [campaignObjectiveDraft, setCampaignObjectiveDraft] = useState('');
   const [subjectDraft, setSubjectDraft] = useState('');
   const [commentsDraft, setCommentsDraft] = useState('');
   const [draggingLeadId, setDraggingLeadId] = useState<string | null>(null);
@@ -539,6 +556,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
     setSelected(lead);
     setCompanyDraft(lead.companyName ?? '');
     setInstagramDraft(lead.instagramHandle === null ? '' : lead.instagramHandle);
+    setCampaignObjectiveDraft(lead.campaignObjective ?? '');
     setSubjectDraft(lead.subjectSummary ?? '');
     setCommentsDraft(lead.crmComments ?? '');
   }
@@ -636,6 +654,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
           ? {
               companyName: companyDraft.trim() || null,
               instagramHandle: instagramDraft.trim(),
+              campaignObjective: campaignObjectiveDraft.trim() || null,
             }
           : {}),
         ...(isOutros
@@ -647,6 +666,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
       setInstagramDraft(
         updated.instagramHandle === null ? '' : updated.instagramHandle,
       );
+      setCampaignObjectiveDraft(updated.campaignObjective ?? '');
       setSubjectDraft(updated.subjectSummary ?? '');
       setCommentsDraft(updated.crmComments ?? '');
       setSuccess('Alterações guardadas.');
@@ -859,6 +879,19 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
                   <p className="text-xs text-muted">
                     Deixa o Instagram vazio e guarda para marcar «Sem Instagram».
                   </p>
+                  <label className="block text-sm font-medium text-foreground">
+                    Objetivo da campanha
+                    <textarea
+                      value={campaignObjectiveDraft}
+                      onChange={(event) =>
+                        setCampaignObjectiveDraft(event.target.value)
+                      }
+                      disabled={saving}
+                      rows={3}
+                      className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
+                      placeholder="Ex.: Gerar leads de relocation no Instagram"
+                    />
+                  </label>
                 </div>
               ) : null}
 
