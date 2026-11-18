@@ -97,7 +97,7 @@ function columnTone(tone: string | null | undefined): RafacallCrmColumnTone {
   return TONE_BY_KEY[key] ?? TONE_BY_KEY.slate!;
 }
 
-function formatWhatsappDigits(digits: string): string {
+function formatWhatsappDigits(digits: string | null | undefined): string {
   const d = String(digits ?? '').replace(/\D/g, '');
   if (!d) return '—';
   if (d.length === 12 && d.startsWith('351')) {
@@ -148,7 +148,15 @@ function formatInstagramBadge(value: string | null): string | null {
 
 function leadDisplayName(lead: ChatbotCrmLead, isGabi: boolean): string {
   if (isGabi && lead.companyName?.trim()) return lead.companyName.trim();
-  return lead.guestName?.trim() || `Lead ${lead.whatsapp.slice(-3)}`;
+  const guest = lead.guestName?.trim();
+  if (guest) return guest;
+  const handle = lead.instagramHandle?.trim();
+  if (handle) return handle.startsWith('@') ? handle : `@${handle}`;
+  const wa = (lead.whatsapp || '').replace(/\D/g, '');
+  if (wa.length >= 3) return `Lead ${wa.slice(-3)}`;
+  const ig = (lead.instagramUserId || '').trim();
+  if (ig.length >= 4) return `Lead IG ${ig.slice(-4)}`;
+  return 'Lead';
 }
 
 function TrashIcon({ className }: { className?: string }) {
