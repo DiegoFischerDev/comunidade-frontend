@@ -32,7 +32,9 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
   const [columnSaving, setColumnSaving] = useState(false);
   const [companyDraft, setCompanyDraft] = useState('');
   const [instagramDraft, setInstagramDraft] = useState('');
+  const [subjectDraft, setSubjectDraft] = useState('');
   const isGabi = slug === 'gabi';
+  const isOutros = slug === 'outros';
 
   function formatInstagramLabel(value: string | null): string {
     if (value === null) return 'Instagram por preencher';
@@ -107,6 +109,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
     setInstagramDraft(
       lead.instagramHandle === null ? '' : lead.instagramHandle,
     );
+    setSubjectDraft(lead.subjectSummary ?? '');
   }
 
   async function moveLead(lead: ChatbotCrmLead, columnId: string) {
@@ -146,6 +149,24 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
       await load();
     } catch (err) {
       setError(getUserFacingApiError(err, { context: 'Ao guardar dados' }));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveOutrosFields(lead: ChatbotCrmLead) {
+    setSaving(true);
+    setError('');
+    try {
+      const updated = await api.admin.chatbots.crm.updateLead(slug, lead.id, {
+        subjectSummary: subjectDraft.trim() || null,
+      });
+      setSelected(updated);
+      setSubjectDraft(updated.subjectSummary ?? '');
+      setSuccess('Assunto guardado.');
+      await load();
+    } catch (err) {
+      setError(getUserFacingApiError(err, { context: 'Ao guardar assunto' }));
     } finally {
       setSaving(false);
     }
@@ -310,6 +331,11 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
                           {formatInstagramLabel(lead.instagramHandle)}
                         </p>
                       ) : null}
+                      {isOutros ? (
+                        <p className="mt-1 text-xs text-muted">
+                          {lead.subjectSummary?.trim() || 'Assunto por explicar'}
+                        </p>
+                      ) : null}
                       {!lead.botEnabled ? (
                         <p className="mt-1 text-xs font-medium text-amber-700">
                           Chatbot Off
@@ -379,6 +405,29 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
                   onClick={() => void saveGabiFields(selected)}
                 >
                   {saving ? 'A guardar…' : 'Guardar dados'}
+                </CardButton>
+              </div>
+            ) : null}
+
+            {isOutros ? (
+              <div className="mt-4 space-y-3 rounded-lg border border-border p-3">
+                <label className="block text-sm font-medium text-foreground">
+                  Assunto
+                  <input
+                    value={subjectDraft}
+                    onChange={(event) => setSubjectDraft(event.target.value)}
+                    disabled={saving}
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
+                    placeholder="Resumo curto do pedido"
+                  />
+                </label>
+                <CardButton
+                  type="button"
+                  size="sm"
+                  disabled={saving}
+                  onClick={() => void saveOutrosFields(selected)}
+                >
+                  {saving ? 'A guardar…' : 'Guardar assunto'}
                 </CardButton>
               </div>
             ) : null}

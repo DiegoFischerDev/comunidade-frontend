@@ -586,7 +586,9 @@ export default function AdminAutomacaoPage() {
             <p className="mt-3 text-sm text-muted">
               {selectedBot.engineKind === 'JOANA_QUALIFICATION'
                 ? 'Motor de qualificação Relocation (CRM Joana).'
-                : 'Motor genérico: responde só com o contexto abaixo.'}{' '}
+                : selectedBot.engineKind === 'HANDOFF_OTHER'
+                  ? 'Handoff à Rafa: mensagem de espera, chatbot Off e CRM Outros.'
+                  : 'Motor genérico: responde só com o contexto abaixo.'}{' '}
               Menu: {selectedBot.menuOrder} — {selectedBot.menuLabel}
             </p>
             <label

@@ -24,10 +24,18 @@ const CRM_BOT_TABS: Array<{ slug: AdminChatbotSlug; name: string; blurb: string 
   { slug: 'joana', name: 'Joana', blurb: 'Relocation / aluguel' },
   { slug: 'bruna', name: 'Bruna', blurb: 'Crédito imobiliário' },
   { slug: 'gabi', name: 'Gabi', blurb: 'Publicidade' },
+  { slug: 'outros', name: 'Outros', blurb: 'Assuntos gerais / Rafa' },
 ];
 
 function parseCrmBotSlug(value: string | null): AdminChatbotSlug {
-  if (value === 'bruna' || value === 'gabi' || value === 'joana') return value;
+  if (
+    value === 'bruna' ||
+    value === 'gabi' ||
+    value === 'joana' ||
+    value === 'outros'
+  ) {
+    return value;
+  }
   return 'joana';
 }
 

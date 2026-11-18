@@ -163,7 +163,7 @@ export type JoanaWelcomeStepInput = {
   delayMsAfter?: number;
 };
 
-export type AdminChatbotSlug = 'joana' | 'bruna' | 'gabi';
+export type AdminChatbotSlug = 'joana' | 'bruna' | 'gabi' | 'outros';
 
 export type AdminChatbot = {
   id: string;
@@ -171,7 +171,7 @@ export type AdminChatbot = {
   name: string;
   menuLabel: string;
   menuOrder: number;
-  engineKind: 'JOANA_QUALIFICATION' | 'GENERIC_CONTEXT';
+  engineKind: 'JOANA_QUALIFICATION' | 'GENERIC_CONTEXT' | 'HANDOFF_OTHER';
   enabled: boolean;
   contextText: string;
   welcomeSteps: JoanaWelcomeStepInput[];
@@ -196,6 +196,8 @@ export type ChatbotCrmLead = {
   companyName: string | null;
   /** null = por preencher; "" = sem Instagram; valor = @handle */
   instagramHandle: string | null;
+  /** Resumo curto do assunto (CRM Outros). */
+  subjectSummary: string | null;
   botEnabled: boolean;
   crmComments: string | null;
   crmProfileImageUrl: string | null;
@@ -207,7 +209,7 @@ export type ChatbotCrmBoard = {
   chatbot: {
     slug: string;
     name: string;
-    engineKind: 'JOANA_QUALIFICATION' | 'GENERIC_CONTEXT';
+    engineKind: 'JOANA_QUALIFICATION' | 'GENERIC_CONTEXT' | 'HANDOFF_OTHER';
   };
   columns: Array<ChatbotCrmColumn & { items: ChatbotCrmLead[] }>;
 };
@@ -2383,6 +2385,7 @@ export const api = {
             crmComments?: string | null;
             companyName?: string | null;
             instagramHandle?: string | null;
+            subjectSummary?: string | null;
           },
         ) =>
           request<ChatbotCrmLead>(
