@@ -24,6 +24,15 @@ import { ChatbotAvatar } from '@/components/admin/ChatbotAvatar';
 const inputClass =
   'mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/25';
 
+/** Tema curto por chatbot — alinhado aos tabs do CRM. */
+const CHATBOT_THEME: Record<AdminChatbotSlug, string> = {
+  joana: 'Relocation / aluguel',
+  bruna: 'Crédito imobiliário',
+  bianca: 'Visto / preparação',
+  gabi: 'Publicidade',
+  outros: 'Assuntos gerais / Rafa',
+};
+
 const WELCOME_STEP_TYPES = [
   'TEXT',
   'AUDIO',
@@ -642,6 +651,7 @@ export default function AdminAutomacaoPage() {
         <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Chatbots">
           {chatbots.map((bot) => {
             const selected = bot.slug === selectedBotSlug;
+            const theme = CHATBOT_THEME[bot.slug] ?? bot.menuLabel;
             return (
               <button
                 key={bot.id}
@@ -651,8 +661,8 @@ export default function AdminAutomacaoPage() {
                 onClick={() => selectBot(bot.slug)}
                 className={
                   selected
-                    ? 'inline-flex items-center gap-2 rounded-lg bg-brand-primary px-3 py-2 text-sm font-medium text-white'
-                    : 'inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground/90 hover:bg-page'
+                    ? 'inline-flex items-center gap-2.5 rounded-lg bg-brand-primary px-3 py-2 text-left text-sm font-medium text-white'
+                    : 'inline-flex items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-2 text-left text-sm font-medium text-foreground/90 hover:bg-page'
                 }
               >
                 <ChatbotAvatar
@@ -661,7 +671,18 @@ export default function AdminAutomacaoPage() {
                   size="sm"
                   onBrand={selected}
                 />
-                {bot.name}
+                <span className="min-w-0">
+                  <span className="block">{bot.name}</span>
+                  <span
+                    className={
+                      selected
+                        ? 'block text-xs font-normal text-white/80'
+                        : 'block text-xs font-normal text-muted'
+                    }
+                  >
+                    {theme}
+                  </span>
+                </span>
               </button>
             );
           })}
