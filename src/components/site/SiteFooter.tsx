@@ -11,12 +11,18 @@ import {
 
 const RECLAME_AQUI_HREF = '/dashboard/reclame-aqui';
 const PRIVACIDADE_HREF = '/privacidade';
+const TERMOS_HREF = '/termos';
 
 const FOOTER_LINKS = [
   {
     href: PRIVACIDADE_HREF,
     label: 'Política de privacidade',
     Icon: ShieldIcon,
+  },
+  {
+    href: TERMOS_HREF,
+    label: 'Termos de Serviço',
+    Icon: DocumentIcon,
   },
   {
     href: RECLAME_AQUI_HREF,
@@ -76,6 +82,27 @@ function ShieldIcon({ className }: { className?: string }) {
       aria-hidden
     >
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  );
+}
+
+function DocumentIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M16 13H8" />
+      <path d="M16 17H8" />
+      <path d="M10 9H8" />
     </svg>
   );
 }

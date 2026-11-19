@@ -9,6 +9,7 @@ const RESERVED = new Set(
     'casas',
     'partner',
     'privacidade',
+    'termos',
     'whatsapp',
     'link',
     'lead-redirect',
