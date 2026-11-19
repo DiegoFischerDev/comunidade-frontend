@@ -163,6 +163,11 @@ export default function AdminAutomacaoPage() {
     useState<AdminChatbotSlug>('joana');
   const [menuText, setMenuText] = useState('');
   const [menuSaving, setMenuSaving] = useState(false);
+  const [whatsappEnabled, setWhatsappEnabled] = useState(true);
+  const [instagramEnabled, setInstagramEnabled] = useState(true);
+  const [channelBusy, setChannelBusy] = useState<
+    'whatsapp' | 'instagram' | null
+  >(null);
   const [contextText, setContextText] = useState('');
   const [welcomeSteps, setWelcomeSteps] = useState<AutomationDraftStep[]>([]);
   const [contextSaving, setContextSaving] = useState(false);
@@ -189,14 +194,17 @@ export default function AdminAutomacaoPage() {
     setLoading(true);
     setError('');
     try {
-      const [res, bots, menu] = await Promise.all([
+      const [res, bots, menu, channels] = await Promise.all([
         api.admin.whatsappAutomations.list(),
         api.admin.chatbots.list(),
         api.admin.chatbots.menu(),
+        api.admin.chatbots.channels(),
       ]);
       setItems(res.items);
       setChatbots(bots);
       setMenuText(menu.text);
+      setWhatsappEnabled(channels.whatsappEnabled);
+      setInstagramEnabled(channels.instagramEnabled);
       setSelectedBotSlug((prev) => {
         const current = bots.find((bot) => bot.slug === prev) ?? bots[0] ?? null;
         if (current) {
@@ -243,6 +251,40 @@ export default function AdminAutomacaoPage() {
       );
     } finally {
       setMenuSaving(false);
+    }
+  }
+
+  async function toggleChannel(channel: 'whatsapp' | 'instagram') {
+    const next =
+      channel === 'whatsapp' ? !whatsappEnabled : !instagramEnabled;
+    setChannelBusy(channel);
+    setError('');
+    setSuccess('');
+    try {
+      const saved = await api.admin.chatbots.updateChannels(
+        channel === 'whatsapp'
+          ? { whatsappEnabled: next }
+          : { instagramEnabled: next },
+      );
+      setWhatsappEnabled(saved.whatsappEnabled);
+      setInstagramEnabled(saved.instagramEnabled);
+      setSuccess(
+        channel === 'whatsapp'
+          ? saved.whatsappEnabled
+            ? 'Chatbots no WhatsApp activados.'
+            : 'Chatbots no WhatsApp desactivados.'
+          : saved.instagramEnabled
+            ? 'Chatbots no Instagram activados.'
+            : 'Chatbots no Instagram desactivados.',
+      );
+    } catch (err) {
+      setError(
+        getUserFacingApiError(err, {
+          context: 'Ao actualizar o canal dos chatbots',
+        }),
+      );
+    } finally {
+      setChannelBusy(null);
     }
   }
 
@@ -524,11 +566,30 @@ export default function AdminAutomacaoPage() {
       <section className="mt-6 rounded-xl border border-border bg-card p-4 shadow-sm">
         <h2 className="text-sm font-semibold text-foreground">Chatbots</h2>
         <p className="mt-1 max-w-2xl text-sm text-muted">
-          Joana, Bruna e Gabi partilham a instância WhatsApp comunidade MEO. O
-          contacto novo recebe um menu (1/2/3) e fica preso ao chatbot
-          escolhido. Cada uma espera 15 segundos, junta as mensagens e só então
-          responde.
+          Joana, Bruna e Gabi partilham a instância WhatsApp comunidade MEO e o
+          Instagram Direct. O contacto novo recebe um menu e fica preso ao
+          chatbot escolhido. Cada uma espera 15 segundos, junta as mensagens e
+          só então responde.
         </p>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <ChannelToggleRow
+            channel="whatsapp"
+            label="WhatsApp"
+            description="Menu e respostas automáticas no WhatsApp"
+            enabled={whatsappEnabled}
+            busy={channelBusy === 'whatsapp' || loading}
+            onToggle={() => void toggleChannel('whatsapp')}
+          />
+          <ChannelToggleRow
+            channel="instagram"
+            label="Instagram"
+            description="Menu e respostas automáticas no Direct"
+            enabled={instagramEnabled}
+            busy={channelBusy === 'instagram' || loading}
+            onToggle={() => void toggleChannel('instagram')}
+          />
+        </div>
 
         <div className="mt-4 rounded-lg border border-border bg-page px-3 py-3">
           <label
@@ -1002,5 +1063,73 @@ export default function AdminAutomacaoPage() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function ChannelToggleRow(props: {
+  channel: 'whatsapp' | 'instagram';
+  label: string;
+  description: string;
+  enabled: boolean;
+  busy: boolean;
+  onToggle: () => void;
+}) {
+  const { channel, label, description, enabled, busy, onToggle } = props;
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-page px-3 py-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <span
+          className={
+            channel === 'whatsapp'
+              ? 'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366]/
+              : 'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#f58529] via-[#dd2a7b] to-[#8134af]'
+          }
+          aria-hidden
+        >
+          {channel === 'whatsapp' ? <WhatsAppIcon /> : <InstagramIcon />}
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-foreground">{label}</p>
+          <p className="text-xs text-muted">{description}</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={enabled}
+        aria-label={`${enabled ? 'Desactivar' : 'Activar'} chatbots no ${label}`}
+        disabled={busy}
+        onClick={onToggle}
+        className={
+          enabled
+            ? 'relative h-7 w-12 shrink-0 rounded-full bg-brand-primary transition-colors disabled:opacity-60'
+            : 'relative h-7 w-12 shrink-0 rounded-full bg-border transition-colors disabled:opacity-60'
+        }
+      >
+        <span
+          className={
+            enabled
+              ? 'absolute top-0.5 left-6 h-6 w-6 rounded-full bg-white shadow-sm transition-all'
+              : 'absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-all'
+          }
+        />
+      </button>
+    </div>
+  );
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+    </svg>
+  );
+}
+
+function InstagramIcon() {
+  return (
+    <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M7.75 2h8.5A5.75 5.75 0 0122 7.75v8.5A5.75 5.75 0 0116.25 22h-8.5A5.75 5.75 0 012 16.25v-8.5A5.75 5.75 0 017.75 2zm0 1.5A4.25 4.25 0 003.5 7.75v8.5A4.25 4.25 0 007.75 20.5h8.5a4.25 4.25 0 004.25-4.25v-8.5A4.25 4.25 0 0016.25 3.5h-8.5zm8.75 1.75a1.125 1.125 0 110 2.25 1.125 1.125 0 010-2.25zM12 7a5 5 0 110 10 5 5 0 010-10zm0 1.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z" />
+    </svg>
   );
 }

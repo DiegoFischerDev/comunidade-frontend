@@ -2328,6 +2328,22 @@ export const api = {
             body: JSON.stringify({ menuText }),
           },
         ),
+      channels: () =>
+        request<{ whatsappEnabled: boolean; instagramEnabled: boolean }>(
+          '/chatbots/channels',
+          { method: 'GET' },
+        ),
+      updateChannels: (input: {
+        whatsappEnabled?: boolean;
+        instagramEnabled?: boolean;
+      }) =>
+        request<{ whatsappEnabled: boolean; instagramEnabled: boolean }>(
+          '/chatbots/channels',
+          {
+            method: 'PATCH',
+            body: JSON.stringify(input),
+          },
+        ),
       get: (slug: string) =>
         request<AdminChatbot>(`/chatbots/${encodeURIComponent(slug)}`, {
           method: 'GET',
