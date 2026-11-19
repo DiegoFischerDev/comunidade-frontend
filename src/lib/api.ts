@@ -159,8 +159,24 @@ export type JoanaWelcomeStepInput = {
   mediaUrl?: string;
   mediaMimeType?: string;
   mediaFileName?: string;
+  /** Variante WhatsApp (ex.: Ogg Opus). */
+  mediaUrlWhatsapp?: string;
+  mediaMimeTypeWhatsapp?: string;
+  /** Variante Instagram (ex.: M4A). */
+  mediaUrlInstagram?: string;
+  mediaMimeTypeInstagram?: string;
   caption?: string;
   delayMsAfter?: number;
+};
+
+export type ChannelMediaUploadResult = {
+  url: string;
+  mediaUrlWhatsapp: string;
+  mediaUrlInstagram: string;
+  mediaMimeType: string;
+  mediaMimeTypeWhatsapp: string;
+  mediaMimeTypeInstagram: string;
+  mediaFileName: string;
 };
 
 export type AdminChatbotSlug =
@@ -2461,6 +2477,14 @@ export const api = {
       const fd = new FormData();
       fd.append('file', file);
       return requestFormData<{ url: string }>('/uploads', fd, { method: 'POST' });
+    },
+    /** Boas-vindas multi-canal: gera Ogg (WA) + M4A (IG) / JPEG partilhado / PDF. */
+    postChannelMedia: (file: File) => {
+      const fd = new FormData();
+      fd.append('file', file);
+      return requestFormData<ChannelMediaUploadResult>('/uploads/channel-media', fd, {
+        method: 'POST',
+      });
     },
   },
   partner: {

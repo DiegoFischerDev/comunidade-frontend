@@ -10,6 +10,10 @@ export type AutomationDraftStep = {
   mediaUrl: string;
   mediaMimeType: string;
   mediaFileName: string;
+  mediaUrlWhatsapp?: string;
+  mediaMimeTypeWhatsapp?: string;
+  mediaUrlInstagram?: string;
+  mediaMimeTypeInstagram?: string;
   /** Pausa após o passo, em segundos (enviada à API em ms). */
   delaySeconds: number;
   uploading?: boolean;
@@ -34,6 +38,10 @@ export function emptyAutomationDraftStep(
     mediaUrl: '',
     mediaMimeType: '',
     mediaFileName: '',
+    mediaUrlWhatsapp: '',
+    mediaMimeTypeWhatsapp: '',
+    mediaUrlInstagram: '',
+    mediaMimeTypeInstagram: '',
     delaySeconds: 1,
   };
 }
@@ -201,6 +209,21 @@ export function AutomationStepsEditor({
                     <p className="truncate text-xs text-muted">
                       {s.mediaFileName || s.mediaUrl}
                     </p>
+                    {s.type === 'AUDIO' &&
+                    (s.mediaUrlWhatsapp || s.mediaUrlInstagram) &&
+                    s.mediaUrlWhatsapp !== s.mediaUrlInstagram ? (
+                      <p className="text-[11px] text-muted">
+                        WhatsApp:{' '}
+                        <code className="text-[10px]">
+                          {s.mediaUrlWhatsapp || s.mediaUrl}
+                        </code>
+                        <br />
+                        Instagram:{' '}
+                        <code className="text-[10px]">
+                          {s.mediaUrlInstagram || s.mediaUrl}
+                        </code>
+                      </p>
+                    ) : null}
                     {s.type === 'AUDIO' ? (
                       <audio
                         key={s.mediaUrl}
@@ -235,12 +258,19 @@ export function AutomationStepsEditor({
                     Ou cola URL / caminho{' '}
                     <code className="text-[10px]">/brand/…</code> ou{' '}
                     <code className="text-[10px]">/uploads/…</code>
+                    {s.type === 'AUDIO'
+                      ? ' — o upload gera Ogg (WhatsApp) e M4A (Instagram).'
+                      : null}
                   </p>
                 )}
                 <input
                   value={s.mediaUrl}
                   onChange={(e) =>
-                    updateStep(s.key, { mediaUrl: e.target.value })
+                    updateStep(s.key, {
+                      mediaUrl: e.target.value,
+                      mediaUrlWhatsapp: e.target.value,
+                      mediaUrlInstagram: e.target.value,
+                    })
                   }
                   className={`${inputClass} bg-card text-xs`}
                   placeholder="/uploads/… ou https://…"

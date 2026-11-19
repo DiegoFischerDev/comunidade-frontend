@@ -39,6 +39,10 @@ function stepsFromApi(
     mediaUrl?: string | null;
     mediaMimeType?: string | null;
     mediaFileName?: string | null;
+    mediaUrlWhatsapp?: string | null;
+    mediaMimeTypeWhatsapp?: string | null;
+    mediaUrlInstagram?: string | null;
+    mediaMimeTypeInstagram?: string | null;
     delayMsAfter?: number;
   }>,
 ): AutomationDraftStep[] {
@@ -49,6 +53,10 @@ function stepsFromApi(
     mediaUrl: s.mediaUrl ?? '',
     mediaMimeType: s.mediaMimeType ?? '',
     mediaFileName: s.mediaFileName ?? '',
+    mediaUrlWhatsapp: s.mediaUrlWhatsapp ?? s.mediaUrl ?? '',
+    mediaMimeTypeWhatsapp: s.mediaMimeTypeWhatsapp ?? s.mediaMimeType ?? '',
+    mediaUrlInstagram: s.mediaUrlInstagram ?? s.mediaUrl ?? '',
+    mediaMimeTypeInstagram: s.mediaMimeTypeInstagram ?? s.mediaMimeType ?? '',
     delaySeconds: Math.max(0, Math.round((s.delayMsAfter ?? 650) / 100) / 10),
   }));
 }
@@ -105,6 +113,12 @@ function draftToWelcomePayload(
           ? s.mediaMimeType || 'application/pdf'
           : s.mediaMimeType || undefined,
       mediaFileName: s.mediaFileName || undefined,
+      mediaUrlWhatsapp: (s.mediaUrlWhatsapp || s.mediaUrl).trim() || undefined,
+      mediaMimeTypeWhatsapp:
+        s.mediaMimeTypeWhatsapp || s.mediaMimeType || undefined,
+      mediaUrlInstagram: (s.mediaUrlInstagram || s.mediaUrl).trim() || undefined,
+      mediaMimeTypeInstagram:
+        s.mediaMimeTypeInstagram || s.mediaMimeType || undefined,
       caption:
         s.type === 'IMAGE' || s.type === 'DOCUMENT'
           ? s.textContent.trim() || undefined
@@ -365,15 +379,19 @@ export default function AdminAutomacaoPage() {
       prev.map((s) => (s.key === key ? { ...s, uploading: true } : s)),
     );
     try {
-      const { url } = await api.uploads.post(file);
+      const prepared = await api.uploads.postChannelMedia(file);
       setWelcomeSteps((prev) =>
         prev.map((s) =>
           s.key === key
             ? {
                 ...s,
-                mediaUrl: url,
-                mediaMimeType: file.type || '',
-                mediaFileName: file.name,
+                mediaUrl: prepared.url,
+                mediaMimeType: prepared.mediaMimeType || file.type || '',
+                mediaFileName: prepared.mediaFileName || file.name,
+                mediaUrlWhatsapp: prepared.mediaUrlWhatsapp,
+                mediaMimeTypeWhatsapp: prepared.mediaMimeTypeWhatsapp,
+                mediaUrlInstagram: prepared.mediaUrlInstagram,
+                mediaMimeTypeInstagram: prepared.mediaMimeTypeInstagram,
                 uploading: false,
               }
             : s,
