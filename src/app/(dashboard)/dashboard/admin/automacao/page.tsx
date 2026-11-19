@@ -1120,7 +1120,7 @@ function ChannelToggleRow(props: {
         <span
           className={
             channel === 'whatsapp'
-              ? 'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366]/
+              ? 'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366]'
               : 'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#f58529] via-[#dd2a7b] to-[#8134af]'
           }
           aria-hidden
