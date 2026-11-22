@@ -232,6 +232,8 @@ export type ChatbotCrmLead = {
   propertyTypology: RafacallCrmPropertyTypology[];
   botEnabled: boolean;
   crmComments: string | null;
+  /** Resumo de até 5 linhas das dúvidas e solicitações do lead. */
+  crmRequestSummary: string | null;
   crmProfileImageUrl: string | null;
   /** PDFs/imagens anexados (mesma chave WhatsApp que o CRM Joana). */
   documents: RafacallCrmDocument[];
@@ -254,6 +256,8 @@ export type RafacallCrmItem = {
   hasVideoCall: boolean;
   crmStatus: RafacallCrmStatus;
   crmComments: string | null;
+  /** Resumo de até 5 linhas das dúvidas e solicitações do lead. */
+  crmRequestSummary: string | null;
   crmExpectedImmigrationAt: string | null;
   crmPropertyTypology: RafacallCrmPropertyTypology[];
   crmPreferredCity: string | null;
@@ -276,7 +280,28 @@ export type RafacallCrmItem = {
   instagramUsername?: string | null;
   /** https://instagram.com/{username} */
   instagramProfileUrl?: string | null;
+  /** Há IGSID para responder no Direct a partir do CRM. */
+  canMessageInstagram?: boolean;
   updatedAt: string;
+};
+
+export type CrmChatChannel = 'WHATSAPP' | 'INSTAGRAM';
+
+export type CrmChannelMessage = {
+  id: string;
+  channel: CrmChatChannel;
+  direction: 'INBOUND' | 'OUTBOUND';
+  author: 'LEAD' | 'BOT' | 'ADMIN';
+  kind: 'TEXT' | 'AUDIO_TRANSCRIPT';
+  body: string;
+  createdAt: string;
+};
+
+export type CrmChannelMessageList = { messages: CrmChannelMessage[] };
+
+export type CrmChannelMessageSendResult = {
+  message: CrmChannelMessage;
+  botPaused: true;
 };
 
 function enrichApiHttpError(
@@ -1240,6 +1265,7 @@ export const api = {
           userName?: string;
           crmStatus?: RafacallCrmStatus;
           crmComments?: string;
+          crmRequestSummary?: string | null;
           crmExpectedImmigrationAt?: string | null;
           videoCallStartsAtUtcIso?: string | null;
           videoCallTimezone?: string;
@@ -1255,10 +1281,33 @@ export const api = {
           method: 'PATCH',
           body: JSON.stringify(body),
         }),
+      generateCrmSummary: (bookingId: string) =>
+        request<RafacallCrmItem>(`/admin/rafacall/crm/${bookingId}/summary`, {
+          method: 'POST',
+        }),
       deleteCrm: (bookingId: string) =>
         request<{ ok: true }>(`/admin/rafacall/crm/${bookingId}`, {
           method: 'DELETE',
         }),
+      listCrmMessages: (
+        bookingId: string,
+        channel: CrmChatChannel,
+        after?: string | null,
+      ) =>
+        request<CrmChannelMessageList>(
+          `/admin/rafacall/crm/${encodeURIComponent(bookingId)}/messages?channel=${channel}${
+            after ? `&after=${encodeURIComponent(after)}` : ''
+          }`,
+          { method: 'GET' },
+        ),
+      sendCrmMessage: (
+        bookingId: string,
+        body: { channel: CrmChatChannel; text?: string; template?: 'scheduling-link' },
+      ) =>
+        request<CrmChannelMessageSendResult>(
+          `/admin/rafacall/crm/${encodeURIComponent(bookingId)}/messages`,
+          { method: 'POST', body: JSON.stringify(body) },
+        ),
       createCrmPayment: (
         bookingId: string,
         body: {
@@ -2383,6 +2432,10 @@ export const api = {
           },
         ),
       crm: {
+        pipelineCounts: () =>
+          request<Record<AdminChatbotSlug, number>>('/admin/crm/counts', {
+            method: 'GET',
+          }),
         board: (slug: string) =>
           request<ChatbotCrmBoard>(
             `/admin/crm/${encodeURIComponent(slug)}`,
@@ -2439,6 +2492,7 @@ export const api = {
             columnId?: string;
             botEnabled?: boolean;
             crmComments?: string | null;
+            crmRequestSummary?: string | null;
             companyName?: string | null;
             instagramHandle?: string | null;
             campaignObjective?: string | null;
@@ -2452,10 +2506,31 @@ export const api = {
             `/admin/crm/${encodeURIComponent(slug)}/leads/${encodeURIComponent(leadId)}`,
             { method: 'PATCH', body: JSON.stringify(body) },
           ),
+        generateSummary: (slug: string, leadId: string) =>
+          request<ChatbotCrmLead>(
+            `/admin/crm/${encodeURIComponent(slug)}/leads/${encodeURIComponent(leadId)}/summary`,
+            { method: 'POST' },
+          ),
         removeLead: (slug: string, leadId: string) =>
           request<{ ok: true }>(
             `/admin/crm/${encodeURIComponent(slug)}/leads/${encodeURIComponent(leadId)}`,
             { method: 'DELETE' },
+          ),
+        listMessages: (slug: string, leadId: string, channel: CrmChatChannel, after?: string | null) =>
+          request<CrmChannelMessageList>(
+            `/admin/crm/${encodeURIComponent(slug)}/leads/${encodeURIComponent(leadId)}/messages?channel=${channel}${
+              after ? `&after=${encodeURIComponent(after)}` : ''
+            }`,
+            { method: 'GET' },
+          ),
+        sendMessage: (
+          slug: string,
+          leadId: string,
+          body: { channel: CrmChatChannel; text?: string; template?: 'scheduling-link' },
+        ) =>
+          request<CrmChannelMessageSendResult>(
+            `/admin/crm/${encodeURIComponent(slug)}/leads/${encodeURIComponent(leadId)}/messages`,
+            { method: 'POST', body: JSON.stringify(body) },
           ),
         uploadDocument: (slug: string, leadId: string, file: File) => {
           const fd = new FormData();

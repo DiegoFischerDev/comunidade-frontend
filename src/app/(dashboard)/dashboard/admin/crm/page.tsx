@@ -1,7 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { api, getUserFacingApiError, type AdminChatbotSlug, type RafacallCrmDocument, type RafacallCrmItem, type RafacallCrmPayment, type RafacallCrmStatus } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +18,12 @@ import {
 } from '@/components/ui/horizontal-snap-carousel';
 import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
 import { GenericChatbotCrmView } from '@/components/admin/GenericChatbotCrmView';
+import { CrmChannelChatModal } from '@/components/admin/CrmChannelChatModal';
+import {
+  CrmLeadNotesTooltip,
+  SparklesIcon,
+  SummarySpinner,
+} from '@/components/admin/CrmLeadNotesTooltip';
 import { CrmLeadNameField } from '@/components/admin/CrmLeadNameField';
 import { ChatbotAvatar } from '@/components/admin/ChatbotAvatar';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
@@ -87,9 +92,16 @@ function getColumnsThatFit(containerWidthPx: number, totalColumns: number): numb
 type CrmKanbanColumnProps = {
   draggingItemId: string | null;
   savingItemId: string | null;
+  summarizingItemId: string | null;
+  togglingJoanaId: string | null;
   onDropItem: (itemId: string, targetStatus: RafacallCrmStatus) => void;
   onOpenDetails: (item: RafacallCrmItem) => void;
   onRequestDelete: (item: RafacallCrmItem) => void;
+  onGenerateSummary: (item: RafacallCrmItem) => void;
+  onToggleJoana: (item: RafacallCrmItem) => void;
+  onOpenChat: (item: RafacallCrmItem, channel: 'WHATSAPP' | 'INSTAGRAM') => void;
+  activeChatId?: string | null;
+  activeChatChannel?: 'WHATSAPP' | 'INSTAGRAM' | null;
   onDragStart: (itemId: string) => void;
   onDragEnd: () => void;
 };
@@ -454,24 +466,6 @@ function PlaneIcon({ className }: { className?: string }) {
   );
 }
 
-function InfoIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 10v6M12 8h.01" />
-    </svg>
-  );
-}
-
 function FileIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -523,130 +517,6 @@ function sumCrmPayments(payments: RafacallCrmPayment[]): number {
 
 function normalizeCrmComments(value: string | null | undefined): string {
   return (value ?? '').trim();
-}
-
-const CRM_COMMENT_POPUP_MAX_WIDTH_PX = 320;
-const CRM_COMMENT_POPUP_MAX_HEIGHT_PX = 192;
-const CRM_COMMENT_POPUP_GAP_PX = 6;
-
-function CrmCommentInfoBadge({ comments }: { comments: string }) {
-  const anchorRef = useRef<HTMLSpanElement>(null);
-  const hideTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | undefined>(undefined);
-  const [open, setOpen] = useState(false);
-  const [popupStyle, setPopupStyle] = useState<{
-    top: number;
-    left: number;
-    maxWidth: number;
-    transform?: string;
-  } | null>(null);
-
-  const show = useCallback(() => {
-    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-    setOpen(true);
-  }, []);
-
-  const scheduleHide = useCallback(() => {
-    hideTimeoutRef.current = globalThis.setTimeout(() => setOpen(false), 120);
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!open || !anchorRef.current) return;
-
-    const updatePosition = () => {
-      const anchor = anchorRef.current;
-      if (!anchor) return;
-
-      const rect = anchor.getBoundingClientRect();
-      const margin = 8;
-      const maxWidth = Math.min(
-        CRM_COMMENT_POPUP_MAX_WIDTH_PX,
-        window.innerWidth - margin * 2,
-      );
-      let left = rect.left;
-      if (left + maxWidth > window.innerWidth - margin) {
-        left = Math.max(margin, window.innerWidth - margin - maxWidth);
-      }
-      if (left < margin) left = margin;
-
-      const estimatedHeight = CRM_COMMENT_POPUP_MAX_HEIGHT_PX + 48;
-      const spaceBelow = window.innerHeight - rect.bottom - CRM_COMMENT_POPUP_GAP_PX;
-      const spaceAbove = rect.top - CRM_COMMENT_POPUP_GAP_PX;
-      const showAbove = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
-
-      if (showAbove) {
-        setPopupStyle({
-          top: rect.top - CRM_COMMENT_POPUP_GAP_PX,
-          left,
-          maxWidth,
-          transform: 'translateY(-100%)',
-        });
-        return;
-      }
-
-      setPopupStyle({
-        top: rect.bottom + CRM_COMMENT_POPUP_GAP_PX,
-        left,
-        maxWidth,
-      });
-    };
-
-    updatePosition();
-    window.addEventListener('scroll', updatePosition, true);
-    window.addEventListener('resize', updatePosition);
-    return () => {
-      window.removeEventListener('scroll', updatePosition, true);
-      window.removeEventListener('resize', updatePosition);
-    };
-  }, [open]);
-
-  useEffect(
-    () => () => {
-      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-    },
-    [],
-  );
-
-  return (
-    <>
-      <span
-        ref={anchorRef}
-        tabIndex={0}
-        className="inline-flex h-5 w-5 shrink-0 cursor-default items-center justify-center rounded-full text-muted/60 transition-colors hover:bg-brand-primary/10 hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
-        aria-label="Cliente com comentário"
-        onMouseDown={(event) => event.stopPropagation()}
-        onMouseEnter={show}
-        onMouseLeave={scheduleHide}
-        onFocus={show}
-        onBlur={scheduleHide}
-      >
-        <InfoIcon className="h-3.5 w-3.5" />
-      </span>
-      {open && popupStyle && typeof document !== 'undefined'
-        ? createPortal(
-            <div
-              role="tooltip"
-              style={{
-                position: 'fixed',
-                top: popupStyle.top,
-                left: popupStyle.left,
-                maxWidth: popupStyle.maxWidth,
-                transform: popupStyle.transform,
-                zIndex: 130,
-              }}
-              className="w-max rounded-xl border border-border bg-card p-4 text-sm leading-relaxed text-foreground shadow-lg"
-              onMouseEnter={show}
-              onMouseLeave={scheduleHide}
-            >
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
-                Comentário
-              </p>
-              <p className="max-h-48 overflow-y-auto whitespace-pre-wrap break-words">{comments}</p>
-            </div>,
-            document.body,
-          )
-        : null}
-    </>
-  );
 }
 
 function openNativeDatePicker(input: HTMLInputElement | null) {
@@ -831,10 +701,35 @@ function countCrmClients(columns: CrmColumn[]): number {
   return columns.reduce((sum, column) => sum + column.items.length, 0);
 }
 
-function waUrl(digits: string, name: string): string {
-  const who = (name || '').trim() || '!';
-  const text = `Oi ${who}, tudo bem?`;
-  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+const GENERIC_CRM_SLUGS = ['bruna', 'bianca', 'gabi', 'outros'] as const;
+
+async function fetchPipelineCounts(): Promise<Record<AdminChatbotSlug, number>> {
+  try {
+    return await api.admin.chatbots.crm.pipelineCounts();
+  } catch (err) {
+    const status =
+      err && typeof err === 'object' && 'status' in err
+        ? (err as { status?: number }).status
+        : undefined;
+    if (status !== 404) throw err;
+
+    const [joanaBoard, ...boards] = await Promise.all([
+      api.admin.rafacall.crmBoard(),
+      ...GENERIC_CRM_SLUGS.map((slug) => api.admin.chatbots.crm.board(slug)),
+    ]);
+    const counts: Record<AdminChatbotSlug, number> = {
+      joana: countCrmClients(joanaBoard.columns),
+      bruna: 0,
+      bianca: 0,
+      gabi: 0,
+      outros: 0,
+    };
+    GENERIC_CRM_SLUGS.forEach((slug, index) => {
+      const columns = boards[index]?.columns ?? [];
+      counts[slug] = columns.reduce((sum, column) => sum + column.items.length, 0);
+    });
+    return counts;
+  }
 }
 
 function chunkColumns(columns: CrmColumn[], chunkSize: number): CrmColumn[][] {
@@ -1012,27 +907,170 @@ function formatCrmUpdatedAtLabel(iso: string | null | undefined): string | null 
   }).format(date);
 }
 
-function CrmClientCard({
+function JoanaLeadActions({
   item,
-  isDragging,
+  name,
+  comments,
+  summary,
+  activeChannel,
   isSaving,
+  isSummarizing,
+  onOpenChat,
+  onGenerateSummary,
+  onToggleJoana,
   onOpenDetails,
   onRequestDelete,
-  onDragStart,
-  onDragEnd,
 }: {
   item: RafacallCrmItem;
-  isDragging: boolean;
+  name: string;
+  comments: string | null;
+  summary: string | null;
+  activeChannel?: 'WHATSAPP' | 'INSTAGRAM' | null;
   isSaving: boolean;
+  isSummarizing: boolean;
+  onOpenChat: (channel: 'WHATSAPP' | 'INSTAGRAM') => void;
+  onGenerateSummary: () => void;
+  onToggleJoana: () => void;
   onOpenDetails: () => void;
   onRequestDelete: () => void;
-  onDragStart: () => void;
-  onDragEnd: () => void;
 }) {
-  const name = item.userName?.trim() || 'Sem nome';
-  const wa = item.whatsappDigits
-    ? formatWhatsappDigits(item.whatsappDigits)
-    : item.instagramUsername?.trim() || null;
+  return (
+    <>
+      <CrmLeadNotesTooltip
+        comments={comments}
+        summary={summary}
+        onGenerateSummary={onGenerateSummary}
+        isSummarizing={isSummarizing}
+        disabled={isSaving}
+      />
+      {item.whatsappDigits ? (
+        <button
+          type="button"
+          draggable={false}
+          className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border bg-page text-[#25D366] transition-colors hover:border-[#25D366]/40 hover:bg-[#25D366]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 ${
+            activeChannel === 'WHATSAPP' ? 'border-[#25D366]' : 'border-border'
+          }`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenChat('WHATSAPP');
+          }}
+          aria-pressed={activeChannel === 'WHATSAPP'}
+          aria-label={`Conversar no WhatsApp com ${name}`}
+          title="WhatsApp"
+        >
+          <WhatsappIcon className="h-3.5 w-3.5" />
+        </button>
+      ) : null}
+      {item.canMessageInstagram ? (
+        <button
+          type="button"
+          draggable={false}
+          className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border bg-page text-[#E1306C] transition-colors hover:border-[#E1306C]/40 hover:bg-[#E1306C]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 ${
+            activeChannel === 'INSTAGRAM' ? 'border-[#E1306C]' : 'border-border'
+          }`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenChat('INSTAGRAM');
+          }}
+          aria-pressed={activeChannel === 'INSTAGRAM'}
+          aria-label={
+            item.instagramUsername
+              ? `Conversar no Instagram com ${item.instagramUsername}`
+              : `Conversar no Instagram com ${name}`
+          }
+          title={item.instagramUsername || 'Instagram'}
+        >
+          <InstagramIcon className="h-3.5 w-3.5" />
+        </button>
+      ) : item.instagramProfileUrl ? (
+        <a
+          href={item.instagramProfileUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          draggable={false}
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-border bg-page text-[#E1306C] transition-colors hover:border-[#E1306C]/40 hover:bg-[#E1306C]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
+          onClick={(event) => event.stopPropagation()}
+          aria-label={
+            item.instagramUsername
+              ? `Abrir Instagram ${item.instagramUsername}`
+              : `Abrir Instagram de ${name}`
+          }
+          title={item.instagramUsername || 'Instagram'}
+        >
+          <InstagramIcon className="h-3.5 w-3.5" />
+        </a>
+      ) : null}
+      <button
+        type="button"
+        draggable={false}
+        disabled={isSummarizing || isSaving}
+        onClick={(event) => {
+          event.stopPropagation();
+          onGenerateSummary();
+        }}
+        className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-border bg-page text-brand-primary transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+        aria-label={`Gerar resumo de ${name}`}
+        title="Gerar resumo"
+      >
+        {isSummarizing ? <SummarySpinner /> : <SparklesIcon className="h-3.5 w-3.5" />}
+      </button>
+      <button
+        type="button"
+        draggable={false}
+        disabled={isSaving}
+        aria-pressed={item.crmJoanaEnabled !== false}
+        title={
+          item.crmJoanaEnabled === false
+            ? 'Chatbot Joana desligado. Clique para ligar.'
+            : 'Chatbot Joana ligado. Clique para desligar.'
+        }
+        aria-label={
+          item.crmJoanaEnabled === false ? 'Ligar chatbot Joana' : 'Desligar chatbot Joana'
+        }
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggleJoana();
+        }}
+        className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50 ${
+          item.crmJoanaEnabled === false
+            ? 'border-rose-300 bg-rose-100 text-rose-950 hover:bg-rose-200'
+            : 'border-emerald-300 bg-emerald-100 text-emerald-950 hover:bg-emerald-200'
+        }`}
+      >
+        {item.crmJoanaEnabled === false ? (
+          <JoanaOffIcon className="h-3.5 w-3.5" />
+        ) : (
+          <JoanaIcon className="h-3.5 w-3.5" />
+        )}
+      </button>
+      <button
+        type="button"
+        draggable={false}
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpenDetails();
+        }}
+        className="inline-flex h-6 cursor-pointer items-center rounded-md border border-border bg-page px-1.5 text-[11px] font-medium leading-none text-foreground transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
+      >
+        Editar
+      </button>
+      <button
+        type="button"
+        draggable={false}
+        onClick={(event) => {
+          event.stopPropagation();
+          onRequestDelete();
+        }}
+        className="ml-auto inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-border bg-page text-muted transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+        aria-label={`Excluir ${name} do CRM`}
+      >
+        <TrashIcon className="h-3.5 w-3.5" />
+      </button>
+    </>
+  );
+}
+
+function JoanaLeadBadges({ item }: { item: RafacallCrmItem }) {
   const immigrationDateLabel = formatImmigrationDateLabel(item.crmExpectedImmigrationAt);
   const isImmediateImmigration = isCrmImmigrationImmediate(item.crmExpectedImmigrationAt);
   const videoCallBadge = formatVideoCallBadgeLabel(item);
@@ -1046,63 +1084,32 @@ function CrmClientCard({
   const hasPreferences = Boolean(
     propertyTypologyLabels.length > 0 || preferredCityLabel || hasPet || desiredRentLabel,
   );
-  const crmComments = normalizeCrmComments(item.crmComments);
   const paymentsTotal = item.paymentsTotal ?? sumCrmPayments(item.payments ?? []);
   const hasPayments = paymentsTotal > 0;
   const documentCount = item.documents?.length ?? 0;
-  const updatedAtLabel = formatCrmUpdatedAtLabel(item.updatedAt);
 
   return (
-    <article
-      draggable
-      onDragStart={(event) => {
-        event.dataTransfer.setData('text/plain', item.id);
-        event.dataTransfer.effectAllowed = 'move';
-        onDragStart();
-      }}
-      onDragEnd={onDragEnd}
-      className={`relative cursor-grab overflow-hidden rounded-lg border border-border bg-page p-3 shadow-sm transition-opacity active:cursor-grabbing ${
-        isDragging ? 'opacity-40' : ''
-      } ${isSaving ? 'pointer-events-none opacity-60' : ''}`}
-    >
-      <div className="min-w-0">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <CrmLeadAvatar name={name} imageUrl={item.crmProfileImageUrl} />
-          {crmComments ? <CrmCommentInfoBadge comments={crmComments} /> : null}
-          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{name}</p>
-          {item.crmJoanaEnabled === false ? (
-            <span
-              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-rose-200 bg-rose-50 text-rose-800"
-              title="Chatbot Joana desativado"
-            >
-              <JoanaOffIcon className="h-3.5 w-3.5" />
-              <span className="sr-only">Chatbot Joana desativado</span>
-            </span>
+    <div>
+      {hasPayments || documentCount > 0 ? (
+        <div className="mb-2 flex flex-wrap items-center gap-1">
+          {hasPayments ? (
+            <p className="inline-flex max-w-full items-center gap-1 rounded-md border border-emerald-200/90 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-semibold text-emerald-900">
+              <EuroIcon className="h-3.5 w-3.5 shrink-0 text-emerald-700" />
+              <span className="truncate">{formatCrmEuroAmount(paymentsTotal)}</span>
+            </p>
+          ) : null}
+          {documentCount > 0 ? (
+            <p className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-0.5 text-[11px] font-semibold text-foreground">
+              <FileIcon className="h-3.5 w-3.5 shrink-0 text-brand-primary" />
+              <span>
+                {documentCount} PDF{documentCount === 1 ? '' : 's'}
+              </span>
+            </p>
           ) : null}
         </div>
-        <p className="mt-0.5 truncate text-[10px] text-muted/60">{wa}</p>
-        {hasPayments || documentCount > 0 ? (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1">
-            {hasPayments ? (
-              <p className="inline-flex max-w-full items-center gap-1 rounded-md border border-emerald-200/90 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-semibold text-emerald-900">
-                <EuroIcon className="h-3.5 w-3.5 shrink-0 text-emerald-700" />
-                <span className="truncate">{formatCrmEuroAmount(paymentsTotal)}</span>
-              </p>
-            ) : null}
-            {documentCount > 0 ? (
-              <p className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-0.5 text-[11px] font-semibold text-foreground">
-                <FileIcon className="h-3.5 w-3.5 shrink-0 text-brand-primary" />
-                <span>
-                  {documentCount} PDF{documentCount === 1 ? '' : 's'}
-                </span>
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-
+      ) : null}
       {immigrationDateLabel || videoCallBadge ? (
-        <div className="mt-2 flex flex-nowrap items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           {immigrationDateLabel ? (
             <span
               className={`inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold whitespace-nowrap ${
@@ -1137,7 +1144,6 @@ function CrmClientCard({
           ) : null}
         </div>
       ) : null}
-
       {visaLabel ? (
         <div className="mt-2">
           <span className="inline-flex max-w-full items-center rounded-md border border-border bg-card px-2 py-1 text-[10px] font-medium text-foreground">
@@ -1145,7 +1151,6 @@ function CrmClientCard({
           </span>
         </div>
       ) : null}
-
       {hasPreferences ? (
         <div className="mt-2.5 flex flex-wrap gap-1.5">
           {propertyTypologyLabels.map((label) => (
@@ -1173,64 +1178,89 @@ function CrmClientCard({
           ) : null}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function CrmClientCard({
+  item,
+  isDragging,
+  isSaving,
+  isSummarizing,
+  onOpenDetails,
+  onRequestDelete,
+  onGenerateSummary,
+  onToggleJoana,
+  onOpenChat,
+  activeChannel,
+  onDragStart,
+  onDragEnd,
+}: {
+  item: RafacallCrmItem;
+  isDragging: boolean;
+  isSaving: boolean;
+  isSummarizing: boolean;
+  onOpenDetails: () => void;
+  onRequestDelete: () => void;
+  onGenerateSummary: () => void;
+  onToggleJoana: () => void;
+  onOpenChat: (channel: 'WHATSAPP' | 'INSTAGRAM') => void;
+  activeChannel?: 'WHATSAPP' | 'INSTAGRAM' | null;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+}) {
+  const name = item.userName?.trim() || 'Sem nome';
+  const wa = item.whatsappDigits
+    ? formatWhatsappDigits(item.whatsappDigits)
+    : item.instagramUsername?.trim() || null;
+  const crmComments = normalizeCrmComments(item.crmComments);
+  const requestSummary = normalizeCrmComments(item.crmRequestSummary);
+  const updatedAtLabel = formatCrmUpdatedAtLabel(item.updatedAt);
+
+  return (
+    <article
+      draggable
+      onDragStart={(event) => {
+        event.dataTransfer.setData('text/plain', item.id);
+        event.dataTransfer.effectAllowed = 'move';
+        onDragStart();
+      }}
+      onDragEnd={onDragEnd}
+      className={`relative cursor-grab overflow-hidden rounded-lg border border-border bg-page p-3 shadow-sm transition-opacity active:cursor-grabbing ${
+        isDragging ? 'opacity-40' : ''
+      } ${isSaving ? 'pointer-events-none opacity-60' : ''}`}
+    >
+      <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <CrmLeadAvatar name={name} imageUrl={item.crmProfileImageUrl} />
+          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{name}</p>
+        </div>
+        <p className="mt-0.5 truncate text-[10px] text-muted/60">{wa}</p>
+      </div>
+
+      <div className="mt-2">
+        <JoanaLeadBadges item={item} />
+      </div>
 
       {updatedAtLabel ? (
         <p className="mt-2 text-[10px] leading-tight text-muted">Atualizado {updatedAtLabel}</p>
       ) : null}
 
       <div className="-mx-3 -mb-3 mt-2.5 flex items-center gap-1 border-t border-border bg-card px-1.5 py-1">
-        {item.whatsappDigits ? (
-          <a
-            href={waUrl(item.whatsappDigits, name)}
-            target="_blank"
-            rel="noopener noreferrer"
-            draggable={false}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-border bg-page text-[#25D366] transition-colors hover:border-[#25D366]/40 hover:bg-[#25D366]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
-            onClick={(event) => event.stopPropagation()}
-            aria-label={`Abrir WhatsApp de ${name}`}
-            title="WhatsApp"
-          >
-            <WhatsappIcon className="h-3.5 w-3.5" />
-          </a>
-        ) : null}
-        {item.instagramProfileUrl ? (
-          <a
-            href={item.instagramProfileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            draggable={false}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-border bg-page text-[#E1306C] transition-colors hover:border-[#E1306C]/40 hover:bg-[#E1306C]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
-            onClick={(event) => event.stopPropagation()}
-            aria-label={
-              item.instagramUsername
-                ? `Abrir Instagram ${item.instagramUsername}`
-                : `Abrir Instagram de ${name}`
-            }
-            title={item.instagramUsername || 'Instagram'}
-          >
-            <InstagramIcon className="h-3.5 w-3.5" />
-          </a>
-        ) : null}
-        <button
-          type="button"
-          draggable={false}
-          onClick={onOpenDetails}
-          className="inline-flex h-6 cursor-pointer items-center rounded-md border border-border bg-page px-1.5 text-[11px] font-medium leading-none text-foreground transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
-        >
-          Editar
-        </button>
-        <button
-          type="button"
-          draggable={false}
-          onClick={(event) => {
-            event.stopPropagation();
-            onRequestDelete();
-          }}
-          className="ml-auto inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-border bg-page text-muted transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
-          aria-label={`Excluir ${name} do CRM`}
-        >
-          <TrashIcon className="h-3.5 w-3.5" />
-        </button>
+        <JoanaLeadActions
+          item={item}
+          name={name}
+          comments={crmComments}
+          summary={requestSummary}
+          activeChannel={activeChannel}
+          isSaving={isSaving}
+          isSummarizing={isSummarizing}
+          onOpenChat={onOpenChat}
+          onGenerateSummary={onGenerateSummary}
+          onToggleJoana={onToggleJoana}
+          onOpenDetails={onOpenDetails}
+          onRequestDelete={onRequestDelete}
+        />
       </div>
     </article>
   );
@@ -1240,9 +1270,16 @@ function CrmKanbanColumn({
   column,
   draggingItemId,
   savingItemId,
+  summarizingItemId,
+  togglingJoanaId,
   onDropItem,
   onOpenDetails,
   onRequestDelete,
+  onGenerateSummary,
+  onToggleJoana,
+  onOpenChat,
+  activeChatId,
+  activeChatChannel,
   onDragStart,
   onDragEnd,
   className = '',
@@ -1250,9 +1287,16 @@ function CrmKanbanColumn({
   column: CrmColumn;
   draggingItemId: string | null;
   savingItemId: string | null;
+  summarizingItemId: string | null;
+  togglingJoanaId: string | null;
   onDropItem: (itemId: string, targetStatus: RafacallCrmStatus) => void;
   onOpenDetails: (item: RafacallCrmItem) => void;
   onRequestDelete: (item: RafacallCrmItem) => void;
+  onGenerateSummary: (item: RafacallCrmItem) => void;
+  onToggleJoana: (item: RafacallCrmItem) => void;
+  onOpenChat: (item: RafacallCrmItem, channel: 'WHATSAPP' | 'INSTAGRAM') => void;
+  activeChatId?: string | null;
+  activeChatChannel?: 'WHATSAPP' | 'INSTAGRAM' | null;
   onDragStart: (itemId: string) => void;
   onDragEnd: () => void;
   className?: string;
@@ -1300,9 +1344,14 @@ function CrmKanbanColumn({
               key={item.whatsappDigits || item.id}
               item={item}
               isDragging={draggingItemId === item.id}
-              isSaving={savingItemId === item.id}
+              isSaving={savingItemId === item.id || togglingJoanaId === item.id}
+              isSummarizing={summarizingItemId === item.id}
               onOpenDetails={() => onOpenDetails(item)}
               onRequestDelete={() => onRequestDelete(item)}
+              onGenerateSummary={() => onGenerateSummary(item)}
+              onToggleJoana={() => onToggleJoana(item)}
+              onOpenChat={(channel) => onOpenChat(item, channel)}
+              activeChannel={activeChatId === item.id ? activeChatChannel : null}
               onDragStart={() => onDragStart(item.id)}
               onDragEnd={onDragEnd}
             />
@@ -2313,6 +2362,9 @@ function CrmDocumentsSection({
 function CrmClientModal({
   item,
   commentsDraft,
+  summaryDraft,
+  summarizing,
+  onGenerateSummary,
   immigrationDateDraft,
   videoCallDateDraft,
   videoCallTimeDraft,
@@ -2326,6 +2378,7 @@ function CrmClientModal({
   hasPetDraft,
   saving,
   onCommentsChange,
+  onSummaryChange,
   onImmigrationDateChange,
   onVideoCallDateChange,
   onVideoCallTimeChange,
@@ -2347,6 +2400,9 @@ function CrmClientModal({
 }: {
   item: RafacallCrmItem;
   commentsDraft: string;
+  summaryDraft: string;
+  summarizing: boolean;
+  onGenerateSummary: () => void;
   immigrationDateDraft: string;
   videoCallDateDraft: string;
   videoCallTimeDraft: string;
@@ -2360,6 +2416,7 @@ function CrmClientModal({
   hasPetDraft: boolean | null;
   saving: boolean;
   onCommentsChange: (value: string) => void;
+  onSummaryChange: (value: string) => void;
   onImmigrationDateChange: (value: string) => void;
   onVideoCallDateChange: (value: string) => void;
   onVideoCallTimeChange: (value: string) => void;
@@ -2899,6 +2956,34 @@ function CrmClientModal({
               placeholder="Notas adicionadas manualmente sobre o cliente."
               className="mt-2 min-h-[160px] w-full resize-y rounded-xl border border-border bg-page px-3.5 py-3 text-sm leading-relaxed text-foreground outline-none transition-colors focus:border-brand-accent disabled:opacity-50"
             />
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <label
+                className="text-xs font-medium uppercase tracking-wide text-muted"
+                htmlFor="crm-request-summary"
+              >
+                Resumo da solicitação
+              </label>
+              <button
+                type="button"
+                disabled={saving || summarizing}
+                onClick={onGenerateSummary}
+                className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-medium text-brand-primary transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Gerar resumo"
+                title="Gerar resumo"
+              >
+                {summarizing ? <SummarySpinner /> : <SparklesIcon className="h-3.5 w-3.5" />}
+                Gerar resumo
+              </button>
+            </div>
+            <textarea
+              id="crm-request-summary"
+              value={summaryDraft}
+              disabled={saving || summarizing}
+              onChange={(event) => onSummaryChange(event.target.value)}
+              rows={5}
+              placeholder="Dúvidas e solicitações deste lead. Gera com o botão ou escreve à mão."
+              className="mt-2 min-h-[120px] w-full resize-y rounded-xl border border-border bg-page px-3.5 py-3 text-sm leading-relaxed text-foreground outline-none transition-colors focus:border-brand-accent disabled:opacity-50"
+            />
 
           </div>
         </div>
@@ -2969,7 +3054,11 @@ function CrmClientModal({
   );
 }
 
-function JoanaCrmBoardPage() {
+function JoanaCrmBoardPage({
+  onClientCount,
+}: {
+  onClientCount?: (slug: AdminChatbotSlug, count: number) => void;
+}) {
   const { user } = useAuth();
   const [columns, setColumns] = useState<CrmColumn[]>([]);
   const [loading, setLoading] = useState(true);
@@ -2977,8 +3066,16 @@ function JoanaCrmBoardPage() {
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [draggingFromStatus, setDraggingFromStatus] = useState<RafacallCrmStatus | null>(null);
   const [savingItemId, setSavingItemId] = useState<string | null>(null);
+  const [togglingJoanaId, setTogglingJoanaId] = useState<string | null>(null);
+  const togglingJoanaIds = useRef(new Set<string>());
+  const [summarizingItemId, setSummarizingItemId] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<RafacallCrmItem | null>(null);
+  const [chatLead, setChatLead] = useState<{
+    id: string;
+    channel: 'WHATSAPP' | 'INSTAGRAM';
+  } | null>(null);
   const [commentsDraft, setCommentsDraft] = useState('');
+  const [summaryDraft, setSummaryDraft] = useState('');
   const [immigrationDateDraft, setImmigrationDateDraft] = useState('');
   const [videoCallDateDraft, setVideoCallDateDraft] = useState('');
   const [videoCallTimeDraft, setVideoCallTimeDraft] = useState('');
@@ -3012,6 +3109,11 @@ function JoanaCrmBoardPage() {
   const totalClients = useMemo(() => countCrmClients(columns), [columns]);
   const filteredClients = useMemo(() => countCrmClients(filteredColumns), [filteredColumns]);
   const isFiltering = normalizeCrmSearchText(filterQuery).length > 0;
+
+  useEffect(() => {
+    if (loading || error) return;
+    onClientCount?.('joana', totalClients);
+  }, [error, loading, onClientCount, totalClients]);
 
   const loadBoard = useCallback(async () => {
     setLoading(true);
@@ -3144,6 +3246,7 @@ function JoanaCrmBoardPage() {
   const handleOpenDetails = useCallback((item: RafacallCrmItem) => {
     setSelectedItem(item);
     setCommentsDraft(item.crmComments ?? '');
+    setSummaryDraft(item.crmRequestSummary ?? '');
     setImmigrationDateDraft(toImmigrationDateInputValue(item.crmExpectedImmigrationAt));
     setVideoCallDateDraft(toVideoCallDateDraft(item));
     setVideoCallTimeDraft(toVideoCallTimeDraft(item));
@@ -3198,29 +3301,63 @@ function JoanaCrmBoardPage() {
     [columns, selectedItem],
   );
 
+  const patchJoanaEnabled = useCallback((itemId: string, enabled: boolean) => {
+    setColumns((prev) =>
+      prev.map((column) => ({
+        ...column,
+        items: column.items.map((entry) =>
+          entry.id === itemId ? { ...entry, crmJoanaEnabled: enabled } : entry,
+        ),
+      })),
+    );
+    setSelectedItem((prev) =>
+      prev?.id === itemId ? { ...prev, crmJoanaEnabled: enabled } : prev,
+    );
+  }, []);
+
+  const handleToggleJoana = useCallback(
+    async (item: RafacallCrmItem, enabled = item.crmJoanaEnabled === false) => {
+      if (item.crmJoanaEnabled === enabled || togglingJoanaIds.current.has(item.id)) return;
+
+      const previousEnabled = item.crmJoanaEnabled;
+      togglingJoanaIds.current.add(item.id);
+      setTogglingJoanaId(item.id);
+      patchJoanaEnabled(item.id, enabled);
+
+      try {
+        const updated = await api.admin.rafacall.updateCrm(item.id, {
+          crmJoanaEnabled: enabled,
+        });
+        setSelectedItem((prev) => (prev?.id === updated.id ? updated : prev));
+        setColumns((prev) =>
+          moveItemBetweenColumns(prev, updated.id, updated.crmStatus, updated),
+        );
+      } catch (err) {
+        patchJoanaEnabled(item.id, previousEnabled);
+        showRafacallAdminBookingErrorToast(
+          getUserFacingApiError(err, { context: 'Ao atualizar o chatbot' }),
+          'Não foi possível atualizar o chatbot.',
+        );
+      } finally {
+        togglingJoanaIds.current.delete(item.id);
+        setTogglingJoanaId((current) => (current === item.id ? null : current));
+      }
+    },
+    [patchJoanaEnabled],
+  );
+
   const handleJoanaEnabledChange = useCallback(
     async (enabled: boolean) => {
       if (!selectedItem || selectedItem.crmJoanaEnabled === enabled) return;
 
       setModalSaving(true);
       try {
-        const updated = await api.admin.rafacall.updateCrm(selectedItem.id, {
-          crmJoanaEnabled: enabled,
-        });
-        setSelectedItem(updated);
-        setColumns((prev) =>
-          moveItemBetweenColumns(prev, updated.id, updated.crmStatus, updated),
-        );
-      } catch (err) {
-        showRafacallAdminBookingErrorToast(
-          getUserFacingApiError(err, { context: 'Ao atualizar o chatbot' }),
-          'Não foi possível atualizar o chatbot.',
-        );
+        await handleToggleJoana(selectedItem, enabled);
       } finally {
         setModalSaving(false);
       }
     },
-    [selectedItem],
+    [handleToggleJoana, selectedItem],
   );
 
   const handleSave = useCallback(async () => {
@@ -3228,6 +3365,8 @@ function JoanaCrmBoardPage() {
 
     const commentsChanged =
       normalizeCrmComments(commentsDraft) !== normalizeCrmComments(selectedItem.crmComments);
+    const summaryChanged =
+      normalizeCrmComments(summaryDraft) !== normalizeCrmComments(selectedItem.crmRequestSummary);
     const immigrationDateChanged =
       immigrationDateDraft !== toImmigrationDateInputValue(selectedItem.crmExpectedImmigrationAt);
     const canEditVideoCall =
@@ -3256,6 +3395,7 @@ function JoanaCrmBoardPage() {
     if (
       !nameChanged &&
       !commentsChanged &&
+      !summaryChanged &&
       !immigrationDateChanged &&
       !videoCallChanged &&
       !propertyTypologyChanged &&
@@ -3294,6 +3434,7 @@ function JoanaCrmBoardPage() {
       const updated = await api.admin.rafacall.updateCrm(selectedItem.id, {
         ...(nameChanged ? { userName: nameDraft.trim() } : {}),
         ...(commentsChanged ? { crmComments: commentsDraft } : {}),
+        ...(summaryChanged ? { crmRequestSummary: summaryDraft } : {}),
         ...(immigrationDateChanged
           ? { crmExpectedImmigrationAt: immigrationDateDraft || null }
           : {}),
@@ -3317,6 +3458,7 @@ function JoanaCrmBoardPage() {
       });
       setSelectedItem(updated);
       setCommentsDraft(updated.crmComments ?? '');
+      setSummaryDraft(updated.crmRequestSummary ?? '');
       setImmigrationDateDraft(toImmigrationDateInputValue(updated.crmExpectedImmigrationAt));
       setVideoCallDateDraft(toVideoCallDateDraft(updated));
       setVideoCallTimeDraft(toVideoCallTimeDraft(updated));
@@ -3332,6 +3474,7 @@ function JoanaCrmBoardPage() {
       );
       setSelectedItem(null);
       setCommentsDraft('');
+      setSummaryDraft('');
       setImmigrationDateDraft('');
       setVideoCallDateDraft('');
       setVideoCallTimeDraft('');
@@ -3365,6 +3508,7 @@ function JoanaCrmBoardPage() {
     }
   }, [
     commentsDraft,
+    summaryDraft,
     desiredRentDraft,
     hasPetDraft,
     hasVisaDraft,
@@ -3480,9 +3624,11 @@ function JoanaCrmBoardPage() {
 
     try {
       await api.admin.rafacall.deleteCrm(itemId);
+      setChatLead((current) => (current?.id === itemId ? null : current));
       if (selectedItem?.id === itemId) {
         setSelectedItem(null);
         setCommentsDraft('');
+        setSummaryDraft('');
         setImmigrationDateDraft('');
         setVideoCallDateDraft('');
         setVideoCallTimeDraft('');
@@ -3504,6 +3650,37 @@ function JoanaCrmBoardPage() {
     }
   }, [columns, deleteConfirmItem, selectedItem?.id]);
 
+  const handleGenerateSummary = useCallback(
+    async (item: RafacallCrmItem) => {
+      if (summarizingItemId) return;
+      setSummarizingItemId(item.id);
+      try {
+        const updated = await api.admin.rafacall.generateCrmSummary(item.id);
+        const nextItem: RafacallCrmItem = { ...updated, id: item.id };
+        setColumns((prev) =>
+          prev.map((column) => ({
+            ...column,
+            items: column.items.map((entry) =>
+              entry.id === item.id ? nextItem : entry,
+            ),
+          })),
+        );
+        setSelectedItem((current) => (current?.id === item.id ? nextItem : current));
+        if (selectedItem?.id === item.id) {
+          setSummaryDraft(nextItem.crmRequestSummary ?? '');
+        }
+        toast.success('Resumo gerado.');
+      } catch (err) {
+        toast.error(
+          getUserFacingApiError(err, { context: 'Ao gerar o resumo' }),
+        );
+      } finally {
+        setSummarizingItemId(null);
+      }
+    },
+    [selectedItem?.id, summarizingItemId],
+  );
+
   if (!user) return null;
 
   if (user.role !== 'ADMIN') {
@@ -3515,14 +3692,31 @@ function JoanaCrmBoardPage() {
     );
   }
 
+  const chatItem = chatLead
+    ? columns.flatMap((column) => column.items).find((item) => item.id === chatLead.id) ?? null
+    : null;
+
   const columnProps = {
     draggingItemId,
     savingItemId,
+    summarizingItemId,
+    togglingJoanaId,
+    onToggleJoana: (item: RafacallCrmItem) => {
+      void handleToggleJoana(item);
+    },
+    onGenerateSummary: (item: RafacallCrmItem) => {
+      void handleGenerateSummary(item);
+    },
     onDropItem: (itemId: string, targetStatus: RafacallCrmStatus) => {
       void handleDropItem(itemId, targetStatus);
     },
     onOpenDetails: handleOpenDetails,
     onRequestDelete: handleRequestDelete,
+    onOpenChat: (item: RafacallCrmItem, channel: 'WHATSAPP' | 'INSTAGRAM') => {
+      setChatLead({ id: item.id, channel });
+    },
+    activeChatId: chatLead?.id ?? null,
+    activeChatChannel: chatLead?.channel ?? null,
     onDragStart: handleDragStart,
     onDragEnd: () => {
       setDraggingItemId(null);
@@ -3644,6 +3838,49 @@ function JoanaCrmBoardPage() {
         />
       ) : null}
 
+      {chatItem && chatLead ? (
+        <CrmChannelChatModal
+          source={{ kind: 'rafacall', bookingId: chatItem.id }}
+          channel={chatLead.channel}
+          title={chatItem.userName?.trim() || 'Lead'}
+          leadImageUrl={chatItem.crmProfileImageUrl}
+          botSlug="joana"
+          botName="Joana"
+          badges={<JoanaLeadBadges item={chatItem} />}
+          suspendEscape={Boolean(selectedItem || deleteConfirmItem)}
+          onClose={() => setChatLead(null)}
+          onBotPaused={() => {
+            setColumns((prev) =>
+              prev.map((column) => ({
+                ...column,
+                items: column.items.map((entry) =>
+                  entry.id === chatItem.id ? { ...entry, crmJoanaEnabled: false } : entry,
+                ),
+              })),
+            );
+            setSelectedItem((current) =>
+              current?.id === chatItem.id ? { ...current, crmJoanaEnabled: false } : current,
+            );
+          }}
+          actions={
+            <JoanaLeadActions
+              item={chatItem}
+              name={chatItem.userName?.trim() || 'Lead'}
+              comments={normalizeCrmComments(chatItem.crmComments)}
+              summary={normalizeCrmComments(chatItem.crmRequestSummary)}
+              activeChannel={chatLead.channel}
+              isSaving={savingItemId === chatItem.id || togglingJoanaId === chatItem.id}
+              isSummarizing={summarizingItemId === chatItem.id}
+              onOpenChat={(channel) => setChatLead({ id: chatItem.id, channel })}
+              onGenerateSummary={() => void handleGenerateSummary(chatItem)}
+              onToggleJoana={() => void handleToggleJoana(chatItem)}
+              onOpenDetails={() => handleOpenDetails(chatItem)}
+              onRequestDelete={() => handleRequestDelete(chatItem)}
+            />
+          }
+        />
+      ) : null}
+
       {deleteConfirmItem ? (
         <CrmDeleteConfirmModal
           item={deleteConfirmItem}
@@ -3663,6 +3900,9 @@ function JoanaCrmBoardPage() {
         <CrmClientModal
           item={selectedItem}
           commentsDraft={commentsDraft}
+          summaryDraft={summaryDraft}
+          summarizing={summarizingItemId === selectedItem.id}
+          onGenerateSummary={() => void handleGenerateSummary(selectedItem)}
           immigrationDateDraft={immigrationDateDraft}
           videoCallDateDraft={videoCallDateDraft}
           videoCallTimeDraft={videoCallTimeDraft}
@@ -3674,8 +3914,9 @@ function JoanaCrmBoardPage() {
           desiredRentDraft={desiredRentDraft}
           hasVisaDraft={hasVisaDraft}
           hasPetDraft={hasPetDraft}
-          saving={modalSaving}
+          saving={modalSaving || togglingJoanaId === selectedItem.id}
           onCommentsChange={setCommentsDraft}
+          onSummaryChange={setSummaryDraft}
           onImmigrationDateChange={setImmigrationDateDraft}
           onVideoCallDateChange={setVideoCallDateDraft}
           onVideoCallTimeChange={setVideoCallTimeDraft}
@@ -3705,6 +3946,7 @@ function JoanaCrmBoardPage() {
             if (!modalSaving) {
               setSelectedItem(null);
               setCommentsDraft('');
+              setSummaryDraft('');
               setImmigrationDateDraft('');
               setVideoCallDateDraft('');
               setVideoCallTimeDraft('');
@@ -3733,15 +3975,18 @@ function JoanaCrmBoardPage() {
 
 function CrmBotSelector({
   selected,
+  counts,
   onSelect,
 }: {
   selected: AdminChatbotSlug;
+  counts: Partial<Record<AdminChatbotSlug, number>>;
   onSelect: (slug: AdminChatbotSlug) => void;
 }) {
   return (
     <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="CRM por chatbot">
       {CRM_BOT_TABS.map((bot) => {
         const active = bot.slug === selected;
+        const count = counts[bot.slug];
         return (
           <button
             key={bot.slug}
@@ -3771,6 +4016,20 @@ function CrmBotSelector({
                 {bot.blurb}
               </span>
             </span>
+            {count != null ? (
+              <span
+                className={
+                  active
+                    ? 'shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium tabular-nums text-white'
+                    : 'shrink-0 rounded-full bg-brand-primary/15 px-2 py-0.5 text-xs font-medium tabular-nums text-brand-primary'
+                }
+              >
+                {count}
+                <span className="sr-only">
+                  {count === 1 ? ' cliente no pipeline' : ' clientes no pipeline'}
+                </span>
+              </span>
+            ) : null}
           </button>
         );
       })}
@@ -3784,6 +4043,31 @@ function CrmPageInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const selectedBot = parseCrmBotSlug(searchParams.get('bot'));
+  const [pipelineCounts, setPipelineCounts] = useState<
+    Partial<Record<AdminChatbotSlug, number>>
+  >({});
+  const liveCountsRef = useRef<Partial<Record<AdminChatbotSlug, number>>>({});
+
+  const handleClientCount = useCallback((slug: AdminChatbotSlug, count: number) => {
+    liveCountsRef.current[slug] = count;
+    setPipelineCounts((prev) =>
+      prev[slug] === count ? prev : { ...prev, [slug]: count },
+    );
+  }, []);
+
+  useEffect(() => {
+    if (user?.role !== 'ADMIN') return;
+    let cancelled = false;
+    void fetchPipelineCounts()
+      .then((counts) => {
+        if (cancelled) return;
+        setPipelineCounts({ ...counts, ...liveCountsRef.current });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.role]);
 
   function selectBot(slug: AdminChatbotSlug) {
     const params = new URLSearchParams(searchParams.toString());
@@ -3815,12 +4099,20 @@ function CrmPageInner() {
         </p>
       </div>
 
-      <CrmBotSelector selected={selectedBot} onSelect={selectBot} />
+      <CrmBotSelector
+        selected={selectedBot}
+        counts={pipelineCounts}
+        onSelect={selectBot}
+      />
 
       {selectedBot === 'joana' ? (
-        <JoanaCrmBoardPage />
+        <JoanaCrmBoardPage onClientCount={handleClientCount} />
       ) : (
-        <GenericChatbotCrmView slug={selectedBot} botName={tab.name} />
+        <GenericChatbotCrmView
+          slug={selectedBot}
+          botName={tab.name}
+          onClientCount={handleClientCount}
+        />
       )}
     </div>
   );

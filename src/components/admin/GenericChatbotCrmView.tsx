@@ -13,6 +13,7 @@ import {
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { ChatbotAvatar } from '@/components/admin/ChatbotAvatar';
 import { CrmLeadNameField } from '@/components/admin/CrmLeadNameField';
+import { CrmChannelChatModal } from '@/components/admin/CrmChannelChatModal';
 import {
   HORIZONTAL_CAROUSEL_TRACK,
   HorizontalSnapCarousel,
@@ -30,12 +31,18 @@ import {
 import { toast } from '@/lib/toast';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { InstagramIcon } from '@/components/icons/InstagramIcon';
+import {
+  CrmLeadNotesTooltip,
+  SparklesIcon,
+  SummarySpinner,
+} from '@/components/admin/CrmLeadNotesTooltip';
 
 const CRM_DOCUMENT_MAX_BYTES = 15 * 1024 * 1024;
 
 type Props = {
   slug: Exclude<AdminChatbotSlug, 'joana'>;
   botName: string;
+  onClientCount?: (slug: AdminChatbotSlug, count: number) => void;
 };
 
 type BoardColumn = ChatbotCrmColumn & { items: ChatbotCrmLead[] };
@@ -115,11 +122,6 @@ function formatWhatsappDigits(digits: string | null | undefined): string {
   return `+${d}`;
 }
 
-function waUrl(digits: string, name: string): string {
-  const who = (name || '').trim() || '!';
-  return `https://wa.me/${digits}?text=${encodeURIComponent(`Oi ${who}, tudo bem?`)}`;
-}
-
 function getLeadInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return '?';
@@ -145,6 +147,73 @@ function formatInstagramBadge(value: string | null): string | null {
   if (value === null) return null;
   if (value === '') return 'Sem Instagram';
   return value.startsWith('@') ? value : `@${value}`;
+}
+
+function GenericLeadBadgeRow({
+  lead,
+  slug,
+}: {
+  lead: ChatbotCrmLead;
+  slug: Exclude<AdminChatbotSlug, 'joana'>;
+}) {
+  const isGabi = slug === 'gabi';
+  const isBruna = slug === 'bruna';
+  const isOutros = slug === 'outros';
+  const name = leadDisplayName(lead, isGabi);
+  const instagram = isGabi ? formatInstagramBadge(lead.instagramHandle) : null;
+  const companyBadge =
+    isGabi && lead.companyName?.trim() && name !== lead.companyName.trim()
+      ? lead.companyName.trim()
+      : null;
+  const contactBadge =
+    isGabi && lead.guestName?.trim() && name !== lead.guestName.trim()
+      ? lead.guestName.trim()
+      : null;
+  const campaignObjective = isGabi ? lead.campaignObjective?.trim() || null : null;
+  const houseValue =
+    isBruna && lead.desiredHouseValue != null
+      ? formatCrmEuroAmount(lead.desiredHouseValue)
+      : null;
+  const preferredCities = isBruna ? lead.preferredCities?.trim() || null : null;
+  const propertyTypologyLabels = isBruna
+    ? formatCrmPropertyTypologyLabels(lead.propertyTypology)
+    : [];
+  const subject = isOutros ? lead.subjectSummary?.trim() || 'Assunto por explicar' : null;
+  const documentCount = lead.documents?.length ?? 0;
+  const chips = [
+    companyBadge,
+    contactBadge,
+    instagram,
+    isGabi && lead.instagramHandle === null ? 'Instagram por preencher' : null,
+    campaignObjective,
+    isGabi && !campaignObjective && lead.instagramHandle !== null ? 'Objetivo por preencher' : null,
+    houseValue,
+    isBruna && lead.desiredHouseValue == null ? 'Valor da casa por preencher' : null,
+    preferredCities,
+    isBruna && !preferredCities ? 'Cidades por preencher' : null,
+    ...propertyTypologyLabels,
+    isBruna && propertyTypologyLabels.length === 0 ? 'Tipologia por preencher' : null,
+    subject,
+  ].filter((item): item is string => Boolean(item));
+
+  if (chips.length === 0 && documentCount === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {documentCount > 0 ? (
+        <span className="inline-flex items-center rounded-md border border-border bg-card px-2 py-1 text-[10px] font-semibold text-foreground">
+          {documentCount} ficheiro{documentCount === 1 ? '' : 's'}
+        </span>
+      ) : null}
+      {chips.map((label) => (
+        <span
+          key={label}
+          className="inline-flex max-w-full items-center rounded-md border border-border bg-card px-2 py-1 text-[10px] font-medium text-foreground"
+        >
+          {label}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 function leadDisplayName(lead: ChatbotCrmLead, isGabi: boolean): string {
@@ -524,8 +593,13 @@ function GenericLeadCard({
   botName,
   isDragging,
   isSaving,
+  isSummarizing,
   onOpenDetails,
   onRequestDelete,
+  onGenerateSummary,
+  onToggleBot,
+  onOpenChat,
+  activeChannel,
   onDragStart,
   onDragEnd,
 }: {
@@ -534,8 +608,13 @@ function GenericLeadCard({
   botName: string;
   isDragging: boolean;
   isSaving: boolean;
+  isSummarizing: boolean;
   onOpenDetails: () => void;
   onRequestDelete: () => void;
+  onGenerateSummary: () => void;
+  onToggleBot: () => void;
+  onOpenChat: (channel: 'WHATSAPP' | 'INSTAGRAM') => void;
+  activeChannel?: 'WHATSAPP' | 'INSTAGRAM' | null;
   onDragStart: () => void;
   onDragEnd: () => void;
 }) {
@@ -590,8 +669,7 @@ function GenericLeadCard({
       showCitiesPending ||
       propertyTypologyLabels.length > 0 ||
       showTypologyPending ||
-      subject ||
-      (!isGabi && !isBruna && !isOutros && comments),
+      subject,
   );
 
   return (
@@ -613,15 +691,6 @@ function GenericLeadCard({
           <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
             {name}
           </p>
-          {!lead.botEnabled ? (
-            <span
-              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-rose-200 bg-rose-50 text-rose-800"
-              title={`Chatbot ${botName} desativado`}
-            >
-              <BotOffIcon className="h-3.5 w-3.5" />
-              <span className="sr-only">Chatbot {botName} desativado</span>
-            </span>
-          ) : null}
         </div>
         <p className="mt-0.5 truncate text-[10px] text-muted/60">{wa}</p>
         {documentCount > 0 ? (
@@ -703,11 +772,6 @@ function GenericLeadCard({
               {subject}
             </span>
           ) : null}
-          {!isGabi && !isBruna && !isOutros && comments ? (
-            <span className="inline-flex max-w-full items-center rounded-md border border-border bg-card px-2 py-1 text-[10px] font-medium text-foreground">
-              {comments.length > 48 ? `${comments.slice(0, 48)}…` : comments}
-            </span>
-          ) : null}
         </div>
       ) : null}
 
@@ -718,21 +782,53 @@ function GenericLeadCard({
       ) : null}
 
       <div className="-mx-3 -mb-3 mt-2.5 flex items-center gap-1 border-t border-border bg-card px-1.5 py-1">
+        <CrmLeadNotesTooltip
+          comments={comments}
+          summary={lead.crmRequestSummary}
+          onGenerateSummary={onGenerateSummary}
+          isSummarizing={isSummarizing}
+          disabled={isSaving}
+        />
         {lead.whatsapp ? (
-          <a
-            href={waUrl(lead.whatsapp, name)}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
             draggable={false}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-border bg-page text-[#25D366] transition-colors hover:border-[#25D366]/40 hover:bg-[#25D366]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
-            onClick={(event) => event.stopPropagation()}
-            aria-label={`Abrir WhatsApp de ${name}`}
+            className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border bg-page text-[#25D366] transition-colors hover:border-[#25D366]/40 hover:bg-[#25D366]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 ${
+              activeChannel === 'WHATSAPP' ? 'border-[#25D366]' : 'border-border'
+            }`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenChat('WHATSAPP');
+            }}
+            aria-pressed={activeChannel === 'WHATSAPP'}
+            aria-label={`Conversar no WhatsApp com ${name}`}
             title="WhatsApp"
           >
             <WhatsappIcon className="h-3.5 w-3.5" />
-          </a>
+          </button>
         ) : null}
-        {lead.instagramHandle && lead.instagramHandle.trim() !== '' ? (
+        {lead.instagramUserId ? (
+          <button
+            type="button"
+            draggable={false}
+            className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border bg-page text-[#E1306C] transition-colors hover:border-[#E1306C]/40 hover:bg-[#E1306C]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 ${
+              activeChannel === 'INSTAGRAM' ? 'border-[#E1306C]' : 'border-border'
+            }`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenChat('INSTAGRAM');
+            }}
+            aria-pressed={activeChannel === 'INSTAGRAM'}
+            aria-label={
+              lead.instagramHandle
+                ? `Conversar no Instagram com ${lead.instagramHandle}`
+                : `Conversar no Instagram com ${name}`
+            }
+            title={lead.instagramHandle || 'Instagram'}
+          >
+            <InstagramIcon className="h-3.5 w-3.5" />
+          </button>
+        ) : lead.instagramHandle && lead.instagramHandle.trim() !== '' ? (
           <a
             href={`https://instagram.com/${lead.instagramHandle.replace(/^@+/, '')}`}
             target="_blank"
@@ -746,6 +842,51 @@ function GenericLeadCard({
             <InstagramIcon className="h-3.5 w-3.5" />
           </a>
         ) : null}
+        <button
+          type="button"
+          draggable={false}
+          disabled={isSummarizing || isSaving}
+          onClick={(event) => {
+            event.stopPropagation();
+            onGenerateSummary();
+          }}
+          className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-border bg-page text-brand-primary transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={`Gerar resumo de ${name}`}
+          title="Gerar resumo"
+        >
+          {isSummarizing ? <SummarySpinner /> : <SparklesIcon className="h-3.5 w-3.5" />}
+        </button>
+        <button
+          type="button"
+          draggable={false}
+          disabled={isSaving}
+          aria-pressed={lead.botEnabled}
+          title={
+            lead.botEnabled
+              ? `Chatbot ${botName} ligado. Clique para desligar.`
+              : `Chatbot ${botName} desligado. Clique para ligar.`
+          }
+          aria-label={
+            lead.botEnabled
+              ? `Desligar chatbot ${botName}`
+              : `Ligar chatbot ${botName}`
+          }
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleBot();
+          }}
+          className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50 ${
+            lead.botEnabled
+              ? 'border-emerald-300 bg-emerald-100 text-emerald-950 hover:bg-emerald-200'
+              : 'border-rose-300 bg-rose-100 text-rose-950 hover:bg-rose-200'
+          }`}
+        >
+          {lead.botEnabled ? (
+            <BotIcon className="h-3.5 w-3.5" />
+          ) : (
+            <BotOffIcon className="h-3.5 w-3.5" />
+          )}
+        </button>
         <button
           type="button"
           draggable={false}
@@ -777,9 +918,15 @@ function GenericKanbanColumn({
   botName,
   draggingLeadId,
   savingLeadId,
+  summarizingLeadId,
   onDropLead,
   onOpenDetails,
   onRequestDelete,
+  onGenerateSummary,
+  onToggleBot,
+  onOpenChat,
+  activeChatId,
+  activeChatChannel,
   onDragStart,
   onDragEnd,
   onRename,
@@ -790,9 +937,15 @@ function GenericKanbanColumn({
   botName: string;
   draggingLeadId: string | null;
   savingLeadId: string | null;
+  summarizingLeadId: string | null;
   onDropLead: (leadId: string, columnId: string) => void;
   onOpenDetails: (lead: ChatbotCrmLead) => void;
   onRequestDelete: (lead: ChatbotCrmLead) => void;
+  onGenerateSummary: (lead: ChatbotCrmLead) => void;
+  onToggleBot: (lead: ChatbotCrmLead) => void;
+  onOpenChat: (lead: ChatbotCrmLead, channel: 'WHATSAPP' | 'INSTAGRAM') => void;
+  activeChatId?: string | null;
+  activeChatChannel?: 'WHATSAPP' | 'INSTAGRAM' | null;
   onDragStart: (leadId: string) => void;
   onDragEnd: () => void;
   onRename: (column: BoardColumn, label: string) => void;
@@ -858,8 +1011,13 @@ function GenericKanbanColumn({
               botName={botName}
               isDragging={draggingLeadId === lead.id}
               isSaving={savingLeadId === lead.id}
+              isSummarizing={summarizingLeadId === lead.id}
               onOpenDetails={() => onOpenDetails(lead)}
               onRequestDelete={() => onRequestDelete(lead)}
+              onGenerateSummary={() => onGenerateSummary(lead)}
+              onToggleBot={() => onToggleBot(lead)}
+              onOpenChat={(channel) => onOpenChat(lead, channel)}
+              activeChannel={activeChatId === lead.id ? activeChatChannel : null}
               onDragStart={() => onDragStart(lead.id)}
               onDragEnd={onDragEnd}
             />
@@ -870,12 +1028,16 @@ function GenericKanbanColumn({
   );
 }
 
-export function GenericChatbotCrmView({ slug, botName }: Props) {
+export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
   const [board, setBoard] = useState<ChatbotCrmBoard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [selected, setSelected] = useState<ChatbotCrmLead | null>(null);
+  const [chatLead, setChatLead] = useState<{
+    id: string;
+    channel: 'WHATSAPP' | 'INSTAGRAM';
+  } | null>(null);
   const [deleteLead, setDeleteLead] = useState<ChatbotCrmLead | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [newName, setNewName] = useState('');
@@ -895,9 +1057,12 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
   >([]);
   const [subjectDraft, setSubjectDraft] = useState('');
   const [commentsDraft, setCommentsDraft] = useState('');
+  const [summaryDraft, setSummaryDraft] = useState('');
   const [nameDraft, setNameDraft] = useState('');
   const [draggingLeadId, setDraggingLeadId] = useState<string | null>(null);
   const [savingLeadId, setSavingLeadId] = useState<string | null>(null);
+  const togglingLeadIds = useRef(new Set<string>());
+  const [summarizingLeadId, setSummarizingLeadId] = useState<string | null>(null);
   const isGabi = slug === 'gabi';
   const isBruna = slug === 'bruna';
   const isOutros = slug === 'outros';
@@ -932,6 +1097,11 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
     [board],
   );
 
+  useEffect(() => {
+    if (loading || error || !board) return;
+    onClientCount?.(slug, total);
+  }, [board, error, loading, onClientCount, slug, total]);
+
   function openLead(lead: ChatbotCrmLead) {
     setSelected(lead);
     setCompanyDraft(lead.companyName ?? '');
@@ -944,7 +1114,42 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
     setTypologyDraft(normalizeCrmPropertyTypologies(lead.propertyTypology));
     setSubjectDraft(lead.subjectSummary ?? '');
     setCommentsDraft(lead.crmComments ?? '');
+    setSummaryDraft(lead.crmRequestSummary ?? '');
     setNameDraft(lead.companyName?.trim() ? '' : leadDisplayName(lead, false));
+  }
+
+  function applyLead(updated: ChatbotCrmLead) {
+    setBoard((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        columns: prev.columns.map((column) => ({
+          ...column,
+          items: column.items.map((item) =>
+            item.id === updated.id ? updated : item,
+          ),
+        })),
+      };
+    });
+    setSelected((current) => (current?.id === updated.id ? updated : current));
+  }
+
+  async function generateSummary(lead: ChatbotCrmLead) {
+    if (summarizingLeadId) return;
+    setSummarizingLeadId(lead.id);
+    setError('');
+    try {
+      const updated = await api.admin.chatbots.crm.generateSummary(slug, lead.id);
+      applyLead(updated);
+      if (selected?.id === lead.id) {
+        setSummaryDraft(updated.crmRequestSummary ?? '');
+      }
+      setSuccess('Resumo gerado.');
+    } catch (err) {
+      setError(getUserFacingApiError(err, { context: 'Ao gerar o resumo' }));
+    } finally {
+      setSummarizingLeadId(null);
+    }
   }
 
   async function createLead() {
@@ -1064,6 +1269,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
       const updated = await api.admin.chatbots.crm.updateLead(slug, selected.id, {
         columnId: selected.columnId,
         crmComments: commentsDraft.trim() || null,
+        crmRequestSummary: summaryDraft.trim() || null,
         ...(isGabi
           ? {
               companyName: companyDraft.trim() || null,
@@ -1100,6 +1306,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
       setTypologyDraft(normalizeCrmPropertyTypologies(updated.propertyTypology));
       setSubjectDraft(updated.subjectSummary ?? '');
       setCommentsDraft(updated.crmComments ?? '');
+      setSummaryDraft(updated.crmRequestSummary ?? '');
       setNameDraft(
         updated.companyName?.trim() ? '' : leadDisplayName(updated, false),
       );
@@ -1112,18 +1319,32 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
     }
   }
 
-  async function toggleBot(botEnabled: boolean) {
-    if (!selected || selected.botEnabled === botEnabled) return;
-    setSaving(true);
+  async function toggleLeadBot(lead: ChatbotCrmLead, botEnabled = !lead.botEnabled) {
+    if (lead.botEnabled === botEnabled || togglingLeadIds.current.has(lead.id)) return;
+    togglingLeadIds.current.add(lead.id);
+    const previous = lead;
+    applyLead({ ...lead, botEnabled });
+    setSavingLeadId(lead.id);
     setError('');
     try {
-      const updated = await api.admin.chatbots.crm.updateLead(slug, selected.id, {
+      const updated = await api.admin.chatbots.crm.updateLead(slug, lead.id, {
         botEnabled,
       });
-      setSelected(updated);
-      await load();
+      applyLead(updated);
     } catch (err) {
+      applyLead(previous);
       setError(getUserFacingApiError(err, { context: 'Ao atualizar chatbot' }));
+    } finally {
+      togglingLeadIds.current.delete(lead.id);
+      setSavingLeadId((current) => (current === lead.id ? null : current));
+    }
+  }
+
+  async function toggleBot(botEnabled: boolean) {
+    if (!selected) return;
+    setSaving(true);
+    try {
+      await toggleLeadBot(selected, botEnabled);
     } finally {
       setSaving(false);
     }
@@ -1136,6 +1357,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
     try {
       await api.admin.chatbots.crm.removeLead(slug, deleteLead.id);
       if (selected?.id === deleteLead.id) setSelected(null);
+      setChatLead((current) => (current?.id === deleteLead.id ? null : current));
       setDeleteLead(null);
       setSuccess('Lead removido do CRM.');
       await load();
@@ -1147,6 +1369,9 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
   }
 
   const columns = board?.columns ?? [];
+  const openChatLead = chatLead
+    ? columns.flatMap((column) => column.items).find((lead) => lead.id === chatLead.id) ?? null
+    : null;
   const titleEditsCompany = Boolean(
     selected && isGabi && selected.companyName?.trim(),
   );
@@ -1229,9 +1454,15 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
                     botName={botName}
                     draggingLeadId={draggingLeadId}
                     savingLeadId={savingLeadId}
+                    summarizingLeadId={summarizingLeadId}
                     onDropLead={(leadId, columnId) => void dropLead(leadId, columnId)}
                     onOpenDetails={openLead}
                     onRequestDelete={setDeleteLead}
+                    onGenerateSummary={(lead) => void generateSummary(lead)}
+                    onToggleBot={(lead) => void toggleLeadBot(lead)}
+                    onOpenChat={(lead, channel) => setChatLead({ id: lead.id, channel })}
+                    activeChatId={chatLead?.id ?? null}
+                    activeChatChannel={chatLead?.channel ?? null}
                     onDragStart={setDraggingLeadId}
                     onDragEnd={() => setDraggingLeadId(null)}
                     onRename={(col, label) => void renameColumn(col, label)}
@@ -1249,9 +1480,15 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
                 botName={botName}
                 draggingLeadId={draggingLeadId}
                 savingLeadId={savingLeadId}
+                summarizingLeadId={summarizingLeadId}
                 onDropLead={(leadId, columnId) => void dropLead(leadId, columnId)}
                 onOpenDetails={openLead}
                 onRequestDelete={setDeleteLead}
+                onGenerateSummary={(lead) => void generateSummary(lead)}
+                onToggleBot={(lead) => void toggleLeadBot(lead)}
+                onOpenChat={(lead, channel) => setChatLead({ id: lead.id, channel })}
+                activeChatId={chatLead?.id ?? null}
+                activeChatChannel={chatLead?.channel ?? null}
                 onDragStart={setDraggingLeadId}
                 onDragEnd={() => setDraggingLeadId(null)}
                 onRename={(col, label) => void renameColumn(col, label)}
@@ -1261,6 +1498,95 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
           </div>
         </div>
       )}
+
+      {openChatLead && chatLead ? (
+        <CrmChannelChatModal
+          source={{ kind: 'lead', slug, leadId: openChatLead.id }}
+          channel={chatLead.channel}
+          title={leadDisplayName(openChatLead, slug === 'gabi')}
+          leadImageUrl={openChatLead.crmProfileImageUrl}
+          botSlug={slug}
+          botName={botName}
+          badges={<GenericLeadBadgeRow lead={openChatLead} slug={slug} />}
+          suspendEscape={Boolean(selected || deleteLead)}
+          onClose={() => setChatLead(null)}
+          onBotPaused={() => applyLead({ ...openChatLead, botEnabled: false })}
+          actions={
+            <>
+              <CrmLeadNotesTooltip
+                comments={openChatLead.crmComments}
+                summary={openChatLead.crmRequestSummary}
+              />
+              <button
+                type="button"
+                className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border bg-page text-[#25D366] ${
+                  chatLead.channel === 'WHATSAPP' ? 'border-[#25D366]' : 'border-border'
+                }`}
+                disabled={!openChatLead.whatsapp}
+                onClick={() => setChatLead({ id: openChatLead.id, channel: 'WHATSAPP' })}
+                aria-label="WhatsApp"
+              >
+                <WhatsappIcon className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border bg-page text-[#E1306C] ${
+                  chatLead.channel === 'INSTAGRAM' ? 'border-[#E1306C]' : 'border-border'
+                }`}
+                disabled={!openChatLead.instagramUserId}
+                onClick={() => setChatLead({ id: openChatLead.id, channel: 'INSTAGRAM' })}
+                aria-label="Instagram"
+              >
+                <InstagramIcon className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                disabled={summarizingLeadId === openChatLead.id}
+                onClick={() => void generateSummary(openChatLead)}
+                className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-border bg-page text-brand-primary disabled:opacity-50"
+                aria-label="Gerar resumo"
+              >
+                {summarizingLeadId === openChatLead.id ? (
+                  <SummarySpinner />
+                ) : (
+                  <SparklesIcon className="h-3.5 w-3.5" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => void toggleLeadBot(openChatLead, !openChatLead.botEnabled)}
+                className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border ${
+                  openChatLead.botEnabled
+                    ? 'border-emerald-300 bg-emerald-100 text-emerald-950'
+                    : 'border-rose-300 bg-rose-100 text-rose-950'
+                }`}
+                aria-label={openChatLead.botEnabled ? 'Desligar chatbot' : 'Ligar chatbot'}
+              >
+                {openChatLead.botEnabled ? (
+                  <BotIcon className="h-3.5 w-3.5" />
+                ) : (
+                  <BotOffIcon className="h-3.5 w-3.5" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => openLead(openChatLead)}
+                className="inline-flex h-6 cursor-pointer items-center rounded-md border border-border bg-page px-1.5 text-[11px] font-medium"
+              >
+                Editar
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeleteLead(openChatLead)}
+                className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-border bg-page text-muted hover:text-red-700"
+                aria-label="Excluir lead"
+              >
+                <TrashIcon className="h-3.5 w-3.5" />
+              </button>
+            </>
+          }
+        />
+      ) : null}
 
       {selected ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
@@ -1444,6 +1770,41 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
                 />
               </label>
 
+              <div className="mt-4">
+                <div className="flex items-center justify-between gap-3">
+                  <label
+                    className="text-xs font-medium uppercase tracking-wide text-muted"
+                    htmlFor="generic-crm-request-summary"
+                  >
+                    Resumo da solicitação
+                  </label>
+                  <button
+                    type="button"
+                    disabled={saving || summarizingLeadId === selected.id}
+                    onClick={() => void generateSummary(selected)}
+                    className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-medium text-brand-primary transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="Gerar resumo"
+                    title="Gerar resumo"
+                  >
+                    {summarizingLeadId === selected.id ? (
+                      <SummarySpinner />
+                    ) : (
+                      <SparklesIcon className="h-3.5 w-3.5" />
+                    )}
+                    Gerar resumo
+                  </button>
+                </div>
+                <textarea
+                  id="generic-crm-request-summary"
+                  value={summaryDraft}
+                  disabled={saving || summarizingLeadId === selected.id}
+                  onChange={(event) => setSummaryDraft(event.target.value)}
+                  rows={5}
+                  placeholder="Dúvidas e solicitações deste lead. Gera com o botão ou escreve à mão."
+                  className="mt-2 min-h-[120px] w-full resize-y rounded-xl border border-border bg-page px-3.5 py-3 text-sm leading-relaxed text-foreground outline-none transition-colors focus:border-brand-accent disabled:opacity-50"
+                />
+              </div>
+
               <GenericCrmDocumentsSection
                 slug={slug}
                 leadId={selected.id}
@@ -1483,7 +1844,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
                   >
                     <button
                       type="button"
-                      disabled={saving || selected.botEnabled}
+                      disabled={saving || savingLeadId === selected.id || selected.botEnabled}
                       aria-pressed={selected.botEnabled}
                       title={`${botName} responde a este WhatsApp.`}
                       onClick={() => void toggleBot(true)}
@@ -1497,7 +1858,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
                     </button>
                     <button
                       type="button"
-                      disabled={saving || !selected.botEnabled}
+                      disabled={saving || savingLeadId === selected.id || !selected.botEnabled}
                       aria-pressed={!selected.botEnabled}
                       title={`${botName} não responde a este WhatsApp.`}
                       onClick={() => void toggleBot(false)}
