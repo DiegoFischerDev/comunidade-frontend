@@ -171,8 +171,19 @@ export function CrmChannelChatModal({
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [sendingLink, setSendingLink] = useState(false);
+  const [sendingAudio, setSendingAudio] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaChunksRef = useRef<Blob[]>([]);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const recordTimerRef = useRef<number | null>(null);
+  const recordedUrlRef = useRef<string | null>(null);
   const theme = THEME[channel];
+  const busy = sending || sendingLink || sendingAudio || recording;
   const bookingId = source.kind === 'rafacall' ? source.bookingId : '';
   const leadSlug = source.kind === 'lead' ? source.slug : '';
   const leadId = source.kind === 'lead' ? source.leadId : '';
@@ -237,6 +248,10 @@ export function CrmChannelChatModal({
   }, [messages, loading]);
 
   useEffect(() => {
+    // No mobile o focus abre o teclado e empurra o layout — só autofocus em desktop.
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
+      return;
+    }
     const node = dialogRef.current;
     node?.querySelector<HTMLElement>('textarea')?.focus();
   }, [sourceKey, channel]);
@@ -246,8 +261,127 @@ export function CrmChannelChatModal({
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = previousOverflow;
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+      if (recordTimerRef.current != null) window.clearInterval(recordTimerRef.current);
+      if (recordedUrlRef.current) URL.revokeObjectURL(recordedUrlRef.current);
     };
   }, []);
+
+  function stopMediaTracks() {
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+  }
+
+  function clearRecordingPreview() {
+    if (recordedUrlRef.current) URL.revokeObjectURL(recordedUrlRef.current);
+    recordedUrlRef.current = null;
+    setRecordedBlob(null);
+    setRecordedUrl(null);
+    setRecordSeconds(0);
+  }
+
+  async function startRecording() {
+    if (busy) return;
+    setError('');
+    clearRecordingPreview();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      mediaChunksRef.current = [];
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : '';
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) mediaChunksRef.current.push(event.data);
+      };
+      recorder.onstop = () => {
+        stopMediaTracks();
+        if (recordTimerRef.current != null) {
+          window.clearInterval(recordTimerRef.current);
+          recordTimerRef.current = null;
+        }
+        const blob = new Blob(mediaChunksRef.current, {
+          type: recorder.mimeType || 'audio/webm',
+        });
+        mediaChunksRef.current = [];
+        if (blob.size < 1) {
+          setRecording(false);
+          setError('Não foi possível gravar o áudio.');
+          return;
+        }
+        const objectUrl = URL.createObjectURL(blob);
+        recordedUrlRef.current = objectUrl;
+        setRecordedBlob(blob);
+        setRecordedUrl(objectUrl);
+        setRecording(false);
+      };
+      recorder.start();
+      setRecording(true);
+      setRecordSeconds(0);
+      recordTimerRef.current = window.setInterval(() => {
+        setRecordSeconds((current) => {
+          if (current >= 119) {
+            stopRecording();
+            return current;
+          }
+          return current + 1;
+        });
+      }, 1000);
+    } catch {
+      stopMediaTracks();
+      setError('Não foi possível aceder ao microfone.');
+    }
+  }
+
+  function stopRecording() {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') {
+      recorder.stop();
+    } else {
+      stopMediaTracks();
+      setRecording(false);
+    }
+    mediaRecorderRef.current = null;
+  }
+
+  async function sendRecordedAudio() {
+    if (!recordedBlob || sendingAudio) return;
+    setSendingAudio(true);
+    setError('');
+    try {
+      const ext = recordedBlob.type.includes('ogg') ? 'ogg' : 'webm';
+      const result =
+        source.kind === 'rafacall'
+          ? await api.admin.rafacall.sendCrmAudio(
+              source.bookingId,
+              channel,
+              recordedBlob,
+              `nota-de-voz.${ext}`,
+            )
+          : await api.admin.chatbots.crm.sendAudio(
+              source.slug,
+              source.leadId,
+              channel,
+              recordedBlob,
+              `nota-de-voz.${ext}`,
+            );
+      stickToBottom.current = true;
+      setMessages((current) => mergeMessages(current, [result.message]));
+      clearRecordingPreview();
+      if (result.botPaused) onBotPaused?.();
+    } catch (err: unknown) {
+      setError(getUserFacingApiError(err, { context: 'Ao enviar áudio' }));
+    } finally {
+      setSendingAudio(false);
+    }
+  }
 
   useEffect(() => {
     if (suspendEscape) return;
@@ -320,7 +454,7 @@ export function CrmChannelChatModal({
               {actions}
               <button
                 type="button"
-                disabled={sending || sendingLink}
+                disabled={busy}
                 onClick={() => void submit({ template: 'scheduling-link' })}
                 className="inline-flex h-9 cursor-pointer items-center rounded-md border border-border bg-page px-2.5 text-xs font-medium text-foreground transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50 sm:h-8 sm:px-2 sm:text-[11px]"
               >
@@ -380,7 +514,20 @@ export function CrmChannelChatModal({
                       {label}
                     </p>
                   ) : null}
-                  {message.kind === 'AUDIO_TRANSCRIPT' ? (
+                  {message.kind === 'AUDIO' && message.mediaUrl ? (
+                    <div className="space-y-1">
+                      <p className={`flex items-center gap-1.5 text-[11px] ${mine ? 'text-white/85' : 'text-muted'}`}>
+                        <MicIcon className="h-3.5 w-3.5 shrink-0" />
+                        {message.body || 'Nota de voz'}
+                      </p>
+                      <audio
+                        controls
+                        preload="metadata"
+                        src={resolveUploadsUrl(message.mediaUrl)}
+                        className="max-w-full"
+                      />
+                    </div>
+                  ) : message.kind === 'AUDIO_TRANSCRIPT' ? (
                     <p className="flex items-start gap-1.5">
                       <MicIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                       <span>{message.body}</span>
@@ -407,7 +554,60 @@ export function CrmChannelChatModal({
               {error}
             </p>
           ) : null}
+          {recording || recordedBlob ? (
+            <div className="mb-2 flex flex-wrap items-center gap-2 rounded-[14px] border border-border bg-page px-3 py-2">
+              {recording ? (
+                <p className="text-sm font-medium text-red-700">
+                  A gravar… {String(Math.floor(recordSeconds / 60)).padStart(2, '0')}:
+                  {String(recordSeconds % 60).padStart(2, '0')}
+                </p>
+              ) : recordedUrl ? (
+                <audio controls src={recordedUrl} className="max-w-full flex-1" />
+              ) : null}
+              <div className="ml-auto flex flex-wrap gap-2">
+                {recording ? (
+                  <button
+                    type="button"
+                    onClick={stopRecording}
+                    className="inline-flex h-9 cursor-pointer items-center rounded-[12px] border border-border bg-card px-3 text-xs font-semibold"
+                  >
+                    Parar
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      disabled={sendingAudio}
+                      onClick={clearRecordingPreview}
+                      className="inline-flex h-9 cursor-pointer items-center rounded-[12px] border border-border bg-card px-3 text-xs font-semibold disabled:opacity-50"
+                    >
+                      Descartar
+                    </button>
+                    <button
+                      type="button"
+                      disabled={sendingAudio}
+                      onClick={() => void sendRecordedAudio()}
+                      className="inline-flex h-9 cursor-pointer items-center rounded-[12px] bg-brand-primary px-3 text-xs font-semibold text-white disabled:opacity-50"
+                    >
+                      {sendingAudio ? 'A enviar…' : 'Enviar áudio'}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : null}
           <div className="flex items-end gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void startRecording()}
+              className={`inline-flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-[14px] border bg-page ${theme.accent} disabled:cursor-not-allowed disabled:opacity-50 ${
+                recording ? 'border-red-300 bg-red-50' : 'border-border'
+              }`}
+              aria-label="Gravar nota de voz"
+            >
+              <MicIcon className="h-5 w-5" />
+            </button>
             <label className="sr-only" htmlFor={`${titleId}-draft`}>
               Mensagem
             </label>
@@ -416,7 +616,7 @@ export function CrmChannelChatModal({
               value={draft}
               rows={2}
               maxLength={4000}
-              disabled={sending || sendingLink}
+              disabled={busy}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && !event.shiftKey) {
@@ -429,7 +629,7 @@ export function CrmChannelChatModal({
             />
             <button
               type="submit"
-              disabled={sending || sendingLink || draft.trim().length === 0}
+              disabled={busy || draft.trim().length === 0}
               className="inline-flex h-12 cursor-pointer items-center rounded-[14px] bg-brand-primary px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               {sending ? 'A enviar…' : 'Enviar'}

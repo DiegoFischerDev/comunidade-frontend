@@ -292,8 +292,9 @@ export type CrmChannelMessage = {
   channel: CrmChatChannel;
   direction: 'INBOUND' | 'OUTBOUND';
   author: 'LEAD' | 'BOT' | 'ADMIN';
-  kind: 'TEXT' | 'AUDIO_TRANSCRIPT';
+  kind: 'TEXT' | 'AUDIO_TRANSCRIPT' | 'AUDIO';
   body: string;
+  mediaUrl: string | null;
   createdAt: string;
 };
 
@@ -1308,6 +1309,15 @@ export const api = {
           `/admin/rafacall/crm/${encodeURIComponent(bookingId)}/messages`,
           { method: 'POST', body: JSON.stringify(body) },
         ),
+      sendCrmAudio: (bookingId: string, channel: CrmChatChannel, file: Blob, fileName?: string) => {
+        const fd = new FormData();
+        fd.append('file', file, fileName || 'nota-de-voz.webm');
+        return requestFormData<CrmChannelMessageSendResult>(
+          `/admin/rafacall/crm/${encodeURIComponent(bookingId)}/messages/audio?channel=${channel}`,
+          fd,
+          { method: 'POST' },
+        );
+      },
       createCrmPayment: (
         bookingId: string,
         body: {
@@ -2532,6 +2542,21 @@ export const api = {
             `/admin/crm/${encodeURIComponent(slug)}/leads/${encodeURIComponent(leadId)}/messages`,
             { method: 'POST', body: JSON.stringify(body) },
           ),
+        sendAudio: (
+          slug: string,
+          leadId: string,
+          channel: CrmChatChannel,
+          file: Blob,
+          fileName?: string,
+        ) => {
+          const fd = new FormData();
+          fd.append('file', file, fileName || 'nota-de-voz.webm');
+          return requestFormData<CrmChannelMessageSendResult>(
+            `/admin/crm/${encodeURIComponent(slug)}/leads/${encodeURIComponent(leadId)}/messages/audio?channel=${channel}`,
+            fd,
+            { method: 'POST' },
+          );
+        },
         uploadDocument: (slug: string, leadId: string, file: File) => {
           const fd = new FormData();
           fd.append('file', file);
