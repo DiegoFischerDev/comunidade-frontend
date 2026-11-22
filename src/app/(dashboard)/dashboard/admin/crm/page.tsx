@@ -29,6 +29,7 @@ import {
   crmActionIconClass,
   crmActionTextBtnClass,
   crmActionBarClass,
+  isCrmLeadRecentlyUpdated,
 } from '@/components/admin/CrmLeadNotesTooltip';
 import { CrmLeadNameField } from '@/components/admin/CrmLeadNameField';
 import { ChatbotAvatar } from '@/components/admin/ChatbotAvatar';
@@ -685,7 +686,20 @@ function crmItemMatchesQuery(item: RafacallCrmItem, query: string): boolean {
   const normalizedQuery = normalizeCrmSearchText(query);
   if (!normalizedQuery) return true;
 
-  if (buildCrmItemSearchHaystack(item).includes(normalizedQuery)) return true;
+  const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
+  const wantsRecent = tokens.includes('novo') || tokens.includes('new');
+  const otherTokens = tokens.filter((token) => token !== 'novo' && token !== 'new');
+
+  if (wantsRecent && !isCrmLeadRecentlyUpdated(item.updatedAt)) {
+    return false;
+  }
+  if (wantsRecent && otherTokens.length === 0) {
+    return true;
+  }
+
+  const haystack = buildCrmItemSearchHaystack(item);
+  const textQuery = otherTokens.length > 0 ? otherTokens.join(' ') : normalizedQuery;
+  if (haystack.includes(textQuery)) return true;
 
   const queryDigits = query.replace(/\D/g, '');
   if (queryDigits.length >= 3 && item.whatsappDigits.includes(queryDigits)) {
@@ -3748,7 +3762,7 @@ function JoanaCrmBoardPage({
             type="search"
             value={filterQuery}
             onChange={(event) => setFilterQuery(event.target.value)}
-            placeholder="Nome, WhatsApp, tipologia, cidade, PET, coluna, comentários…"
+            placeholder="Nome, WhatsApp, tipologia, cidade, PET, novo, coluna…"
             className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-9 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted/80 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
           />
           <svg
