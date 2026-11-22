@@ -11,7 +11,6 @@ import {
   type RafacallCrmDocument,
 } from '@/lib/api';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
-import { ChatbotAvatar } from '@/components/admin/ChatbotAvatar';
 import { CrmLeadNameField } from '@/components/admin/CrmLeadNameField';
 import { CrmChannelChatModal } from '@/components/admin/CrmChannelChatModal';
 import {
@@ -1145,7 +1144,6 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
       if (selected?.id === lead.id) {
         setSummaryDraft(updated.crmRequestSummary ?? '');
       }
-      setSuccess('Resumo gerado.');
     } catch (err) {
       setError(getUserFacingApiError(err, { context: 'Ao gerar o resumo' }));
     } finally {
@@ -1381,19 +1379,7 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
 
   return (
     <div className="mt-2">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-3">
-          <ChatbotAvatar slug={slug} name={botName} size="lg" className="mt-0.5" />
-          <div className="min-w-0">
-            <p className="text-sm text-muted">
-              CRM da {botName}. Leads deste assunto — arrasta entre colunas ou
-              muda no detalhe.
-            </p>
-            <p className="mt-1 text-sm text-muted">
-              {total} cliente{total === 1 ? '' : 's'} no pipeline
-            </p>
-          </div>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <button
           type="button"
           onClick={() => setNewOpen(true)}

@@ -3669,7 +3669,6 @@ function JoanaCrmBoardPage({
         if (selectedItem?.id === item.id) {
           setSummaryDraft(nextItem.crmRequestSummary ?? '');
         }
-        toast.success('Resumo gerado.');
       } catch (err) {
         toast.error(
           getUserFacingApiError(err, { context: 'Ao gerar o resumo' }),
@@ -3726,21 +3725,7 @@ function JoanaCrmBoardPage({
 
   return (
     <div className="mt-2">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-3">
-          <ChatbotAvatar slug="joana" name="Joana" size="lg" className="mt-0.5" />
-          <div className="min-w-0">
-            <p className="text-sm text-muted">
-              CRM da Joana (Relocation). Acompanhe o follow-up após o agendamento.
-              Arraste entre colunas para atualizar o estado.
-            </p>
-            <p className="mt-1 text-sm text-muted">
-              {isFiltering
-                ? `${filteredClients} de ${totalClients} cliente${totalClients === 1 ? '' : 's'} no pipeline`
-                : `${totalClients} cliente${totalClients === 1 ? '' : 's'} no pipeline`}
-            </p>
-          </div>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <button
           type="button"
           onClick={handleOpenNewClient}

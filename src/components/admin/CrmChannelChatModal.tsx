@@ -35,8 +35,11 @@ type ChatTheme = {
   labelTheirs: string;
   timeMine: string;
   timeTheirs: string;
+  daySeparator: string;
   composer: string;
   input: string;
+  emojiBtn: string;
+  emojiPanel: string;
   mic: string;
   micActive: string;
   send: string;
@@ -64,9 +67,13 @@ const THEME: Record<CrmChatChannel, ChatTheme> = {
     labelTheirs: 'text-[#667781]',
     timeMine: 'text-[#667781]',
     timeTheirs: 'text-[#667781]',
+    daySeparator:
+      'rounded-lg bg-[#e1f2fb] px-3 py-1 text-[12px] font-medium text-[#54656f] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)]',
     composer: 'border-[#d1d7db] bg-[#f0f2f5]',
     input:
       'rounded-[24px] border-0 bg-white text-[#111b21] shadow-sm placeholder:text-[#667781] focus-visible:ring-[#25d366]/35',
+    emojiBtn: 'border-0 bg-transparent text-[#54656f] hover:bg-black/5 hover:text-[#008069]',
+    emojiPanel: 'border-[#d1d7db] bg-white text-[#111b21] shadow-lg',
     mic: 'border-0 bg-[#008069] text-white hover:bg-[#006d5b]',
     micActive: 'bg-[#e11d48] text-white hover:bg-[#be123c]',
     send: 'bg-[#008069] text-white hover:bg-[#006d5b]',
@@ -91,9 +98,12 @@ const THEME: Record<CrmChatChannel, ChatTheme> = {
     labelTheirs: 'text-[#8e8e8e]',
     timeMine: 'text-white/70',
     timeTheirs: 'text-[#8e8e8e]',
+    daySeparator: 'text-[12px] font-semibold text-[#8e8e8e]',
     composer: 'border-[#efefef] bg-white',
     input:
       'rounded-full border border-[#dbdbdb] bg-white text-[#262626] placeholder:text-[#8e8e8e] focus-visible:ring-[#3797f0]/30',
+    emojiBtn: 'border border-[#dbdbdb] bg-white text-[#262626] hover:bg-[#fafafa]',
+    emojiPanel: 'border-[#dbdbdb] bg-white text-[#262626] shadow-lg',
     mic: 'border border-[#dbdbdb] bg-white text-[#262626] hover:bg-[#fafafa]',
     micActive: 'border-[#f9a8d4] bg-[#fce7f3] text-[#be185d]',
     send: 'bg-[#3797f0] text-white hover:bg-[#2d86d9]',
@@ -102,10 +112,86 @@ const THEME: Record<CrmChatChannel, ChatTheme> = {
   },
 };
 
+/** Principais emojis usados em chats WhatsApp / Instagram. */
+const CHAT_EMOJIS = [
+  '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣',
+  '😊', '😇', '🙂', '😉', '😍', '🥰', '😘', '😗',
+  '😋', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫',
+  '🤔', '🤐', '🤨', '😐', '😑', '😶', '🙄', '😏',
+  '😣', '😥', '😮', '😯', '😪', '😫', '🥱', '😴',
+  '🤤', '😒', '😓', '😔', '😕', '🙃', '😲', '☹️',
+  '🙁', '😖', '😞', '😟', '😤', '😢', '😭', '😦',
+  '😧', '😨', '😩', '🤯', '😬', '😰', '😱', '🥵',
+  '🥶', '😳', '😵', '😡', '😠', '🤬', '😷', '🤒',
+  '🤕', '🤢', '🤮', '🤧', '😈', '👿', '💀', '☠️',
+  '💩', '🤡', '👻', '👽', '🤖', '😺', '😸', '😹',
+  '😻', '😼', '😽', '🙀', '😿', '😾', '👍', '👎',
+  '👏', '🙌', '👐', '🤝', '🙏', '💪', '✌️', '🤞',
+  '🤟', '🤘', '👌', '🤌', '🤏', '👈', '👉', '👆',
+  '👇', '☝️', '✋', '🤚', '🖐️', '🖖', '👋', '🤙',
+  '🫡', '🫶', '💯', '🔥', '✨', '⭐', '🌟', '💥',
+  '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍',
+  '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖',
+  '💘', '💝', '✅', '❌', '❗', '❓', '💬', '👀',
+  '🎉', '🎊', '🥳', '😎', '☀️', '🌙', '🌈', '☕',
+] as const;
+
+function startOfLocalDay(date: Date): number {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+}
+
+function dayKeyFromIso(iso: string): string | null {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatDaySeparator(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+
+  const today = startOfLocalDay(new Date());
+  const target = startOfLocalDay(date);
+  const dayMs = 24 * 60 * 60 * 1000;
+  const diffDays = Math.round((today - target) / dayMs);
+
+  if (diffDays === 0) return 'Hoje';
+  if (diffDays === 1) return 'Ontem';
+
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleDateString('pt-PT', {
+    day: 'numeric',
+    month: 'long',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  });
+}
+
 function formatBubbleTime(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
   return date.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+}
+
+function EmojiIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 10h.01M15.5 10h.01" />
+      <path d="M8.5 14.5s1.5 2 3.5 2 3.5-2 3.5-2" />
+    </svg>
+  );
 }
 
 function MicIcon({ className }: { className?: string }) {
@@ -281,12 +367,15 @@ export function CrmChannelChatModal({
   onAdminReplied?: () => void;
 }) {
   const titleId = useId();
+  const emojiPanelId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const draftRef = useRef<HTMLTextAreaElement>(null);
   const stickToBottom = useRef(true);
   const [messages, setMessages] = useState<CrmChannelMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState('');
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendingLink, setSendingLink] = useState(false);
   const [sendingAudio, setSendingAudio] = useState(false);
@@ -327,6 +416,7 @@ export function CrmChannelChatModal({
     setLoading(true);
     setError('');
     setMessages([]);
+    setEmojiOpen(false);
     stickToBottom.current = true;
     void load(null)
       .then((rows) => {
@@ -540,16 +630,47 @@ export function CrmChannelChatModal({
   }
 
   useEffect(() => {
+    const media = window.matchMedia('(max-width: 767px)');
+    const closeOnMobile = () => {
+      if (media.matches) setEmojiOpen(false);
+    };
+    closeOnMobile();
+    media.addEventListener('change', closeOnMobile);
+    return () => media.removeEventListener('change', closeOnMobile);
+  }, []);
+
+  useEffect(() => {
     if (suspendEscape) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.stopPropagation();
-        onClose();
+      if (event.key !== 'Escape') return;
+      event.stopPropagation();
+      if (emojiOpen) {
+        setEmojiOpen(false);
+        return;
       }
+      onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose, suspendEscape]);
+  }, [emojiOpen, onClose, suspendEscape]);
+
+  function insertEmoji(emoji: string) {
+    const node = draftRef.current;
+    const max = 4000;
+    if (!node) {
+      setDraft((current) => (current + emoji).slice(0, max));
+      return;
+    }
+    const start = node.selectionStart ?? draft.length;
+    const end = node.selectionEnd ?? draft.length;
+    const next = `${draft.slice(0, start)}${emoji}${draft.slice(end)}`.slice(0, max);
+    const cursor = Math.min(start + emoji.length, next.length);
+    setDraft(next);
+    requestAnimationFrame(() => {
+      node.focus();
+      node.setSelectionRange(cursor, cursor);
+    });
+  }
 
   async function submit(body: { text?: string; template?: 'scheduling-link' }) {
     if (sending || sendingLink) return;
@@ -640,7 +761,7 @@ export function CrmChannelChatModal({
           {!loading && messages.length === 0 ? (
             <p className={`text-sm ${theme.empty}`}>Ainda não há mensagens neste canal.</p>
           ) : null}
-          {messages.map((message) => {
+          {messages.map((message, index) => {
             const mine = message.author !== 'LEAD';
             const label =
               message.author === 'ADMIN'
@@ -649,6 +770,10 @@ export function CrmChannelChatModal({
                   ? botName
                   : title;
             const time = formatBubbleTime(message.createdAt);
+            const dayKey = dayKeyFromIso(message.createdAt);
+            const previousDayKey =
+              index > 0 ? dayKeyFromIso(messages[index - 1]?.createdAt ?? '') : null;
+            const dayLabel = dayKey && dayKey !== previousDayKey ? formatDaySeparator(message.createdAt) : '';
             const avatar = (
               <MessageAuthorAvatar
                 author={message.author}
@@ -659,48 +784,54 @@ export function CrmChannelChatModal({
               />
             );
             return (
-              <div
-                key={message.id}
-                className={`flex min-w-0 items-end gap-1.5 ${mine ? 'justify-end' : 'justify-start'}`}
-              >
-                {!mine ? avatar : <span className="w-6 shrink-0" aria-hidden />}
+              <div key={message.id} className="min-w-0 space-y-1.5">
+                {dayLabel ? (
+                  <div className="flex justify-center py-1.5">
+                    <span className={theme.daySeparator}>{dayLabel}</span>
+                  </div>
+                ) : null}
                 <div
-                  className={`min-w-0 max-w-[min(78%,28rem)] break-words px-2.5 py-1.5 text-[14px] leading-snug ${
-                    mine ? theme.bubbleMine : theme.bubbleTheirs
-                  }`}
+                  className={`flex min-w-0 items-end gap-1.5 ${mine ? 'justify-end' : 'justify-start'}`}
                 >
-                  <p className={`mb-0.5 text-[10px] font-semibold ${mine ? theme.labelMine : theme.labelTheirs}`}>
-                    {label}
-                  </p>
-                  {message.kind === 'AUDIO' && message.mediaUrl ? (
-                    <div className="min-w-0 space-y-1 overflow-hidden">
-                      <p className={`flex items-center gap-1.5 text-[11px] ${mine ? theme.labelMine : theme.labelTheirs}`}>
-                        <MicIcon className="h-3.5 w-3.5 shrink-0" />
-                        {message.body || 'Nota de voz'}
+                  {!mine ? avatar : <span className="w-6 shrink-0" aria-hidden />}
+                  <div
+                    className={`min-w-0 max-w-[min(78%,28rem)] break-words px-2.5 py-1.5 text-[14px] leading-snug ${
+                      mine ? theme.bubbleMine : theme.bubbleTheirs
+                    }`}
+                  >
+                    <p className={`mb-0.5 text-[10px] font-semibold ${mine ? theme.labelMine : theme.labelTheirs}`}>
+                      {label}
+                    </p>
+                    {message.kind === 'AUDIO' && message.mediaUrl ? (
+                      <div className="min-w-0 space-y-1 overflow-hidden">
+                        <p className={`flex items-center gap-1.5 text-[11px] ${mine ? theme.labelMine : theme.labelTheirs}`}>
+                          <MicIcon className="h-3.5 w-3.5 shrink-0" />
+                          {message.body || 'Nota de voz'}
+                        </p>
+                        <audio
+                          controls
+                          preload="metadata"
+                          src={resolveUploadsUrl(message.mediaUrl)}
+                          className="block h-10 w-full max-w-full"
+                          style={{ maxWidth: '100%' }}
+                        />
+                      </div>
+                    ) : message.kind === 'AUDIO_TRANSCRIPT' ? (
+                      <p className="flex items-start gap-1.5 break-words">
+                        <MicIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span className="min-w-0">{message.body}</span>
                       </p>
-                      <audio
-                        controls
-                        preload="metadata"
-                        src={resolveUploadsUrl(message.mediaUrl)}
-                        className="block h-10 w-full max-w-full"
-                        style={{ maxWidth: '100%' }}
-                      />
-                    </div>
-                  ) : message.kind === 'AUDIO_TRANSCRIPT' ? (
-                    <p className="flex items-start gap-1.5 break-words">
-                      <MicIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                      <span className="min-w-0">{message.body}</span>
-                    </p>
-                  ) : (
-                    <p className="whitespace-pre-wrap break-words">{message.body}</p>
-                  )}
-                  {time ? (
-                    <p className={`mt-1 text-right text-[10px] leading-none ${mine ? theme.timeMine : theme.timeTheirs}`}>
-                      {time}
-                    </p>
-                  ) : null}
+                    ) : (
+                      <p className="whitespace-pre-wrap break-words">{message.body}</p>
+                    )}
+                    {time ? (
+                      <p className={`mt-1 text-right text-[10px] leading-none ${mine ? theme.timeMine : theme.timeTheirs}`}>
+                        {time}
+                      </p>
+                    ) : null}
+                  </div>
+                  {mine ? avatar : <span className="w-6 shrink-0" aria-hidden />}
                 </div>
-                {mine ? avatar : <span className="w-6 shrink-0" aria-hidden />}
               </div>
             );
           })}
@@ -750,11 +881,57 @@ export function CrmChannelChatModal({
               </div>
             </div>
           ) : null}
+          {emojiOpen ? (
+            <div
+              id={emojiPanelId}
+              role="dialog"
+              aria-label="Emojis"
+              className={`mb-2 hidden max-h-52 min-w-0 overflow-y-auto overscroll-contain rounded-2xl border p-2 md:block ${theme.emojiPanel}`}
+            >
+              <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
+                <p className="text-xs font-semibold opacity-70">Emojis</p>
+                <button
+                  type="button"
+                  onClick={() => setEmojiOpen(false)}
+                  className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full opacity-70 transition-opacity hover:opacity-100"
+                  aria-label="Fechar emojis"
+                >
+                  <CloseIcon className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="grid grid-cols-8 gap-0.5 sm:grid-cols-10">
+                {CHAT_EMOJIS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => insertEmoji(emoji)}
+                    className="inline-flex h-9 w-full cursor-pointer items-center justify-center rounded-lg text-xl leading-none transition-colors hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={`Inserir ${emoji}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <div className="flex min-w-0 items-end gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              aria-expanded={emojiOpen}
+              aria-controls={emojiPanelId}
+              onClick={() => setEmojiOpen((open) => !open)}
+              className={`hidden h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full disabled:cursor-not-allowed disabled:opacity-50 md:inline-flex ${theme.emojiBtn}`}
+              aria-label={emojiOpen ? 'Fechar emojis' : 'Abrir emojis'}
+            >
+              <EmojiIcon className="h-5 w-5" />
+            </button>
             <label className="sr-only" htmlFor={`${titleId}-draft`}>
               Mensagem
             </label>
             <textarea
+              ref={draftRef}
               id={`${titleId}-draft`}
               value={draft}
               rows={2}
@@ -774,7 +951,10 @@ export function CrmChannelChatModal({
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => void startRecording()}
+                onClick={() => {
+                  setEmojiOpen(false);
+                  void startRecording();
+                }}
                 className={`inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full disabled:cursor-not-allowed disabled:opacity-50 ${
                   recording ? theme.micActive : theme.mic
                 }`}
