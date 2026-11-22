@@ -18,25 +18,95 @@ export type CrmChatSource =
 
 const RAFA_AVATAR_SLUG: AdminChatbotSlug = 'outros';
 
-const THEME: Record<
-  CrmChatChannel,
-  { label: string; accent: string; soft: string; mine: string; ring: string }
-> = {
+type ChatTheme = {
+  label: string;
+  shell: string;
+  header: string;
+  headerTitle: string;
+  headerSub: string;
+  headerClose: string;
+  toolbar: string;
+  toolbarBtn: string;
+  thread: string;
+  empty: string;
+  bubbleMine: string;
+  bubbleTheirs: string;
+  labelMine: string;
+  labelTheirs: string;
+  timeMine: string;
+  timeTheirs: string;
+  composer: string;
+  input: string;
+  mic: string;
+  micActive: string;
+  send: string;
+  ring: string;
+  recordPanel: string;
+};
+
+const THEME: Record<CrmChatChannel, ChatTheme> = {
   WHATSAPP: {
-    label: 'WhatsApp',
-    accent: 'text-[#128C7E]',
-    soft: 'bg-[#25D366]/10',
-    mine: 'bg-[#25D366] text-white',
-    ring: 'focus-visible:ring-[#25D366]/40',
+    label: 'online',
+    shell: 'border-[#d1d7db] bg-[#efeae2]',
+    header: 'border-[#0a3d38]/20 bg-[#008069] text-white',
+    headerTitle: 'text-white',
+    headerSub: 'text-white/80',
+    headerClose: 'border-white/25 bg-white/10 text-white hover:bg-white/20',
+    toolbar: 'border-white/15 bg-[#00745d]',
+    toolbarBtn:
+      'border-white/25 bg-white/10 text-white hover:bg-white/20 focus-visible:ring-white/40',
+    thread:
+      'bg-[#efeae2] [background-image:url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23d4cdc4\' fill-opacity=\'0.35\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")]',
+    empty: 'text-[#667781]',
+    bubbleMine: 'rounded-lg rounded-br-none bg-[#d9fdd3] text-[#111b21] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)]',
+    bubbleTheirs: 'rounded-lg rounded-bl-none bg-white text-[#111b21] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)]',
+    labelMine: 'text-[#008069]',
+    labelTheirs: 'text-[#667781]',
+    timeMine: 'text-[#667781]',
+    timeTheirs: 'text-[#667781]',
+    composer: 'border-[#d1d7db] bg-[#f0f2f5]',
+    input:
+      'rounded-[24px] border-0 bg-white text-[#111b21] shadow-sm placeholder:text-[#667781] focus-visible:ring-[#25d366]/35',
+    mic: 'border-0 bg-[#008069] text-white hover:bg-[#006d5b]',
+    micActive: 'bg-[#e11d48] text-white hover:bg-[#be123c]',
+    send: 'bg-[#008069] text-white hover:bg-[#006d5b]',
+    ring: 'focus-visible:ring-[#25d366]/40',
+    recordPanel: 'border-[#d1d7db] bg-white text-[#111b21]',
   },
   INSTAGRAM: {
-    label: 'Instagram',
-    accent: 'text-[#C13584]',
-    soft: 'bg-[#E1306C]/10',
-    mine: 'bg-[#E1306C] text-white',
-    ring: 'focus-visible:ring-[#E1306C]/40',
+    label: 'Instagram Direct',
+    shell: 'border-[#dbdbdb] bg-white',
+    header: 'border-[#efefef] bg-white text-[#262626]',
+    headerTitle: 'text-[#262626]',
+    headerSub: 'text-[#8e8e8e]',
+    headerClose: 'border-[#dbdbdb] bg-white text-[#262626] hover:bg-[#fafafa]',
+    toolbar: 'border-[#efefef] bg-[#fafafa]',
+    toolbarBtn:
+      'border-[#dbdbdb] bg-white text-[#262626] hover:bg-[#fafafa] focus-visible:ring-[#3797f0]/30',
+    thread: 'bg-white',
+    empty: 'text-[#8e8e8e]',
+    bubbleMine: 'rounded-[22px] bg-[#3797f0] text-white',
+    bubbleTheirs: 'rounded-[22px] bg-[#efefef] text-[#262626]',
+    labelMine: 'text-white/85',
+    labelTheirs: 'text-[#8e8e8e]',
+    timeMine: 'text-white/70',
+    timeTheirs: 'text-[#8e8e8e]',
+    composer: 'border-[#efefef] bg-white',
+    input:
+      'rounded-full border border-[#dbdbdb] bg-white text-[#262626] placeholder:text-[#8e8e8e] focus-visible:ring-[#3797f0]/30',
+    mic: 'border border-[#dbdbdb] bg-white text-[#262626] hover:bg-[#fafafa]',
+    micActive: 'border-[#f9a8d4] bg-[#fce7f3] text-[#be185d]',
+    send: 'bg-[#3797f0] text-white hover:bg-[#2d86d9]',
+    ring: 'focus-visible:ring-[#3797f0]/40',
+    recordPanel: 'border-[#dbdbdb] bg-[#fafafa] text-[#262626]',
   },
 };
+
+function formatBubbleTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+}
 
 function MicIcon({ className }: { className?: string }) {
   return (
@@ -73,6 +143,42 @@ function CloseIcon({ className }: { className?: string }) {
   );
 }
 
+function SendIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M22 2 11 13" />
+      <path d="M22 2 15 22 11 13 2 9l20-7z" />
+    </svg>
+  );
+}
+
+function VideoCallIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5" />
+      <rect x="2" y="6" width="14" height="12" rx="2" />
+    </svg>
+  );
+}
+
 function leadInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return '?';
@@ -80,9 +186,18 @@ function leadInitials(name: string): string {
   return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
 }
 
-function LeadMessageAvatar({ name, imageUrl }: { name: string; imageUrl?: string | null }) {
+function LeadMessageAvatar({
+  name,
+  imageUrl,
+  size = 'sm',
+}: {
+  name: string;
+  imageUrl?: string | null;
+  size?: 'sm' | 'md';
+}) {
   const [imgFailed, setImgFailed] = useState(false);
   const src = !imgFailed && imageUrl ? resolveUploadsUrl(imageUrl) : '';
+  const dim = size === 'md' ? 'h-10 w-10 text-xs' : 'h-6 w-6 text-[10px]';
 
   if (src) {
     return (
@@ -90,7 +205,7 @@ function LeadMessageAvatar({ name, imageUrl }: { name: string; imageUrl?: string
       <img
         src={src}
         alt=""
-        className="h-6 w-6 shrink-0 rounded-full border border-border bg-page object-cover"
+        className={`${dim} shrink-0 rounded-full border border-black/10 bg-white object-cover`}
         onError={() => setImgFailed(true)}
       />
     );
@@ -99,7 +214,7 @@ function LeadMessageAvatar({ name, imageUrl }: { name: string; imageUrl?: string
   return (
     <span
       aria-hidden
-      className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-primary text-[10px] font-semibold text-white"
+      className={`inline-flex ${dim} shrink-0 items-center justify-center rounded-full bg-[#25d366] font-semibold text-white`}
     >
       {leadInitials(name)}
     </span>
@@ -182,6 +297,7 @@ export function CrmChannelChatModal({
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const recordTimerRef = useRef<number | null>(null);
   const recordedUrlRef = useRef<string | null>(null);
+  const afterStopActionRef = useRef<'discard' | 'send' | null>(null);
   const theme = THEME[channel];
   const busy = sending || sendingLink || sendingAudio || recording;
   const bookingId = source.kind === 'rafacall' ? source.bookingId : '';
@@ -276,6 +392,7 @@ export function CrmChannelChatModal({
   function clearRecordingPreview() {
     if (recordedUrlRef.current) URL.revokeObjectURL(recordedUrlRef.current);
     recordedUrlRef.current = null;
+    afterStopActionRef.current = null;
     setRecordedBlob(null);
     setRecordedUrl(null);
     setRecordSeconds(0);
@@ -307,20 +424,30 @@ export function CrmChannelChatModal({
           window.clearInterval(recordTimerRef.current);
           recordTimerRef.current = null;
         }
+        const action = afterStopActionRef.current;
+        afterStopActionRef.current = null;
         const blob = new Blob(mediaChunksRef.current, {
           type: recorder.mimeType || 'audio/webm',
         });
         mediaChunksRef.current = [];
+        setRecording(false);
+        if (action === 'discard') {
+          clearRecordingPreview();
+          return;
+        }
         if (blob.size < 1) {
-          setRecording(false);
           setError('Não foi possível gravar o áudio.');
+          clearRecordingPreview();
+          return;
+        }
+        if (action === 'send') {
+          void sendAudioBlob(blob);
           return;
         }
         const objectUrl = URL.createObjectURL(blob);
         recordedUrlRef.current = objectUrl;
         setRecordedBlob(blob);
         setRecordedUrl(objectUrl);
-        setRecording(false);
       };
       recorder.start();
       setRecording(true);
@@ -328,6 +455,7 @@ export function CrmChannelChatModal({
       recordTimerRef.current = window.setInterval(() => {
         setRecordSeconds((current) => {
           if (current >= 119) {
+            // Limite: para e deixa pré-escuta (sem enviar automaticamente).
             stopRecording();
             return current;
           }
@@ -351,25 +479,45 @@ export function CrmChannelChatModal({
     mediaRecorderRef.current = null;
   }
 
-  async function sendRecordedAudio() {
-    if (!recordedBlob || sendingAudio) return;
+  function discardRecording() {
+    if (sendingAudio) return;
+    if (recording) {
+      afterStopActionRef.current = 'discard';
+      stopRecording();
+      return;
+    }
+    clearRecordingPreview();
+  }
+
+  function sendRecording() {
+    if (sendingAudio) return;
+    if (recording) {
+      afterStopActionRef.current = 'send';
+      stopRecording();
+      return;
+    }
+    if (recordedBlob) void sendAudioBlob(recordedBlob);
+  }
+
+  async function sendAudioBlob(blob: Blob) {
+    if (sendingAudio) return;
     setSendingAudio(true);
     setError('');
     try {
-      const ext = recordedBlob.type.includes('ogg') ? 'ogg' : 'webm';
+      const ext = blob.type.includes('ogg') ? 'ogg' : 'webm';
       const result =
         source.kind === 'rafacall'
           ? await api.admin.rafacall.sendCrmAudio(
               source.bookingId,
               channel,
-              recordedBlob,
+              blob,
               `nota-de-voz.${ext}`,
             )
           : await api.admin.chatbots.crm.sendAudio(
               source.slug,
               source.leadId,
               channel,
-              recordedBlob,
+              blob,
               `nota-de-voz.${ext}`,
             );
       stickToBottom.current = true;
@@ -378,6 +526,10 @@ export function CrmChannelChatModal({
       if (result.botPaused) onBotPaused?.();
     } catch (err: unknown) {
       setError(getUserFacingApiError(err, { context: 'Ao enviar áudio' }));
+      const objectUrl = URL.createObjectURL(blob);
+      recordedUrlRef.current = objectUrl;
+      setRecordedBlob(blob);
+      setRecordedUrl(objectUrl);
     } finally {
       setSendingAudio(false);
     }
@@ -422,6 +574,8 @@ export function CrmChannelChatModal({
     }
   }
 
+  const isWhatsapp = channel === 'WHATSAPP';
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden overscroll-none bg-black/50 p-3 sm:items-center sm:p-4">
       <div
@@ -429,36 +583,40 @@ export function CrmChannelChatModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex max-h-[min(44rem,calc(100dvh-1.5rem))] w-full max-w-xl flex-col overflow-hidden rounded-[18px] border border-border bg-card shadow-sm"
+        className={`flex max-h-[min(44rem,calc(100dvh-1.5rem))] w-full max-w-xl flex-col overflow-hidden overflow-x-hidden border shadow-lg ${
+          isWhatsapp ? 'rounded-[18px]' : 'rounded-[24px]'
+        } ${theme.shell}`}
       >
-        <header className={`border-b border-border px-4 py-3 ${theme.soft}`}>
-          <div className="flex items-start gap-3">
+        <header className={`min-w-0 border-b px-3 py-2.5 sm:px-4 ${theme.header}`}>
+          <div className="flex min-w-0 items-center gap-3">
+            <LeadMessageAvatar name={title} imageUrl={leadImageUrl} size="md" />
             <div className="min-w-0 flex-1">
-              <p id={titleId} className="truncate text-base font-semibold text-foreground">
+              <p id={titleId} className={`truncate text-[15px] font-semibold leading-tight ${theme.headerTitle}`}>
                 {title}
               </p>
-              <p className={`text-xs font-semibold ${theme.accent}`}>{theme.label}</p>
+              <p className={`text-[12px] font-medium leading-tight ${theme.headerSub}`}>{theme.label}</p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border/80 bg-card text-muted shadow-sm transition-colors hover:bg-page hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
+              className={`inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 ${theme.headerClose} ${theme.ring}`}
               aria-label="Fechar"
             >
               <CloseIcon className="h-4 w-4" />
             </button>
           </div>
           {badges || actions ? (
-            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <div className={`mt-2.5 flex min-w-0 flex-wrap items-center gap-1.5 rounded-xl border px-2 py-2 ${theme.toolbar}`}>
               {badges}
               {actions}
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => void submit({ template: 'scheduling-link' })}
-                className="inline-flex h-9 cursor-pointer items-center rounded-md border border-border bg-page px-2.5 text-xs font-medium text-foreground transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50 sm:h-8 sm:px-2 sm:text-[11px]"
+                className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 ${theme.toolbarBtn}`}
               >
-                {sendingLink ? 'A enviar…' : 'Enviar link de agendar'}
+                <VideoCallIcon className="h-3.5 w-3.5 shrink-0" />
+                {sendingLink ? 'A enviar…' : 'Agendar chamada'}
               </button>
             </div>
           ) : null}
@@ -466,16 +624,16 @@ export function CrmChannelChatModal({
 
         <div
           ref={listRef}
-          className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain bg-page px-3 py-3"
+          className={`min-h-0 min-w-0 flex-1 space-y-1.5 overflow-x-hidden overflow-y-auto overscroll-contain px-3 py-3 ${theme.thread}`}
           onScroll={(event) => {
             const node = event.currentTarget;
             const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
             stickToBottom.current = distance < 48;
           }}
         >
-          {loading ? <p className="text-sm text-muted">A carregar conversa…</p> : null}
+          {loading ? <p className={`text-sm ${theme.empty}`}>A carregar conversa…</p> : null}
           {!loading && messages.length === 0 ? (
-            <p className="text-sm text-muted">Ainda não há mensagens neste canal.</p>
+            <p className={`text-sm ${theme.empty}`}>Ainda não há mensagens neste canal.</p>
           ) : null}
           {messages.map((message) => {
             const mine = message.author !== 'LEAD';
@@ -484,7 +642,8 @@ export function CrmChannelChatModal({
                 ? 'Rafa'
                 : message.author === 'BOT'
                   ? botName
-                  : null;
+                  : title;
+            const time = formatBubbleTime(message.createdAt);
             const avatar = (
               <MessageAuthorAvatar
                 author={message.author}
@@ -497,26 +656,20 @@ export function CrmChannelChatModal({
             return (
               <div
                 key={message.id}
-                className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}
+                className={`flex min-w-0 items-end gap-1.5 ${mine ? 'justify-end' : 'justify-start'}`}
               >
-                {!mine ? avatar : null}
+                {!mine ? avatar : <span className="w-6 shrink-0" aria-hidden />}
                 <div
-                  className={`max-w-[min(85%,22rem)] rounded-[14px] px-3 py-2 text-sm leading-relaxed ${
-                    mine ? theme.mine : 'border border-border bg-card text-foreground'
+                  className={`min-w-0 max-w-[min(78%,20rem)] break-words px-2.5 py-1.5 text-[14px] leading-snug ${
+                    mine ? theme.bubbleMine : theme.bubbleTheirs
                   }`}
                 >
-                  {label ? (
-                    <p
-                      className={`mb-0.5 text-[10px] font-semibold ${
-                        mine ? 'text-white/80' : 'text-muted'
-                      }`}
-                    >
-                      {label}
-                    </p>
-                  ) : null}
+                  <p className={`mb-0.5 text-[10px] font-semibold ${mine ? theme.labelMine : theme.labelTheirs}`}>
+                    {label}
+                  </p>
                   {message.kind === 'AUDIO' && message.mediaUrl ? (
-                    <div className="space-y-1">
-                      <p className={`flex items-center gap-1.5 text-[11px] ${mine ? 'text-white/85' : 'text-muted'}`}>
+                    <div className="min-w-0 space-y-1 overflow-hidden">
+                      <p className={`flex items-center gap-1.5 text-[11px] ${mine ? theme.labelMine : theme.labelTheirs}`}>
                         <MicIcon className="h-3.5 w-3.5 shrink-0" />
                         {message.body || 'Nota de voz'}
                       </p>
@@ -524,26 +677,32 @@ export function CrmChannelChatModal({
                         controls
                         preload="metadata"
                         src={resolveUploadsUrl(message.mediaUrl)}
-                        className="max-w-full"
+                        className="block h-10 w-full max-w-full"
+                        style={{ maxWidth: '100%' }}
                       />
                     </div>
                   ) : message.kind === 'AUDIO_TRANSCRIPT' ? (
-                    <p className="flex items-start gap-1.5">
+                    <p className="flex items-start gap-1.5 break-words">
                       <MicIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                      <span>{message.body}</span>
+                      <span className="min-w-0">{message.body}</span>
                     </p>
                   ) : (
-                    <p className="whitespace-pre-wrap">{message.body}</p>
+                    <p className="whitespace-pre-wrap break-words">{message.body}</p>
                   )}
+                  {time ? (
+                    <p className={`mt-1 text-right text-[10px] leading-none ${mine ? theme.timeMine : theme.timeTheirs}`}>
+                      {time}
+                    </p>
+                  ) : null}
                 </div>
-                {mine ? avatar : null}
+                {mine ? avatar : <span className="w-6 shrink-0" aria-hidden />}
               </div>
             );
           })}
         </div>
 
         <form
-          className="border-t border-border bg-card p-3"
+          className={`min-w-0 overflow-x-hidden border-t p-2.5 sm:p-3 ${theme.composer}`}
           onSubmit={(event) => {
             event.preventDefault();
             void submit({ text: draft });
@@ -555,59 +714,38 @@ export function CrmChannelChatModal({
             </p>
           ) : null}
           {recording || recordedBlob ? (
-            <div className="mb-2 flex flex-wrap items-center gap-2 rounded-[14px] border border-border bg-page px-3 py-2">
+            <div className={`mb-2 flex min-w-0 flex-col gap-2 rounded-2xl border px-3 py-2 ${theme.recordPanel}`}>
               {recording ? (
                 <p className="text-sm font-medium text-red-700">
                   A gravar… {String(Math.floor(recordSeconds / 60)).padStart(2, '0')}:
                   {String(recordSeconds % 60).padStart(2, '0')}
                 </p>
               ) : recordedUrl ? (
-                <audio controls src={recordedUrl} className="max-w-full flex-1" />
+                <div className="min-w-0 overflow-hidden">
+                  <audio controls src={recordedUrl} className="block h-10 w-full max-w-full" />
+                </div>
               ) : null}
-              <div className="ml-auto flex flex-wrap gap-2">
-                {recording ? (
-                  <button
-                    type="button"
-                    onClick={stopRecording}
-                    className="inline-flex h-9 cursor-pointer items-center rounded-[12px] border border-border bg-card px-3 text-xs font-semibold"
-                  >
-                    Parar
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      disabled={sendingAudio}
-                      onClick={clearRecordingPreview}
-                      className="inline-flex h-9 cursor-pointer items-center rounded-[12px] border border-border bg-card px-3 text-xs font-semibold disabled:opacity-50"
-                    >
-                      Descartar
-                    </button>
-                    <button
-                      type="button"
-                      disabled={sendingAudio}
-                      onClick={() => void sendRecordedAudio()}
-                      className="inline-flex h-9 cursor-pointer items-center rounded-[12px] bg-brand-primary px-3 text-xs font-semibold text-white disabled:opacity-50"
-                    >
-                      {sendingAudio ? 'A enviar…' : 'Enviar áudio'}
-                    </button>
-                  </>
-                )}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={sendingAudio}
+                  onClick={discardRecording}
+                  className="inline-flex h-9 cursor-pointer items-center rounded-full border border-current/20 px-3 text-xs font-semibold disabled:opacity-50"
+                >
+                  Descartar
+                </button>
+                <button
+                  type="button"
+                  disabled={sendingAudio}
+                  onClick={sendRecording}
+                  className={`inline-flex h-9 cursor-pointer items-center rounded-full px-3 text-xs font-semibold disabled:opacity-50 ${theme.send}`}
+                >
+                  {sendingAudio ? 'A enviar…' : 'Enviar'}
+                </button>
               </div>
             </div>
           ) : null}
-          <div className="flex items-end gap-2">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void startRecording()}
-              className={`inline-flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-[14px] border bg-page ${theme.accent} disabled:cursor-not-allowed disabled:opacity-50 ${
-                recording ? 'border-red-300 bg-red-50' : 'border-border'
-              }`}
-              aria-label="Gravar nota de voz"
-            >
-              <MicIcon className="h-5 w-5" />
-            </button>
+          <div className="flex min-w-0 items-end gap-2">
             <label className="sr-only" htmlFor={`${titleId}-draft`}>
               Mensagem
             </label>
@@ -624,16 +762,34 @@ export function CrmChannelChatModal({
                   void submit({ text: draft });
                 }
               }}
-              placeholder={`Escrever no ${theme.label}`}
-              className={`min-h-12 flex-1 resize-none rounded-[14px] border border-border bg-page px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 ${theme.ring}`}
+              placeholder="Mensagem"
+              className={`min-h-[3.25rem] min-w-0 flex-1 resize-none px-3.5 py-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 ${theme.input} ${theme.ring}`}
             />
-            <button
-              type="submit"
-              disabled={busy || draft.trim().length === 0}
-              className="inline-flex h-12 cursor-pointer items-center rounded-[14px] bg-brand-primary px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {sending ? 'A enviar…' : 'Enviar'}
-            </button>
+            <div className="flex shrink-0 flex-col gap-1.5">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void startRecording()}
+                className={`inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full disabled:cursor-not-allowed disabled:opacity-50 ${
+                  recording ? theme.micActive : theme.mic
+                }`}
+                aria-label="Gravar nota de voz"
+              >
+                <MicIcon className="h-5 w-5" />
+              </button>
+              <button
+                type="submit"
+                disabled={busy || draft.trim().length === 0}
+                className={`inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full disabled:cursor-not-allowed disabled:opacity-50 ${theme.send}`}
+                aria-label={sending ? 'A enviar' : 'Enviar'}
+              >
+                {sending ? (
+                  <span className="text-xs font-semibold">…</span>
+                ) : (
+                  <SendIcon className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>

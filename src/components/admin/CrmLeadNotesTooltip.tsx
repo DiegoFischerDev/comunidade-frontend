@@ -97,6 +97,7 @@ export function CrmLeadNotesTooltip({
   const summaryText = summary?.trim() || '';
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
+  const requestedForOpenRef = useRef(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -121,7 +122,15 @@ export function CrmLeadNotesTooltip({
     return () => window.removeEventListener('keydown', onKey, true);
   }, [open]);
 
-  const generateLabel = summaryText ? 'Atualizar resumo' : 'Gerar resumo';
+  useEffect(() => {
+    if (!open) {
+      requestedForOpenRef.current = false;
+      return;
+    }
+    if (!onGenerateSummary || disabled || requestedForOpenRef.current) return;
+    requestedForOpenRef.current = true;
+    onGenerateSummary();
+  }, [open, onGenerateSummary, disabled]);
 
   return (
     <>
@@ -192,34 +201,32 @@ export function CrmLeadNotesTooltip({
                   </div>
 
                   <div className="rounded-xl border border-border bg-page px-3.5 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-                      Resumo da solicitação
-                    </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                        Resumo da solicitação
+                      </p>
+                      {isSummarizing ? (
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-medium text-sky-700">
+                          <SummarySpinner className="h-3 w-3" />
+                          A atualizar…
+                        </span>
+                      ) : null}
+                    </div>
                     {summaryText ? (
-                      <p className="mt-1.5 max-h-36 overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
+                      <p
+                        className={`mt-1.5 max-h-36 overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground ${
+                          isSummarizing ? 'opacity-60' : ''
+                        }`}
+                      >
                         {summaryText}
                       </p>
                     ) : (
-                      <p className="mt-1.5 text-sm text-muted">Ainda sem resumo.</p>
+                      <p className="mt-1.5 text-sm text-muted">
+                        {isSummarizing ? 'A gerar resumo…' : 'Ainda sem resumo.'}
+                      </p>
                     )}
                   </div>
                 </div>
-
-                {onGenerateSummary ? (
-                  <button
-                    type="button"
-                    disabled={disabled || isSummarizing}
-                    onClick={() => onGenerateSummary()}
-                    className="mt-4 inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-sky-300 bg-sky-50 px-4 text-sm font-medium text-sky-800 transition-colors hover:border-sky-400 hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isSummarizing ? (
-                      <SummarySpinner className="h-4 w-4" />
-                    ) : (
-                      <SparklesIcon className="h-4 w-4" />
-                    )}
-                    {isSummarizing ? 'A gerar…' : generateLabel}
-                  </button>
-                ) : null}
               </div>
             </div>,
             document.body,
