@@ -62,6 +62,7 @@ export type RafacallCrmStatus =
   | 'IMIGRACAO_NULL'
   | 'IMIGRACAO_LONGE'
   | 'IMIGRACAO_PERTO'
+  | 'POTENCIAL_CLIENTE'
   | 'VIDEO_CHAMADA_AGENDADA'
   | 'REALIZOU_VIDEO_CHAMADA'
   | 'AGUARDANDO_ASSINATURA'
@@ -1236,6 +1237,7 @@ export const api = {
       updateCrm: (
         bookingId: string,
         body: {
+          userName?: string;
           crmStatus?: RafacallCrmStatus;
           crmComments?: string;
           crmExpectedImmigrationAt?: string | null;

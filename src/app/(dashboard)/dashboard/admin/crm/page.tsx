@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/horizontal-snap-carousel';
 import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
 import { GenericChatbotCrmView } from '@/components/admin/GenericChatbotCrmView';
+import { CrmLeadNameField } from '@/components/admin/CrmLeadNameField';
 import { ChatbotAvatar } from '@/components/admin/ChatbotAvatar';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { InstagramIcon } from '@/components/icons/InstagramIcon';
@@ -868,6 +869,7 @@ function moveItemBetweenColumns(
     ...movingItem,
     ...(updatedItem ?? {}),
     crmStatus: toStatus,
+    updatedAt: updatedItem?.updatedAt ?? new Date().toISOString(),
     ...(!updatedItem && isJoanaOffCrmStatus(toStatus) ? { crmJoanaEnabled: false } : {}),
   };
 
@@ -2340,6 +2342,8 @@ function CrmClientModal({
   onJoanaEnabledChange,
   onSave,
   onClose,
+  nameDraft,
+  onNameChange,
 }: {
   item: RafacallCrmItem;
   commentsDraft: string;
@@ -2372,11 +2376,14 @@ function CrmClientModal({
   onJoanaEnabledChange: (enabled: boolean) => void;
   onSave: () => void;
   onClose: () => void;
+  nameDraft: string;
+  onNameChange: (value: string) => void;
 }) {
   const immigrationDateInputRef = useRef<HTMLInputElement>(null);
   const [immigrationOptionsOpen, setImmigrationOptionsOpen] = useState(false);
   const [videoCallOptionsOpen, setVideoCallOptionsOpen] = useState(false);
-  const name = item.userName?.trim() || 'Sem nome';
+  const name = nameDraft.trim() || 'Sem nome';
+  const hasNameChanges = nameDraft.trim() !== (item.userName?.trim() || '');
   const bookingTimezone = item.bookingTimezone?.trim() || 'Europe/Lisbon';
   const isImmediateImmigration = isCrmImmigrationImmediate(immigrationDateDraft);
   const immigrationLabel = isImmediateImmigration
@@ -2424,6 +2431,7 @@ function CrmClientModal({
   const hasVisaChanges = hasVisaDraft !== toHasVisaDraft(item.crmHasVisa);
   const hasPetChanges = hasPetDraft !== toHasPetDraft(item.crmHasPet);
   const hasChanges =
+    hasNameChanges ||
     hasCommentsChanges ||
     hasImmigrationDateChanges ||
     hasVideoCallChanges ||
@@ -2452,9 +2460,12 @@ function CrmClientModal({
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <h2 id="crm-client-modal-title" className="truncate text-lg font-semibold text-foreground">
-                    {name}
-                  </h2>
+                  <CrmLeadNameField
+                    id="crm-client-modal-title"
+                    value={nameDraft}
+                    disabled={saving}
+                    onChange={onNameChange}
+                  />
                   <p className="mt-0.5 text-sm text-muted">
                     {item.whatsappDigits
                       ? formatWhatsappDigits(item.whatsappDigits)
@@ -2982,6 +2993,7 @@ function JoanaCrmBoardPage() {
   const [desiredRentDraft, setDesiredRentDraft] = useState('');
   const [hasVisaDraft, setHasVisaDraft] = useState<boolean | null>(null);
   const [hasPetDraft, setHasPetDraft] = useState<boolean | null>(null);
+  const [nameDraft, setNameDraft] = useState('');
   const [modalSaving, setModalSaving] = useState(false);
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<RafacallCrmItem | null>(null);
   const [deleteSaving, setDeleteSaving] = useState(false);
@@ -3140,6 +3152,7 @@ function JoanaCrmBoardPage() {
     setDesiredRentDraft(toDesiredRentDraft(item.crmDesiredRent));
     setHasVisaDraft(toHasVisaDraft(item.crmHasVisa));
     setHasPetDraft(toHasPetDraft(item.crmHasPet));
+    setNameDraft(item.userName?.trim() || '');
   }, []);
 
   const handleModalStatusChange = useCallback(
@@ -3234,8 +3247,14 @@ function JoanaCrmBoardPage() {
     const hasPetChanged = hasPetDraft !== toHasPetDraft(selectedItem.crmHasPet);
     const desiredRentChanged =
       normalizeDesiredRentDraft(desiredRentDraft) !== (selectedItem.crmDesiredRent ?? null);
+    const nameChanged = nameDraft.trim() !== (selectedItem.userName?.trim() || '');
+    if (nameChanged && nameDraft.trim().length < 2) {
+      toast.error('Indica o nome do cliente.');
+      return;
+    }
 
     if (
+      !nameChanged &&
       !commentsChanged &&
       !immigrationDateChanged &&
       !videoCallChanged &&
@@ -3273,6 +3292,7 @@ function JoanaCrmBoardPage() {
     setModalSaving(true);
     try {
       const updated = await api.admin.rafacall.updateCrm(selectedItem.id, {
+        ...(nameChanged ? { userName: nameDraft.trim() } : {}),
         ...(commentsChanged ? { crmComments: commentsDraft } : {}),
         ...(immigrationDateChanged
           ? { crmExpectedImmigrationAt: immigrationDateDraft || null }
@@ -3320,6 +3340,7 @@ function JoanaCrmBoardPage() {
       setDesiredRentDraft('');
       setHasVisaDraft(null);
       setHasPetDraft(null);
+      setNameDraft('');
       toast.success('Alterações guardadas com sucesso.');
     } catch (err) {
       const { shouldRefreshAvailability } = showRafacallAdminBookingErrorToast(
@@ -3348,6 +3369,7 @@ function JoanaCrmBoardPage() {
     hasPetDraft,
     hasVisaDraft,
     immigrationDateDraft,
+    nameDraft,
     preferredCityDraft,
     propertyTypologyDraft,
     selectedItem,
@@ -3469,6 +3491,7 @@ function JoanaCrmBoardPage() {
         setDesiredRentDraft('');
         setHasVisaDraft(null);
         setHasPetDraft(null);
+        setNameDraft('');
       }
       setDeleteConfirmItem(null);
     } catch (err) {
@@ -3675,6 +3698,8 @@ function JoanaCrmBoardPage() {
           onDocumentsChange={handleDocumentsChange}
           onStatusChange={(status) => void handleModalStatusChange(status)}
           onJoanaEnabledChange={(enabled) => void handleJoanaEnabledChange(enabled)}
+          nameDraft={nameDraft}
+          onNameChange={setNameDraft}
           onSave={() => void handleSave()}
           onClose={() => {
             if (!modalSaving) {
@@ -3691,6 +3716,7 @@ function JoanaCrmBoardPage() {
               setDesiredRentDraft('');
               setHasVisaDraft(null);
               setHasPetDraft(null);
+              setNameDraft('');
             }
           }}
         />

@@ -119,6 +119,7 @@ export const RAFA_CALL_CRM_STATUS_ORDER: RafacallCrmStatus[] = [
   'IMIGRACAO_NULL',
   'IMIGRACAO_LONGE',
   'IMIGRACAO_PERTO',
+  'POTENCIAL_CLIENTE',
   'VIDEO_CHAMADA_AGENDADA',
   'REALIZOU_VIDEO_CHAMADA',
   'AGUARDANDO_ASSINATURA',
@@ -140,6 +141,7 @@ export const RAFA_CALL_CRM_STATUS_LABELS: Record<RafacallCrmStatus, string> = {
   IMIGRACAO_NULL: 'Sem data para imigar',
   IMIGRACAO_LONGE: 'Data para imigrar longe',
   IMIGRACAO_PERTO: 'Data para imigrar perto',
+  POTENCIAL_CLIENTE: 'Cliente ideal',
   VIDEO_CHAMADA_AGENDADA: 'Vídeo chamada agendada',
   REALIZOU_VIDEO_CHAMADA: 'Realizou vídeo chamada',
   AGUARDANDO_ASSINATURA: 'Contrato enviado',
@@ -195,6 +197,14 @@ export const RAFA_CALL_CRM_STATUS_TONES: Record<RafacallCrmStatus, RafacallCrmCo
     badge: 'bg-orange-500/15 text-orange-900',
     dot: 'bg-orange-400',
     dragRing: 'ring-orange-300/50',
+  },
+  POTENCIAL_CLIENTE: {
+    column: 'bg-brand-accent/[0.14]',
+    header: 'bg-brand-accent/25',
+    border: 'border-brand-accent/45',
+    badge: 'bg-brand-accent/30 text-foreground',
+    dot: 'bg-brand-accent',
+    dragRing: 'ring-brand-accent/40',
   },
   AGUARDANDO_ASSINATURA: {
     column: 'bg-violet-500/[0.07]',
@@ -309,40 +319,28 @@ export function formatImmigrationDateLabel(value: string | null | undefined): st
   });
 }
 
-export function compareCrmImmigrationDateKeys(
-  left: string | null | undefined,
-  right: string | null | undefined,
-): number {
-  const leftImmediate = isCrmImmigrationImmediate(left);
-  const rightImmediate = isCrmImmigrationImmediate(right);
-  if (leftImmediate && rightImmediate) return 0;
-  if (leftImmediate) return -1;
-  if (rightImmediate) return 1;
-
-  const leftKey = left?.trim() ?? '';
-  const rightKey = right?.trim() ?? '';
-  if (!leftKey && !rightKey) return 0;
-  if (!leftKey) return 1;
-  if (!rightKey) return -1;
-  return leftKey.localeCompare(rightKey);
-}
-
-export function sortCrmItemsByImmigrationDate<
-  T extends { crmExpectedImmigrationAt: string | null },
->(items: T[]): T[] {
-  return [...items].sort((left, right) =>
-    compareCrmImmigrationDateKeys(
-      left.crmExpectedImmigrationAt,
-      right.crmExpectedImmigrationAt,
-    ),
-  );
+/** Mais recente primeiro. Empate mantém a ordem atual. */
+export function sortCrmItemsByRecentUpdate<T extends { updatedAt: string }>(
+  items: T[],
+): T[] {
+  return items
+    .map((item, index) => ({ item, index }))
+    .sort((left, right) => {
+      const leftMs = Date.parse(left.item.updatedAt);
+      const rightMs = Date.parse(right.item.updatedAt);
+      const leftTime = Number.isNaN(leftMs) ? 0 : leftMs;
+      const rightTime = Number.isNaN(rightMs) ? 0 : rightMs;
+      if (rightTime !== leftTime) return rightTime - leftTime;
+      return left.index - right.index;
+    })
+    .map(({ item }) => item);
 }
 
 export function sortCrmBoardColumns<
-  T extends { items: Array<{ crmExpectedImmigrationAt: string | null }> },
+  T extends { items: Array<{ updatedAt: string }> },
 >(columns: T[]): T[] {
   return columns.map((column) => ({
     ...column,
-    items: sortCrmItemsByImmigrationDate(column.items),
+    items: sortCrmItemsByRecentUpdate(column.items),
   }));
 }

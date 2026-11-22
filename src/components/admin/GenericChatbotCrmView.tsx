@@ -12,6 +12,7 @@ import {
 } from '@/lib/api';
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { ChatbotAvatar } from '@/components/admin/ChatbotAvatar';
+import { CrmLeadNameField } from '@/components/admin/CrmLeadNameField';
 import {
   HORIZONTAL_CAROUSEL_TRACK,
   HorizontalSnapCarousel,
@@ -843,7 +844,13 @@ function GenericKanbanColumn({
         {column.items.length === 0 ? (
           <p className="py-4 text-center text-xs text-muted">Arraste clientes para aqui</p>
         ) : (
-          column.items.map((lead) => (
+          [...column.items]
+            .sort((left, right) => {
+              const leftMs = Date.parse(left.updatedAt) || 0;
+              const rightMs = Date.parse(right.updatedAt) || 0;
+              return rightMs - leftMs;
+            })
+            .map((lead) => (
             <GenericLeadCard
               key={lead.id}
               lead={lead}
@@ -888,6 +895,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
   >([]);
   const [subjectDraft, setSubjectDraft] = useState('');
   const [commentsDraft, setCommentsDraft] = useState('');
+  const [nameDraft, setNameDraft] = useState('');
   const [draggingLeadId, setDraggingLeadId] = useState<string | null>(null);
   const [savingLeadId, setSavingLeadId] = useState<string | null>(null);
   const isGabi = slug === 'gabi';
@@ -936,6 +944,7 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
     setTypologyDraft(normalizeCrmPropertyTypologies(lead.propertyTypology));
     setSubjectDraft(lead.subjectSummary ?? '');
     setCommentsDraft(lead.crmComments ?? '');
+    setNameDraft(lead.companyName?.trim() ? '' : leadDisplayName(lead, false));
   }
 
   async function createLead() {
@@ -1040,6 +1049,18 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
         }
       }
 
+      const titleEditsCompany = isGabi && Boolean(selected.companyName?.trim());
+      const titleDraft = titleEditsCompany ? companyDraft : nameDraft;
+      const originalTitle = titleEditsCompany
+        ? selected.companyName?.trim() || ''
+        : leadDisplayName(selected, false);
+      const titleChanged = titleDraft.trim() !== originalTitle;
+      if (!titleEditsCompany && titleChanged && titleDraft.trim().length < 2) {
+        setError('Indica o nome do cliente.');
+        setSaving(false);
+        return;
+      }
+
       const updated = await api.admin.chatbots.crm.updateLead(slug, selected.id, {
         columnId: selected.columnId,
         crmComments: commentsDraft.trim() || null,
@@ -1060,6 +1081,9 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
         ...(isOutros
           ? { subjectSummary: subjectDraft.trim() || null }
           : {}),
+        ...(!titleEditsCompany && titleChanged
+          ? { guestName: titleDraft.trim() }
+          : {}),
       });
       setSelected(updated);
       setCompanyDraft(updated.companyName ?? '');
@@ -1076,6 +1100,9 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
       setTypologyDraft(normalizeCrmPropertyTypologies(updated.propertyTypology));
       setSubjectDraft(updated.subjectSummary ?? '');
       setCommentsDraft(updated.crmComments ?? '');
+      setNameDraft(
+        updated.companyName?.trim() ? '' : leadDisplayName(updated, false),
+      );
       setSuccess('Alterações guardadas.');
       await load();
     } catch (err) {
@@ -1120,6 +1147,11 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
   }
 
   const columns = board?.columns ?? [];
+  const titleEditsCompany = Boolean(
+    selected && isGabi && selected.companyName?.trim(),
+  );
+  const titleValue = titleEditsCompany ? companyDraft : nameDraft;
+  const titleName = titleValue.trim() || 'Lead';
 
   return (
     <div className="mt-2">
@@ -1239,14 +1271,18 @@ export function GenericChatbotCrmView({ slug, botName }: Props) {
           >
             <div className="flex items-start gap-3 border-b border-border px-5 py-4">
               <LeadAvatar
-                name={leadDisplayName(selected, isGabi)}
+                name={titleName}
                 imageUrl={selected.crmProfileImageUrl}
                 size="lg"
               />
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg font-semibold text-foreground">
-                  {leadDisplayName(selected, isGabi)}
-                </h2>
+                <CrmLeadNameField
+                  id="chatbot-crm-lead-name"
+                  value={titleValue}
+                  maxLength={titleEditsCompany ? 160 : 80}
+                  disabled={saving}
+                  onChange={titleEditsCompany ? setCompanyDraft : setNameDraft}
+                />
                 <p className="mt-1 text-sm text-muted">
                   {formatWhatsappDigits(selected.whatsapp)}
                 </p>
