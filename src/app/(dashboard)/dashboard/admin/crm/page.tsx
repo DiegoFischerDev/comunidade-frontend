@@ -21,6 +21,7 @@ import { GenericChatbotCrmView } from '@/components/admin/GenericChatbotCrmView'
 import { CrmChannelChatModal } from '@/components/admin/CrmChannelChatModal';
 import {
   CrmLeadNotesTooltip,
+  CrmRecentLeadBadge,
   CrmUnansweredBadge,
   SparklesIcon,
   SummarySpinner,
@@ -1234,6 +1235,7 @@ function CrmClientCard({
         <div className="flex min-w-0 items-center gap-1.5">
           <CrmLeadAvatar name={name} imageUrl={item.crmProfileImageUrl} />
           <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{name}</p>
+          <CrmRecentLeadBadge updatedAt={item.updatedAt} />
         </div>
         <p className="mt-0.5 truncate text-[10px] text-muted/60">{wa}</p>
       </div>

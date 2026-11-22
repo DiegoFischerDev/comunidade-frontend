@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 import {
   api,
   getUserFacingApiError,
@@ -209,6 +209,162 @@ function MicIcon({ className }: { className?: string }) {
       <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z" />
       <path d="M19 11a7 7 0 0 1-14 0M12 18v3" />
     </svg>
+  );
+}
+
+function PlayIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11-6.86a1 1 0 0 0 0-1.72l-11-6.86a1 1 0 0 0-1.5.86z" />
+    </svg>
+  );
+}
+
+function PauseIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M7 5h3.5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm6.5 0H17a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-3.5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+    </svg>
+  );
+}
+
+function formatAudioClock(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+  const total = Math.floor(seconds);
+  const minutes = Math.floor(total / 60);
+  const rest = total % 60;
+  return `${minutes}:${String(rest).padStart(2, '0')}`;
+}
+
+function ChatVoiceNotePlayer({
+  src,
+  mine,
+  channel,
+}: {
+  src: string;
+  mine: boolean;
+  channel: CrmChatChannel;
+}) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const node = audioRef.current;
+    if (!node) return;
+    node.playbackRate = 2;
+
+    const onLoaded = () => {
+      if (Number.isFinite(node.duration)) setDuration(node.duration);
+    };
+    const onTime = () => setCurrent(node.currentTime);
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    const onEnded = () => {
+      setPlaying(false);
+      setCurrent(0);
+    };
+
+    node.addEventListener('loadedmetadata', onLoaded);
+    node.addEventListener('durationchange', onLoaded);
+    node.addEventListener('timeupdate', onTime);
+    node.addEventListener('play', onPlay);
+    node.addEventListener('pause', onPause);
+    node.addEventListener('ended', onEnded);
+    return () => {
+      node.removeEventListener('loadedmetadata', onLoaded);
+      node.removeEventListener('durationchange', onLoaded);
+      node.removeEventListener('timeupdate', onTime);
+      node.removeEventListener('play', onPlay);
+      node.removeEventListener('pause', onPause);
+      node.removeEventListener('ended', onEnded);
+    };
+  }, [src]);
+
+  async function togglePlayback() {
+    const node = audioRef.current;
+    if (!node) return;
+    if (node.paused) {
+      node.playbackRate = 2;
+      try {
+        await node.play();
+      } catch {
+        /* autoplay / interactivity bloqueada — o utilizador pode tentar de novo */
+      }
+      return;
+    }
+    node.pause();
+  }
+
+  function seek(event: ReactMouseEvent<HTMLDivElement>) {
+    const node = audioRef.current;
+    if (!node || !Number.isFinite(duration) || duration <= 0) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    node.currentTime = ratio * duration;
+    setCurrent(node.currentTime);
+  }
+
+  const progress = duration > 0 ? Math.min(100, (current / duration) * 100) : 0;
+  const clock = formatAudioClock(playing || current > 0 ? current : duration);
+  const isWhatsapp = channel === 'WHATSAPP';
+  const playBtn = mine
+    ? isWhatsapp
+      ? 'bg-[#008069] text-white'
+      : 'bg-white/25 text-white'
+    : isWhatsapp
+      ? 'bg-[#008069] text-white'
+      : 'bg-[#3797f0] text-white';
+  const track = mine
+    ? isWhatsapp
+      ? 'bg-[#008069]/25'
+      : 'bg-white/30'
+    : isWhatsapp
+      ? 'bg-[#111b21]/15'
+      : 'bg-[#262626]/15';
+  const fill = mine
+    ? isWhatsapp
+      ? 'bg-[#008069]'
+      : 'bg-white'
+    : isWhatsapp
+      ? 'bg-[#008069]'
+      : 'bg-[#3797f0]';
+  const meta = mine
+    ? isWhatsapp
+      ? 'text-[#667781]'
+      : 'text-white/80'
+    : isWhatsapp
+      ? 'text-[#667781]'
+      : 'text-[#8e8e8e]';
+
+  return (
+    <div className="flex min-w-[11rem] max-w-full items-center gap-2 py-0.5">
+      <button
+        type="button"
+        onClick={() => void togglePlayback()}
+        className={`inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full ${playBtn}`}
+        aria-label={playing ? 'Pausar nota de voz' : 'Reproduzir nota de voz'}
+      >
+        {playing ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="ml-0.5 h-4 w-4" />}
+      </button>
+      <div className="min-w-0 flex-1">
+        <div
+          role="slider"
+          aria-label="Progresso do áudio"
+          aria-valuemin={0}
+          aria-valuemax={Math.max(1, Math.floor(duration))}
+          aria-valuenow={Math.floor(current)}
+          tabIndex={0}
+          className={`relative h-1.5 w-full cursor-pointer overflow-hidden rounded-full ${track}`}
+          onClick={seek}
+        >
+          <span className={`absolute inset-y-0 left-0 rounded-full ${fill}`} style={{ width: `${progress}%` }} />
+        </div>
+        <p className={`mt-1 text-[10px] leading-none tabular-nums ${meta}`}>{clock}</p>
+      </div>
+      <audio ref={audioRef} preload="metadata" src={src} className="hidden" />
+    </div>
   );
 }
 
@@ -803,17 +959,11 @@ export function CrmChannelChatModal({
                       {label}
                     </p>
                     {message.kind === 'AUDIO' && message.mediaUrl ? (
-                      <div className="min-w-0 space-y-1 overflow-hidden">
-                        <p className={`flex items-center gap-1.5 text-[11px] ${mine ? theme.labelMine : theme.labelTheirs}`}>
-                          <MicIcon className="h-3.5 w-3.5 shrink-0" />
-                          {message.body || 'Nota de voz'}
-                        </p>
-                        <audio
-                          controls
-                          preload="metadata"
+                      <div className="min-w-0 overflow-hidden">
+                        <ChatVoiceNotePlayer
                           src={resolveUploadsUrl(message.mediaUrl)}
-                          className="block h-10 w-full max-w-full"
-                          style={{ maxWidth: '100%' }}
+                          mine={mine}
+                          channel={channel}
                         />
                       </div>
                     ) : message.kind === 'AUDIO_TRANSCRIPT' ? (
@@ -858,7 +1008,7 @@ export function CrmChannelChatModal({
                 </p>
               ) : recordedUrl ? (
                 <div className="min-w-0 overflow-hidden">
-                  <audio controls src={recordedUrl} className="block h-10 w-full max-w-full" />
+                  <ChatVoiceNotePlayer src={recordedUrl} mine channel={channel} />
                 </div>
               ) : null}
               <div className="flex flex-wrap gap-2">

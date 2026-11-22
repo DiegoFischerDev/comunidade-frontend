@@ -32,6 +32,7 @@ import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { InstagramIcon } from '@/components/icons/InstagramIcon';
 import {
   CrmLeadNotesTooltip,
+  CrmRecentLeadBadge,
   CrmUnansweredBadge,
   SparklesIcon,
   SummarySpinner,
@@ -697,6 +698,7 @@ function GenericLeadCard({
           <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
             {name}
           </p>
+          <CrmRecentLeadBadge updatedAt={lead.updatedAt} />
         </div>
         <p className="mt-0.5 truncate text-[10px] text-muted/60">{wa}</p>
         {documentCount > 0 ? (

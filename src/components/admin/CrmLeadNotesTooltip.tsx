@@ -29,6 +29,39 @@ export function CrmUnansweredBadge({ count }: { count: number }) {
   );
 }
 
+const CRM_RECENT_UPDATE_MS = 3 * 60 * 60 * 1000;
+
+/** Lead com `updatedAt` há menos de 3 horas. */
+export function isCrmLeadRecentlyUpdated(
+  iso: string | null | undefined,
+  nowMs: number = Date.now(),
+): boolean {
+  if (!iso) return false;
+  const updatedMs = Date.parse(iso);
+  if (!Number.isFinite(updatedMs)) return false;
+  const age = nowMs - updatedMs;
+  return age >= 0 && age < CRM_RECENT_UPDATE_MS;
+}
+
+/** Tag «Novo» no card quando a última atualização foi há menos de 3 horas. */
+export function CrmRecentLeadBadge({
+  updatedAt,
+  className,
+}: {
+  updatedAt?: string | null;
+  className?: string;
+}) {
+  if (!isCrmLeadRecentlyUpdated(updatedAt)) return null;
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center rounded-md border border-amber-200/90 bg-amber-50/90 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-950 ${className ?? ''}`}
+      title="Atualizado há menos de 3 horas"
+    >
+      Novo
+    </span>
+  );
+}
+
 const POPUP_MAX_WIDTH_PX = 320;
 const POPUP_MAX_HEIGHT_PX = 280;
 const POPUP_GAP_PX = 6;
