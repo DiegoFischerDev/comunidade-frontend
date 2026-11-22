@@ -21,6 +21,7 @@ import { GenericChatbotCrmView } from '@/components/admin/GenericChatbotCrmView'
 import { CrmChannelChatModal } from '@/components/admin/CrmChannelChatModal';
 import {
   CrmLeadNotesTooltip,
+  CrmUnansweredBadge,
   SparklesIcon,
   SummarySpinner,
   crmActionIconBtnClass,
@@ -959,10 +960,15 @@ function JoanaLeadActions({
             onOpenChat('WHATSAPP');
           }}
           aria-pressed={activeChannel === 'WHATSAPP'}
-          aria-label={`Conversar no WhatsApp com ${name}`}
+          aria-label={
+            (item.unansweredWhatsapp ?? 0) > 0
+              ? `Conversar no WhatsApp com ${name}, ${item.unansweredWhatsapp} sem resposta`
+              : `Conversar no WhatsApp com ${name}`
+          }
           title="WhatsApp"
         >
           <WhatsappIcon className={crmActionIconClass} />
+          <CrmUnansweredBadge count={item.unansweredWhatsapp ?? 0} />
         </button>
       ) : null}
       {item.canMessageInstagram ? (
@@ -978,13 +984,16 @@ function JoanaLeadActions({
           }}
           aria-pressed={activeChannel === 'INSTAGRAM'}
           aria-label={
-            item.instagramUsername
-              ? `Conversar no Instagram com ${item.instagramUsername}`
-              : `Conversar no Instagram com ${name}`
+            (item.unansweredInstagram ?? 0) > 0
+              ? `Conversar no Instagram com ${item.instagramUsername || name}, ${item.unansweredInstagram} sem resposta`
+              : item.instagramUsername
+                ? `Conversar no Instagram com ${item.instagramUsername}`
+                : `Conversar no Instagram com ${name}`
           }
           title={item.instagramUsername || 'Instagram'}
         >
           <InstagramIcon className={crmActionIconClass} />
+          <CrmUnansweredBadge count={item.unansweredInstagram ?? 0} />
         </button>
       ) : item.instagramProfileUrl ? (
         <a
@@ -3851,6 +3860,24 @@ function JoanaCrmBoardPage({
             );
             setSelectedItem((current) =>
               current?.id === chatItem.id ? { ...current, crmJoanaEnabled: false } : current,
+            );
+          }}
+          onAdminReplied={() => {
+            setColumns((prev) =>
+              prev.map((column) => ({
+                ...column,
+                items: column.items.map((entry) =>
+                  entry.id !== chatItem.id
+                    ? entry
+                    : {
+                        ...entry,
+                        unansweredWhatsapp:
+                          chatLead.channel === 'WHATSAPP' ? 0 : entry.unansweredWhatsapp,
+                        unansweredInstagram:
+                          chatLead.channel === 'INSTAGRAM' ? 0 : entry.unansweredInstagram,
+                      },
+                ),
+              })),
             );
           }}
           actions={

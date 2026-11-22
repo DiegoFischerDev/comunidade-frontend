@@ -237,6 +237,10 @@ export type ChatbotCrmLead = {
   crmProfileImageUrl: string | null;
   /** PDFs/imagens anexados (mesma chave WhatsApp que o CRM Joana). */
   documents: RafacallCrmDocument[];
+  /** Mensagens consecutivas do lead a aguardar resposta no WhatsApp. */
+  unansweredWhatsapp?: number;
+  /** Mensagens consecutivas do lead a aguardar resposta no Instagram. */
+  unansweredInstagram?: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -282,6 +286,10 @@ export type RafacallCrmItem = {
   instagramProfileUrl?: string | null;
   /** Há IGSID para responder no Direct a partir do CRM. */
   canMessageInstagram?: boolean;
+  /** Mensagens consecutivas do lead a aguardar resposta no WhatsApp. */
+  unansweredWhatsapp?: number;
+  /** Mensagens consecutivas do lead a aguardar resposta no Instagram. */
+  unansweredInstagram?: number;
   updatedAt: string;
 };
 

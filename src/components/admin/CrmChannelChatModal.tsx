@@ -264,6 +264,7 @@ export function CrmChannelChatModal({
   suspendEscape,
   onClose,
   onBotPaused,
+  onAdminReplied,
 }: {
   source: CrmChatSource;
   channel: CrmChatChannel;
@@ -276,6 +277,8 @@ export function CrmChannelChatModal({
   suspendEscape?: boolean;
   onClose: () => void;
   onBotPaused?: () => void;
+  /** Admin enviou texto/áudio/link — limpa o badge de não respondidas desse canal. */
+  onAdminReplied?: () => void;
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -524,6 +527,7 @@ export function CrmChannelChatModal({
       setMessages((current) => mergeMessages(current, [result.message]));
       clearRecordingPreview();
       if (result.botPaused) onBotPaused?.();
+      onAdminReplied?.();
     } catch (err: unknown) {
       setError(getUserFacingApiError(err, { context: 'Ao enviar áudio' }));
       const objectUrl = URL.createObjectURL(blob);
@@ -566,6 +570,7 @@ export function CrmChannelChatModal({
       setMessages((current) => mergeMessages(current, [result.message]));
       if (!isLink) setDraft('');
       if (result.botPaused) onBotPaused?.();
+      onAdminReplied?.();
     } catch (err: unknown) {
       setError(getUserFacingApiError(err, { context: 'Ao enviar' }));
     } finally {
@@ -577,17 +582,17 @@ export function CrmChannelChatModal({
   const isWhatsapp = channel === 'WHATSAPP';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden overscroll-none bg-black/50 p-3 sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-hidden overscroll-none bg-black/50 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-[max(0.25rem,env(safe-area-inset-top))] sm:items-center sm:p-3">
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`flex max-h-[min(44rem,calc(100dvh-1.5rem))] w-full max-w-xl flex-col overflow-hidden overflow-x-hidden border shadow-lg ${
+        className={`flex h-[calc(100dvh-0.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] max-h-[calc(100dvh-0.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] w-full max-w-4xl flex-col overflow-hidden overflow-x-hidden border shadow-lg sm:h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-1.5rem)] ${
           isWhatsapp ? 'rounded-[18px]' : 'rounded-[24px]'
         } ${theme.shell}`}
       >
-        <header className={`min-w-0 border-b px-3 py-2.5 sm:px-4 ${theme.header}`}>
+        <header className={`min-w-0 shrink-0 border-b px-3 py-2.5 sm:px-4 ${theme.header}`}>
           <div className="flex min-w-0 items-center gap-3">
             <LeadMessageAvatar name={title} imageUrl={leadImageUrl} size="md" />
             <div className="min-w-0 flex-1">
@@ -660,7 +665,7 @@ export function CrmChannelChatModal({
               >
                 {!mine ? avatar : <span className="w-6 shrink-0" aria-hidden />}
                 <div
-                  className={`min-w-0 max-w-[min(78%,20rem)] break-words px-2.5 py-1.5 text-[14px] leading-snug ${
+                  className={`min-w-0 max-w-[min(78%,28rem)] break-words px-2.5 py-1.5 text-[14px] leading-snug ${
                     mine ? theme.bubbleMine : theme.bubbleTheirs
                   }`}
                 >
@@ -702,7 +707,7 @@ export function CrmChannelChatModal({
         </div>
 
         <form
-          className={`min-w-0 overflow-x-hidden border-t p-2.5 sm:p-3 ${theme.composer}`}
+          className={`min-w-0 shrink-0 overflow-x-hidden border-t p-2.5 sm:p-3 ${theme.composer}`}
           onSubmit={(event) => {
             event.preventDefault();
             void submit({ text: draft });

@@ -33,6 +33,7 @@ import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { InstagramIcon } from '@/components/icons/InstagramIcon';
 import {
   CrmLeadNotesTooltip,
+  CrmUnansweredBadge,
   SparklesIcon,
   SummarySpinner,
   crmActionIconBtnClass,
@@ -807,10 +808,15 @@ function GenericLeadCard({
               onOpenChat('WHATSAPP');
             }}
             aria-pressed={activeChannel === 'WHATSAPP'}
-            aria-label={`Conversar no WhatsApp com ${name}`}
+            aria-label={
+              (lead.unansweredWhatsapp ?? 0) > 0
+                ? `Conversar no WhatsApp com ${name}, ${lead.unansweredWhatsapp} sem resposta`
+                : `Conversar no WhatsApp com ${name}`
+            }
             title="WhatsApp"
           >
             <WhatsappIcon className={crmActionIconClass} />
+            <CrmUnansweredBadge count={lead.unansweredWhatsapp ?? 0} />
           </button>
         ) : null}
         {lead.instagramUserId ? (
@@ -826,13 +832,16 @@ function GenericLeadCard({
             }}
             aria-pressed={activeChannel === 'INSTAGRAM'}
             aria-label={
-              lead.instagramHandle
-                ? `Conversar no Instagram com ${lead.instagramHandle}`
-                : `Conversar no Instagram com ${name}`
+              (lead.unansweredInstagram ?? 0) > 0
+                ? `Conversar no Instagram com ${lead.instagramHandle || name}, ${lead.unansweredInstagram} sem resposta`
+                : lead.instagramHandle
+                  ? `Conversar no Instagram com ${lead.instagramHandle}`
+                  : `Conversar no Instagram com ${name}`
             }
             title={lead.instagramHandle || 'Instagram'}
           >
             <InstagramIcon className={crmActionIconClass} />
+            <CrmUnansweredBadge count={lead.unansweredInstagram ?? 0} />
           </button>
         ) : lead.instagramHandle && lead.instagramHandle.trim() !== '' ? (
           <a
@@ -1503,6 +1512,30 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
           suspendEscape={Boolean(selected || deleteLead)}
           onClose={() => setChatLead(null)}
           onBotPaused={() => applyLead({ ...openChatLead, botEnabled: false })}
+          onAdminReplied={() => {
+            const channel = chatLead.channel;
+            const leadId = openChatLead.id;
+            setBoard((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                columns: prev.columns.map((column) => ({
+                  ...column,
+                  items: column.items.map((item) =>
+                    item.id !== leadId
+                      ? item
+                      : {
+                          ...item,
+                          unansweredWhatsapp:
+                            channel === 'WHATSAPP' ? 0 : item.unansweredWhatsapp,
+                          unansweredInstagram:
+                            channel === 'INSTAGRAM' ? 0 : item.unansweredInstagram,
+                        },
+                  ),
+                })),
+              };
+            });
+          }}
           actions={
             <>
               <CrmLeadNotesTooltip
@@ -1521,6 +1554,7 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
                 aria-label="WhatsApp"
               >
                 <WhatsappIcon className={crmActionIconClass} />
+                <CrmUnansweredBadge count={openChatLead.unansweredWhatsapp ?? 0} />
               </button>
               <button
                 type="button"
@@ -1532,6 +1566,7 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
                 aria-label="Instagram"
               >
                 <InstagramIcon className={crmActionIconClass} />
+                <CrmUnansweredBadge count={openChatLead.unansweredInstagram ?? 0} />
               </button>
               <button
                 type="button"

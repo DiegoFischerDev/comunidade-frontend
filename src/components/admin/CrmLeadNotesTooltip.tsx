@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 /** Ícone da barra de acções do card CRM — maior no mobile para toque. */
 export const crmActionIconBtnClass =
-  'inline-flex h-9 w-9 sm:h-6 sm:w-6 shrink-0 cursor-pointer items-center justify-center rounded-md border bg-page transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50';
+  'relative inline-flex h-9 w-9 sm:h-6 sm:w-6 shrink-0 cursor-pointer items-center justify-center rounded-md border bg-page transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50';
 
 export const crmActionIconClass = 'h-4 w-4 sm:h-3.5 sm:w-3.5';
 
@@ -14,6 +14,24 @@ export const crmActionTextBtnClass =
 
 export const crmActionBarClass =
   '-mx-3 -mb-3 mt-2.5 flex items-center gap-1.5 sm:gap-1 border-t border-border bg-card px-1.5 py-1.5 sm:py-1';
+
+/** Badge de não respondidas — estilo WhatsApp (círculo verde com número branco). */
+export function CrmUnansweredBadge({ count }: { count: number }) {
+  if (!Number.isFinite(count) || count <= 0) return null;
+  const label = count > 99 ? '99+' : String(Math.floor(count));
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute -right-1 -top-1 z-10 inline-flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-[#25D366] px-1 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-card"
+    >
+      {label}
+    </span>
+  );
+}
+
+const POPUP_MAX_WIDTH_PX = 320;
+const POPUP_MAX_HEIGHT_PX = 280;
+const POPUP_GAP_PX = 6;
 
 function InfoIcon({ className }: { className?: string }) {
   return (
@@ -80,6 +98,11 @@ function CloseIcon({ className }: { className?: string }) {
   );
 }
 
+function canUseHoverTooltip() {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+}
+
 export function CrmLeadNotesTooltip({
   comments,
   summary,
@@ -95,68 +118,191 @@ export function CrmLeadNotesTooltip({
 }) {
   const commentText = comments?.trim() || '';
   const summaryText = summary?.trim() || '';
+  const hasNotes = Boolean(commentText || summaryText);
   const titleId = useId();
+  const anchorRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const hideTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | undefined>(undefined);
   const requestedForOpenRef = useRef(false);
-  const [open, setOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [hoverOpen, setHoverOpen] = useState(false);
+  const [popupStyle, setPopupStyle] = useState<{
+    top: number;
+    left: number;
+    maxWidth: number;
+    transform?: string;
+  } | null>(null);
+
+  const showHover = useCallback(() => {
+    if (!canUseHoverTooltip() || modalOpen || !hasNotes) return;
+    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    setHoverOpen(true);
+  }, [hasNotes, modalOpen]);
+
+  const scheduleHideHover = useCallback(() => {
+    hideTimeoutRef.current = globalThis.setTimeout(() => setHoverOpen(false), 120);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!hoverOpen || !anchorRef.current) return;
+
+    const updatePosition = () => {
+      const anchor = anchorRef.current;
+      if (!anchor) return;
+
+      const rect = anchor.getBoundingClientRect();
+      const margin = 8;
+      const maxWidth = Math.min(POPUP_MAX_WIDTH_PX, window.innerWidth - margin * 2);
+      let left = rect.left;
+      if (left + maxWidth > window.innerWidth - margin) {
+        left = Math.max(margin, window.innerWidth - margin - maxWidth);
+      }
+      if (left < margin) left = margin;
+
+      const estimatedHeight = POPUP_MAX_HEIGHT_PX + 48;
+      const spaceBelow = window.innerHeight - rect.bottom - POPUP_GAP_PX;
+      const spaceAbove = rect.top - POPUP_GAP_PX;
+      const showAbove = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+
+      if (showAbove) {
+        setPopupStyle({
+          top: rect.top - POPUP_GAP_PX,
+          left,
+          maxWidth,
+          transform: 'translateY(-100%)',
+        });
+        return;
+      }
+
+      setPopupStyle({
+        top: rect.bottom + POPUP_GAP_PX,
+        left,
+        maxWidth,
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [hoverOpen]);
+
+  useEffect(
+    () => () => {
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    },
+    [],
+  );
 
   useEffect(() => {
-    if (!open) return;
+    if (!modalOpen) return;
+    setHoverOpen(false);
     closeRef.current?.focus();
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [open]);
+  }, [modalOpen]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!modalOpen) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      setOpen(false);
+      setModalOpen(false);
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [open]);
+  }, [modalOpen]);
 
   useEffect(() => {
-    if (!open) {
+    if (!modalOpen) {
       requestedForOpenRef.current = false;
       return;
     }
     if (!onGenerateSummary || disabled || requestedForOpenRef.current) return;
     requestedForOpenRef.current = true;
     onGenerateSummary();
-  }, [open, onGenerateSummary, disabled]);
+  }, [modalOpen, onGenerateSummary, disabled]);
 
   return (
     <>
       <button
+        ref={anchorRef}
         type="button"
         draggable={false}
         disabled={disabled}
         className={`${crmActionIconBtnClass} border-sky-300 bg-sky-50 text-sky-700 hover:border-sky-400 hover:bg-sky-100`}
         aria-label="Informação do lead"
-        title="Informação"
+        title={hasNotes ? undefined : 'Informação'}
         aria-haspopup="dialog"
-        aria-expanded={open}
+        aria-expanded={modalOpen}
         onMouseDown={(event) => event.stopPropagation()}
         onClick={(event) => {
           event.stopPropagation();
           if (disabled) return;
-          setOpen(true);
+          setHoverOpen(false);
+          setModalOpen(true);
         }}
+        onMouseEnter={showHover}
+        onMouseLeave={scheduleHideHover}
+        onFocus={showHover}
+        onBlur={scheduleHideHover}
       >
         <InfoIcon className={crmActionIconClass} />
       </button>
-      {open && typeof document !== 'undefined'
+
+      {hasNotes && hoverOpen && !modalOpen && popupStyle && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              role="tooltip"
+              style={{
+                position: 'fixed',
+                top: popupStyle.top,
+                left: popupStyle.left,
+                maxWidth: popupStyle.maxWidth,
+                transform: popupStyle.transform,
+                zIndex: 130,
+              }}
+              className="w-max rounded-xl border border-border bg-card p-4 text-sm leading-relaxed text-foreground shadow-lg"
+              onMouseEnter={showHover}
+              onMouseLeave={scheduleHideHover}
+            >
+              {commentText ? (
+                <div>
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                    Comentário
+                  </p>
+                  <p className="max-h-40 overflow-y-auto whitespace-pre-wrap break-words">
+                    {commentText}
+                  </p>
+                </div>
+              ) : null}
+              {summaryText ? (
+                <div className={commentText ? 'mt-3 border-t border-border pt-3' : undefined}>
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                    Resumo da solicitação
+                  </p>
+                  <p className="max-h-40 overflow-y-auto whitespace-pre-wrap break-words">
+                    {summaryText}
+                  </p>
+                </div>
+              ) : null}
+            </div>,
+            document.body,
+          )
+        : null}
+
+      {modalOpen && typeof document !== 'undefined'
         ? createPortal(
             <div
               className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 p-3 sm:items-center sm:p-4"
-              onClick={() => setOpen(false)}
+              onClick={() => setModalOpen(false)}
               onMouseDown={(event) => event.stopPropagation()}
             >
               <div
@@ -178,7 +324,7 @@ export function CrmLeadNotesTooltip({
                   <button
                     ref={closeRef}
                     type="button"
-                    onClick={() => setOpen(false)}
+                    onClick={() => setModalOpen(false)}
                     className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-[14px] border border-border bg-card text-foreground transition-colors hover:bg-page focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
                     aria-label="Fechar"
                   >
