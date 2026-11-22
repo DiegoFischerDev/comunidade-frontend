@@ -1,11 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-const POPUP_MAX_WIDTH_PX = 320;
-const POPUP_MAX_HEIGHT_PX = 280;
-const POPUP_GAP_PX = 6;
+/** Ícone da barra de acções do card CRM — maior no mobile para toque. */
+export const crmActionIconBtnClass =
+  'inline-flex h-9 w-9 sm:h-6 sm:w-6 shrink-0 cursor-pointer items-center justify-center rounded-md border bg-page transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50';
+
+export const crmActionIconClass = 'h-4 w-4 sm:h-3.5 sm:w-3.5';
+
+export const crmActionTextBtnClass =
+  'inline-flex h-9 sm:h-6 cursor-pointer items-center rounded-md border border-border bg-page px-2.5 sm:px-1.5 text-xs sm:text-[11px] font-medium leading-none text-foreground transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30';
+
+export const crmActionBarClass =
+  '-mx-3 -mb-3 mt-2.5 flex items-center gap-1.5 sm:gap-1 border-t border-border bg-card px-1.5 py-1.5 sm:py-1';
 
 function InfoIcon({ className }: { className?: string }) {
   return (
@@ -55,6 +63,23 @@ export function SummarySpinner({ className }: { className?: string }) {
   );
 }
 
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
 export function CrmLeadNotesTooltip({
   comments,
   summary,
@@ -70,145 +95,132 @@ export function CrmLeadNotesTooltip({
 }) {
   const commentText = comments?.trim() || '';
   const summaryText = summary?.trim() || '';
-  const anchorRef = useRef<HTMLButtonElement>(null);
-  const hideTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | undefined>(undefined);
+  const titleId = useId();
+  const closeRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
-  const [popupStyle, setPopupStyle] = useState<{
-    top: number;
-    left: number;
-    maxWidth: number;
-    transform?: string;
-  } | null>(null);
 
-  const show = useCallback(() => {
-    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-    setOpen(true);
-  }, []);
-
-  const scheduleHide = useCallback(() => {
-    hideTimeoutRef.current = globalThis.setTimeout(() => setOpen(false), 120);
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!open || !anchorRef.current) return;
-
-    const updatePosition = () => {
-      const anchor = anchorRef.current;
-      if (!anchor) return;
-
-      const rect = anchor.getBoundingClientRect();
-      const margin = 8;
-      const maxWidth = Math.min(POPUP_MAX_WIDTH_PX, window.innerWidth - margin * 2);
-      let left = rect.left;
-      if (left + maxWidth > window.innerWidth - margin) {
-        left = Math.max(margin, window.innerWidth - margin - maxWidth);
-      }
-      if (left < margin) left = margin;
-
-      const estimatedHeight = POPUP_MAX_HEIGHT_PX + 48;
-      const spaceBelow = window.innerHeight - rect.bottom - POPUP_GAP_PX;
-      const spaceAbove = rect.top - POPUP_GAP_PX;
-      const showAbove = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
-
-      if (showAbove) {
-        setPopupStyle({
-          top: rect.top - POPUP_GAP_PX,
-          left,
-          maxWidth,
-          transform: 'translateY(-100%)',
-        });
-        return;
-      }
-
-      setPopupStyle({
-        top: rect.bottom + POPUP_GAP_PX,
-        left,
-        maxWidth,
-      });
-    };
-
-    updatePosition();
-    window.addEventListener('scroll', updatePosition, true);
-    window.addEventListener('resize', updatePosition);
+  useEffect(() => {
+    if (!open) return;
+    closeRef.current?.focus();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     return () => {
-      window.removeEventListener('scroll', updatePosition, true);
-      window.removeEventListener('resize', updatePosition);
+      document.body.style.overflow = previousOverflow;
     };
   }, [open]);
 
-  useEffect(
-    () => () => {
-      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-    },
-    [],
-  );
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setOpen(false);
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [open]);
 
-  const hasNotes = Boolean(commentText || summaryText);
-  const isDisabled = disabled || isSummarizing;
+  const generateLabel = summaryText ? 'Atualizar resumo' : 'Gerar resumo';
 
   return (
     <>
       <button
-        ref={anchorRef}
         type="button"
         draggable={false}
-        disabled={isDisabled}
-        className="inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md border border-sky-300 bg-sky-50 text-sky-700 transition-colors hover:border-sky-400 hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-50"
-        aria-label="Informação do lead. Clique para gerar resumo."
-        title="Informação — clique para gerar resumo"
+        disabled={disabled}
+        className={`${crmActionIconBtnClass} border-sky-300 bg-sky-50 text-sky-700 hover:border-sky-400 hover:bg-sky-100`}
+        aria-label="Informação do lead"
+        title="Informação"
+        aria-haspopup="dialog"
+        aria-expanded={open}
         onMouseDown={(event) => event.stopPropagation()}
         onClick={(event) => {
           event.stopPropagation();
-          if (!onGenerateSummary || isDisabled) return;
-          onGenerateSummary();
+          if (disabled) return;
+          setOpen(true);
         }}
-        onMouseEnter={() => {
-          if (hasNotes) show();
-        }}
-        onMouseLeave={scheduleHide}
-        onFocus={() => {
-          if (hasNotes) show();
-        }}
-        onBlur={scheduleHide}
       >
-        {isSummarizing ? <SummarySpinner /> : <InfoIcon className="h-3.5 w-3.5" />}
+        <InfoIcon className={crmActionIconClass} />
       </button>
-      {hasNotes && open && popupStyle && typeof document !== 'undefined'
+      {open && typeof document !== 'undefined'
         ? createPortal(
             <div
-              role="tooltip"
-              style={{
-                position: 'fixed',
-                top: popupStyle.top,
-                left: popupStyle.left,
-                maxWidth: popupStyle.maxWidth,
-                transform: popupStyle.transform,
-                zIndex: 130,
-              }}
-              className="w-max rounded-xl border border-border bg-card p-4 text-sm leading-relaxed text-foreground shadow-lg"
-              onMouseEnter={show}
-              onMouseLeave={scheduleHide}
+              className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 p-3 sm:items-center sm:p-4"
+              onClick={() => setOpen(false)}
+              onMouseDown={(event) => event.stopPropagation()}
             >
-              {commentText ? (
-                <div>
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
-                    Comentário
-                  </p>
-                  <p className="max-h-40 overflow-y-auto whitespace-pre-wrap break-words">
-                    {commentText}
-                  </p>
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                className="w-full max-w-sm rounded-[18px] border border-border bg-card p-4 shadow-sm sm:p-5"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h2 id={titleId} className="text-base font-semibold text-foreground">
+                      Informação do lead
+                    </h2>
+                    <p className="mt-0.5 text-xs text-muted">
+                      Notas e resumo da solicitação
+                    </p>
+                  </div>
+                  <button
+                    ref={closeRef}
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-[14px] border border-border bg-card text-foreground transition-colors hover:bg-page focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
+                    aria-label="Fechar"
+                  >
+                    <CloseIcon className="h-4 w-4" />
+                  </button>
                 </div>
-              ) : null}
-              {summaryText ? (
-                <div className={commentText ? 'mt-3 border-t border-border pt-3' : undefined}>
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
-                    Resumo da solicitação
-                  </p>
-                  <p className="max-h-40 overflow-y-auto whitespace-pre-wrap break-words">
-                    {summaryText}
-                  </p>
+
+                <div className="mt-4 space-y-3">
+                  <div className="rounded-xl border border-border bg-page px-3.5 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                      Comentário
+                    </p>
+                    {commentText ? (
+                      <p className="mt-1.5 max-h-36 overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
+                        {commentText}
+                      </p>
+                    ) : (
+                      <p className="mt-1.5 text-sm text-muted">Sem comentário.</p>
+                    )}
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-page px-3.5 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                      Resumo da solicitação
+                    </p>
+                    {summaryText ? (
+                      <p className="mt-1.5 max-h-36 overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
+                        {summaryText}
+                      </p>
+                    ) : (
+                      <p className="mt-1.5 text-sm text-muted">Ainda sem resumo.</p>
+                    )}
+                  </div>
                 </div>
-              ) : null}
+
+                {onGenerateSummary ? (
+                  <button
+                    type="button"
+                    disabled={disabled || isSummarizing}
+                    onClick={() => onGenerateSummary()}
+                    className="mt-4 inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-sky-300 bg-sky-50 px-4 text-sm font-medium text-sky-800 transition-colors hover:border-sky-400 hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isSummarizing ? (
+                      <SummarySpinner className="h-4 w-4" />
+                    ) : (
+                      <SparklesIcon className="h-4 w-4" />
+                    )}
+                    {isSummarizing ? 'A gerar…' : generateLabel}
+                  </button>
+                ) : null}
+              </div>
             </div>,
             document.body,
           )

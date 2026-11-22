@@ -23,6 +23,10 @@ import {
   CrmLeadNotesTooltip,
   SparklesIcon,
   SummarySpinner,
+  crmActionIconBtnClass,
+  crmActionIconClass,
+  crmActionTextBtnClass,
+  crmActionBarClass,
 } from '@/components/admin/CrmLeadNotesTooltip';
 import { CrmLeadNameField } from '@/components/admin/CrmLeadNameField';
 import { ChatbotAvatar } from '@/components/admin/ChatbotAvatar';
@@ -947,7 +951,7 @@ function JoanaLeadActions({
         <button
           type="button"
           draggable={false}
-          className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border bg-page text-[#25D366] transition-colors hover:border-[#25D366]/40 hover:bg-[#25D366]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 ${
+          className={`${crmActionIconBtnClass} text-[#25D366] hover:border-[#25D366]/40 hover:bg-[#25D366]/10 ${
             activeChannel === 'WHATSAPP' ? 'border-[#25D366]' : 'border-border'
           }`}
           onClick={(event) => {
@@ -958,14 +962,14 @@ function JoanaLeadActions({
           aria-label={`Conversar no WhatsApp com ${name}`}
           title="WhatsApp"
         >
-          <WhatsappIcon className="h-3.5 w-3.5" />
+          <WhatsappIcon className={crmActionIconClass} />
         </button>
       ) : null}
       {item.canMessageInstagram ? (
         <button
           type="button"
           draggable={false}
-          className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border bg-page text-[#E1306C] transition-colors hover:border-[#E1306C]/40 hover:bg-[#E1306C]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 ${
+          className={`${crmActionIconBtnClass} text-[#E1306C] hover:border-[#E1306C]/40 hover:bg-[#E1306C]/10 ${
             activeChannel === 'INSTAGRAM' ? 'border-[#E1306C]' : 'border-border'
           }`}
           onClick={(event) => {
@@ -980,7 +984,7 @@ function JoanaLeadActions({
           }
           title={item.instagramUsername || 'Instagram'}
         >
-          <InstagramIcon className="h-3.5 w-3.5" />
+          <InstagramIcon className={crmActionIconClass} />
         </button>
       ) : item.instagramProfileUrl ? (
         <a
@@ -988,7 +992,7 @@ function JoanaLeadActions({
           target="_blank"
           rel="noopener noreferrer"
           draggable={false}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-border bg-page text-[#E1306C] transition-colors hover:border-[#E1306C]/40 hover:bg-[#E1306C]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
+          className={`${crmActionIconBtnClass} border-border text-[#E1306C] hover:border-[#E1306C]/40 hover:bg-[#E1306C]/10`}
           onClick={(event) => event.stopPropagation()}
           aria-label={
             item.instagramUsername
@@ -997,7 +1001,7 @@ function JoanaLeadActions({
           }
           title={item.instagramUsername || 'Instagram'}
         >
-          <InstagramIcon className="h-3.5 w-3.5" />
+          <InstagramIcon className={crmActionIconClass} />
         </a>
       ) : null}
       <button
@@ -1017,16 +1021,16 @@ function JoanaLeadActions({
           event.stopPropagation();
           onToggleJoana();
         }}
-        className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50 ${
+        className={`${crmActionIconBtnClass} ${
           item.crmJoanaEnabled === false
             ? 'border-rose-300 bg-rose-100 text-rose-950 hover:bg-rose-200'
             : 'border-emerald-300 bg-emerald-100 text-emerald-950 hover:bg-emerald-200'
         }`}
       >
         {item.crmJoanaEnabled === false ? (
-          <JoanaOffIcon className="h-3.5 w-3.5" />
+          <JoanaOffIcon className={crmActionIconClass} />
         ) : (
-          <JoanaIcon className="h-3.5 w-3.5" />
+          <JoanaIcon className={crmActionIconClass} />
         )}
       </button>
       <button
@@ -1036,7 +1040,7 @@ function JoanaLeadActions({
           event.stopPropagation();
           onOpenDetails();
         }}
-        className="inline-flex h-6 cursor-pointer items-center rounded-md border border-border bg-page px-1.5 text-[11px] font-medium leading-none text-foreground transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
+        className={crmActionTextBtnClass}
       >
         Editar
       </button>
@@ -1047,16 +1051,22 @@ function JoanaLeadActions({
           event.stopPropagation();
           onRequestDelete();
         }}
-        className="ml-auto inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-border bg-page text-muted transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+        className={`${crmActionIconBtnClass} ml-auto border-border text-muted hover:border-red-200 hover:bg-red-50 hover:text-red-700 focus-visible:ring-red-200`}
         aria-label={`Excluir ${name} do CRM`}
       >
-        <TrashIcon className="h-3.5 w-3.5" />
+        <TrashIcon className={crmActionIconClass} />
       </button>
     </>
   );
 }
 
-function JoanaLeadBadges({ item }: { item: RafacallCrmItem }) {
+function JoanaLeadBadges({
+  item,
+  className = 'flex flex-wrap items-center gap-1.5',
+}: {
+  item: RafacallCrmItem;
+  className?: string;
+}) {
   const immigrationDateLabel = formatImmigrationDateLabel(item.crmExpectedImmigrationAt);
   const isImmediateImmigration = isCrmImmigrationImmediate(item.crmExpectedImmigrationAt);
   const videoCallBadge = formatVideoCallBadgeLabel(item);
@@ -1067,102 +1077,97 @@ function JoanaLeadBadges({ item }: { item: RafacallCrmItem }) {
     item.crmHasVisa === true ? 'Tem visto' : item.crmHasVisa === false ? 'Sem visto' : null;
   const desiredRentLabel =
     item.crmDesiredRent != null ? formatCrmEuroAmount(item.crmDesiredRent) : null;
-  const hasPreferences = Boolean(
-    propertyTypologyLabels.length > 0 || preferredCityLabel || hasPet || desiredRentLabel,
-  );
   const paymentsTotal = item.paymentsTotal ?? sumCrmPayments(item.payments ?? []);
   const hasPayments = paymentsTotal > 0;
   const documentCount = item.documents?.length ?? 0;
+  const hasAny =
+    hasPayments ||
+    documentCount > 0 ||
+    Boolean(immigrationDateLabel) ||
+    Boolean(videoCallBadge) ||
+    Boolean(visaLabel) ||
+    propertyTypologyLabels.length > 0 ||
+    Boolean(preferredCityLabel) ||
+    Boolean(desiredRentLabel) ||
+    hasPet;
+
+  if (!hasAny) return null;
 
   return (
-    <div>
-      {hasPayments || documentCount > 0 ? (
-        <div className="mb-2 flex flex-wrap items-center gap-1">
-          {hasPayments ? (
-            <p className="inline-flex max-w-full items-center gap-1 rounded-md border border-emerald-200/90 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-semibold text-emerald-900">
-              <EuroIcon className="h-3.5 w-3.5 shrink-0 text-emerald-700" />
-              <span className="truncate">{formatCrmEuroAmount(paymentsTotal)}</span>
-            </p>
-          ) : null}
-          {documentCount > 0 ? (
-            <p className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-0.5 text-[11px] font-semibold text-foreground">
-              <FileIcon className="h-3.5 w-3.5 shrink-0 text-brand-primary" />
-              <span>
-                {documentCount} PDF{documentCount === 1 ? '' : 's'}
-              </span>
-            </p>
-          ) : null}
-        </div>
+    <div className={className}>
+      {hasPayments ? (
+        <p className="inline-flex max-w-full items-center gap-1 rounded-md border border-emerald-200/90 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-semibold text-emerald-900">
+          <EuroIcon className="h-3.5 w-3.5 shrink-0 text-emerald-700" />
+          <span className="truncate">{formatCrmEuroAmount(paymentsTotal)}</span>
+        </p>
       ) : null}
-      {immigrationDateLabel || videoCallBadge ? (
-        <div className="flex flex-wrap items-center gap-1">
-          {immigrationDateLabel ? (
-            <span
-              className={`inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold whitespace-nowrap ${
-                isImmediateImmigration
-                  ? 'border-orange-200/90 bg-orange-50/90 text-orange-950'
-                  : 'border-amber-200/90 bg-amber-50/90 text-amber-950'
-              }`}
-            >
-              <PlaneIcon
-                className={`h-3.5 w-3.5 shrink-0 ${
-                  isImmediateImmigration ? 'text-orange-700' : 'text-amber-700'
-                }`}
-              />
-              {immigrationDateLabel}
-            </span>
-          ) : null}
-          {videoCallBadge ? (
-            <span
-              className={`inline-flex min-w-0 items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold whitespace-nowrap ${
-                videoCallBadge.tone === 'completed'
-                  ? 'border-emerald-200/90 bg-emerald-50/90 text-emerald-950'
-                  : 'border-sky-200/90 bg-sky-50/90 text-sky-950'
-              }`}
-            >
-              <VideoIcon
-                className={`h-3.5 w-3.5 shrink-0 ${
-                  videoCallBadge.tone === 'completed' ? 'text-emerald-700' : 'text-sky-700'
-                }`}
-              />
-              <span className="truncate">{videoCallBadge.label}</span>
-            </span>
-          ) : null}
-        </div>
+      {documentCount > 0 ? (
+        <p className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-0.5 text-[11px] font-semibold text-foreground">
+          <FileIcon className="h-3.5 w-3.5 shrink-0 text-brand-primary" />
+          <span>
+            {documentCount} PDF{documentCount === 1 ? '' : 's'}
+          </span>
+        </p>
+      ) : null}
+      {immigrationDateLabel ? (
+        <span
+          className={`inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold whitespace-nowrap ${
+            isImmediateImmigration
+              ? 'border-orange-200/90 bg-orange-50/90 text-orange-950'
+              : 'border-amber-200/90 bg-amber-50/90 text-amber-950'
+          }`}
+        >
+          <PlaneIcon
+            className={`h-3.5 w-3.5 shrink-0 ${
+              isImmediateImmigration ? 'text-orange-700' : 'text-amber-700'
+            }`}
+          />
+          {immigrationDateLabel}
+        </span>
+      ) : null}
+      {videoCallBadge ? (
+        <span
+          className={`inline-flex min-w-0 items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold whitespace-nowrap ${
+            videoCallBadge.tone === 'completed'
+              ? 'border-emerald-200/90 bg-emerald-50/90 text-emerald-950'
+              : 'border-sky-200/90 bg-sky-50/90 text-sky-950'
+          }`}
+        >
+          <VideoIcon
+            className={`h-3.5 w-3.5 shrink-0 ${
+              videoCallBadge.tone === 'completed' ? 'text-emerald-700' : 'text-sky-700'
+            }`}
+          />
+          <span className="truncate">{videoCallBadge.label}</span>
+        </span>
       ) : null}
       {visaLabel ? (
-        <div className="mt-2">
-          <span className="inline-flex max-w-full items-center rounded-md border border-border bg-card px-2 py-1 text-[10px] font-medium text-foreground">
-            {visaLabel}
-          </span>
-        </div>
+        <span className="inline-flex max-w-full items-center rounded-md border border-border bg-card px-2 py-1 text-[10px] font-medium text-foreground">
+          {visaLabel}
+        </span>
       ) : null}
-      {hasPreferences ? (
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {propertyTypologyLabels.map((label) => (
-            <span
-              key={label}
-              className="inline-flex max-w-full items-center rounded-md border border-violet-200/90 bg-violet-50/90 px-2 py-1 text-[10px] font-medium text-violet-900"
-            >
-              {label}
-            </span>
-          ))}
-          {preferredCityLabel ? (
-            <span className="inline-flex max-w-full items-center rounded-md border border-sky-200/90 bg-sky-50/90 px-2 py-1 text-[10px] font-medium text-sky-900">
-              {preferredCityLabel}
-            </span>
-          ) : null}
-          {desiredRentLabel ? (
-            <span className="inline-flex max-w-full items-center rounded-md border border-amber-200/90 bg-amber-50/90 px-2 py-1 text-[10px] font-medium text-amber-950">
-              Aluguel {desiredRentLabel}
-            </span>
-          ) : null}
-          {hasPet ? (
-            <span className="inline-flex max-w-full items-center rounded-md border border-emerald-200/90 bg-emerald-50/90 px-2 py-1 text-[10px] font-medium text-emerald-900">
-              PET
-            </span>
-          ) : null}
-        </div>
+      {propertyTypologyLabels.map((label) => (
+        <span
+          key={label}
+          className="inline-flex max-w-full items-center rounded-md border border-violet-200/90 bg-violet-50/90 px-2 py-1 text-[10px] font-medium text-violet-900"
+        >
+          {label}
+        </span>
+      ))}
+      {preferredCityLabel ? (
+        <span className="inline-flex max-w-full items-center rounded-md border border-sky-200/90 bg-sky-50/90 px-2 py-1 text-[10px] font-medium text-sky-900">
+          {preferredCityLabel}
+        </span>
+      ) : null}
+      {desiredRentLabel ? (
+        <span className="inline-flex max-w-full items-center rounded-md border border-amber-200/90 bg-amber-50/90 px-2 py-1 text-[10px] font-medium text-amber-950">
+          Aluguel {desiredRentLabel}
+        </span>
+      ) : null}
+      {hasPet ? (
+        <span className="inline-flex max-w-full items-center rounded-md border border-emerald-200/90 bg-emerald-50/90 px-2 py-1 text-[10px] font-medium text-emerald-900">
+          PET
+        </span>
       ) : null}
     </div>
   );
@@ -1232,7 +1237,7 @@ function CrmClientCard({
         <p className="mt-2 text-[10px] leading-tight text-muted">Atualizado {updatedAtLabel}</p>
       ) : null}
 
-      <div className="-mx-3 -mb-3 mt-2.5 flex items-center gap-1 border-t border-border bg-card px-1.5 py-1">
+      <div className={crmActionBarClass}>
         <JoanaLeadActions
           item={item}
           name={name}
@@ -3832,7 +3837,7 @@ function JoanaCrmBoardPage({
           leadImageUrl={chatItem.crmProfileImageUrl}
           botSlug="joana"
           botName="Joana"
-          badges={<JoanaLeadBadges item={chatItem} />}
+          badges={<JoanaLeadBadges item={chatItem} className="contents" />}
           suspendEscape={Boolean(selectedItem || deleteConfirmItem)}
           onClose={() => setChatLead(null)}
           onBotPaused={() => {

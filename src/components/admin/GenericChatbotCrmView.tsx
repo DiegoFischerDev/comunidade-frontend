@@ -35,6 +35,10 @@ import {
   CrmLeadNotesTooltip,
   SparklesIcon,
   SummarySpinner,
+  crmActionIconBtnClass,
+  crmActionIconClass,
+  crmActionTextBtnClass,
+  crmActionBarClass,
 } from '@/components/admin/CrmLeadNotesTooltip';
 
 const CRM_DOCUMENT_MAX_BYTES = 15 * 1024 * 1024;
@@ -152,9 +156,11 @@ function formatInstagramBadge(value: string | null): string | null {
 function GenericLeadBadgeRow({
   lead,
   slug,
+  className = 'flex flex-wrap gap-1.5',
 }: {
   lead: ChatbotCrmLead;
   slug: Exclude<AdminChatbotSlug, 'joana'>;
+  className?: string;
 }) {
   const isGabi = slug === 'gabi';
   const isBruna = slug === 'bruna';
@@ -198,7 +204,7 @@ function GenericLeadBadgeRow({
 
   if (chips.length === 0 && documentCount === 0) return null;
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className={className}>
       {documentCount > 0 ? (
         <span className="inline-flex items-center rounded-md border border-border bg-card px-2 py-1 text-[10px] font-semibold text-foreground">
           {documentCount} ficheiro{documentCount === 1 ? '' : 's'}
@@ -781,7 +787,7 @@ function GenericLeadCard({
         </p>
       ) : null}
 
-      <div className="-mx-3 -mb-3 mt-2.5 flex items-center gap-1 border-t border-border bg-card px-1.5 py-1">
+      <div className={crmActionBarClass}>
         <CrmLeadNotesTooltip
           comments={comments}
           summary={lead.crmRequestSummary}
@@ -793,7 +799,7 @@ function GenericLeadCard({
           <button
             type="button"
             draggable={false}
-            className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border bg-page text-[#25D366] transition-colors hover:border-[#25D366]/40 hover:bg-[#25D366]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 ${
+            className={`${crmActionIconBtnClass} text-[#25D366] hover:border-[#25D366]/40 hover:bg-[#25D366]/10 ${
               activeChannel === 'WHATSAPP' ? 'border-[#25D366]' : 'border-border'
             }`}
             onClick={(event) => {
@@ -804,14 +810,14 @@ function GenericLeadCard({
             aria-label={`Conversar no WhatsApp com ${name}`}
             title="WhatsApp"
           >
-            <WhatsappIcon className="h-3.5 w-3.5" />
+            <WhatsappIcon className={crmActionIconClass} />
           </button>
         ) : null}
         {lead.instagramUserId ? (
           <button
             type="button"
             draggable={false}
-            className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border bg-page text-[#E1306C] transition-colors hover:border-[#E1306C]/40 hover:bg-[#E1306C]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 ${
+            className={`${crmActionIconBtnClass} text-[#E1306C] hover:border-[#E1306C]/40 hover:bg-[#E1306C]/10 ${
               activeChannel === 'INSTAGRAM' ? 'border-[#E1306C]' : 'border-border'
             }`}
             onClick={(event) => {
@@ -826,7 +832,7 @@ function GenericLeadCard({
             }
             title={lead.instagramHandle || 'Instagram'}
           >
-            <InstagramIcon className="h-3.5 w-3.5" />
+            <InstagramIcon className={crmActionIconClass} />
           </button>
         ) : lead.instagramHandle && lead.instagramHandle.trim() !== '' ? (
           <a
@@ -834,12 +840,12 @@ function GenericLeadCard({
             target="_blank"
             rel="noopener noreferrer"
             draggable={false}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-border bg-page text-[#E1306C] transition-colors hover:border-[#E1306C]/40 hover:bg-[#E1306C]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
+            className={`${crmActionIconBtnClass} border-border text-[#E1306C] hover:border-[#E1306C]/40 hover:bg-[#E1306C]/10`}
             onClick={(event) => event.stopPropagation()}
             aria-label={`Abrir Instagram ${lead.instagramHandle}`}
             title={lead.instagramHandle}
           >
-            <InstagramIcon className="h-3.5 w-3.5" />
+            <InstagramIcon className={crmActionIconClass} />
           </a>
         ) : null}
         <button
@@ -861,23 +867,23 @@ function GenericLeadCard({
             event.stopPropagation();
             onToggleBot();
           }}
-          className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50 ${
+          className={`${crmActionIconBtnClass} ${
             lead.botEnabled
               ? 'border-emerald-300 bg-emerald-100 text-emerald-950 hover:bg-emerald-200'
               : 'border-rose-300 bg-rose-100 text-rose-950 hover:bg-rose-200'
           }`}
         >
           {lead.botEnabled ? (
-            <BotIcon className="h-3.5 w-3.5" />
+            <BotIcon className={crmActionIconClass} />
           ) : (
-            <BotOffIcon className="h-3.5 w-3.5" />
+            <BotOffIcon className={crmActionIconClass} />
           )}
         </button>
         <button
           type="button"
           draggable={false}
           onClick={onOpenDetails}
-          className="inline-flex h-6 cursor-pointer items-center rounded-md border border-border bg-page px-1.5 text-[11px] font-medium leading-none text-foreground transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
+          className={crmActionTextBtnClass}
         >
           Editar
         </button>
@@ -888,10 +894,10 @@ function GenericLeadCard({
             event.stopPropagation();
             onRequestDelete();
           }}
-          className="ml-auto inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-border bg-page text-muted transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+          className={`${crmActionIconBtnClass} ml-auto border-border text-muted hover:border-red-200 hover:bg-red-50 hover:text-red-700 focus-visible:ring-red-200`}
           aria-label={`Excluir ${name} do CRM`}
         >
-          <TrashIcon className="h-3.5 w-3.5" />
+          <TrashIcon className={crmActionIconClass} />
         </button>
       </div>
     </article>
@@ -1493,7 +1499,7 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
           leadImageUrl={openChatLead.crmProfileImageUrl}
           botSlug={slug}
           botName={botName}
-          badges={<GenericLeadBadgeRow lead={openChatLead} slug={slug} />}
+          badges={<GenericLeadBadgeRow lead={openChatLead} slug={slug} className="contents" />}
           suspendEscape={Boolean(selected || deleteLead)}
           onClose={() => setChatLead(null)}
           onBotPaused={() => applyLead({ ...openChatLead, botEnabled: false })}
@@ -1507,30 +1513,30 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
               />
               <button
                 type="button"
-                className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border bg-page text-[#25D366] ${
+                className={`${crmActionIconBtnClass} text-[#25D366] ${
                   chatLead.channel === 'WHATSAPP' ? 'border-[#25D366]' : 'border-border'
                 }`}
                 disabled={!openChatLead.whatsapp}
                 onClick={() => setChatLead({ id: openChatLead.id, channel: 'WHATSAPP' })}
                 aria-label="WhatsApp"
               >
-                <WhatsappIcon className="h-3.5 w-3.5" />
+                <WhatsappIcon className={crmActionIconClass} />
               </button>
               <button
                 type="button"
-                className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border bg-page text-[#E1306C] ${
+                className={`${crmActionIconBtnClass} text-[#E1306C] ${
                   chatLead.channel === 'INSTAGRAM' ? 'border-[#E1306C]' : 'border-border'
                 }`}
                 disabled={!openChatLead.instagramUserId}
                 onClick={() => setChatLead({ id: openChatLead.id, channel: 'INSTAGRAM' })}
                 aria-label="Instagram"
               >
-                <InstagramIcon className="h-3.5 w-3.5" />
+                <InstagramIcon className={crmActionIconClass} />
               </button>
               <button
                 type="button"
                 onClick={() => void toggleLeadBot(openChatLead, !openChatLead.botEnabled)}
-                className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border ${
+                className={`${crmActionIconBtnClass} ${
                   openChatLead.botEnabled
                     ? 'border-emerald-300 bg-emerald-100 text-emerald-950'
                     : 'border-rose-300 bg-rose-100 text-rose-950'
@@ -1538,25 +1544,25 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
                 aria-label={openChatLead.botEnabled ? 'Desligar chatbot' : 'Ligar chatbot'}
               >
                 {openChatLead.botEnabled ? (
-                  <BotIcon className="h-3.5 w-3.5" />
+                  <BotIcon className={crmActionIconClass} />
                 ) : (
-                  <BotOffIcon className="h-3.5 w-3.5" />
+                  <BotOffIcon className={crmActionIconClass} />
                 )}
               </button>
               <button
                 type="button"
                 onClick={() => openLead(openChatLead)}
-                className="inline-flex h-6 cursor-pointer items-center rounded-md border border-border bg-page px-1.5 text-[11px] font-medium"
+                className={crmActionTextBtnClass}
               >
                 Editar
               </button>
               <button
                 type="button"
                 onClick={() => setDeleteLead(openChatLead)}
-                className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-border bg-page text-muted hover:text-red-700"
+                className={`${crmActionIconBtnClass} border-border text-muted hover:border-red-200 hover:bg-red-50 hover:text-red-700`}
                 aria-label="Excluir lead"
               >
-                <TrashIcon className="h-3.5 w-3.5" />
+                <TrashIcon className={crmActionIconClass} />
               </button>
             </>
           }

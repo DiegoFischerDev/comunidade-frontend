@@ -56,6 +56,23 @@ function MicIcon({ className }: { className?: string }) {
   );
 }
 
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
 function leadInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return '?';
@@ -225,6 +242,14 @@ export function CrmChannelChatModal({
   }, [sourceKey, channel]);
 
   useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
     if (suspendEscape) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -264,7 +289,7 @@ export function CrmChannelChatModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden overscroll-none bg-black/50 p-3 sm:items-center sm:p-4">
       <div
         ref={dialogRef}
         role="dialog"
@@ -283,28 +308,31 @@ export function CrmChannelChatModal({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-11 min-w-11 cursor-pointer items-center justify-center rounded-[14px] border border-border bg-card text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
+              className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border/80 bg-card text-muted shadow-sm transition-colors hover:bg-page hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30"
+              aria-label="Fechar"
             >
-              Fechar
+              <CloseIcon className="h-4 w-4" />
             </button>
           </div>
-          {badges ? <div className="mt-3">{badges}</div> : null}
-          <div className="mt-3 flex flex-wrap items-center gap-1">
-            {actions}
-            <button
-              type="button"
-              disabled={sending || sendingLink}
-              onClick={() => void submit({ template: 'scheduling-link' })}
-              className="inline-flex h-8 cursor-pointer items-center rounded-md border border-border bg-page px-2 text-[11px] font-medium text-foreground transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {sendingLink ? 'A enviar…' : 'Enviar link de agendar'}
-            </button>
-          </div>
+          {badges || actions ? (
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              {badges}
+              {actions}
+              <button
+                type="button"
+                disabled={sending || sendingLink}
+                onClick={() => void submit({ template: 'scheduling-link' })}
+                className="inline-flex h-9 cursor-pointer items-center rounded-md border border-border bg-page px-2.5 text-xs font-medium text-foreground transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50 sm:h-8 sm:px-2 sm:text-[11px]"
+              >
+                {sendingLink ? 'A enviar…' : 'Enviar link de agendar'}
+              </button>
+            </div>
+          ) : null}
         </header>
 
         <div
           ref={listRef}
-          className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-page px-3 py-3"
+          className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain bg-page px-3 py-3"
           onScroll={(event) => {
             const node = event.currentTarget;
             const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
