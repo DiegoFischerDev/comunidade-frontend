@@ -143,8 +143,7 @@ export function CrmLeadNotesTooltip({
     [],
   );
 
-  if (!commentText && !summaryText) return null;
-
+  const hasNotes = Boolean(commentText || summaryText);
   const isDisabled = disabled || isSummarizing;
 
   return (
@@ -163,14 +162,18 @@ export function CrmLeadNotesTooltip({
           if (!onGenerateSummary || isDisabled) return;
           onGenerateSummary();
         }}
-        onMouseEnter={show}
+        onMouseEnter={() => {
+          if (hasNotes) show();
+        }}
         onMouseLeave={scheduleHide}
-        onFocus={show}
+        onFocus={() => {
+          if (hasNotes) show();
+        }}
         onBlur={scheduleHide}
       >
         {isSummarizing ? <SummarySpinner /> : <InfoIcon className="h-3.5 w-3.5" />}
       </button>
-      {open && popupStyle && typeof document !== 'undefined'
+      {hasNotes && open && popupStyle && typeof document !== 'undefined'
         ? createPortal(
             <div
               role="tooltip"

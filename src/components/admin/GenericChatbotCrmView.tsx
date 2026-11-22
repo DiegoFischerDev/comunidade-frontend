@@ -845,20 +845,6 @@ function GenericLeadCard({
         <button
           type="button"
           draggable={false}
-          disabled={isSummarizing || isSaving}
-          onClick={(event) => {
-            event.stopPropagation();
-            onGenerateSummary();
-          }}
-          className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-border bg-page text-brand-primary transition-colors hover:border-brand-primary/30 hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label={`Gerar resumo de ${name}`}
-          title="Gerar resumo"
-        >
-          {isSummarizing ? <SummarySpinner /> : <SparklesIcon className="h-3.5 w-3.5" />}
-        </button>
-        <button
-          type="button"
-          draggable={false}
           disabled={isSaving}
           aria-pressed={lead.botEnabled}
           title={
@@ -1516,6 +1502,8 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
               <CrmLeadNotesTooltip
                 comments={openChatLead.crmComments}
                 summary={openChatLead.crmRequestSummary}
+                onGenerateSummary={() => void generateSummary(openChatLead)}
+                isSummarizing={summarizingLeadId === openChatLead.id}
               />
               <button
                 type="button"
@@ -1538,19 +1526,6 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
                 aria-label="Instagram"
               >
                 <InstagramIcon className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                disabled={summarizingLeadId === openChatLead.id}
-                onClick={() => void generateSummary(openChatLead)}
-                className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-border bg-page text-brand-primary disabled:opacity-50"
-                aria-label="Gerar resumo"
-              >
-                {summarizingLeadId === openChatLead.id ? (
-                  <SummarySpinner />
-                ) : (
-                  <SparklesIcon className="h-3.5 w-3.5" />
-                )}
               </button>
               <button
                 type="button"
