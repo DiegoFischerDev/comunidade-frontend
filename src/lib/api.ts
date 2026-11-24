@@ -2501,6 +2501,20 @@ export const api = {
           request<Record<AdminChatbotSlug, number>>('/admin/crm/counts', {
             method: 'GET',
           }),
+        transferLead: (body: {
+          sourceSlug: AdminChatbotSlug;
+          sourceId: string;
+          targetSlug: AdminChatbotSlug;
+        }) =>
+          request<{
+            sourceSlug: AdminChatbotSlug;
+            targetSlug: AdminChatbotSlug;
+            targetId: string;
+            targetKind: 'crm_lead' | 'rafa_call_booking';
+          }>('/admin/crm/transfer', {
+            method: 'POST',
+            body: JSON.stringify(body),
+          }),
         board: (slug: string) =>
           request<ChatbotCrmBoard>(
             `/admin/crm/${encodeURIComponent(slug)}`,

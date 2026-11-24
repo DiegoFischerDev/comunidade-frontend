@@ -13,6 +13,7 @@ import {
 import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { CrmLeadNameField } from '@/components/admin/CrmLeadNameField';
 import { CrmChannelChatModal } from '@/components/admin/CrmChannelChatModal';
+import { CrmTransferToBotControls } from '@/components/admin/CrmTransferToBotControls';
 import {
   HORIZONTAL_CAROUSEL_TRACK,
   HorizontalSnapCarousel,
@@ -1859,6 +1860,31 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
                           item.id === selected.id
                             ? { ...item, documents }
                             : item,
+                        ),
+                      })),
+                    };
+                  });
+                }}
+              />
+
+              <CrmTransferToBotControls
+                sourceSlug={slug}
+                sourceId={selected.id}
+                disabled={saving || deleteSaving}
+                onTransferred={() => {
+                  const transferredId = selected.id;
+                  setSelected(null);
+                  setChatLead((current) =>
+                    current?.id === transferredId ? null : current,
+                  );
+                  setBoard((prev) => {
+                    if (!prev) return prev;
+                    return {
+                      ...prev,
+                      columns: prev.columns.map((column) => ({
+                        ...column,
+                        items: column.items.filter(
+                          (item) => item.id !== transferredId,
                         ),
                       })),
                     };

@@ -20,6 +20,7 @@ import {
 import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
 import { GenericChatbotCrmView } from '@/components/admin/GenericChatbotCrmView';
 import { CrmChannelChatModal } from '@/components/admin/CrmChannelChatModal';
+import { CrmTransferToBotControls } from '@/components/admin/CrmTransferToBotControls';
 import {
   CrmLeadNotesTooltip,
   CrmRecentLeadBadge,
@@ -182,6 +183,7 @@ function CrmKanbanBoard({
           hideNavOnMobile
           centeredPeek
           navPlacement="inset"
+          navSticky
           prevAriaLabel="Coluna anterior"
           nextAriaLabel="Coluna seguinte"
           trackClassName={`items-stretch ${HORIZONTAL_CAROUSEL_TRACK} ${CENTERED_PEEK_CAROUSEL_TRACK} max-md:gap-3 md:gap-4 md:px-0 pb-2`}
@@ -213,6 +215,7 @@ function CrmKanbanBoard({
         hideNavWhenSingle={false}
         hideNavOnMobile
         navPlacement="inset"
+        navSticky
         prevAriaLabel="Colunas anteriores"
         nextAriaLabel="Colunas seguintes"
         trackClassName={`items-stretch ${HORIZONTAL_CAROUSEL_TRACK} gap-4 pb-2`}
@@ -681,18 +684,59 @@ function buildCrmItemSearchHaystack(item: RafacallCrmItem): string {
   return normalizeCrmSearchText(parts.filter(Boolean).join(' '));
 }
 
-function crmItemMatchesQuery(item: RafacallCrmItem, query: string): boolean {
+type CrmQuickFilters = {
+  hasVisa?: boolean;
+};
+
+/** Extrai o atalho «tem visto» / «temvisto» dos tokens de pesquisa. */
+function takeHasVisaQuickFilter(tokens: string[]): {
+  wantsHasVisa: boolean;
+  remaining: string[];
+} {
+  if (tokens.includes('temvisto')) {
+    return {
+      wantsHasVisa: true,
+      remaining: tokens.filter((token) => token !== 'temvisto'),
+    };
+  }
+
+  const remaining: string[] = [];
+  let wantsHasVisa = false;
+  for (let index = 0; index < tokens.length; index += 1) {
+    if (tokens[index] === 'tem' && tokens[index + 1] === 'visto') {
+      wantsHasVisa = true;
+      index += 1;
+      continue;
+    }
+    remaining.push(tokens[index]);
+  }
+  return { wantsHasVisa, remaining };
+}
+
+function crmItemMatchesQuery(
+  item: RafacallCrmItem,
+  query: string,
+  quickFilters: CrmQuickFilters = {},
+): boolean {
+  if (quickFilters.hasVisa && item.crmHasVisa !== true) {
+    return false;
+  }
+
   const normalizedQuery = normalizeCrmSearchText(query);
   if (!normalizedQuery) return true;
 
   const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
   const wantsRecent = tokens.includes('novo') || tokens.includes('new');
-  const otherTokens = tokens.filter((token) => token !== 'novo' && token !== 'new');
+  const withoutRecent = tokens.filter((token) => token !== 'novo' && token !== 'new');
+  const { wantsHasVisa, remaining: otherTokens } = takeHasVisaQuickFilter(withoutRecent);
 
   if (wantsRecent && !isCrmLeadRecentlyUpdated(item.updatedAt)) {
     return false;
   }
-  if (wantsRecent && otherTokens.length === 0) {
+  if (wantsHasVisa && item.crmHasVisa !== true) {
+    return false;
+  }
+  if ((wantsRecent || wantsHasVisa) && otherTokens.length === 0) {
     return true;
   }
 
@@ -708,12 +752,24 @@ function crmItemMatchesQuery(item: RafacallCrmItem, query: string): boolean {
   return false;
 }
 
-function filterCrmColumns(columns: CrmColumn[], query: string): CrmColumn[] {
-  if (!normalizeCrmSearchText(query)) return columns;
+function filterCrmColumns(
+  columns: CrmColumn[],
+  query: string,
+  quickFilters: CrmQuickFilters = {},
+): CrmColumn[] {
+  const hasTextQuery = normalizeCrmSearchText(query).length > 0;
+  const hasQuickFilter = quickFilters.hasVisa === true;
+  if (!hasTextQuery && !hasQuickFilter) return columns;
   return columns.map((column) => ({
     ...column,
-    items: column.items.filter((item) => crmItemMatchesQuery(item, query)),
+    items: column.items.filter((item) => crmItemMatchesQuery(item, query, quickFilters)),
   }));
+}
+
+function crmQuickFilterChipClass(active: boolean): string {
+  return active
+    ? 'cursor-pointer rounded-full bg-brand-primary px-3 py-1.5 text-xs font-medium text-brand-on-primary'
+    : 'cursor-pointer rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-page';
 }
 
 function countCrmClients(columns: CrmColumn[]): number {
@@ -2410,6 +2466,7 @@ function CrmClientModal({
   onJoanaEnabledChange,
   onSave,
   onClose,
+  onTransferred,
   nameDraft,
   onNameChange,
 }: {
@@ -2448,6 +2505,10 @@ function CrmClientModal({
   onJoanaEnabledChange: (enabled: boolean) => void;
   onSave: () => void;
   onClose: () => void;
+  onTransferred: (result: {
+    targetSlug: AdminChatbotSlug;
+    targetId: string;
+  }) => void;
   nameDraft: string;
   onNameChange: (value: string) => void;
 }) {
@@ -3001,6 +3062,13 @@ function CrmClientModal({
             />
 
           </div>
+
+          <CrmTransferToBotControls
+            sourceSlug="joana"
+            sourceId={item.id}
+            disabled={saving}
+            onTransferred={onTransferred}
+          />
         </div>
 
         <div className="shrink-0 border-t border-border bg-page/70 px-5 py-4">
@@ -3111,6 +3179,7 @@ function JoanaCrmBoardPage({
   const [deleteSaving, setDeleteSaving] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [filterQuery, setFilterQuery] = useState('');
+  const [quickFilterHasVisa, setQuickFilterHasVisa] = useState(false);
   const [newClientOpen, setNewClientOpen] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   const [newClientWhatsapp, setNewClientWhatsapp] = useState('');
@@ -3118,12 +3187,16 @@ function JoanaCrmBoardPage({
   const [newClientSaving, setNewClientSaving] = useState(false);
 
   const filteredColumns = useMemo(
-    () => filterCrmColumns(columns, filterQuery),
-    [columns, filterQuery],
+    () =>
+      filterCrmColumns(columns, filterQuery, {
+        hasVisa: quickFilterHasVisa,
+      }),
+    [columns, filterQuery, quickFilterHasVisa],
   );
   const totalClients = useMemo(() => countCrmClients(columns), [columns]);
   const filteredClients = useMemo(() => countCrmClients(filteredColumns), [filteredColumns]);
-  const isFiltering = normalizeCrmSearchText(filterQuery).length > 0;
+  const isFiltering =
+    normalizeCrmSearchText(filterQuery).length > 0 || quickFilterHasVisa;
 
   useEffect(() => {
     if (loading || error) return;
@@ -3803,41 +3876,59 @@ function JoanaCrmBoardPage({
       </div>
 
       {columns.length > 0 ? (
-        <div className="relative mt-4 max-w-xl">
-          <label className="sr-only" htmlFor="crm-filter">
-            Filtrar clientes
-          </label>
-          <input
-            id="crm-filter"
-            type="search"
-            value={filterQuery}
-            onChange={(event) => setFilterQuery(event.target.value)}
-            placeholder="Nome, WhatsApp, tipologia, cidade, PET, novo, coluna…"
-            className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-9 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted/80 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
-          />
-          <svg
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted/80"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="M20 20l-3-3" />
-          </svg>
-          {isFiltering ? (
+        <div className="mt-4 space-y-3">
+          <div className="relative max-w-xl">
+            <label className="sr-only" htmlFor="crm-filter">
+              Filtrar clientes
+            </label>
+            <input
+              id="crm-filter"
+              type="search"
+              value={filterQuery}
+              onChange={(event) => setFilterQuery(event.target.value)}
+              placeholder="Nome, WhatsApp, tipologia, cidade, PET, novo, tem visto…"
+              className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-9 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted/80 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
+            />
+            <svg
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted/80"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3-3" />
+            </svg>
+            {isFiltering ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setFilterQuery('');
+                  setQuickFilterHasVisa(false);
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-md p-1.5 text-muted transition-colors hover:bg-page hover:text-foreground"
+                aria-label="Limpar filtro"
+              >
+                ✕
+              </button>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
+              Atalhos:
+            </span>
             <button
               type="button"
-              onClick={() => setFilterQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-md p-1.5 text-muted transition-colors hover:bg-page hover:text-foreground"
-              aria-label="Limpar filtro"
+              className={crmQuickFilterChipClass(quickFilterHasVisa)}
+              aria-pressed={quickFilterHasVisa}
+              onClick={() => setQuickFilterHasVisa((current) => !current)}
             >
-              ✕
+              Tem visto
             </button>
-          ) : null}
+          </div>
         </div>
       ) : null}
 
@@ -4014,6 +4105,19 @@ function JoanaCrmBoardPage({
           nameDraft={nameDraft}
           onNameChange={setNameDraft}
           onSave={() => void handleSave()}
+          onTransferred={() => {
+            const transferredId = selectedItem.id;
+            setSelectedItem(null);
+            setChatLead((current) =>
+              current?.id === transferredId ? null : current,
+            );
+            setColumns((prev) =>
+              prev.map((column) => ({
+                ...column,
+                items: column.items.filter((item) => item.id !== transferredId),
+              })),
+            );
+          }}
           onClose={() => {
             if (!modalSaving) {
               setSelectedItem(null);

@@ -80,6 +80,11 @@ type HorizontalSnapCarouselProps = {
    * `outset`: em `md+` as setas ficam fora, à esquerda/direita, sem tapar os slides.
    */
   navPlacement?: "inset" | "outset";
+  /**
+   * Mantém as setas no meio do viewport enquanto o carrossel é alto
+   * (ex.: kanban CRM). Sem isto, `top-1/2` do contentor fica fora do ecrã.
+   */
+  navSticky?: boolean;
   /** Dashboard mobile: peek 12vw + zonas de toque nas laterais para avançar. */
   centeredPeek?: boolean;
   /** Oculta setas em ecrãs mobile (navegação por swipe). */
@@ -100,6 +105,7 @@ export function HorizontalSnapCarousel({
   onNavInteract,
   loop = false,
   navPlacement = "inset",
+  navSticky = false,
   centeredPeek = false,
   hideNavOnMobile = false,
   prevAriaLabel = "Anterior",
@@ -127,6 +133,10 @@ export function HorizontalSnapCarousel({
         : navStyle === "fadeMobile"
           ? HORIZONTAL_CAROUSEL_NAV_BTN_FADE_MOBILE
           : HORIZONTAL_CAROUSEL_NAV_BTN;
+  /** Com sticky, o eixo Y vem do rail sticky — não do contentor alto. */
+  const navBtnStickyClass = navSticky
+    ? "pointer-events-auto !top-0"
+    : "";
   const internalTrackRef = useRef<HTMLDivElement | null>(null);
   const setTrackRef = useCallback(
     (el: HTMLDivElement | null) => {
@@ -195,62 +205,70 @@ export function HorizontalSnapCarousel({
   const showNav = slideCount > 1 || !hideNavWhenSingle;
   const hideNavMobileClass = hideNavOnMobile ? "max-md:hidden" : "";
 
+  const navButtons = showNav ? (
+    <>
+      <button
+        type="button"
+        aria-label={prevAriaLabel}
+        aria-disabled={!canPrev}
+        disabled={!canPrev}
+        onClick={() => scrollByDir(-1)}
+        className={`${navBtnClass} ${navPosPrev} ${hideNavMobileClass} ${navBtnStickyClass}`.trim()}
+      >
+        <svg
+          aria-hidden
+          className="h-5 w-5 md:h-8 md:w-8"
+          width="1em"
+          height="1em"
+          viewBox="0 0 16 16"
+        >
+          <path
+            fill="currentColor"
+            fillRule="evenodd"
+            d="M9.78 4.22a.75.75 0 0 0-1.06 0L5.47 7.47a.75.75 0 0 0 0 1.06l3.25 3.25a.75.75 0 1 0 1.06-1.06L7.06 8l2.72-2.72a.75.75 0 0 0 0-1.06"
+            clipRule="evenodd"
+          />
+        </svg>
+      </button>
+      <button
+        type="button"
+        aria-label={nextAriaLabel}
+        aria-disabled={!canNext}
+        disabled={!canNext}
+        onClick={() => scrollByDir(1)}
+        className={`${navBtnClass} ${navPosNext} ${hideNavMobileClass} ${navBtnStickyClass}`.trim()}
+      >
+        <svg
+          aria-hidden
+          className="h-5 w-5 md:h-8 md:w-8"
+          width="1em"
+          height="1em"
+          viewBox="0 0 16 16"
+        >
+          <path
+            fill="currentColor"
+            fillRule="evenodd"
+            d="M6.22 4.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 0 1-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 0 1 0-1.06"
+            clipRule="evenodd"
+          />
+        </svg>
+      </button>
+    </>
+  ) : null;
+
   return (
     <div
       className={`group relative ${
         navPlacement === "outset" ? "overflow-visible" : ""
       } ${className}`.trim()}
     >
-      {showNav ? (
-        <>
-          <button
-            type="button"
-            aria-label={prevAriaLabel}
-            aria-disabled={!canPrev}
-            disabled={!canPrev}
-            onClick={() => scrollByDir(-1)}
-            className={`${navBtnClass} ${navPosPrev} ${hideNavMobileClass}`}
-          >
-            <svg
-              aria-hidden
-              className="h-5 w-5 md:h-8 md:w-8"
-              width="1em"
-              height="1em"
-              viewBox="0 0 16 16"
-            >
-              <path
-                fill="currentColor"
-                fillRule="evenodd"
-                d="M9.78 4.22a.75.75 0 0 0-1.06 0L5.47 7.47a.75.75 0 0 0 0 1.06l3.25 3.25a.75.75 0 1 0 1.06-1.06L7.06 8l2.72-2.72a.75.75 0 0 0 0-1.06"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-          <button
-            type="button"
-            aria-label={nextAriaLabel}
-            aria-disabled={!canNext}
-            disabled={!canNext}
-            onClick={() => scrollByDir(1)}
-            className={`${navBtnClass} ${navPosNext} ${hideNavMobileClass}`}
-          >
-            <svg
-              aria-hidden
-              className="h-5 w-5 md:h-8 md:w-8"
-              width="1em"
-              height="1em"
-              viewBox="0 0 16 16"
-            >
-              <path
-                fill="currentColor"
-                fillRule="evenodd"
-                d="M6.22 4.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 0 1-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 0 1 0-1.06"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-        </>
-      ) : null}
+      {showNav && navSticky ? (
+        <div className="pointer-events-none sticky top-[min(42vh,20rem)] z-30 -mx-2 h-0 w-[calc(100%+1rem)] sm:-mx-12 sm:w-[calc(100%+6rem)]">
+          <div className="relative h-0 w-full">{navButtons}</div>
+        </div>
+      ) : (
+        navButtons
+      )}
       <div
         ref={setTrackRef}
         className={`${HORIZONTAL_CAROUSEL_TRACK} ${trackClassName}`.trim()}
