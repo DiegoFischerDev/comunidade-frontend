@@ -2550,6 +2550,11 @@ export const api = {
             `/admin/crm/${encodeURIComponent(slug)}/columns/${encodeURIComponent(columnId)}`,
             { method: 'PATCH', body: JSON.stringify(body) },
           ),
+        deleteColumn: (slug: string, columnId: string) =>
+          request<{ ok: true; id: string }>(
+            `/admin/crm/${encodeURIComponent(slug)}/columns/${encodeURIComponent(columnId)}`,
+            { method: 'DELETE' },
+          ),
         reorderColumns: (slug: string, columnIds: string[]) =>
           request<ChatbotCrmColumn[]>(
             `/admin/crm/${encodeURIComponent(slug)}/columns/reorder`,

@@ -937,6 +937,8 @@ const GenericKanbanColumn = memo(function GenericKanbanColumn({
   onDragStart,
   onDragEnd,
   onRename,
+  onRequestDeleteColumn,
+  canDeleteColumn,
   className = '',
 }: {
   column: BoardColumn;
@@ -956,9 +958,12 @@ const GenericKanbanColumn = memo(function GenericKanbanColumn({
   onDragStart: (leadId: string) => void;
   onDragEnd: () => void;
   onRename: (column: BoardColumn, label: string) => void;
+  onRequestDeleteColumn: (column: BoardColumn) => void;
+  canDeleteColumn: boolean;
   className?: string;
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
   const tone = columnTone(column.tone);
 
   return (
@@ -982,14 +987,30 @@ const GenericKanbanColumn = memo(function GenericKanbanColumn({
     >
       <header className={`border-b px-3 py-2.5 ${tone.header} ${tone.border}`}>
         <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <span className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} aria-hidden />
             <input
               defaultValue={column.label}
-              onBlur={(event) => onRename(column, event.target.value)}
+              onFocus={() => setIsRenaming(true)}
+              onBlur={(event) => {
+                setIsRenaming(false);
+                onRename(column, event.target.value);
+              }}
               className="min-w-0 flex-1 truncate rounded-md border border-transparent bg-transparent px-1 py-0.5 text-sm font-semibold text-foreground hover:border-border focus:border-brand-primary focus:outline-none"
               aria-label={`Nome da coluna ${column.label}`}
             />
+            {isRenaming && canDeleteColumn ? (
+              <button
+                type="button"
+                className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-red-700 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                aria-label={`Excluir coluna ${column.label}`}
+                title="Excluir coluna"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => onRequestDeleteColumn(column)}
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            ) : null}
           </div>
           <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${tone.badge}`}>
             {column.items.length}
@@ -1040,6 +1061,7 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
     channel: 'WHATSAPP' | 'INSTAGRAM';
   } | null>(null);
   const [deleteLead, setDeleteLead] = useState<ChatbotCrmLead | null>(null);
+  const [deleteColumn, setDeleteColumn] = useState<BoardColumn | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newWhatsapp, setNewWhatsapp] = useState('');
@@ -1243,6 +1265,22 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
       await load();
     } catch (err) {
       setError(getUserFacingApiError(err, { context: 'Ao renomear coluna' }));
+    } finally {
+      setColumnSaving(false);
+    }
+  }
+
+  async function confirmDeleteColumn() {
+    if (!deleteColumn) return;
+    setColumnSaving(true);
+    setError('');
+    try {
+      await api.admin.chatbots.crm.deleteColumn(slug, deleteColumn.id);
+      setDeleteColumn(null);
+      setSuccess('Coluna excluída.');
+      await load();
+    } catch (err) {
+      setError(getUserFacingApiError(err, { context: 'Ao excluir coluna' }));
     } finally {
       setColumnSaving(false);
     }
@@ -1488,6 +1526,8 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
                     onDragStart={setDraggingLeadId}
                     onDragEnd={() => setDraggingLeadId(null)}
                     onRename={(col, label) => void renameColumn(col, label)}
+                    onRequestDeleteColumn={setDeleteColumn}
+                    canDeleteColumn={columns.length > 1}
                   />
                 </div>
               ))}
@@ -1514,6 +1554,8 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
                 onDragStart={setDraggingLeadId}
                 onDragEnd={() => setDraggingLeadId(null)}
                 onRename={(col, label) => void renameColumn(col, label)}
+                onRequestDeleteColumn={setDeleteColumn}
+                canDeleteColumn={columns.length > 1}
                 className="w-[17.5rem] shrink-0"
               />
             ))}
@@ -1530,7 +1572,7 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
           botSlug={slug}
           botName={botName}
           badges={<GenericLeadBadgeRow lead={openChatLead} slug={slug} className="contents" />}
-          suspendEscape={Boolean(selected || deleteLead)}
+          suspendEscape={Boolean(selected || deleteLead || deleteColumn)}
           onClose={() => setChatLead(null)}
           onBotPaused={() => applyLead({ ...openChatLead, botEnabled: false })}
           onAdminReplied={() => {
@@ -1957,6 +1999,76 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {deleteColumn ? (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="generic-crm-delete-column-title"
+          onClick={() => {
+            if (!columnSaving) setDeleteColumn(null);
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <TrashIcon className="mt-0.5 h-5 w-5 shrink-0 text-red-700" />
+              <div className="min-w-0">
+                <h2
+                  id="generic-crm-delete-column-title"
+                  className="text-base font-semibold text-foreground"
+                >
+                  Excluir coluna?
+                </h2>
+                <p className="mt-1 text-sm text-muted">
+                  {deleteColumn.items.length > 0
+                    ? 'Move ou exclui os clientes desta coluna antes de a remover.'
+                    : `A coluna «${deleteColumn.label}» será removida do CRM da ${botName}.`}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-red-200 bg-red-50/80 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Coluna
+              </p>
+              <p className="mt-1 text-sm font-semibold text-foreground">
+                {deleteColumn.label}
+              </p>
+              <p className="mt-0.5 text-sm text-foreground/90">
+                {deleteColumn.items.length === 0
+                  ? 'Sem clientes'
+                  : deleteColumn.items.length === 1
+                    ? '1 cliente'
+                    : `${deleteColumn.items.length} clientes`}
+              </p>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                disabled={columnSaving || deleteColumn.items.length > 0}
+                onClick={() => void confirmDeleteColumn()}
+                className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] bg-red-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <TrashIcon className="h-4 w-4" />
+                {columnSaving ? 'A excluir…' : 'Confirmar exclusão'}
+              </button>
+              <button
+                type="button"
+                disabled={columnSaving}
+                onClick={() => setDeleteColumn(null)}
+                className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-[14px] border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-page disabled:opacity-50"
+              >
+                Cancelar
+              </button>
             </div>
           </div>
         </div>
