@@ -110,17 +110,37 @@ export default function AdminDisparoPage() {
   const [immigrationImmediate, setImmigrationImmediate] = useState(false);
   const [minDelay, setMinDelay] = useState(1);
   const [maxDelay, setMaxDelay] = useState(10);
+  const [campaignName, setCampaignName] = useState('');
 
   const [previewTotal, setPreviewTotal] = useState(0);
   const [previewItems, setPreviewItems] = useState<MassDispatchPreviewItem[]>(
     [],
   );
   const [previewLoading, setPreviewLoading] = useState(false);
+  /** conversationIds desmarcados (default = todos seleccionados). */
+  const [excludedConversationIds, setExcludedConversationIds] = useState<
+    Set<string>
+  >(() => new Set());
 
   const [campaigns, setCampaigns] = useState<MassCampaign[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+
+  const selectedCount = Math.max(
+    0,
+    previewTotal - excludedConversationIds.size,
+  );
+  const allVisibleSelected =
+    previewItems.length > 0 &&
+    previewItems.every(
+      (item) => !excludedConversationIds.has(item.conversationId),
+    );
+  const noneVisibleSelected =
+    previewItems.length === 0 ||
+    previewItems.every((item) =>
+      excludedConversationIds.has(item.conversationId),
+    );
 
   const filters: MassDispatchFilters = useMemo(() => {
     const next: MassDispatchFilters = {
@@ -175,6 +195,8 @@ export default function AdminDisparoPage() {
           if (cancelled) return;
           setPreviewTotal(res.total);
           setPreviewItems(res.items);
+          // Novo resultado de filtro → todos voltam a seleccionados.
+          setExcludedConversationIds(new Set());
         })
         .catch((err) => {
           if (cancelled) return;
@@ -245,15 +267,40 @@ export default function AdminDisparoPage() {
     );
   }
 
+  function toggleLead(conversationId: string) {
+    setExcludedConversationIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(conversationId)) next.delete(conversationId);
+      else next.add(conversationId);
+      return next;
+    });
+  }
+
+  function toggleAllVisible(selectAll: boolean) {
+    setExcludedConversationIds((prev) => {
+      const next = new Set(prev);
+      for (const item of previewItems) {
+        if (selectAll) next.delete(item.conversationId);
+        else next.add(item.conversationId);
+      }
+      return next;
+    });
+  }
+
   async function handleSend() {
     if (sending) return;
-    if (previewTotal <= 0) {
-      setError('Não há leads para enviar com estas condições.');
+    const title = campaignName.trim();
+    if (!title) {
+      setError('Indica um título para a campanha.');
+      return;
+    }
+    if (selectedCount <= 0) {
+      setError('Selecciona pelo menos um lead para enviar.');
       return;
     }
     if (
       !window.confirm(
-        `Enviar a sequência para ${previewTotal} lead${previewTotal === 1 ? '' : 's'}? O bot vai gerar variações e iniciar o disparo com espaçamento aleatório.`,
+        `Enviar «${title}» para ${selectedCount} lead${selectedCount === 1 ? '' : 's'}? O bot vai gerar variações e iniciar o disparo com espaçamento aleatório.`,
       )
     ) {
       return;
@@ -264,12 +311,15 @@ export default function AdminDisparoPage() {
     try {
       const payload = draftToPayload(steps);
       const created = await api.admin.massDispatch.createCampaign({
+        name: title,
         steps: payload,
         filters,
+        excludedConversationIds: [...excludedConversationIds],
         minDelayMinutes: minDelay,
         maxDelayMinutes: maxDelay,
       });
       toast.success('Campanha criada — a enviar…');
+      setCampaignName('');
       setCampaigns((prev) => [created, ...prev.filter((c) => c.id !== created.id)]);
       await loadCampaigns();
     } catch (err) {
@@ -489,20 +539,57 @@ export default function AdminDisparoPage() {
 
       <section className="space-y-4 rounded-2xl border border-border bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-medium text-foreground">Leads</h2>
-            <p className="text-sm text-muted">
-              {previewLoading
-                ? 'A actualizar…'
-                : `${previewTotal} lead${previewTotal === 1 ? '' : 's'} vão receber a mensagem`}
-              {previewTotal > previewItems.length
-                ? ` (a mostrar ${previewItems.length})`
-                : ''}
-            </p>
+          <div className="min-w-0 flex-1 space-y-3">
+            <div>
+              <h2 className="text-lg font-medium text-foreground">Leads</h2>
+              <p className="text-sm text-muted">
+                {previewLoading
+                  ? 'A actualizar…'
+                  : `${selectedCount} de ${previewTotal} seleccionado${selectedCount === 1 ? '' : 's'} vão receber a mensagem`}
+                {previewTotal > previewItems.length
+                  ? ` (a mostrar ${previewItems.length})`
+                  : ''}
+              </p>
+            </div>
+            <label className="block max-w-md text-sm text-foreground">
+              Título da campanha
+              <input
+                type="text"
+                className={inputClass}
+                placeholder="Ex.: Novidades Lisboa — Março"
+                maxLength={160}
+                value={campaignName}
+                disabled={sending}
+                onChange={(e) => setCampaignName(e.target.value)}
+              />
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={sending || previewItems.length === 0 || allVisibleSelected}
+                onClick={() => toggleAllVisible(true)}
+                className="rounded-lg border border-border px-3 py-1.5 text-sm text-foreground hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Marcar todos
+              </button>
+              <button
+                type="button"
+                disabled={sending || noneVisibleSelected}
+                onClick={() => toggleAllVisible(false)}
+                className="rounded-lg border border-border px-3 py-1.5 text-sm text-foreground hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Desmarcar todos
+              </button>
+            </div>
           </div>
           <button
             type="button"
-            disabled={sending || previewTotal === 0 || bots.length === 0}
+            disabled={
+              sending ||
+              selectedCount === 0 ||
+              bots.length === 0 ||
+              !campaignName.trim()
+            }
             onClick={() => void handleSend()}
             className="rounded-xl bg-brand-primary px-5 py-3 text-sm font-medium text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -514,6 +601,16 @@ export default function AdminDisparoPage() {
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-border text-muted">
               <tr>
+                <th className="w-10 px-2 py-2">
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    disabled={sending || previewItems.length === 0}
+                    aria-label="Seleccionar todos os leads visíveis"
+                    onChange={(e) => toggleAllVisible(e.target.checked)}
+                    className="h-4 w-4 rounded border-border"
+                  />
+                </th>
                 <th className="px-2 py-2 font-medium">Nome</th>
                 <th className="px-2 py-2 font-medium">Bot</th>
                 <th className="px-2 py-2 font-medium">Canal</th>
@@ -527,52 +624,67 @@ export default function AdminDisparoPage() {
               {previewItems.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-2 py-6 text-center text-muted"
                   >
                     Nenhum lead com estas condições e canal activo.
                   </td>
                 </tr>
               ) : (
-                previewItems.map((item) => (
-                  <tr
-                    key={`${item.sourceType}-${item.sourceId}`}
-                    className="border-b border-border/70"
-                  >
-                    <td className="px-2 py-2 text-foreground">
-                      {item.displayName || item.whatsappDigits || '—'}
-                    </td>
-                    <td className="px-2 py-2 capitalize text-foreground">
-                      {item.botSlug}
-                    </td>
-                    <td className="px-2 py-2 text-foreground">
-                      {channelLabel(item.channel)}
-                    </td>
-                    <td className="px-2 py-2 text-foreground">
-                      {visaLabel(item.hasVisa)}
-                    </td>
-                    <td className="px-2 py-2 text-foreground">
-                      {item.propertyTypology.length
-                        ? item.propertyTypology
-                            .map(
-                              (t) =>
-                                RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS[
-                                  t as RafacallCrmPropertyTypology
-                                ] || t,
-                            )
-                            .join(', ')
-                        : '—'}
-                    </td>
-                    <td className="px-2 py-2 text-foreground">
-                      {item.preferredCity || '—'}
-                    </td>
-                    <td className="px-2 py-2 text-foreground">
-                      {item.immigrationImmediate
-                        ? 'Imediato'
-                        : item.expectedImmigrationAt || '—'}
-                    </td>
-                  </tr>
-                ))
+                previewItems.map((item) => {
+                  const checked = !excludedConversationIds.has(
+                    item.conversationId,
+                  );
+                  return (
+                    <tr
+                      key={`${item.sourceType}-${item.sourceId}`}
+                      className="border-b border-border/70"
+                    >
+                      <td className="px-2 py-2">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={sending}
+                          aria-label={`Incluir ${item.displayName || item.whatsappDigits || item.conversationId}`}
+                          onChange={() => toggleLead(item.conversationId)}
+                          className="h-4 w-4 rounded border-border"
+                        />
+                      </td>
+                      <td className="px-2 py-2 text-foreground">
+                        {item.displayName || item.whatsappDigits || '—'}
+                      </td>
+                      <td className="px-2 py-2 capitalize text-foreground">
+                        {item.botSlug}
+                      </td>
+                      <td className="px-2 py-2 text-foreground">
+                        {channelLabel(item.channel)}
+                      </td>
+                      <td className="px-2 py-2 text-foreground">
+                        {visaLabel(item.hasVisa)}
+                      </td>
+                      <td className="px-2 py-2 text-foreground">
+                        {item.propertyTypology.length
+                          ? item.propertyTypology
+                              .map(
+                                (t) =>
+                                  RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS[
+                                    t as RafacallCrmPropertyTypology
+                                  ] || t,
+                              )
+                              .join(', ')
+                          : '—'}
+                      </td>
+                      <td className="px-2 py-2 text-foreground">
+                        {item.preferredCity || '—'}
+                      </td>
+                      <td className="px-2 py-2 text-foreground">
+                        {item.immigrationImmediate
+                          ? 'Imediato'
+                          : item.expectedImmigrationAt || '—'}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -601,13 +713,17 @@ export default function AdminDisparoPage() {
                 key={c.id}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-4 py-3"
               >
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {c.name || 'Disparo'} · {statusLabel(c.status)}
+                <div className="min-w-0 space-y-1">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {c.name?.trim() || 'Campanha sem título'}
                   </p>
                   <p className="text-xs text-muted">
+                    {statusLabel(c.status)}
+                    {' · '}
                     {c.sentCount}/{c.totalRecipients} enviados
                     {c.failedCount > 0 ? ` · ${c.failedCount} falhas` : ''}
+                    {' · '}
+                    intervalo {c.minDelayMinutes}–{c.maxDelayMinutes} min
                     {' · '}
                     {new Date(c.createdAt).toLocaleString('pt-PT')}
                   </p>

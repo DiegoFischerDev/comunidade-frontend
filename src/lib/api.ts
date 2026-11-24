@@ -2547,6 +2547,7 @@ export const api = {
         name?: string;
         steps: JoanaWelcomeStepInput[];
         filters: MassDispatchFilters;
+        excludedConversationIds?: string[];
         minDelayMinutes?: number;
         maxDelayMinutes?: number;
       }) =>
