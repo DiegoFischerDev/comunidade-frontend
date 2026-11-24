@@ -319,13 +319,30 @@ export function formatImmigrationDateLabel(value: string | null | undefined): st
   });
 }
 
-/** Mais recente primeiro. Empate mantém a ordem atual. */
-export function sortCrmItemsByRecentUpdate<T extends { updatedAt: string }>(
-  items: T[],
-): T[] {
+function crmUnansweredTotal(item: {
+  unansweredWhatsapp?: number | null;
+  unansweredInstagram?: number | null;
+}): number {
+  return (item.unansweredWhatsapp ?? 0) + (item.unansweredInstagram ?? 0);
+}
+
+/**
+ * Pendentes de resposta primeiro; depois mais recente primeiro.
+ * Empate mantém a ordem atual.
+ */
+export function sortCrmItemsByRecentUpdate<
+  T extends {
+    updatedAt: string;
+    unansweredWhatsapp?: number | null;
+    unansweredInstagram?: number | null;
+  },
+>(items: T[]): T[] {
   return items
     .map((item, index) => ({ item, index }))
     .sort((left, right) => {
+      const leftPending = crmUnansweredTotal(left.item) > 0 ? 1 : 0;
+      const rightPending = crmUnansweredTotal(right.item) > 0 ? 1 : 0;
+      if (rightPending !== leftPending) return rightPending - leftPending;
       const leftMs = Date.parse(left.item.updatedAt);
       const rightMs = Date.parse(right.item.updatedAt);
       const leftTime = Number.isNaN(leftMs) ? 0 : leftMs;
@@ -337,10 +354,101 @@ export function sortCrmItemsByRecentUpdate<T extends { updatedAt: string }>(
 }
 
 export function sortCrmBoardColumns<
-  T extends { items: Array<{ updatedAt: string }> },
+  T extends {
+    items: Array<{
+      updatedAt: string;
+      unansweredWhatsapp?: number | null;
+      unansweredInstagram?: number | null;
+    }>;
+  },
 >(columns: T[]): T[] {
   return columns.map((column) => ({
     ...column,
     items: sortCrmItemsByRecentUpdate(column.items),
   }));
+}
+
+/** Intervalo do soft poll do kanban CRM. */
+export const CRM_BOARD_SOFT_POLL_MS = 15_000;
+
+export type CrmPollableItem = {
+  id: string;
+  updatedAt: string;
+  unansweredWhatsapp?: number | null;
+  unansweredInstagram?: number | null;
+};
+
+/** Comparação estável para soft poll (evita re-render se o payload for igual). */
+export function crmPollItemsEqual(left: unknown, right: unknown): boolean {
+  if (left === right) return true;
+  try {
+    return JSON.stringify(left) === JSON.stringify(right);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Soft-merge do board: reutiliza referências de items/colunas inalterados.
+ * Devolve `previous` intacto se nada mudou (React salta o re-render).
+ */
+export function mergeCrmBoardColumns<
+  TItem extends CrmPollableItem,
+  TColumn extends { items: TItem[] },
+>(
+  previous: TColumn[],
+  incoming: TColumn[],
+  columnKey: (column: TColumn) => string,
+): TColumn[] {
+  if (previous.length === 0) {
+    return sortCrmBoardColumns(incoming);
+  }
+
+  const prevByKey = new Map(previous.map((column) => [columnKey(column), column]));
+  const prevItemsById = new Map<string, TItem>();
+  for (const column of previous) {
+    for (const item of column.items) {
+      prevItemsById.set(item.id, item);
+    }
+  }
+
+  const nextColumns = incoming.map((incomingColumn) => {
+    const key = columnKey(incomingColumn);
+    const prevColumn = prevByKey.get(key);
+
+    const mergedItems = sortCrmItemsByRecentUpdate(
+      incomingColumn.items.map((item) => {
+        const prevItem = prevItemsById.get(item.id);
+        if (prevItem && crmPollItemsEqual(prevItem, item)) return prevItem;
+        return item;
+      }),
+    );
+
+    const itemsUnchanged =
+      Boolean(prevColumn) &&
+      prevColumn!.items.length === mergedItems.length &&
+      prevColumn!.items.every((item, index) => item === mergedItems[index]);
+
+    const metaUnchanged =
+      Boolean(prevColumn) &&
+      crmPollItemsEqual(
+        { ...prevColumn, items: undefined },
+        { ...incomingColumn, items: undefined },
+      );
+
+    if (itemsUnchanged && metaUnchanged && prevColumn) {
+      return prevColumn;
+    }
+
+    return { ...incomingColumn, items: mergedItems };
+  });
+
+  if (
+    previous.length === nextColumns.length &&
+    previous.every((column, index) => column === nextColumns[index])
+  ) {
+    return previous;
+  }
+
+  return nextColumns;
 }

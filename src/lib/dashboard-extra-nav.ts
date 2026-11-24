@@ -63,6 +63,11 @@ export const ADMIN_NAV_ITEMS: DashboardExtraNavItem[] = [
     label: 'Automação',
     isActive: (pathname) => pathname === '/dashboard/admin/automacao',
   },
+  {
+    href: '/dashboard/admin/rag',
+    label: 'RAG (Q&A)',
+    isActive: (pathname) => pathname === '/dashboard/admin/rag',
+  },
 ];
 
 export const RELOCATION_PARTNER_NAV_ITEMS: DashboardExtraNavItem[] = [

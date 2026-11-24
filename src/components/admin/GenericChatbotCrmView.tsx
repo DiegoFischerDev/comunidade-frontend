@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   api,
   getUserFacingApiError,
@@ -19,14 +19,18 @@ import {
 } from '@/components/ui/horizontal-snap-carousel';
 import { resolveUploadsUrl } from '@/lib/resolve-uploads-url';
 import {
+  crmPollItemsEqual,
   formatCrmEuroAmount,
   formatCrmPropertyTypologyLabels,
+  mergeCrmBoardColumns,
   normalizeCrmPropertyTypologies,
   RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS,
   RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER,
+  sortCrmItemsByRecentUpdate,
   type RafacallCrmColumnTone,
   type RafacallCrmPropertyTypology,
 } from '@/lib/rafacall-crm';
+import { useCrmBoardSoftPoll } from '@/hooks/use-crm-board-soft-poll';
 import { toast } from '@/lib/toast';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { InstagramIcon } from '@/components/icons/InstagramIcon';
@@ -914,7 +918,7 @@ function GenericLeadCard({
   );
 }
 
-function GenericKanbanColumn({
+const GenericKanbanColumn = memo(function GenericKanbanColumn({
   column,
   slug,
   botName,
@@ -999,13 +1003,7 @@ function GenericKanbanColumn({
         {column.items.length === 0 ? (
           <p className="py-4 text-center text-xs text-muted">Arraste clientes para aqui</p>
         ) : (
-          [...column.items]
-            .sort((left, right) => {
-              const leftMs = Date.parse(left.updatedAt) || 0;
-              const rightMs = Date.parse(right.updatedAt) || 0;
-              return rightMs - leftMs;
-            })
-            .map((lead) => (
+          sortCrmItemsByRecentUpdate(column.items).map((lead) => (
             <GenericLeadCard
               key={lead.id}
               lead={lead}
@@ -1028,7 +1026,7 @@ function GenericKanbanColumn({
       </div>
     </section>
   );
-}
+});
 
 export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
   const [board, setBoard] = useState<ChatbotCrmBoard | null>(null);
@@ -1069,30 +1067,64 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
   const isBruna = slug === 'bruna';
   const isOutros = slug === 'outros';
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const load = useCallback(async (opts?: { soft?: boolean }) => {
+    const soft = opts?.soft === true;
+    if (!soft) {
+      setLoading(true);
+      setError('');
+    }
     try {
       const next = await api.admin.chatbots.crm.board(slug);
-      setBoard(next);
+      setBoard((prev) => {
+        if (!soft || !prev) return next;
+        const mergedColumns = mergeCrmBoardColumns(
+          prev.columns,
+          next.columns,
+          (column) => column.id,
+        );
+        if (
+          mergedColumns === prev.columns &&
+          crmPollItemsEqual(prev.chatbot, next.chatbot)
+        ) {
+          return prev;
+        }
+        return { ...next, columns: mergedColumns };
+      });
       setSelected((prev) => {
         if (!prev) return null;
         for (const column of next.columns) {
           const found = column.items.find((item) => item.id === prev.id);
-          if (found) return found;
+          if (found) {
+            return soft && crmPollItemsEqual(prev, found) ? prev : found;
+          }
         }
-        return null;
+        return soft ? prev : null;
       });
     } catch (err) {
-      setError(getUserFacingApiError(err, { context: 'Ao carregar o CRM' }));
+      if (!soft) {
+        setError(getUserFacingApiError(err, { context: 'Ao carregar o CRM' }));
+      }
     } finally {
-      setLoading(false);
+      if (!soft) setLoading(false);
     }
   }, [slug]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const softRefreshBoard = useCallback(() => load({ soft: true }), [load]);
+
+  useCrmBoardSoftPoll({
+    enabled: !loading && !error && Boolean(board),
+    paused:
+      Boolean(draggingLeadId) ||
+      Boolean(savingLeadId) ||
+      Boolean(saving) ||
+      Boolean(deleteSaving) ||
+      Boolean(columnSaving),
+    onPoll: softRefreshBoard,
+  });
 
   const total = useMemo(
     () => board?.columns.reduce((sum, column) => sum + column.items.length, 0) ?? 0,
@@ -1518,6 +1550,7 @@ export function GenericChatbotCrmView({ slug, botName, onClientCount }: Props) {
                             channel === 'WHATSAPP' ? 0 : item.unansweredWhatsapp,
                           unansweredInstagram:
                             channel === 'INSTAGRAM' ? 0 : item.unansweredInstagram,
+                          updatedAt: new Date().toISOString(),
                         },
                   ),
                 })),

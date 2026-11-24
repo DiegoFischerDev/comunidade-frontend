@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { api, getUserFacingApiError, type AdminChatbotSlug, type RafacallCrmDocument, type RafacallCrmItem, type RafacallCrmPayment, type RafacallCrmStatus } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,8 +8,9 @@ import { LoginWhatsappFields } from '@/components/auth/LoginWhatsappFields';
 import { AdminVideoCallSlotPicker } from '@/components/rafacall/AdminVideoCallSlotPicker';
 import { showRafacallAdminBookingErrorToast } from '@/lib/rafacall-admin-booking-errors';
 import { toast } from '@/lib/toast';
-import { CRM_IMMIGRATION_IMMEDIATE_VALUE, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER, RAFA_CALL_CRM_STATUS_LABELS, RAFA_CALL_CRM_STATUS_ORDER, formatCrmEuroAmount, formatCrmPaymentDateLabel, formatCrmPetLabel, formatCrmPropertyTypologyLabels, formatCrmVisaLabel, getCrmColumnTone, formatImmigrationDateLabel, formatImmigrationMonthYear, isCrmImmigrationImmediate, isJoanaOffCrmStatus, normalizeCrmBoardColumns, normalizeCrmPropertyTypologies, sameCrmPropertyTypologies, sortCrmBoardColumns, toImmigrationDateInputValue } from '@/lib/rafacall-crm';
+import { CRM_IMMIGRATION_IMMEDIATE_VALUE, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_LABELS, RAFA_CALL_CRM_PROPERTY_TYPOLOGY_ORDER, RAFA_CALL_CRM_STATUS_LABELS, RAFA_CALL_CRM_STATUS_ORDER, crmPollItemsEqual, formatCrmEuroAmount, formatCrmPaymentDateLabel, formatCrmPetLabel, formatCrmPropertyTypologyLabels, formatCrmVisaLabel, getCrmColumnTone, formatImmigrationDateLabel, formatImmigrationMonthYear, isCrmImmigrationImmediate, isJoanaOffCrmStatus, mergeCrmBoardColumns, normalizeCrmBoardColumns, normalizeCrmPropertyTypologies, sameCrmPropertyTypologies, sortCrmBoardColumns, toImmigrationDateInputValue } from '@/lib/rafacall-crm';
 import type { RafacallCrmPropertyTypology } from '@/lib/rafacall-crm';
+import { useCrmBoardSoftPoll } from '@/hooks/use-crm-board-soft-poll';
 import {
   CENTERED_PEEK_CAROUSEL_ITEM,
   CENTERED_PEEK_CAROUSEL_TRACK,
@@ -1282,7 +1283,7 @@ function CrmClientCard({
   );
 }
 
-function CrmKanbanColumn({
+const CrmKanbanColumn = memo(function CrmKanbanColumn({
   column,
   draggingItemId,
   savingItemId,
@@ -1376,7 +1377,7 @@ function CrmKanbanColumn({
       </div>
     </section>
   );
-}
+});
 
 function normalizePreferredCityDraft(value: string): string | null {
   const trimmed = value.trim();
@@ -3131,24 +3132,57 @@ function JoanaCrmBoardPage({
     onClientCount?.('joana', totalClients);
   }, [error, loading, onClientCount, totalClients]);
 
-  const loadBoard = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const loadBoard = useCallback(async (opts?: { soft?: boolean }) => {
+    const soft = opts?.soft === true;
+    if (!soft) {
+      setLoading(true);
+      setError('');
+    }
     try {
       const board = await api.admin.rafacall.crmBoard();
-      setColumns(sortCrmBoardColumns(normalizeCrmBoardColumns(board.columns)));
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Não foi possível carregar o CRM.',
+      const incoming = sortCrmBoardColumns(normalizeCrmBoardColumns(board.columns));
+      setColumns((prev) =>
+        soft ? mergeCrmBoardColumns(prev, incoming, (column) => column.status) : incoming,
       );
+      if (soft) {
+        setSelectedItem((current) => {
+          if (!current) return null;
+          for (const column of incoming) {
+            const found = column.items.find((item) => item.id === current.id);
+            if (found) {
+              return crmPollItemsEqual(current, found) ? current : found;
+            }
+          }
+          return current;
+        });
+      }
+    } catch (err) {
+      if (!soft) {
+        setError(
+          err instanceof Error ? err.message : 'Não foi possível carregar o CRM.',
+        );
+      }
     } finally {
-      setLoading(false);
+      if (!soft) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     if (user?.role === 'ADMIN') void loadBoard();
   }, [user?.role, loadBoard]);
+
+  const softRefreshBoard = useCallback(() => loadBoard({ soft: true }), [loadBoard]);
+
+  useCrmBoardSoftPoll({
+    enabled: user?.role === 'ADMIN' && !loading && !error,
+    paused:
+      Boolean(draggingItemId) ||
+      Boolean(savingItemId) ||
+      Boolean(modalSaving) ||
+      Boolean(newClientSaving) ||
+      Boolean(deleteSaving),
+    onPoll: softRefreshBoard,
+  });
 
   useEffect(() => {
     if (!selectedItem) {
@@ -3696,6 +3730,35 @@ function JoanaCrmBoardPage({
     [selectedItem?.id, summarizingItemId],
   );
 
+  const onToggleJoanaColumn = useCallback(
+    (item: RafacallCrmItem) => {
+      void handleToggleJoana(item);
+    },
+    [handleToggleJoana],
+  );
+  const onGenerateSummaryColumn = useCallback(
+    (item: RafacallCrmItem) => {
+      void handleGenerateSummary(item);
+    },
+    [handleGenerateSummary],
+  );
+  const onDropItemColumn = useCallback(
+    (itemId: string, targetStatus: RafacallCrmStatus) => {
+      void handleDropItem(itemId, targetStatus);
+    },
+    [handleDropItem],
+  );
+  const onOpenChatColumn = useCallback(
+    (item: RafacallCrmItem, channel: 'WHATSAPP' | 'INSTAGRAM') => {
+      setChatLead({ id: item.id, channel });
+    },
+    [],
+  );
+  const onDragEndColumn = useCallback(() => {
+    setDraggingItemId(null);
+    setDraggingFromStatus(null);
+  }, []);
+
   if (!user) return null;
 
   if (user.role !== 'ADMIN') {
@@ -3716,27 +3779,16 @@ function JoanaCrmBoardPage({
     savingItemId,
     summarizingItemId,
     togglingJoanaId,
-    onToggleJoana: (item: RafacallCrmItem) => {
-      void handleToggleJoana(item);
-    },
-    onGenerateSummary: (item: RafacallCrmItem) => {
-      void handleGenerateSummary(item);
-    },
-    onDropItem: (itemId: string, targetStatus: RafacallCrmStatus) => {
-      void handleDropItem(itemId, targetStatus);
-    },
+    onToggleJoana: onToggleJoanaColumn,
+    onGenerateSummary: onGenerateSummaryColumn,
+    onDropItem: onDropItemColumn,
     onOpenDetails: handleOpenDetails,
     onRequestDelete: handleRequestDelete,
-    onOpenChat: (item: RafacallCrmItem, channel: 'WHATSAPP' | 'INSTAGRAM') => {
-      setChatLead({ id: item.id, channel });
-    },
+    onOpenChat: onOpenChatColumn,
     activeChatId: chatLead?.id ?? null,
     activeChatChannel: chatLead?.channel ?? null,
     onDragStart: handleDragStart,
-    onDragEnd: () => {
-      setDraggingItemId(null);
-      setDraggingFromStatus(null);
-    },
+    onDragEnd: onDragEndColumn,
   };
 
   return (
@@ -3865,20 +3917,23 @@ function JoanaCrmBoardPage({
           }}
           onAdminReplied={() => {
             setColumns((prev) =>
-              prev.map((column) => ({
-                ...column,
-                items: column.items.map((entry) =>
-                  entry.id !== chatItem.id
-                    ? entry
-                    : {
-                        ...entry,
-                        unansweredWhatsapp:
-                          chatLead.channel === 'WHATSAPP' ? 0 : entry.unansweredWhatsapp,
-                        unansweredInstagram:
-                          chatLead.channel === 'INSTAGRAM' ? 0 : entry.unansweredInstagram,
-                      },
-                ),
-              })),
+              sortCrmBoardColumns(
+                prev.map((column) => ({
+                  ...column,
+                  items: column.items.map((entry) =>
+                    entry.id !== chatItem.id
+                      ? entry
+                      : {
+                          ...entry,
+                          unansweredWhatsapp:
+                            chatLead.channel === 'WHATSAPP' ? 0 : entry.unansweredWhatsapp,
+                          unansweredInstagram:
+                            chatLead.channel === 'INSTAGRAM' ? 0 : entry.unansweredInstagram,
+                          updatedAt: new Date().toISOString(),
+                        },
+                  ),
+                })),
+              ),
             );
           }}
           actions={

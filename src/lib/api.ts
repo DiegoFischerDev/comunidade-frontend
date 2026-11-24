@@ -116,6 +116,23 @@ export type FinanceBoard = {
   balance: number;
 };
 
+export type RagQaPair = {
+  id: string;
+  question: string;
+  answer: string;
+  isActive: boolean;
+  showInFaq: boolean;
+  embeddingModel: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RagFaqItem = {
+  id: string;
+  question: string;
+  answer: string;
+};
+
 export type WhatsappClientAutomationStepType = 'TEXT' | 'AUDIO' | 'IMAGE';
 
 /** Passos das boas-vindas da Joana (inclui PDF). */
@@ -1409,6 +1426,36 @@ export const api = {
         }),
       delete: (id: string) =>
         request<{ ok: true }>(`/admin/finance/${id}`, {
+          method: 'DELETE',
+        }),
+    },
+    ragQa: {
+      list: () => request<RagQaPair[]>('/admin/rag/qa', { method: 'GET' }),
+      create: (body: {
+        question: string;
+        answer: string;
+        isActive?: boolean;
+        showInFaq?: boolean;
+      }) =>
+        request<RagQaPair>('/admin/rag/qa', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
+      update: (
+        id: string,
+        body: {
+          question?: string;
+          answer?: string;
+          isActive?: boolean;
+          showInFaq?: boolean;
+        },
+      ) =>
+        request<RagQaPair>(`/admin/rag/qa/${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        }),
+      delete: (id: string) =>
+        request<{ ok: true }>(`/admin/rag/qa/${encodeURIComponent(id)}`, {
           method: 'DELETE',
         }),
     },
@@ -3558,5 +3605,10 @@ export const api = {
         body: JSON.stringify(params),
         token: null,
       }),
+  },
+
+  rag: {
+    faq: () =>
+      request<RagFaqItem[]>('/rag/faq', { method: 'GET', token: null }),
   },
 };
