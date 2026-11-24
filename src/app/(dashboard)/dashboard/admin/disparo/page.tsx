@@ -371,8 +371,47 @@ export default function AdminDisparoPage() {
         <h2 className="text-lg font-medium text-foreground">Sequência</h2>
         <p className="text-sm text-muted">
           Texto, imagem ou documento (PDF). O texto terá variações geradas pela
-          OpenAI no momento do envio.
+          OpenAI no momento do envio. Usa a tag{' '}
+          <code className="rounded bg-neutral-100 px-1.5 py-0.5 text-xs text-foreground">
+            {'{{nome}}'}
+          </code>{' '}
+          para inserir o primeiro nome do lead (ex.: «Oi {'{{nome}}'}, tudo
+          bem?»).
         </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={sending}
+            onClick={() => {
+              const tag = '{{nome}}';
+              setSteps((prev) => {
+                const textIdx = prev.findIndex((s) => s.type === 'TEXT');
+                if (textIdx < 0) {
+                  return [
+                    {
+                      ...emptyAutomationDraftStep('TEXT'),
+                      textContent: tag,
+                    },
+                    ...prev,
+                  ];
+                }
+                return prev.map((s, i) =>
+                  i === textIdx
+                    ? {
+                        ...s,
+                        textContent: s.textContent.trim()
+                          ? `${s.textContent.trim()} ${tag}`
+                          : tag,
+                      }
+                    : s,
+                );
+              });
+            }}
+            className="rounded-lg border border-border px-3 py-1.5 text-sm text-foreground hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Inserir {'{{nome}}'}
+          </button>
+        </div>
         <AutomationStepsEditor
           steps={steps}
           allowedTypes={['TEXT', 'IMAGE', 'DOCUMENT']}
