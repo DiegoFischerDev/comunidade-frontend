@@ -38,9 +38,8 @@ import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { InstagramIcon } from '@/components/icons/InstagramIcon';
 
 const CRM_BOT_TABS: Array<{ slug: AdminChatbotSlug; name: string; blurb: string }> = [
-  { slug: 'joana', name: 'Joana', blurb: 'Relocation / aluguel' },
+  { slug: 'joana', name: 'Joana', blurb: 'Relocation / visto / aluguel' },
   { slug: 'bruna', name: 'Bruna', blurb: 'Crédito imobiliário' },
-  { slug: 'bianca', name: 'Bianca', blurb: 'Visto / preparação' },
   { slug: 'gabi', name: 'Gabi', blurb: 'Publicidade' },
   { slug: 'outros', name: 'Outros', blurb: 'Assuntos gerais / Rafa' },
 ];
@@ -48,7 +47,6 @@ const CRM_BOT_TABS: Array<{ slug: AdminChatbotSlug; name: string; blurb: string 
 function parseCrmBotSlug(value: string | null): AdminChatbotSlug {
   if (
     value === 'bruna' ||
-    value === 'bianca' ||
     value === 'gabi' ||
     value === 'joana' ||
     value === 'outros'
@@ -722,7 +720,7 @@ function countCrmClients(columns: CrmColumn[]): number {
   return columns.reduce((sum, column) => sum + column.items.length, 0);
 }
 
-const GENERIC_CRM_SLUGS = ['bruna', 'bianca', 'gabi', 'outros'] as const;
+const GENERIC_CRM_SLUGS = ['bruna', 'gabi', 'outros'] as const;
 
 async function fetchPipelineCounts(): Promise<Record<AdminChatbotSlug, number>> {
   try {

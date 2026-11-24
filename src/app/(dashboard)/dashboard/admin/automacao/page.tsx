@@ -26,9 +26,9 @@ const inputClass =
 
 /** Tema curto por chatbot — alinhado aos tabs do CRM. */
 const CHATBOT_THEME: Record<AdminChatbotSlug, string> = {
-  joana: 'Relocation / aluguel',
+  joana: 'Relocation / visto / aluguel',
   bruna: 'Crédito imobiliário',
-  bianca: 'Visto / preparação',
+  bianca: 'Visto / preparação (desactivado)',
   gabi: 'Publicidade',
   outros: 'Assuntos gerais / Rafa',
 };
@@ -224,12 +224,14 @@ export default function AdminAutomacaoPage() {
         api.admin.chatbots.channels(),
       ]);
       setItems(res.items);
-      setChatbots(bots);
+      const enabledBots = bots.filter((bot) => bot.enabled);
+      setChatbots(enabledBots);
       setMenuText(menu.text);
       setWhatsappEnabled(channels.whatsappEnabled);
       setInstagramEnabled(channels.instagramEnabled);
       setSelectedBotSlug((prev) => {
-        const current = bots.find((bot) => bot.slug === prev) ?? bots[0] ?? null;
+        const current =
+          enabledBots.find((bot) => bot.slug === prev) ?? enabledBots[0] ?? null;
         if (current) {
           setContextText(current.contextText);
           setWelcomeSteps(stepsFromApi(current.welcomeSteps));
@@ -692,12 +694,10 @@ export default function AdminAutomacaoPage() {
           <>
             <p className="mt-3 text-sm text-muted">
               {selectedBot.slug === 'joana'
-                ? 'Motor de qualificação Relocation (CRM Joana).'
-                : selectedBot.slug === 'bianca'
-                  ? 'Vistos e preparação: responde com o contexto abaixo e conduz à videochamada (/agendar). CRM próprio em /dashboard/admin/crm?bot=bianca.'
-                  : selectedBot.engineKind === 'HANDOFF_OTHER'
-                    ? 'Handoff à Rafa: mensagem de espera, chatbot Off e CRM Outros.'
-                    : 'Motor genérico: responde só com o contexto abaixo.'}{' '}
+                ? 'Motor de qualificação Relocation + visto/preparação (CRM Joana). Gate: visto ou já em Portugal; sem visto fica só para dúvidas (RAG).'
+                : selectedBot.engineKind === 'HANDOFF_OTHER'
+                  ? 'Handoff à Rafa: mensagem de espera, chatbot Off e CRM Outros.'
+                  : 'Motor genérico: responde só com o contexto abaixo.'}{' '}
               Menu: {selectedBot.menuOrder} — {selectedBot.menuLabel}
             </p>
             <label
