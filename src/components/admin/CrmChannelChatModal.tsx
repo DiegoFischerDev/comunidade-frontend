@@ -955,9 +955,32 @@ export function CrmChannelChatModal({
                       mine ? theme.bubbleMine : theme.bubbleTheirs
                     }`}
                   >
-                    <p className={`mb-0.5 text-[10px] font-semibold ${mine ? theme.labelMine : theme.labelTheirs}`}>
-                      {label}
-                    </p>
+                    <div
+                      className={`mb-0.5 flex flex-wrap items-center gap-1 ${
+                        mine ? 'justify-end' : 'justify-start'
+                      }`}
+                    >
+                      <p
+                        className={`text-[10px] font-semibold ${
+                          mine ? theme.labelMine : theme.labelTheirs
+                        }`}
+                      >
+                        {label}
+                      </p>
+                      {message.author === 'BOT' &&
+                      Array.isArray(message.ragCodes) &&
+                      message.ragCodes.length > 0
+                        ? message.ragCodes.map((code) => (
+                            <span
+                              key={`${message.id}-${code}`}
+                              title={`Par RAG ${code}`}
+                              className="rounded-md border border-border bg-page px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-muted"
+                            >
+                              {code}
+                            </span>
+                          ))
+                        : null}
+                    </div>
                     {message.kind === 'AUDIO' && message.mediaUrl ? (
                       <div className="min-w-0 overflow-hidden">
                         <ChatVoiceNotePlayer

@@ -90,6 +90,7 @@ export default function AdminRagPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [togglingKey, setTogglingKey] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [filterQuery, setFilterQuery] = useState('');
 
   const load = useCallback(async () => {
     if (!canSee) return;
@@ -125,6 +126,22 @@ export default function AdminRagPage() {
     }
     return ids;
   }, [drafts, items]);
+
+  const filteredItems = useMemo(() => {
+    const q = filterQuery.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((row) => {
+      const draft = drafts[row.id];
+      const question = (draft?.question ?? row.question).toLowerCase();
+      const answer = (draft?.answer ?? row.answer).toLowerCase();
+      return (
+        row.code.toLowerCase().includes(q) ||
+        row.id.toLowerCase().includes(q) ||
+        question.includes(q) ||
+        answer.includes(q)
+      );
+    });
+  }, [drafts, filterQuery, items]);
 
   function draftFor(row: RagQaPair): Draft {
     return (
@@ -381,20 +398,42 @@ export default function AdminRagPage() {
       </section>
 
       <section className="mt-10">
-        <h2 className="text-lg font-semibold text-foreground">
-          Pares guardados ({items.length})
-        </h2>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <h2 className="text-lg font-semibold text-foreground">
+            Pares guardados ({filteredItems.length}
+            {filterQuery.trim() ? ` de ${items.length}` : ''})
+          </h2>
+          {items.length > 0 ? (
+            <label className="block w-full max-w-sm sm:ml-auto">
+              <span className="mb-1 block text-xs font-medium text-muted">
+                Filtrar
+              </span>
+              <input
+                type="search"
+                value={filterQuery}
+                onChange={(e) => setFilterQuery(e.target.value)}
+                placeholder="ID ou palavra-chave…"
+                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+              />
+            </label>
+          ) : null}
+        </div>
         {loading ? (
           <p className="mt-4 text-sm text-muted">A carregar…</p>
         ) : items.length === 0 ? (
           <p className="mt-4 text-sm text-muted">
             Ainda não há pares. Cria o primeiro acima.
           </p>
+        ) : filteredItems.length === 0 ? (
+          <p className="mt-4 text-sm text-muted">
+            Nenhum par corresponde ao filtro.
+          </p>
         ) : (
           <div className="mt-4 overflow-x-auto rounded-lg border border-border bg-card">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-page text-xs font-semibold uppercase tracking-wide text-muted">
                 <tr>
+                  <th className="px-4 py-3">ID</th>
                   <th className="px-4 py-3">Pergunta</th>
                   <th className="px-4 py-3">Resposta</th>
                   <th className="px-4 py-3">RAG</th>
@@ -405,12 +444,20 @@ export default function AdminRagPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {items.map((row) => {
+                {filteredItems.map((row) => {
                   const draft = draftFor(row);
                   const isDirty = dirtyIds.has(row.id);
                   const isSaving = savingId === row.id;
                   return (
                     <tr key={row.id} className="align-top text-foreground">
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <span
+                          className="font-mono text-xs font-semibold text-foreground"
+                          title={row.id}
+                        >
+                          {row.code}
+                        </span>
+                      </td>
                       <td className="min-w-[14rem] px-4 py-3">
                         <textarea
                           value={draft.question}
@@ -419,7 +466,7 @@ export default function AdminRagPage() {
                           }
                           rows={3}
                           className="w-full rounded-lg border border-border bg-card px-2.5 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
-                          aria-label={`Pergunta ${row.id}`}
+                          aria-label={`Pergunta ${row.code}`}
                         />
                       </td>
                       <td className="min-w-[18rem] px-4 py-3">
@@ -430,7 +477,7 @@ export default function AdminRagPage() {
                           }
                           rows={4}
                           className="w-full rounded-lg border border-border bg-card px-2.5 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
-                          aria-label={`Resposta ${row.id}`}
+                          aria-label={`Resposta ${row.code}`}
                         />
                         {isDirty ? (
                           <button

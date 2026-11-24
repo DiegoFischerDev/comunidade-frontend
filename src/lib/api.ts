@@ -118,6 +118,7 @@ export type FinanceBoard = {
 
 export type RagQaPair = {
   id: string;
+  code: string;
   question: string;
   answer: string;
   isActive: boolean;
@@ -320,6 +321,8 @@ export type CrmChannelMessage = {
   kind: 'TEXT' | 'AUDIO_TRANSCRIPT' | 'AUDIO';
   body: string;
   mediaUrl: string | null;
+  /** Códigos curtos dos pares RAG usados nesta resposta BOT (ex. Rag02). */
+  ragCodes?: string[] | null;
   createdAt: string;
 };
 
