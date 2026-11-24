@@ -685,32 +685,52 @@ function buildCrmItemSearchHaystack(item: RafacallCrmItem): string {
 }
 
 type CrmQuickFilters = {
+  /** `true` = com visto, `false` = sem visto, `undefined` = sem filtro de visto */
   hasVisa?: boolean;
 };
 
-/** Extrai o atalho «tem visto» / «temvisto» dos tokens de pesquisa. */
+/** Extrai «com/tem visto» e «sem visto» dos tokens de pesquisa. */
 function takeHasVisaQuickFilter(tokens: string[]): {
-  wantsHasVisa: boolean;
+  hasVisaFilter: boolean | undefined;
   remaining: string[];
 } {
-  if (tokens.includes('temvisto')) {
+  if (tokens.includes('temvisto') || tokens.includes('comvisto')) {
     return {
-      wantsHasVisa: true,
-      remaining: tokens.filter((token) => token !== 'temvisto'),
+      hasVisaFilter: true,
+      remaining: tokens.filter(
+        (token) => token !== 'temvisto' && token !== 'comvisto',
+      ),
+    };
+  }
+  if (tokens.includes('semvisto')) {
+    return {
+      hasVisaFilter: false,
+      remaining: tokens.filter((token) => token !== 'semvisto'),
     };
   }
 
   const remaining: string[] = [];
-  let wantsHasVisa = false;
+  let hasVisaFilter: boolean | undefined;
   for (let index = 0; index < tokens.length; index += 1) {
-    if (tokens[index] === 'tem' && tokens[index + 1] === 'visto') {
-      wantsHasVisa = true;
+    const token = tokens[index];
+    const next = tokens[index + 1];
+    if (
+      (token === 'tem' || token === 'com') &&
+      next === 'visto' &&
+      hasVisaFilter === undefined
+    ) {
+      hasVisaFilter = true;
       index += 1;
       continue;
     }
-    remaining.push(tokens[index]);
+    if (token === 'sem' && next === 'visto' && hasVisaFilter === undefined) {
+      hasVisaFilter = false;
+      index += 1;
+      continue;
+    }
+    remaining.push(token);
   }
-  return { wantsHasVisa, remaining };
+  return { hasVisaFilter, remaining };
 }
 
 function crmItemMatchesQuery(
@@ -718,7 +738,10 @@ function crmItemMatchesQuery(
   query: string,
   quickFilters: CrmQuickFilters = {},
 ): boolean {
-  if (quickFilters.hasVisa && item.crmHasVisa !== true) {
+  if (
+    typeof quickFilters.hasVisa === 'boolean' &&
+    item.crmHasVisa !== quickFilters.hasVisa
+  ) {
     return false;
   }
 
@@ -728,15 +751,22 @@ function crmItemMatchesQuery(
   const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
   const wantsRecent = tokens.includes('novo') || tokens.includes('new');
   const withoutRecent = tokens.filter((token) => token !== 'novo' && token !== 'new');
-  const { wantsHasVisa, remaining: otherTokens } = takeHasVisaQuickFilter(withoutRecent);
+  const { hasVisaFilter, remaining: otherTokens } =
+    takeHasVisaQuickFilter(withoutRecent);
 
   if (wantsRecent && !isCrmLeadRecentlyUpdated(item.updatedAt)) {
     return false;
   }
-  if (wantsHasVisa && item.crmHasVisa !== true) {
+  if (
+    typeof hasVisaFilter === 'boolean' &&
+    item.crmHasVisa !== hasVisaFilter
+  ) {
     return false;
   }
-  if ((wantsRecent || wantsHasVisa) && otherTokens.length === 0) {
+  if (
+    (wantsRecent || typeof hasVisaFilter === 'boolean') &&
+    otherTokens.length === 0
+  ) {
     return true;
   }
 
@@ -758,7 +788,7 @@ function filterCrmColumns(
   quickFilters: CrmQuickFilters = {},
 ): CrmColumn[] {
   const hasTextQuery = normalizeCrmSearchText(query).length > 0;
-  const hasQuickFilter = quickFilters.hasVisa === true;
+  const hasQuickFilter = typeof quickFilters.hasVisa === 'boolean';
   if (!hasTextQuery && !hasQuickFilter) return columns;
   return columns.map((column) => ({
     ...column,
@@ -3179,7 +3209,8 @@ function JoanaCrmBoardPage({
   const [deleteSaving, setDeleteSaving] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [filterQuery, setFilterQuery] = useState('');
-  const [quickFilterHasVisa, setQuickFilterHasVisa] = useState(false);
+  /** `true` = com visto, `false` = sem visto, `null` = sem filtro */
+  const [quickFilterHasVisa, setQuickFilterHasVisa] = useState<boolean | null>(null);
   const [newClientOpen, setNewClientOpen] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   const [newClientWhatsapp, setNewClientWhatsapp] = useState('');
@@ -3189,14 +3220,15 @@ function JoanaCrmBoardPage({
   const filteredColumns = useMemo(
     () =>
       filterCrmColumns(columns, filterQuery, {
-        hasVisa: quickFilterHasVisa,
+        hasVisa: quickFilterHasVisa ?? undefined,
       }),
     [columns, filterQuery, quickFilterHasVisa],
   );
   const totalClients = useMemo(() => countCrmClients(columns), [columns]);
   const filteredClients = useMemo(() => countCrmClients(filteredColumns), [filteredColumns]);
   const isFiltering =
-    normalizeCrmSearchText(filterQuery).length > 0 || quickFilterHasVisa;
+    normalizeCrmSearchText(filterQuery).length > 0 ||
+    typeof quickFilterHasVisa === 'boolean';
 
   useEffect(() => {
     if (loading || error) return;
@@ -3886,7 +3918,7 @@ function JoanaCrmBoardPage({
               type="search"
               value={filterQuery}
               onChange={(event) => setFilterQuery(event.target.value)}
-              placeholder="Nome, WhatsApp, tipologia, cidade, PET, novo, tem visto…"
+              placeholder="Nome, WhatsApp, tipologia, cidade, PET, novo, com visto, sem visto…"
               className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-9 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted/80 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
             />
             <svg
@@ -3907,7 +3939,7 @@ function JoanaCrmBoardPage({
                 type="button"
                 onClick={() => {
                   setFilterQuery('');
-                  setQuickFilterHasVisa(false);
+                  setQuickFilterHasVisa(null);
                 }}
                 className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-md p-1.5 text-muted transition-colors hover:bg-page hover:text-foreground"
                 aria-label="Limpar filtro"
@@ -3918,15 +3950,27 @@ function JoanaCrmBoardPage({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
-              Atalhos:
+              Filtros:
             </span>
             <button
               type="button"
-              className={crmQuickFilterChipClass(quickFilterHasVisa)}
-              aria-pressed={quickFilterHasVisa}
-              onClick={() => setQuickFilterHasVisa((current) => !current)}
+              className={crmQuickFilterChipClass(quickFilterHasVisa === true)}
+              aria-pressed={quickFilterHasVisa === true}
+              onClick={() =>
+                setQuickFilterHasVisa((current) => (current === true ? null : true))
+              }
             >
-              Tem visto
+              Com visto
+            </button>
+            <button
+              type="button"
+              className={crmQuickFilterChipClass(quickFilterHasVisa === false)}
+              aria-pressed={quickFilterHasVisa === false}
+              onClick={() =>
+                setQuickFilterHasVisa((current) => (current === false ? null : false))
+              }
+            >
+              Sem visto
             </button>
           </div>
         </div>
