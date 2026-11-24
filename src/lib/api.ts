@@ -188,6 +188,78 @@ export type JoanaWelcomeStepInput = {
   delayMsAfter?: number;
 };
 
+export type MassDispatchBotSlug = 'joana' | 'bruna' | 'gabi' | 'outros';
+
+export type MassDispatchFilters = {
+  bots?: MassDispatchBotSlug[];
+  hasVisa?: boolean;
+  typologies?: Array<'QUARTO' | 'T0' | 'T1' | 'T2' | 'T3' | 'T4' | 'T5'>;
+  preferredCityContains?: string;
+  immigrationFrom?: string;
+  immigrationTo?: string;
+  immigrationImmediate?: boolean;
+};
+
+export type MassDispatchPreviewItem = {
+  botSlug: MassDispatchBotSlug;
+  sourceType: 'BOOKING' | 'CRM_LEAD';
+  sourceId: string;
+  conversationId: string;
+  channel: 'WHATSAPP' | 'INSTAGRAM' | 'FACEBOOK';
+  whatsappDigits: string | null;
+  instagramUserId: string | null;
+  displayName: string | null;
+  hasVisa: boolean | null;
+  propertyTypology: Array<'QUARTO' | 'T0' | 'T1' | 'T2' | 'T3' | 'T4' | 'T5'>;
+  preferredCity: string | null;
+  expectedImmigrationAt: string | null;
+  immigrationImmediate: boolean;
+};
+
+export type MassCampaignStatus =
+  | 'DRAFT'
+  | 'SENDING'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'FAILED';
+
+export type MassCampaign = {
+  id: string;
+  name: string | null;
+  status: MassCampaignStatus;
+  steps: JoanaWelcomeStepInput[];
+  filters: MassDispatchFilters;
+  minDelayMinutes: number;
+  maxDelayMinutes: number;
+  totalRecipients: number;
+  sentCount: number;
+  failedCount: number;
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MassCampaignRecipient = {
+  id: string;
+  status: 'PENDING' | 'SENDING' | 'SENT' | 'FAILED' | 'SKIPPED';
+  botSlug: string;
+  sourceType: 'BOOKING' | 'CRM_LEAD';
+  sourceId: string;
+  conversationId: string;
+  channel: 'WHATSAPP' | 'INSTAGRAM' | 'FACEBOOK';
+  whatsappDigits: string | null;
+  instagramUserId: string | null;
+  displayName: string | null;
+  dueAt: string;
+  variationIndex: number | null;
+  errorMessage: string | null;
+  sentAt: string | null;
+};
+
+export type MassCampaignDetail = MassCampaign & {
+  recipients: MassCampaignRecipient[];
+};
+
 export type ChannelMediaUploadResult = {
   url: string;
   mediaUrlWhatsapp: string;
@@ -2427,6 +2499,65 @@ export const api = {
         request<{ ok: true }>(
           `/whatsapp-automations/${encodeURIComponent(id)}`,
           { method: 'DELETE' },
+        ),
+    },
+    massDispatch: {
+      preview: (filters: MassDispatchFilters) => {
+        const params = new URLSearchParams();
+        for (const bot of filters.bots ?? []) params.append('bots', bot);
+        if (typeof filters.hasVisa === 'boolean') {
+          params.set('hasVisa', String(filters.hasVisa));
+        }
+        for (const t of filters.typologies ?? []) {
+          params.append('typologies', t);
+        }
+        if (filters.preferredCityContains?.trim()) {
+          params.set(
+            'preferredCityContains',
+            filters.preferredCityContains.trim(),
+          );
+        }
+        if (filters.immigrationFrom?.trim()) {
+          params.set('immigrationFrom', filters.immigrationFrom.trim());
+        }
+        if (filters.immigrationTo?.trim()) {
+          params.set('immigrationTo', filters.immigrationTo.trim());
+        }
+        if (filters.immigrationImmediate) {
+          params.set('immigrationImmediate', 'true');
+        }
+        const qs = params.toString();
+        return request<{
+          total: number;
+          items: MassDispatchPreviewItem[];
+        }>(`/admin/mass-dispatch/preview${qs ? `?${qs}` : ''}`, {
+          method: 'GET',
+        });
+      },
+      listCampaigns: () =>
+        request<{ items: MassCampaign[] }>('/admin/mass-dispatch/campaigns', {
+          method: 'GET',
+        }),
+      getCampaign: (id: string) =>
+        request<MassCampaignDetail>(
+          `/admin/mass-dispatch/campaigns/${encodeURIComponent(id)}`,
+          { method: 'GET' },
+        ),
+      createCampaign: (body: {
+        name?: string;
+        steps: JoanaWelcomeStepInput[];
+        filters: MassDispatchFilters;
+        minDelayMinutes?: number;
+        maxDelayMinutes?: number;
+      }) =>
+        request<MassCampaignDetail>('/admin/mass-dispatch/campaigns', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
+      cancelCampaign: (id: string) =>
+        request<MassCampaignDetail>(
+          `/admin/mass-dispatch/campaigns/${encodeURIComponent(id)}/cancel`,
+          { method: 'POST' },
         ),
     },
     joana: {
